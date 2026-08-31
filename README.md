@@ -1,12 +1,12 @@
 # GIG Trading Algorithm
 
-Research-to-production platform for systematic trading (**GIG_Quant_Terminal**). Built so a hiring manager at a multi-strat or quantitative hedge fund can clone the repo, run tests, and see a complete research loop: point-in-time universe → factors → neutralization → walk-forward backtest → costs → risk limits.
+Research-to-production platform for systematic trading (**GIG_Quant_Terminal**).
+
+The research loop is: point-in-time universe → factors → neutralization → walk-forward backtest → costs → risk limits.
 
 Python is the research layer. Tight loops (cross-sectional neutralization) also ship as optional **C++** (`src/cpp/speed.cpp`, module `gig._speed`). If a compiler is missing, the same math runs in Python.
 
-This is not a “Renaissance clone,” not a live money printer, and not a dashboard with forty loosely named engines. It is a small, tested library that does a few things correctly.
-
-## What a reviewer should look at
+## Components
 
 | Area | Where | Why it matters |
 |---|---|---|
@@ -25,7 +25,7 @@ This is not a “Renaissance clone,” not a live money printer, and not a dashb
 
 The flagship strategy is a **dollar-neutral equity long/short** (`src/gig/strategies/equity_ls.py`). Futures time-series momentum and an options variance-risk-premium tilt sit behind the same result object so the research process is identical across asset classes.
 
-Root-level `*_engine.py` files (if still present) are the pre-rebuild prototype. They are not the evaluation surface. Interviewers should read `src/gig/` and `tests/` only.
+The evaluation surface is `src/gig/` and `tests/`. Root-level `*_engine.py` files are the pre-rebuild prototype.
 
 ## Install
 
@@ -70,15 +70,17 @@ python -m gig backtest --source yahoo
 python -m gig backtest --source synthetic
 ```
 
-Free vendor APIs (FRED, EDGAR, Alpaca IEX, Finnhub): [docs/APIS.md](docs/APIS.md).
+Vendor APIs (FRED, EDGAR, Alpaca IEX, Finnhub): [docs/APIS.md](docs/APIS.md).
 
-## Design rules (non-negotiable)
+yfinance is a convenience tape. Swap it for a point-in-time vendor (CRSP, Compustat, Norgate, internal) through the `DataProvider` interface. Model policy: [docs/MODELS.md](docs/MODELS.md).
+
+## Design rules
 
 1. **Information available at t only.** Forward returns used for IC and PnL are shifted. Combination weights are lagged one day so today’s IC cannot size today’s book.
 2. **Costs are not optional.** Every rebalance pays spread, commission, and impact.
 3. **Risk is constraints, not a score.** Gross, net, name, and sector limits are checked as data. Callers halt or resize.
 4. **Experiments are hashed.** Config + metrics append to `results/experiments.jsonl`.
-5. **No secrets in git.** `.env` is gitignored. The previous README in this workspace contained live API keys; rotate them.
+5. **No secrets in git.** `.env` is gitignored.
 
 ## Repository layout
 
@@ -89,14 +91,6 @@ tests/               pytest (synthetic data, no network)
 examples/            one-command research run
 .github/workflows/   CI
 ```
-
-## What this is not
-
-- It will not get you hired by claiming Medallion-like returns.
-- LSTM-on-price or LLM buy/sell as the production signal. See `docs/MODELS.md`.
-- yfinance is a convenience tape, not CRSP. The `DataProvider` interface is the swap.
-
-A serious desk will replace the synthetic provider with a point-in-time vendor (CRSP, Compustat, Norgate, internal). The interfaces are written for that swap.
 
 ## License
 
