@@ -1,0 +1,6 @@
+# Full US listed common stocks (NYSE, Nasdaq, AMEX, Arca).
+# ETFs, warrants, units, preferreds, and test issues are dropped.
+# This is the *current* tape, not CRSP — delisted names are missing.
+source: us_listed
+exclude_etf: true
+exclude_test: true

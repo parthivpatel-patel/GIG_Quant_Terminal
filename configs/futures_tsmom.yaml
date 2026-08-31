@@ -1,0 +1,4 @@
+strategy: futures_tsmom
+lookback: 252
+vol_lookback: 60
+vol_target: 0.15

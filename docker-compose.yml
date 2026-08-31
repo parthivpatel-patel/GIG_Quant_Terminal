@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+  gig:
+    build: .
+    container_name: gig-trading
+    ports:
+      - "5001:5001"
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - gig-data:/app/data
+      - ./gig_database.db:/app/gig_database.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/ping"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+volumes:
+  gig-data:

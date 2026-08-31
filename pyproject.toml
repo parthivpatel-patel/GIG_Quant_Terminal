@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=68", "wheel", "pybind11>=2.12", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gig"
+version = "0.1.0"
+description = "GIG Trading Algorithm — factors, walk-forward backtests, risk, C++ hot path."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Parthiv S Patel" }]
+keywords = ["quantitative-finance", "factor-investing", "backtesting", "portfolio"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "scipy>=1.11",
+  "pydantic>=2.5",
+  "pydantic-settings>=2.1",
+  "pyyaml>=6.0",
+  "python-dotenv>=1.0",
+  "duckdb>=1.0",
+  "yfinance>=0.2.40",
+  "scikit-learn>=1.4",
+]
+
+[project.optional-dependencies]
+data = ["yfinance>=0.2.40"]
+broker = ["alpaca-py>=0.21"]
+nlp = ["vaderSentiment>=3.3"]
+transformers = ["transformers>=4.40", "torch"]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=4.1",
+  "pybind11>=2.12",
+]
+all = ["gig[broker,nlp,transformers,dev]"]
+
+[project.scripts]
+gig = "gig.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"gig.store" = ["schema.sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["gig"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true

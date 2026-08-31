@@ -1,0 +1,16 @@
+strategy: equity_ls
+n_long: 20
+n_short: 20
+rebalance_every: 5
+min_history: 252
+gross_leverage: 2.0
+max_name_weight: 0.05
+costs:
+  spread_bps: 4.0
+  commission_bps: 1.0
+  impact_eta: 0.10
+factors:
+  - momentum_12_1
+  - strev_21d
+  - ivol_63d
+neutralize: [sector]

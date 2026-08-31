@@ -1,0 +1,33 @@
+# Secrets — do not publish
+.env
+.env.*
+!.env.example
+
+# Local interpreters and caches (not source)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.so
+*.pyd
+*.db-shm
+*.db-wal
+
+# Local data lakes (GitHub rejects files over 100 MB)
+*.duckdb
+*.duckdb.wal
+data/cache/
+results/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
