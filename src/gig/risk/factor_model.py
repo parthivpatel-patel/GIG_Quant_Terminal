@@ -115,12 +115,17 @@ def fit_statistical_risk_model(
     n_factors: int = 5,
     min_obs: int = 120,
     specific_floor: float = 1e-8,
+    shrinkage: float = 0.0,
 ) -> RiskModel | None:
     """
     Fit ``Sigma = B B' + D`` from a date x symbol return panel.
 
     Names without `min_obs` observations are dropped rather than imputed, since
     filling a short history with zeros would understate their risk.
+
+    ``shrinkage`` (0–1) blends sample eigenvalues and specific variances toward
+    their cross-sectional means — a light Ledoit–Wolf-style stabilizer that
+    usually lifts predicted vol toward realized without a licensed risk model.
     """
     if returns is None or returns.empty:
         return None
@@ -140,6 +145,7 @@ def fit_statistical_risk_model(
         return None
 
     k = int(max(1, min(n_factors, n - 1, t - 1)))
+    alpha = float(np.clip(shrinkage, 0.0, 1.0))
 
     # Thin SVD of the T x N return matrix rather than an eigendecomposition of
     # the N x N covariance. The sample covariance has rank at most T, so on a
@@ -150,12 +156,18 @@ def fit_statistical_risk_model(
     # components and it turns minutes per refit into about a second.
     _u, s, vt = np.linalg.svd(x, full_matrices=False)
     eigvals = np.clip(np.square(s[:k]) / (t - 1), 0.0, None)
+    if alpha > 0 and len(eigvals):
+        eigvals = (1.0 - alpha) * eigvals + alpha * float(np.mean(eigvals))
 
     # Orthonormal factors: fold the factor vol into the exposures so F = I.
     b = vt[:k].T * np.sqrt(eigvals)
     systematic_var = np.square(b).sum(axis=1)
     total_var = np.square(x).sum(axis=0) / (t - 1)
     specific = np.clip(total_var - systematic_var, specific_floor, None)
+    if alpha > 0:
+        target = float(np.mean(specific))
+        specific = (1.0 - alpha) * specific + alpha * target
+        specific = np.clip(specific, specific_floor, None)
 
     trace = float(total_var.sum())
     explained = float(eigvals.sum() / trace) if trace > 0 else float("nan")
@@ -177,13 +189,21 @@ def risk_report(
     sectors: pd.Series | None = None,
     n_factors: int = 5,
     top_n: int = 8,
+    shrinkage: float | None = None,
 ) -> dict:
     """
     Ex-ante risk summary for a book: predicted vol, systematic vs specific
     split, the largest volatility contributors, and realized vol of the same
     weights over the estimation window for comparison.
     """
-    model = fit_statistical_risk_model(returns, n_factors=n_factors)
+    if shrinkage is None:
+        try:
+            from gig.config import get_settings
+
+            shrinkage = float(get_settings().risk_shrinkage)
+        except Exception:
+            shrinkage = 0.15
+    model = fit_statistical_risk_model(returns, n_factors=n_factors, shrinkage=float(shrinkage))
     if model is None:
         return {"available": False}
 
@@ -239,4 +259,5 @@ def risk_report(
         "eigenvalue_share": [float(x / eig_sum) for x in eigs],
         "factor_exposure": {str(k): float(v) for k, v in book_exposure.items()},
         "equation": "Σ = BB′ + D",
+        "shrinkage": float(shrinkage),
     }

@@ -117,6 +117,28 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
         except Exception as exc:
             return {"available": False, "error": f"{type(exc).__name__}: {exc}"}
 
+    @app.get("/api/ops")
+    def ops() -> dict[str, Any]:
+        from gig.ops.status import ops_snapshot
+
+        return ops_snapshot()
+
+    @app.get("/api/attribution")
+    def attribution(limit: int = Query(cloud_limit, ge=20, le=1200)) -> dict[str, Any]:
+        from gig.research.attribution import attribution_snapshot
+
+        cloud = cached_cloud(limit)
+        return attribution_snapshot(
+            risk=cloud.get("risk") if cloud.get("available") else None,
+            factor_ic=cloud.get("factor_ic") if cloud.get("available") else None,
+        )
+
+    @app.get("/api/blotter")
+    def blotter(limit: int = Query(120, ge=20, le=600)) -> dict[str, Any]:
+        from gig.research.attribution import blotter_snapshot
+
+        return blotter_snapshot(limit=limit)
+
     @app.get("/api/ollama/status")
     def ollama_status_route() -> dict[str, Any]:
         from gig.nlp.ollama import default_prompts, ollama_status
@@ -188,6 +210,8 @@ def _start_paper_loop(*, every: int, limit: int, force: bool, dry_run: bool) -> 
 
     from gig.data.lake import db_lock
     from gig.logging import configure_logging
+    from gig.ops.killswitch import kill_switch
+    from gig.ops.status import touch_heartbeat
 
     log = configure_logging()
 
@@ -198,10 +222,21 @@ def _start_paper_loop(*, every: int, limit: int, force: bool, dry_run: bool) -> 
         time.sleep(3)
         while True:
             try:
-                with db_lock():
-                    run = run_once(dry_run=dry_run, limit=limit, force=force)
-                log.info("paper loop\n%s", run.report())
+                if kill_switch().engaged:
+                    touch_heartbeat(ok=True, detail="kill switch engaged — skipping pass")
+                    log.info("paper loop idle: kill switch engaged")
+                else:
+                    with db_lock():
+                        run = run_once(dry_run=dry_run, limit=limit, force=force)
+                    touch_heartbeat(
+                        ok=not run.blocked,
+                        detail=("blocked" if run.blocked else "ok")
+                        + (f" submitted={run.submitted}" if not dry_run else " dry-run"),
+                        run_id=run.run_id,
+                    )
+                    log.info("paper loop\n%s", run.report())
             except Exception as exc:
+                touch_heartbeat(ok=False, detail=f"{type(exc).__name__}: {exc}")
                 log.warning("paper loop error: %s: %s", type(exc).__name__, exc)
             time.sleep(max(60, every))
 

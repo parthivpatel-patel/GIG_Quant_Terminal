@@ -96,6 +96,12 @@ def service_status() -> dict[str, Any]:
     except Exception as exc:
         payload["ollama"] = {"available": False, "error": f"{type(exc).__name__}: {exc}"}
     try:
+        from gig.ops.status import ops_snapshot
+
+        payload["ops"] = ops_snapshot()
+    except Exception as exc:
+        payload["ops"] = {"available": False, "error": f"{type(exc).__name__}: {exc}"}
+    try:
         store = _open_store()
         payload["tables"] = store.stats()
         last = store.con.execute("SELECT MAX(dt) FROM bars").fetchone()

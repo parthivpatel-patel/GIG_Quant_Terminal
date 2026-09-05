@@ -315,6 +315,12 @@ def _load_live_panel(settings, use_news: bool) -> MarketPanel:
         filings = store.load_filings()
         if filings is not None and not filings.empty:
             panel.filings = filings
+        try:
+            fundamentals = store.load_fundamentals()
+            if fundamentals is not None and not fundamentals.empty:
+                panel.fundamentals = fundamentals
+        except Exception:
+            pass
         macro = store.load_macro()
         if macro is not None and not macro.empty:
             panel.macro = macro

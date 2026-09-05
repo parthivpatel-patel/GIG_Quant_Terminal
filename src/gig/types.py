@@ -42,6 +42,7 @@ class MarketPanel:
     news: pd.DataFrame | None = None
     filings: pd.DataFrame | None = None
     macro: pd.DataFrame | None = None
+    fundamentals: pd.DataFrame | None = None
 
     def symbols(self) -> list[str]:
         return list(self.close.columns)

@@ -1,36 +1,44 @@
 {
   "source": "yahoo",
+  "construction": "risk_constrained",
   "metrics": {
-    "n_obs": 1001.0,
-    "ann_return": -1.7485731957158261,
-    "ann_vol": 3.6787097854085937,
-    "sharpe": -0.4753224085932108,
-    "sortino": -0.25338806546305215,
-    "calmar": -0.3833468680185447,
-    "max_drawdown": -4.561334242154908,
-    "win_rate": 0.4075924075924076,
-    "skew": -22.197870640202122,
-    "kurtosis": 508.3731577558962,
-    "total_return": 273.4055694528133,
-    "ann_turnover": 31.45594405594406,
-    "avg_turnover": 0.12482517482517484,
-    "dsr": 1.8168848228845433e-06,
-    "psr": 0.00029225085810090097,
-    "expected_max_sharpe": 0.16484882943499563
+    "n_obs": 998.0,
+    "ann_return": 0.04680156731691728,
+    "ann_vol": 0.09439145087106499,
+    "sharpe": 0.49582421803057547,
+    "sortino": 0.47364699351452966,
+    "calmar": 0.46757560080175425,
+    "max_drawdown": -0.10009411790663669,
+    "win_rate": 0.39579158316633267,
+    "skew": -1.7791915781766507,
+    "kurtosis": 19.761268149584804,
+    "total_return": 0.18244343432579346,
+    "ann_turnover": 19.84717744967472,
+    "avg_turnover": 0.07875864067331238,
+    "ex_ante_vol_mean": 0.016939468035603446,
+    "systematic_share_mean": 1.92287284331356e-09,
+    "risk_model_fits": 36.0,
+    "dsr": 0.9999999999999989,
+    "psr": 1.0,
+    "expected_max_sharpe": 0.05805177377647402
   },
   "factor_ic": {
-    "momentum_12_1": 0.02580879531283612,
-    "strev_21d": 0.00987844594636911,
-    "ivol_63d": 0.0418399052416877,
-    "news_sentiment": NaN,
-    "filings_8k": 0.0041330287191279425
+    "momentum_12_1": 0.025605611216774436,
+    "strev_21d": 0.010096614733195607,
+    "ivol_63d": 0.04197589259717575,
+    "filings_8k": 0.004121995869997081
   },
   "factor_ic_n": {
-    "momentum_12_1": 548.0,
-    "strev_21d": 750.0,
-    "ivol_63d": 687.0,
-    "news_sentiment": 1.0,
-    "filings_8k": 750.0
+    "momentum_12_1": 545.0,
+    "strev_21d": 747.0,
+    "ivol_63d": 684.0,
+    "filings_8k": 747.0
   },
-  "config_hash": "febb8fa91fa0b46c"
+  "config_hash": "eef020135cd3588e",
+  "risk_path": {
+    "ex_ante_vol": 0.016939468035603446,
+    "systematic_share": 1.92287284331356e-09,
+    "gross": 1.9999999999195632,
+    "effective_names": 1208.5604412484633
+  }
 }

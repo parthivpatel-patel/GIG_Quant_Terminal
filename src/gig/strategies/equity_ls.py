@@ -110,6 +110,13 @@ class EquityLongShort:
             ff = filings_factor(panel.filings, panel.close)
             neutralized["filings_8k"] = neutralize(ff, panel.sectors, tradable=tradable)
 
+        if getattr(panel, "fundamentals", None) is not None and panel.fundamentals is not None and not panel.fundamentals.empty:
+            from gig.factors.fundamentals import fundamentals_factor
+
+            btp = fundamentals_factor(panel)
+            if btp.notna().any().any():
+                neutralized["book_to_price"] = neutralize(btp, panel.sectors, tradable=tradable)
+
         ic_table = {k: ic_summary(v, fwd) for k, v in neutralized.items()}
         combo = ic_weighted_combine(neutralized, fwd, min_history=63)
         combo = combo.where(tradable)

@@ -352,6 +352,16 @@
     db.textContent = "db " + (bars ? bars.toLocaleString() + " bars" : "empty");
     db.className = "pill " + (bars ? "pill-ok" : "pill-bad");
 
+    const asof = el("pill-asof");
+    if (asof) {
+      const ops = s.ops || {};
+      const f = ops.freshness || {};
+      asof.textContent = s.asof ? "asof " + s.asof : "asof —";
+      asof.className =
+        "pill " +
+        (f.level === "ok" ? "pill-ok" : f.level === "warn" ? "pill-warn" : bars ? "pill-warn" : "pill-bad");
+    }
+
     const keys = s.keys || {};
     const live = keys.alpaca || keys.finnhub;
     const feed = el("pill-feed");
@@ -368,15 +378,23 @@
     const ol = s.ollama || {};
     const olp = el("pill-ollama");
     if (olp) {
-      olp.textContent = ol.available ? "desk ollama" : "desk structured";
-      olp.className = "pill " + (ol.available ? "pill-ok" : "pill-warn");
+      olp.textContent = ol.available && ol.model_ready ? "ollama up" : ol.available ? "ollama pull?" : "desk structured";
+      olp.className = "pill " + (ol.available && ol.model_ready ? "pill-ok" : "pill-warn");
     }
 
     const paper = el("pill-paper");
     if (paper) {
-      paper.textContent = keys.alpaca ? "paper ready" : "paper keys?";
-      paper.className = "pill " + (keys.alpaca ? "pill-ok" : "pill-warn");
+      const kill = (s.ops && s.ops.kill_switch) || {};
+      if (kill.engaged) {
+        paper.textContent = "KILL";
+        paper.className = "pill pill-bad";
+      } else {
+        paper.textContent = keys.alpaca ? "paper ready" : "paper keys?";
+        paper.className = "pill " + (keys.alpaca ? "pill-ok" : "pill-warn");
+      }
     }
+
+    if (s.ops) renderOps(s.ops);
   }
 
   function renderSectorNet(sectorNet) {
@@ -594,6 +612,201 @@
             `<span class="sc">${fmtPct(r.drift, 1)}</span></li>`
         )
         .join("");
+    }
+  }
+
+  function renderOps(ops) {
+    const level = el("ops-level");
+    const fresh = el("ops-fresh");
+    const kill = el("ops-kill");
+    const hb = el("ops-hb");
+    const last = el("ops-last");
+    const alerts = el("ops-alerts");
+    if (!level) return;
+    if (!ops || !ops.available) {
+      level.textContent = "ops offline";
+      level.className = "ops-item warn";
+      return;
+    }
+    const lv = ops.level || "ok";
+    level.textContent = "ops " + lv;
+    level.className = "ops-item " + lv;
+
+    const f = ops.freshness || {};
+    if (fresh) {
+      fresh.textContent = f.asof ? "bars " + f.asof + (f.age_days ? ` · ${f.age_days}d` : "") : "bars —";
+      fresh.className = "ops-item " + (f.level || "warn");
+    }
+
+    const k = ops.kill_switch || {};
+    if (kill) {
+      kill.textContent = k.engaged ? "KILL ON" : "kill off";
+      kill.className = "ops-item " + (k.engaged ? "bad" : "ok");
+      kill.title = k.reason || "";
+    }
+
+    const h = ops.heartbeat || {};
+    if (hb) {
+      hb.textContent = h.ts ? "loop " + (h.ok ? "ok" : "fail") : "loop idle";
+      hb.className = "ops-item " + (h.ts ? (h.ok ? "ok" : "warn") : "warn");
+      hb.title = h.detail || "";
+    }
+
+    const lr = ops.last_run || null;
+    if (last) {
+      if (!lr || lr.error) {
+        last.textContent = "last run —";
+        last.className = "ops-item";
+      } else {
+        last.textContent =
+          "last " +
+          (lr.blocked ? "BLOCKED" : lr.dry_run ? "dry" : "live") +
+          (isNum(lr.turnover) ? ` · to ${fmtPct(lr.turnover, 0)}` : "");
+        last.className = "ops-item " + (lr.blocked ? "warn" : "ok");
+      }
+    }
+
+    if (alerts) {
+      alerts.innerHTML = (ops.alerts || [])
+        .slice(0, 3)
+        .map((a) => `<span class="ops-alert ${a.level || ""}">${a.detail || a.code}</span>`)
+        .join("");
+    }
+  }
+
+  function renderBlotter(b) {
+    const metrics = el("blotter-metrics");
+    const rows = el("blotter-rows");
+    const note = el("blotter-note");
+    if (!metrics) return;
+    if (!b || !b.available) {
+      metrics.innerHTML =
+        '<div class="m"><span class="m-k">status</span><span class="m-v">—</span></div>';
+      if (rows) {
+        const auditRows = (b && b.rows) || [];
+        rows.innerHTML = auditRows
+          .slice(0, 12)
+          .map(
+            (r) =>
+              `<li><span class="sym">${r.symbol}</span>` +
+              `<span class="wt">${fmtPct(r.target, 1)}</span>` +
+              `<span class="sc">${r.side || ""}</span></li>`
+          )
+          .join("");
+      }
+      if (note) note.textContent = (b && (b.hint || b.error)) || "offline";
+      return;
+    }
+    const cell = (k, v) =>
+      `<div class="m"><span class="m-k">${k}</span><span class="m-v">${v}</span></div>`;
+    metrics.innerHTML = [
+      cell("gross tgt", fmt(b.target_gross, 2)),
+      cell("net tgt", fmtSigned(b.target_net, 3)),
+      cell("worst |Δ|", fmtPct(b.worst_drift, 2)),
+      cell("held", String(b.n_positions ?? "—")),
+    ].join("");
+    if (note) note.textContent = (b.target_asof || "—") + (b.construction ? " · " + b.construction : "");
+    if (rows) {
+      rows.innerHTML = (b.rows || [])
+        .slice(0, 14)
+        .map(
+          (r) =>
+            `<li title="held ${fmtPct(r.held, 2)} → tgt ${fmtPct(r.target, 2)}">` +
+            `<span class="sym">${r.symbol}</span>` +
+            `<span class="wt">${fmtPct(r.held, 1)}</span>` +
+            `<span class="sc">${fmtPct(r.drift, 1)}</span></li>`
+        )
+        .join("");
+    }
+  }
+
+  function renderAttribution(a) {
+    const metrics = el("attr-metrics");
+    const signal = el("attr-signal");
+    const note = el("attr-note");
+    if (!metrics) return;
+    if (!a || !a.available) {
+      metrics.innerHTML =
+        '<div class="m"><span class="m-k">attribution</span><span class="m-v">—</span></div>';
+      return;
+    }
+    const research = a.research || {};
+    const m = research.metrics || {};
+    const risk = a.risk || {};
+    const paper = a.paper || {};
+    const cell = (k, v, cls = "") =>
+      `<div class="m"><span class="m-k">${k}</span><span class="m-v ${cls}">${v}</span></div>`;
+    metrics.innerHTML = [
+      cell("bt sharpe", fmt(m.sharpe, 2), isNum(m.sharpe) && m.sharpe >= 0 ? "good" : "bad"),
+      cell("sys share", fmtPct(risk.systematic_share, 0)),
+      cell("pred/real", isNum(risk.pred_over_real) ? risk.pred_over_real.toFixed(2) + "x" : "—"),
+      cell("paper Δ", fmtPct(paper.total_return, 1)),
+    ].join("");
+    if (note) {
+      note.textContent =
+        (research.source || "research") +
+        (isNum(risk.shrinkage) ? "" : "") +
+        (paper.available ? " · paper trail" : "");
+    }
+    const sig = a.signal || research.signal || [];
+    if (signal) {
+      signal.innerHTML = sig.length
+        ? sig
+            .slice(0, 6)
+            .map((s) => {
+              const pct = clamp((s.share || 0) * 100, 2, 100);
+              const cls = (s.ic || 0) >= 0 ? "bar-pos" : "bar-neg";
+              return `<div class="bar-row">
+                <div class="bar-top"><span class="k">${s.name}</span><span class="v">${fmt(s.ic, 3)} · ${fmtPct(s.share, 0)}</span></div>
+                <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+              </div>`;
+            })
+            .join("")
+        : '<div class="breach-none">no IC yet</div>';
+    }
+    renderNavSpark(paper);
+  }
+
+  function renderNavSpark(paper) {
+    const c = el("nav-spark");
+    if (!c) return;
+    const ctx2 = c.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.parentElement.clientWidth || 280;
+    const h = 64;
+    c.width = w * dpr;
+    c.height = h * dpr;
+    c.style.width = w + "px";
+    c.style.height = h + "px";
+    ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx2.clearRect(0, 0, w, h);
+    const note = el("nav-note");
+    const pts = (paper && paper.points) || [];
+    const navs = pts.map((p) => p.nav).filter(isNum);
+    if (navs.length < 2) {
+      ctx2.fillStyle = "#556070";
+      ctx2.font = "10px IBM Plex Mono, monospace";
+      ctx2.fillText("paper NAV after live trade runs", 10, 36);
+      if (note) note.textContent = "no trail";
+      return;
+    }
+    const min = Math.min(...navs);
+    const max = Math.max(...navs);
+    const span = max - min || 1;
+    ctx2.beginPath();
+    navs.forEach((v, i) => {
+      const x = (i / (navs.length - 1)) * (w - 8) + 4;
+      const y = h - 8 - ((v - min) / span) * (h - 20);
+      if (i === 0) ctx2.moveTo(x, y);
+      else ctx2.lineTo(x, y);
+    });
+    ctx2.strokeStyle = "#9ef01a";
+    ctx2.lineWidth = 1.5;
+    ctx2.stroke();
+    if (note) {
+      note.textContent =
+        (isNum(paper.total_return) ? fmtPct(paper.total_return, 1) : "—") +
+        (isNum(paper.nav_last) ? " · $" + Math.round(paper.nav_last).toLocaleString() : "");
     }
   }
 
@@ -1063,6 +1276,7 @@
         await refreshStatus();
         await refreshCloud();
         await refreshPaper();
+        await refreshOpsExtras();
         try {
           renderResearch(await getJSON("/api/research"));
           renderSpark(await getJSON("/api/experiments"));
@@ -1113,6 +1327,24 @@
     }
   }
 
+  async function refreshOpsExtras() {
+    try {
+      renderBlotter(await getJSON("/api/blotter?limit=120"));
+    } catch (err) {
+      console.error("blotter", err);
+    }
+    try {
+      renderAttribution(await getJSON("/api/attribution"));
+    } catch (err) {
+      console.error("attribution", err);
+    }
+    try {
+      renderOps(await getJSON("/api/ops"));
+    } catch (err) {
+      console.error("ops", err);
+    }
+  }
+
   async function boot() {
     resize();
     // Browsers restore <select> values across reloads, which would leave the
@@ -1123,6 +1355,7 @@
     wireEvents();
     wireDesk();
     startClock();
+    setModeLabels();
     requestAnimationFrame(render);
 
     await refreshStatus();
@@ -1135,11 +1368,13 @@
     }
     refreshTape();
     refreshPaper();
+    refreshOpsExtras();
 
     setInterval(refreshTape, 5000);
     setInterval(refreshStatus, 30000);
     setInterval(refreshCloud, 120000);
     setInterval(refreshPaper, 45000);
+    setInterval(refreshOpsExtras, 60000);
   }
 
   boot();

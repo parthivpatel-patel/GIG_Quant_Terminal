@@ -187,6 +187,38 @@ class Store:
     def load_filings(self) -> pd.DataFrame:
         return self.con.execute("SELECT * FROM filings").df()
 
+    def upsert_fundamentals(self, frame: pd.DataFrame) -> int:
+        """Point-in-time fundamental fields. Requires asof_date, symbol, field, value."""
+        if frame is None or frame.empty:
+            return 0
+        df = frame.copy()
+        for col in ("asof_date", "symbol", "field", "value"):
+            if col not in df.columns:
+                raise ValueError(f"fundamentals missing column {col}")
+        if "source" not in df.columns:
+            df["source"] = "manual"
+        df["asof_date"] = pd.to_datetime(df["asof_date"]).dt.date
+        df["symbol"] = df["symbol"].astype(str)
+        df["field"] = df["field"].astype(str)
+        symbols = sorted(df["symbol"].unique().tolist())
+        for i in range(0, len(symbols), 400):
+            chunk = symbols[i : i + 400]
+            placeholders = ",".join(["?"] * len(chunk))
+            self.con.execute(
+                f"DELETE FROM fundamentals WHERE symbol IN ({placeholders})",
+                chunk,
+            )
+        self.con.execute(
+            "INSERT INTO fundamentals SELECT asof_date, symbol, field, value, source FROM df"
+        )
+        return len(df)
+
+    def load_fundamentals(self) -> pd.DataFrame:
+        try:
+            return self.con.execute("SELECT * FROM fundamentals").df()
+        except Exception:
+            return pd.DataFrame()
+
     def load_panel(self, start: date, end: date, symbols: list[str] | None = None) -> MarketPanel | None:
         if symbols:
             bars = self.con.execute(
@@ -349,6 +381,7 @@ class Store:
             "trade_runs",
             "target_book",
             "orders",
+            "fundamentals",
         ):
             try:
                 n = self.con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]

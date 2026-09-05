@@ -33,7 +33,9 @@ pip install -e ".[ml]"          # LightGBM lambdarank (auto-selected)
 
 ## Additions that would add depth
 
-1. **Fundamentals (value/quality)** — point-in-time book equity, earnings, accruals. Needs Compustat/Norgate, not yfinance `.info`.
+1. **Fundamentals (value/quality)** — point-in-time book equity via DuckDB
+   `fundamentals` (`BookToPrice`). Empty table → factor stays NaN. Compustat /
+   Norgate-shaped loaders belong behind `Store.upsert_fundamentals`.
 2. **Filings NLP** — 8-K/10-K from SEC EDGAR, parsed at *file datetime*, not “the document mentions AAPL.” Same as-of join as news.
 3. **CatBoost ranker** — same walk-forward wrapper once LightGBM paper drift looks clean.
 4. **Earnings surprise** — SUE against a stale consensus snapshot, which must be point-in-time.

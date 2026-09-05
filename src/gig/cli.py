@@ -37,6 +37,13 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("quotes", help="Live snapshot (Alpaca IEX, else Finnhub)")
 
+    p_ops = sub.add_parser("ops", help="Kill switch, freshness, heartbeat")
+    ops_sub = p_ops.add_subparsers(dest="ops_cmd", required=True)
+    ops_sub.add_parser("status", help="Ops snapshot (JSON)")
+    p_halt = ops_sub.add_parser("halt", help="Engage kill switch — suppress submissions")
+    p_halt.add_argument("--reason", default="manual halt")
+    ops_sub.add_parser("resume", help="Clear kill switch")
+
     p_bt = sub.add_parser("backtest", help="Run equity long/short (live Yahoo by default)")
     p_bt.add_argument("--source", choices=["yahoo", "synthetic"], default=None)
     p_bt.add_argument("--seed", type=int, default=42)
@@ -123,6 +130,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(df.to_string(index=False))
         return 0
+    if args.cmd == "ops":
+        return _ops(args)
     if args.cmd == "serve":
         from gig.service.app import serve
 
@@ -199,6 +208,25 @@ def _universe(action: str) -> int:
         )
     )
     return 0
+
+
+def _ops(args) -> int:
+    from gig.ops.killswitch import kill_switch
+    from gig.ops.status import ops_snapshot
+
+    cmd = args.ops_cmd
+    if cmd == "status":
+        print(json.dumps(ops_snapshot(), indent=2, default=str))
+        return 0
+    if cmd == "halt":
+        out = kill_switch().halt(reason=getattr(args, "reason", "manual halt"), by="cli")
+        print(json.dumps(out, indent=2, default=str))
+        return 0
+    if cmd == "resume":
+        out = kill_switch().resume(by="cli")
+        print(json.dumps(out, indent=2, default=str))
+        return 0
+    return 1
 
 
 def _open_broker():

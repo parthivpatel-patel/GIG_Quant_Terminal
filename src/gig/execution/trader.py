@@ -170,9 +170,15 @@ def run_once(
 ) -> TradeRun:
     """Compute a target, reconcile against the account, and optionally trade."""
     from gig.execution import pretrade as pretrade_mod
+    from gig.ops.killswitch import kill_switch
 
     log = configure_logging(get_settings().log_level)
     settings = get_settings()
+    kill = kill_switch().status()
+    if kill.get("engaged") and not dry_run:
+        log.warning("kill switch engaged — forcing dry_run (%s)", kill.get("reason"))
+        dry_run = True
+
     reconcile = reconcile or ReconcileConfig()
     execution = execution or ExecutionConfig()
     run_id = f"{datetime.now(UTC):%Y%m%dT%H%M%S}-{uuid.uuid4().hex[:6]}"
@@ -252,6 +258,17 @@ def run_once(
             for f in report.findings
         ]
     apply_drops(plan, report)
+
+    if kill.get("engaged"):
+        from gig.execution.pretrade import Rejection
+
+        report.findings = list(report.findings) + [
+            Rejection(
+                "kill_switch",
+                f"engaged: {kill.get('reason') or 'halted'} — orders suppressed",
+                True,
+            )
+        ]
 
     run = TradeRun(
         run_id=run_id,

@@ -35,6 +35,15 @@
   </div>
 </header>
 
+<div class="ops-strip" id="ops-strip">
+  <span class="ops-item" id="ops-level">ops —</span>
+  <span class="ops-item" id="ops-fresh">bars —</span>
+  <span class="ops-item" id="ops-kill">kill off</span>
+  <span class="ops-item" id="ops-hb">loop —</span>
+  <span class="ops-item" id="ops-last">last run —</span>
+  <span class="ops-alerts" id="ops-alerts"></span>
+</div>
+
 <main class="layout">
 
   <section class="rail rail-left">
@@ -71,8 +80,17 @@
       <p class="disclaimer" id="paper-note">
         Orders are not sent from this UI. Use
         <code>python -m gig trade plan</code> then
-        <code>trade run --yes</code>.
+        <code>trade run --yes</code>. Halt: <code>gig ops halt</code>.
       </p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Blotter</h2>
+        <span class="panel-note" id="blotter-note">held vs target</span>
+      </div>
+      <div class="metrics" id="blotter-metrics"></div>
+      <ul class="leg-list" id="blotter-rows"></ul>
     </div>
   </section>
 
@@ -83,6 +101,11 @@
         <p class="stage-blurb" id="stage-blurb">momentum · idiosyncratic vol · short-term reversal · alpha rank colour</p>
       </div>
       <div class="controls">
+        <div class="mode-tabs" id="mode-tabs">
+          <button class="mode-tab active" data-mode="alpha" type="button">alpha</button>
+          <button class="mode-tab" data-mode="risk" type="button">risk</button>
+          <button class="mode-tab" data-mode="held" type="button">held</button>
+        </div>
         <label class="ctl" id="ctl-y">
           <span>Y</span>
           <select id="axis-y" autocomplete="off">
@@ -125,6 +148,10 @@
         <div class="panel-head"><h2>Experiment path</h2><span class="panel-note">Sharpe trail</span></div>
         <canvas id="spark" height="64"></canvas>
       </div>
+      <div class="panel flat">
+        <div class="panel-head"><h2>Paper NAV</h2><span class="panel-note" id="nav-note">audit trail</span></div>
+        <canvas id="nav-spark" height="64"></canvas>
+      </div>
     </div>
   </section>
 
@@ -142,8 +169,20 @@
       </div>
       <div class="metrics" id="risk-metrics"></div>
       <div class="bars" id="risk-split"></div>
+      <div class="panel-sub">Factor heat · Σ = BB′ + D</div>
+      <div class="bars" id="exposure-bars"></div>
+      <canvas id="scree" height="56"></canvas>
       <div class="panel-sub">Top volatility contributors</div>
       <ul class="leg-list" id="risk-contrib"></ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Attribution</h2>
+        <span class="panel-note" id="attr-note">signal · risk</span>
+      </div>
+      <div class="metrics" id="attr-metrics"></div>
+      <div class="bars" id="attr-signal"></div>
     </div>
 
     <div class="panel">
