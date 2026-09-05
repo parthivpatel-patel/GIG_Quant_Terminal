@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GIG — Research Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">GIG</span>
+    <div class="brand-text">
+      <span class="brand-title">Research Terminal</span>
+      <span class="brand-sub" id="brand-build">factor-neutral · lambdarank · paper</span>
+    </div>
+  </div>
+  <div class="pills" id="pills">
+    <span class="pill" id="pill-db">db —</span>
+    <span class="pill" id="pill-universe">universe —</span>
+    <span class="pill" id="pill-asof">asof —</span>
+    <span class="pill" id="pill-feed">feed —</span>
+    <span class="pill" id="pill-ml">ml —</span>
+    <span class="pill" id="pill-ollama">ollama —</span>
+    <span class="pill" id="pill-paper">paper —</span>
+  </div>
+  <div class="top-actions">
+    <button class="btn" id="btn-refresh" title="Clear cache and reload">refresh</button>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<main class="layout">
+
+  <section class="rail rail-left">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Book</h2>
+        <span class="panel-note" id="book-asof">—</span>
+      </div>
+      <div class="book-stats">
+        <div class="stat"><span class="stat-k">gross</span><span class="stat-v" id="bk-gross">—</span></div>
+        <div class="stat"><span class="stat-k">net</span><span class="stat-v" id="bk-net">—</span></div>
+        <div class="stat"><span class="stat-k">longs</span><span class="stat-v" id="bk-longs">—</span></div>
+        <div class="stat"><span class="stat-k">shorts</span><span class="stat-v" id="bk-shorts">—</span></div>
+        <div class="stat wide"><span class="stat-k">build</span><span class="stat-v" id="bk-build">—</span></div>
+      </div>
+      <div class="leg">
+        <div class="leg-head leg-long">LONG</div>
+        <ul class="leg-list" id="list-long"></ul>
+      </div>
+      <div class="leg">
+        <div class="leg-head leg-short">SHORT</div>
+        <ul class="leg-list" id="list-short"></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Paper account</h2>
+        <span class="panel-note" id="paper-open">—</span>
+      </div>
+      <div class="metrics" id="paper-metrics"></div>
+      <div class="panel-sub">Largest drift vs target</div>
+      <ul class="leg-list" id="paper-drift"></ul>
+      <p class="disclaimer" id="paper-note">
+        Orders are not sent from this UI. Use
+        <code>python -m gig trade plan</code> then
+        <code>trade run --yes</code>.
+      </p>
+    </div>
+  </section>
+
+  <section class="stage">
+    <div class="stage-head">
+      <div>
+        <h2>Neutralized factor space</h2>
+        <p class="stage-blurb" id="stage-blurb">momentum · idiosyncratic vol · short-term reversal · alpha rank colour</p>
+      </div>
+      <div class="controls">
+        <label class="ctl" id="ctl-y">
+          <span>Y</span>
+          <select id="axis-y" autocomplete="off">
+            <option value="ivol">idiosyncratic vol</option>
+            <option value="live">live % change</option>
+            <option value="score">alpha score</option>
+          </select>
+        </label>
+        <label class="ctl">
+          <span>Sector</span>
+          <select id="sector-filter" autocomplete="off"><option value="">all</option></select>
+        </label>
+        <button class="btn" id="btn-spin" data-on="1">spin</button>
+        <button class="btn" id="btn-reset">reset</button>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="scene"></canvas>
+      <div class="tip" id="tip" hidden></div>
+      <div class="axis-legend">
+        <div><span class="ax ax-x"></span>x — <span id="legend-x">12-1 momentum</span></div>
+        <div><span class="ax ax-y"></span>y — <span id="legend-y">idiosyncratic vol</span></div>
+        <div><span class="ax ax-z"></span>z — <span id="legend-z">short-term reversal</span></div>
+        <div class="legend-note" id="legend-note">rank-normalized · ring = held · pulse = new quote</div>
+      </div>
+      <div class="stage-empty" id="stage-empty" hidden>
+        <p>No bars in DuckDB yet.</p>
+        <code>python -m gig universe refresh</code>
+        <code>python -m gig ingest</code>
+      </div>
+    </div>
+
+    <div class="stage-foot">
+      <div class="panel flat">
+        <div class="panel-head"><h2>Sector net</h2><span class="panel-note">|net| ≤ limit</span></div>
+        <div id="sector-bars" class="bars compact"></div>
+      </div>
+      <div class="panel flat">
+        <div class="panel-head"><h2>Experiment path</h2><span class="panel-note">Sharpe trail</span></div>
+        <canvas id="spark" height="64"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section class="rail rail-right">
+    <div class="panel">
+      <div class="panel-head"><h2>Risk limits</h2></div>
+      <div id="risk-bars" class="bars"></div>
+      <div id="breaches" class="breaches"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Ex-ante risk</h2>
+        <span class="panel-note" id="risk-model-note">—</span>
+      </div>
+      <div class="metrics" id="risk-metrics"></div>
+      <div class="bars" id="risk-split"></div>
+      <div class="panel-sub">Top volatility contributors</div>
+      <ul class="leg-list" id="risk-contrib"></ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Last backtest</h2>
+        <span class="panel-note" id="research-src">—</span>
+      </div>
+      <div class="metrics" id="metrics"></div>
+      <p class="disclaimer" id="research-note"></p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>Factor IC</h2><span class="panel-note">Newey–West t</span></div>
+      <div id="ic-bars" class="bars"></div>
+    </div>
+
+    <div class="panel desk">
+      <div class="panel-head">
+        <h2>Research desk</h2>
+        <span class="panel-note" id="desk-status">ollama</span>
+      </div>
+      <div class="prompts" id="desk-prompts"></div>
+      <div class="desk-chat" id="desk-chat">
+        <div class="desk-msg muted">Ask about the book, risk, or last backtest. Numbers come from the live snapshot — not invented.</div>
+      </div>
+      <form class="desk-form" id="desk-form">
+        <input id="desk-input" type="text" maxlength="500" placeholder="e.g. Is the book factor-neutral today?" autocomplete="off" />
+        <button class="btn primary" type="submit">ask</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="tape">
+  <div class="tape-strip" id="tape-strip"></div>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

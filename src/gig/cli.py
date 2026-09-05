@@ -43,7 +43,59 @@ def main(argv: list[str] | None = None) -> int:
     p_bt.add_argument("--no-persist", action="store_true")
     p_bt.add_argument("--no-ml", action="store_true")
     p_bt.add_argument("--no-news", action="store_true")
+    p_bt.add_argument(
+        "--no-optimizer",
+        action="store_true",
+        help="Equal-weight quantile book instead of the factor-neutral vol-targeted one",
+    )
     sub.add_parser("research", help="Alias for backtest")
+
+    p_srv = sub.add_parser("serve", help="Research terminal (3D factor space, book, risk)")
+    p_srv.add_argument("--host", default="127.0.0.1")
+    p_srv.add_argument("--port", type=int, default=8000)
+    p_srv.add_argument("--limit", type=int, default=220, help="Names in the factor cloud")
+    p_srv.add_argument(
+        "--trade-every",
+        type=int,
+        default=0,
+        help="Embed paper loop in this process (seconds). Needed on Windows with DuckDB.",
+    )
+    p_srv.add_argument("--trade-limit", type=int, default=120)
+    p_srv.add_argument("--trade-force", action="store_true", help="Trade outside regular hours")
+    p_srv.add_argument("--trade-yes", action="store_true", help="Actually submit paper orders")
+
+    p_tr = sub.add_parser("trade", help="Alpaca paper trading: plan, execute, monitor, flatten")
+    tr_sub = p_tr.add_subparsers(dest="trade_cmd", required=True)
+    for name, helptext in (
+        ("plan", "Build today's target and print the trade list. Sends nothing."),
+        ("run", "Execute the plan on the paper account (requires --yes)"),
+    ):
+        sp = tr_sub.add_parser(name, help=helptext)
+        sp.add_argument("--limit", type=int, default=300, help="Universe size by ADV rank")
+        sp.add_argument("--force", action="store_true", help="Trade outside regular hours")
+        sp.add_argument("--use-ml", action="store_true", help="Include walk-forward LightGBM/sklearn scores")
+        sp.add_argument("--band", type=float, default=None, help="No-trade band in weight terms")
+        sp.add_argument("--json", action="store_true", help="Full machine-readable run record")
+        if name == "run":
+            sp.add_argument("--yes", action="store_true", help="Required to send real orders")
+
+    p_st = tr_sub.add_parser("status", help="Account, target, and per-name drift")
+    p_st.add_argument("--limit", type=int, default=300)
+    p_st.add_argument("--json", action="store_true")
+
+    p_fl = tr_sub.add_parser("flatten", help="Kill switch: close every position")
+    p_fl.add_argument("--yes", action="store_true", help="Required to actually close")
+
+    p_hist = tr_sub.add_parser("history", help="Recent runs from the audit trail")
+    p_hist.add_argument("--limit", type=int, default=15)
+    p_hist.add_argument("--orders", action="store_true", help="Show orders instead of runs")
+
+    p_loop = tr_sub.add_parser("loop", help="Rebalance on a schedule while the market is open")
+    p_loop.add_argument("--every", type=int, default=900, help="Seconds between passes")
+    p_loop.add_argument("--limit", type=int, default=300)
+    p_loop.add_argument("--yes", action="store_true", help="Required to send real orders")
+    p_loop.add_argument("--force", action="store_true", help="Trade outside regular hours")
+    p_loop.add_argument("--max-passes", type=int, default=0, help="0 runs until interrupted")
 
     args = parser.parse_args(argv)
     settings = get_settings()
@@ -71,6 +123,20 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(df.to_string(index=False))
         return 0
+    if args.cmd == "serve":
+        from gig.service.app import serve
+
+        return serve(
+            host=args.host,
+            port=args.port,
+            cloud_limit=args.limit,
+            trade_every=getattr(args, "trade_every", 0) or 0,
+            trade_limit=getattr(args, "trade_limit", 120),
+            trade_force=getattr(args, "trade_force", False),
+            trade_yes=getattr(args, "trade_yes", False),
+        )
+    if args.cmd == "trade":
+        return _trade(args)
     if args.cmd in {"backtest", "research"}:
         from gig.pipeline import run_equity_research
 
@@ -80,18 +146,20 @@ def main(argv: list[str] | None = None) -> int:
             persist=not getattr(args, "no_persist", False),
             use_ml=not getattr(args, "no_ml", False),
             use_news=not getattr(args, "no_news", False),
+            use_optimizer=not getattr(args, "no_optimizer", False),
         )
-        print(
-            json.dumps(
-                {
-                    "metrics": result.metrics,
-                    "factor_ic": result.factor_ic,
-                    "factor_ic_n": result.factor_ic_n,
-                },
-                indent=2,
-                default=float,
-            )
-        )
+        payload = {
+            "metrics": result.metrics,
+            "factor_ic": result.factor_ic,
+            "factor_ic_n": result.factor_ic_n,
+        }
+        if result.diagnostics is not None and not result.diagnostics.empty:
+            payload["risk_path"] = {
+                col: float(result.diagnostics[col].mean())
+                for col in ("ex_ante_vol", "systematic_share", "gross", "effective_names")
+                if col in result.diagnostics.columns
+            }
+        print(json.dumps(payload, indent=2, default=float))
         return 0
     return 1
 
@@ -133,6 +201,151 @@ def _universe(action: str) -> int:
     return 0
 
 
+def _open_broker():
+    """Alpaca paper adapter, with actionable errors instead of a traceback."""
+    from gig.execution.alpaca import AlpacaBroker
+
+    return AlpacaBroker()
+
+
+def _print_trades(plan, limit: int = 40) -> None:
+    if not plan.trades:
+        print("  no trades — the account already matches the target")
+        return
+    print(f"\n  {'SIDE':<5}{'SYMBOL':<8}{'SHARES':>9}{'NOTIONAL':>13}{'CUR_W':>9}{'TGT_W':>9}  NOTE")
+    for trade in plan.trades[:limit]:
+        print(
+            f"  {trade.side.upper():<5}{trade.symbol:<8}{trade.shares:>9,.0f}"
+            f"{trade.notional:>13,.0f}{trade.current_weight:>9.3f}"
+            f"{trade.target_weight:>9.3f}  {trade.note}"
+        )
+    if len(plan.trades) > limit:
+        print(f"  ... {len(plan.trades) - limit} more")
+    print(
+        f"\n  estimated one-way cost {plan.estimated_cost_bps():.1f} bps on "
+        f"{plan.buy_notional + plan.sell_notional:,.0f} traded"
+    )
+
+
+def _trade(args) -> int:
+    cmd = args.trade_cmd
+
+    if cmd == "history":
+        from gig.data.lake import open_store
+
+        store = open_store()
+        frame = (
+            store.load_orders(limit=args.limit)
+            if args.orders
+            else store.load_trade_runs(limit=args.limit)
+        )
+        if frame is None or frame.empty:
+            print("No trading runs recorded yet. Start with: python -m gig trade plan")
+            return 0
+        print(frame[[c for c in frame.columns if c != "report"]].to_string(index=False))
+        return 0
+
+    try:
+        broker = _open_broker()
+    except ImportError:
+        print('Alpaca SDK missing. Install it with:  pip install -e ".[broker]"')
+        return 1
+    except RuntimeError as exc:
+        print(f"Broker not configured: {exc}")
+        return 1
+
+    if cmd == "status":
+        from gig.execution.trader import account_status
+
+        status = account_status(broker=broker, limit=args.limit)
+        if args.json:
+            print(json.dumps(status, indent=2, default=str))
+            return 0
+        acct = status.get("account", {})
+        print(f"NAV          {status['nav']:,.2f}   paper={acct.get('paper', '?')}")
+        print(f"positions    {status['n_positions']}   market_open={status['market_open']}")
+        print(f"target       {json.dumps(status['target'], default=str)}")
+        print(f"worst drift  {status['worst_drift']:.4f}")
+        if status["drift"]:
+            print(f"\n  {'SYMBOL':<8}{'CUR_W':>9}{'TGT_W':>9}{'DRIFT':>9}{'SHARES':>10}")
+            for row in status["drift"][:25]:
+                print(
+                    f"  {row['symbol']:<8}{row['current_weight']:>9.3f}"
+                    f"{row['target_weight']:>9.3f}{row['drift']:>9.3f}{row['shares_held']:>10,.0f}"
+                )
+        return 0
+
+    if cmd == "flatten":
+        from gig.execution.trader import flatten
+
+        out = flatten(broker=broker, dry_run=not args.yes)
+        print(json.dumps(out, indent=2, default=str))
+        if out["dry_run"]:
+            print("\nDry run. Re-run with --yes to actually close these positions.")
+        return 0
+
+    if cmd == "loop":
+        return _trade_loop(args, broker)
+
+    from gig.execution.reconcile import ReconcileConfig
+    from gig.execution.trader import run_once
+
+    if cmd == "run" and not args.yes:
+        print("`trade run` sends orders to the broker. Re-run with --yes to confirm,")
+        print("or use `python -m gig trade plan` to see the trade list without trading.")
+        return 1
+
+    reconcile = ReconcileConfig(no_trade_band=args.band) if args.band is not None else None
+    run = run_once(
+        dry_run=(cmd == "plan"),
+        limit=args.limit,
+        broker=broker,
+        force=args.force,
+        use_ml=args.use_ml,
+        reconcile=reconcile,
+    )
+    if args.json:
+        print(json.dumps(run.to_dict(), indent=2, default=str))
+        return 2 if run.blocked else 0
+    print(run.report())
+    _print_trades(run.plan)
+    if run.blocked:
+        print("\nBlocked by the pre-trade gate. Nothing was sent.")
+        return 2
+    if cmd == "plan":
+        print("\nDry run. Re-run as `trade run --yes` to send these orders.")
+    return 0
+
+
+def _trade_loop(args, broker) -> int:
+    """Rebalance on a fixed interval until interrupted."""
+    import time
+
+    from gig.execution.trader import run_once
+
+    if not args.yes:
+        print("Loop starts in dry-run mode. Add --yes to send orders.")
+    passes = 0
+    try:
+        while True:
+            run = run_once(
+                dry_run=not args.yes,
+                limit=args.limit,
+                broker=broker,
+                force=getattr(args, "force", False),
+            )
+            print(run.report(), flush=True)
+            passes += 1
+            if args.max_passes and passes >= args.max_passes:
+                return 0
+            if broker.is_open() is False:
+                print(f"market closed — next pass in {args.every}s", flush=True)
+            time.sleep(max(30, args.every))
+    except KeyboardInterrupt:
+        print(f"\nstopped after {passes} passes")
+        return 0
+
+
 def _doctor() -> int:
     settings = get_settings()
     settings.ensure_dirs()
@@ -171,6 +384,36 @@ def _doctor() -> int:
         print("cpp          ok  (gig._speed)")
     except Exception:
         print("cpp          Python fallback (install a C++ compiler, then pip install -e .)")
+    try:
+        import lightgbm  # noqa: F401
+
+        print("lightgbm     ok  (lambdarank walk-forward)")
+    except ImportError:
+        print('lightgbm     MISSING  (pip install -e ".[ml]" for LambdaRank)')
+    try:
+        from gig.nlp.ollama import ollama_status
+
+        ol = ollama_status()
+        if ol["available"]:
+            print(f"ollama       ok  ({ol.get('model')})")
+        else:
+            print(f"ollama       offline  ({ol.get('hint', 'start ollama')})")
+    except Exception as exc:
+        print(f"ollama       error {exc}")
+    try:
+        import fastapi  # noqa: F401
+        import uvicorn  # noqa: F401
+
+        print("terminal     ok  (python -m gig serve)")
+    except ImportError:
+        print('terminal     MISSING  (pip install -e ".[web]")')
+    try:
+        import alpaca  # noqa: F401
+
+        paper = "paper" in settings.alpaca_base_url
+        print(f"broker       ok  ({'paper' if paper else 'LIVE — check ALPACA_BASE_URL'})")
+    except ImportError:
+        print('broker       MISSING  (pip install -e ".[broker]" for python -m gig trade)')
     keys = settings.keys_status()
     print(f"fred         {'key set' if keys['fred'] else 'MISSING   free key: https://fred.stlouisfed.org/docs/api/api_key.html'}")
     print(f"finnhub      {'key set' if keys['finnhub'] else 'MISSING   free key: https://finnhub.io/register'}")

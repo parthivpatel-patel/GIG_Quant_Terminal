@@ -8,7 +8,8 @@ Pipeline:
   4. Optional news sentiment (headlines dated ≤ t)
   5. Sector neutralization
   6. Expanding IC-weighted combination (weights lagged one day)
-  7. Dollar-neutral quantile book, costs, next-bar PnL
+  7. Factor-neutral, vol-targeted book (or dollar-neutral quantiles), costs,
+     next-bar PnL
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from gig.factors.combine import ic_weighted_combine
 from gig.factors.momentum import Momentum12m1, ShortTermReversal
 from gig.factors.neutralize import neutralize
 from gig.factors.volatility import IdiosyncraticVol
+from gig.portfolio.optimize import OptimizerConfig
 from gig.research.experiment import config_hash
 from gig.research.ic import ic_summary
 from gig.types import BacktestResult, MarketPanel
@@ -41,9 +43,15 @@ class EquityLongShort:
     use_ml: bool = True
     use_news: bool = True
     cost_model: TransactionCostModel = field(default_factory=TransactionCostModel)
+    # None reverts to equal-weight quantiles, which is kept as the baseline the
+    # risk-constrained book has to beat rather than deleted.
+    optimizer: OptimizerConfig | None = None
+    risk_lookback: int = 252
+    risk_refit_every: int = 21
+    risk_factors: int = 5
 
     def config(self) -> dict[str, Any]:
-        return {
+        cfg = {
             "strategy": "equity_ls",
             "n_long": self.n_long,
             "n_short": self.n_short,
@@ -52,7 +60,18 @@ class EquityLongShort:
             "use_ml": self.use_ml,
             "use_news": self.use_news,
             "min_adv_usd": self.min_adv_usd,
+            "construction": "risk_constrained" if self.optimizer else "quantile_equal_weight",
         }
+        if self.optimizer is not None:
+            cfg.update(
+                {
+                    **self.optimizer.as_dict(),
+                    "risk_lookback": self.risk_lookback,
+                    "risk_refit_every": self.risk_refit_every,
+                    "risk_factors": self.risk_factors,
+                }
+            )
+        return cfg
 
     def scores(self, panel: MarketPanel) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, dict[str, float]]]:
         tradable = point_in_time_mask(
@@ -105,6 +124,10 @@ class EquityLongShort:
             n_short=n_side,
             rebalance_every=self.rebalance_every,
             cost_model=self.cost_model,
+            optimizer=self.optimizer,
+            risk_lookback=self.risk_lookback,
+            risk_refit_every=self.risk_refit_every,
+            risk_factors=self.risk_factors,
         )
         result = engine.run(
             combo,
@@ -113,6 +136,7 @@ class EquityLongShort:
             dollar_volume=panel.dollar_volume,
             config_hash=config_hash(self.config()),
             gross_scale=_macro_scale(panel),
+            sectors=panel.sectors,
         )
         result.factor_ic = {k: v["ic_mean"] for k, v in ic_table.items()}
         result.factor_ic_n = {k: v["n_obs"] for k, v in ic_table.items()}

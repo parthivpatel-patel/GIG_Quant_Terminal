@@ -16,16 +16,21 @@ def _schema_sql() -> str:
 
 
 class Store:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, read_only: bool = False) -> None:
         try:
             import duckdb
         except ImportError as exc:
             raise ImportError("Install duckdb (pip install duckdb) — no SQL server required") from exc
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
-        self.con = duckdb.connect(str(path))
+        self.read_only = read_only
+        # Readers must not take the exclusive lock — the terminal and the trader
+        # otherwise fight over the same file on Windows.
+        self.con = duckdb.connect(str(path), read_only=read_only)
 
     def init(self) -> None:
+        if self.read_only:
+            return
         self.con.execute(_schema_sql())
 
     def close(self) -> None:
@@ -223,6 +228,110 @@ class Store:
             [datetime.now(UTC), name, config_hash, json.dumps(metrics, default=float)],
         )
 
+    # --- trading audit trail -------------------------------------------------
+
+    def record_trade_run(self, row: dict) -> None:
+        import json
+
+        self.con.execute(
+            "INSERT INTO trade_runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                row.get("ts") or datetime.now(UTC),
+                str(row["run_id"]),
+                row.get("asof"),
+                bool(row.get("dry_run", True)),
+                bool(row.get("blocked", False)),
+                float(row.get("nav") or 0.0),
+                float(row.get("gross") or 0.0),
+                float(row.get("net") or 0.0),
+                float(row.get("turnover") or 0.0),
+                int(row.get("n_orders") or 0),
+                str(row.get("construction") or ""),
+                json.dumps(row.get("report") or {}, default=str),
+            ],
+        )
+
+    def record_target_book(
+        self,
+        run_id: str,
+        weights: pd.Series,
+        sectors: pd.Series | None = None,
+        prices: pd.Series | None = None,
+        asof: date | None = None,
+        ts: datetime | None = None,
+    ) -> int:
+        if weights is None or weights.empty:
+            return 0
+        stamp = ts or datetime.now(UTC)
+        rows = [
+            (
+                stamp,
+                str(run_id),
+                asof,
+                str(symbol),
+                float(weight),
+                str(sectors.get(symbol, "unknown")) if sectors is not None else "unknown",
+                float(prices.get(symbol)) if prices is not None and symbol in prices.index else None,
+            )
+            for symbol, weight in weights.items()
+        ]
+        self.con.executemany("INSERT INTO target_book VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
+        return len(rows)
+
+    def record_orders(self, run_id: str, rows: list[dict], ts: datetime | None = None) -> int:
+        if not rows:
+            return 0
+        stamp = ts or datetime.now(UTC)
+        payload = [
+            (
+                stamp,
+                str(run_id),
+                str(r.get("symbol")),
+                str(r.get("side")),
+                float(r.get("shares") or 0.0),
+                r.get("limit_price"),
+                r.get("reference_price"),
+                float(r.get("notional") or 0.0),
+                r.get("current_weight"),
+                r.get("target_weight"),
+                str(r.get("status") or ""),
+                str(r.get("broker_order_id") or ""),
+                str(r.get("note") or ""),
+            )
+            for r in rows
+        ]
+        self.con.executemany(
+            "INSERT INTO orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", payload
+        )
+        return len(payload)
+
+    def nav_high_water(self) -> float | None:
+        """
+        Peak NAV across live (non-dry-run) trading runs.
+
+        Used by the drawdown halt. Dry runs are excluded because they record the
+        account NAV without having caused any of it.
+        """
+        row = self.con.execute(
+            "SELECT MAX(nav) FROM trade_runs WHERE dry_run = FALSE AND nav > 0"
+        ).fetchone()
+        if not row or row[0] is None:
+            return None
+        return float(row[0])
+
+    def load_trade_runs(self, limit: int = 50) -> pd.DataFrame:
+        return self.con.execute(
+            f"SELECT * FROM trade_runs ORDER BY ts DESC LIMIT {int(limit)}"
+        ).df()
+
+    def load_orders(self, run_id: str | None = None, limit: int = 200) -> pd.DataFrame:
+        if run_id:
+            return self.con.execute(
+                f"SELECT * FROM orders WHERE run_id = ? ORDER BY ts DESC LIMIT {int(limit)}",
+                [run_id],
+            ).df()
+        return self.con.execute(f"SELECT * FROM orders ORDER BY ts DESC LIMIT {int(limit)}").df()
+
     def stats(self) -> dict[str, int]:
         out: dict[str, int] = {}
         for table in (
@@ -237,6 +346,9 @@ class Store:
             "quotes",
             "calendar",
             "listings",
+            "trade_runs",
+            "target_book",
+            "orders",
         ):
             try:
                 n = self.con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]

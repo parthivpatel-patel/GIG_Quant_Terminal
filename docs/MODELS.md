@@ -1,15 +1,19 @@
-# Models that belong in this stack (and ones that do not)
+# Model policy
 
-Hiring managers at multi-strats do not want “we added LSTM + FinBERT + GPT.” They want **one model class, walk-forward, no leakage, stored with a train-end date**.
+The standard this stack holds itself to: **one model class, walk-forward, no
+leakage, stored with a train-end date.** Breadth of model families is not a
+substitute for any of those four.
 
-## What we implemented
+## What is implemented
 
 | Model | Role | Leakage rule |
 |---|---|---|
 | 12-1 momentum, ST reversal, ivol | Baseline cross-sectional factors | Prices through close t only |
 | HistGradientBoosting (sklearn) | Tabular ranker on those factors | **OOS folds only**; train window scores are NaN |
+| LightGBM `lambdarank` | Same walk-forward wrapper; preferred when `gig[ml]` is installed | **OOS folds only**; relevance bins within each date |
 | Headline lexicon (+ optional VADER / FinBERT) | NLP factor | Headline timestamp ≤ date t |
 | IC-weighted combination | Blend | Weights lagged one day |
+| Ollama (local LLM) | Research-desk briefing over the live snapshot | **Never** generates BUY/SELL or orders |
 
 Run live:
 
@@ -18,29 +22,43 @@ python -m gig ingest
 python -m gig backtest --source yahoo
 ```
 
-Tests and CI still use `--source synthetic` so they never need the network.
+Tests and CI use `--source synthetic` so they never need the network.
 
-## What to add next if you want depth (not more logos)
+Install the optional ranker:
 
-These are the additions that actually show up in QR/QD interviews:
+```bash
+pip install -e ".[ml]"          # LightGBM lambdarank (auto-selected)
+# without lightgbm, walk_forward_scores falls back to sklearn HistGBDT
+```
+
+## Additions that would add depth
 
 1. **Fundamentals (value/quality)** — point-in-time book equity, earnings, accruals. Needs Compustat/Norgate, not yfinance `.info`.
 2. **Filings NLP** — 8-K/10-K from SEC EDGAR, parsed at *file datetime*, not “the document mentions AAPL.” Same as-of join as news.
-3. **LightGBM / CatBoost ranker** (`lambdarank`) — same walk-forward wrapper, swap the estimator. Standard on equity desks.
-4. **Earnings surprise** — SUE vs a stale consensus snapshot (must be PIT).
-5. **Short interest / borrow** — if you can license it. Capacity and crowding, not a price LSTM.
-6. **Options IV surface** — we already price BSM; a VRP factor from a live chain is the real next step.
+3. **CatBoost ranker** — same walk-forward wrapper once LightGBM paper drift looks clean.
+4. **Earnings surprise** — SUE against a stale consensus snapshot, which must be point-in-time.
+5. **Short interest / borrow** — capacity and crowding, if licensable.
+6. **Options IV surface** — BSM pricing already exists; a VRP factor from a live chain is the next step.
 
-## What not to add (it reads as retail)
+## Excluded by policy
 
-- LSTM/Transformer on raw OHLCV as “the alpha”
+- LSTM/Transformer on raw OHLCV as the production signal
 - An LLM that outputs BUY/SELL
-- Combining 12 neural nets with hand-waved weights
+- Ensembles of many neural nets with hand-set weights
 - Social-media scrapers without timestamps and a bot filter
 - Retraining on the full sample and reporting that Sharpe
 
-FinBERT is available as `transformer_sentiment()` if you `pip install gig[transformers]`. It is optional. The lexicon path is what CI runs, because downloading a 400MB model is not research discipline.
+Each is excluded for the same reason: none of them can be given an honest
+train-end date and an out-of-sample score on this data.
 
-## How to talk about this in an interview
+FinBERT is available as `transformer_sentiment()` under
+`pip install gig[transformers]`. It stays optional; the lexicon path is what CI
+runs, because a 400MB download is not a research dependency.
 
-“I built a CS long/short. Features are neutralized momentum/reversal/ivol. I added a GBDT whose predictions are walk-forward only, embargoed, and I treat news as a dated feature joined as-of. Yahoo is a convenience tape; I would swap the provider for CRSP.”
+## Summary of the design
+
+A cross-sectional long/short whose features are neutralized momentum, reversal,
+and idiosyncratic vol; a walk-forward ranker (LightGBM lambdarank when installed,
+else sklearn HistGBDT); news treated as a dated feature joined as-of. yfinance is
+a convenience tape and the `DataProvider` interface is where a point-in-time
+vendor replaces it.

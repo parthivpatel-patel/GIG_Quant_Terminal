@@ -18,22 +18,50 @@ from gig.strategies.equity_ls import EquityLongShort
 from gig.types import BacktestResult, MarketPanel
 
 
+def optimizer_config(settings, enabled: bool | None = None):
+    """
+    Risk policy for book construction, or None for the equal-weight baseline.
+
+    Gross and name caps come from the same settings the risk limits check
+    reads, so the optimizer cannot be configured to build a book that the
+    limits module would immediately flag.
+    """
+    from gig.portfolio.optimize import OptimizerConfig
+
+    on = settings.use_optimizer if enabled is None else enabled
+    if not on:
+        return None
+    return OptimizerConfig(
+        target_vol=settings.target_vol,
+        max_gross=settings.max_gross_leverage,
+        max_name=settings.max_name_weight,
+    )
+
+
 def run_equity_research(
     source: str | None = None,
     seed: int = 42,
     persist: bool = True,
     use_ml: bool = True,
     use_news: bool = True,
+    use_optimizer: bool | None = None,
 ) -> BacktestResult:
     log = configure_logging(get_settings().log_level)
     settings = get_settings()
     settings.ensure_dirs()
     src = (source or settings.data_source).lower()
+    opt = optimizer_config(settings, use_optimizer)
+    risk_kwargs = {
+        "optimizer": opt,
+        "risk_lookback": settings.risk_lookback,
+        "risk_refit_every": settings.risk_refit_every,
+        "risk_factors": settings.risk_factors,
+    }
 
     if src == "synthetic":
         provider = SyntheticProvider(n_names=80, n_days=756, seed=seed)
         panel = provider.load_panel(provider.start, provider.start.replace(year=provider.start.year + 4))
-        strategy = EquityLongShort(use_ml=use_ml, use_news=False)
+        strategy = EquityLongShort(use_ml=use_ml, use_news=False, **risk_kwargs)
     elif src == "yahoo":
         panel = _load_live_panel(settings, use_news=use_news)
         n_names = len(panel.symbols())
@@ -44,6 +72,7 @@ def run_equity_research(
             min_adv_usd=1_000_000.0 if wide else 0.0,
             use_ml=use_ml and n_names <= 800,
             use_news=use_news,
+            **risk_kwargs,
         )
         if use_ml and n_names > 800:
             log.info("walk-forward GBDT skipped (%s names) — pass a smaller tape or wait; factors still run", n_names)
@@ -62,22 +91,38 @@ def run_equity_research(
     result.metrics.update(dsr)
 
     log.info(
-        "equity_ls source=%s sharpe=%.2f max_dd=%.2f%% IC_mom=%.3f",
+        "equity_ls source=%s construction=%s sharpe=%.2f vol=%.1f%% max_dd=%.2f%% IC_mom=%.3f",
         src,
+        "risk_constrained" if opt else "quantile_equal_weight",
         result.metrics.get("sharpe", float("nan")),
+        100 * result.metrics.get("ann_vol", float("nan")),
         100 * result.metrics.get("max_drawdown", float("nan")),
         result.factor_ic.get("momentum_12_1", float("nan")),
     )
+    if result.diagnostics is not None and not result.diagnostics.empty:
+        log.info(
+            "risk model: ex-ante vol %.1f%% systematic %.0f%% of variance across %d rebalances",
+            100 * result.diagnostics["ex_ante_vol"].mean(),
+            100 * result.diagnostics["systematic_share"].mean(),
+            len(result.diagnostics),
+        )
 
     if persist:
         out = settings.results_dir / "equity_ls_last.json"
         payload = {
             "source": src,
+            "construction": "risk_constrained" if opt else "quantile_equal_weight",
             "metrics": result.metrics,
             "factor_ic": result.factor_ic,
             "factor_ic_n": result.factor_ic_n,
             "config_hash": result.config_hash,
         }
+        if result.diagnostics is not None and not result.diagnostics.empty:
+            payload["risk_path"] = {
+                col: float(result.diagnostics[col].mean())
+                for col in ("ex_ante_vol", "systematic_share", "gross", "effective_names")
+                if col in result.diagnostics.columns
+            }
         out.write_text(json.dumps(payload, indent=2, default=float), encoding="utf-8")
         ExperimentLog(settings.results_dir / "experiments.jsonl").record(
             "equity_ls", strategy.config(), result.metrics
@@ -155,10 +200,9 @@ def ingest_live(use_news: bool = True, *, all_us: bool | None = None) -> dict:
 def live_quotes(limit: int = 50) -> pd.DataFrame:
     """Snapshot from Alpaca IEX, else Finnhub. Caps at `limit` names (ADV order)."""
     settings = get_settings()
-    from gig.store import Store
+    from gig.data.lake import open_store
 
-    store = Store(settings.db_path)
-    store.init()
+    store = open_store()
     sectors = resolve_universe(settings.universe_file, store, refresh=False)
     symbols = _quote_symbols(store, list(sectors), limit)
     if settings.alpaca_api_key and settings.alpaca_secret_key:

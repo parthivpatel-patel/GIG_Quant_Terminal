@@ -80,3 +80,5 @@ class BacktestResult:
     factor_ic_n: dict[str, float] = field(default_factory=dict)
     config_hash: str = ""
     asof: date | None = None
+    # Per-rebalance ex-ante risk, present only when the optimizer ran.
+    diagnostics: pd.DataFrame | None = None

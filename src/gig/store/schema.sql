@@ -95,3 +95,51 @@ CREATE TABLE IF NOT EXISTS calendar (
     event_type VARCHAR NOT NULL,
     extra VARCHAR
 );
+
+-- Trading audit trail. Append-only on purpose: the value of these three tables
+-- is being able to reconstruct, after the fact, what the strategy wanted, what
+-- the risk gate said about it, and what was actually sent. Rewriting history
+-- here would defeat the point, so nothing UPDATEs them.
+
+-- `asof_date`, not `asof`: ASOF is a reserved word in DuckDB (ASOF JOIN), and
+-- the other tables here already use the suffixed form.
+CREATE TABLE IF NOT EXISTS trade_runs (
+    ts TIMESTAMP NOT NULL,
+    run_id VARCHAR NOT NULL,
+    asof_date DATE,
+    dry_run BOOLEAN,
+    blocked BOOLEAN,
+    nav DOUBLE,
+    gross DOUBLE,
+    net DOUBLE,
+    turnover DOUBLE,
+    n_orders INTEGER,
+    construction VARCHAR,
+    report VARCHAR
+);
+
+CREATE TABLE IF NOT EXISTS target_book (
+    ts TIMESTAMP NOT NULL,
+    run_id VARCHAR NOT NULL,
+    asof_date DATE,
+    symbol VARCHAR NOT NULL,
+    weight DOUBLE,
+    sector VARCHAR,
+    price DOUBLE
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    ts TIMESTAMP NOT NULL,
+    run_id VARCHAR NOT NULL,
+    symbol VARCHAR NOT NULL,
+    side VARCHAR,
+    shares DOUBLE,
+    limit_price DOUBLE,
+    reference_price DOUBLE,
+    notional DOUBLE,
+    current_weight DOUBLE,
+    target_weight DOUBLE,
+    status VARCHAR,
+    broker_order_id VARCHAR,
+    note VARCHAR
+);

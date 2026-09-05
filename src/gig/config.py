@@ -56,6 +56,15 @@ class Settings(BaseSettings):
     max_drawdown: float = 0.12
     var_confidence: float = 0.99
 
+    # Risk-constrained construction. `target_vol` is annualized ex-ante vol
+    # under the fitted factor model and binds only when the gross and name caps
+    # leave room for it.
+    use_optimizer: bool = True
+    target_vol: float = 0.10
+    risk_factors: int = 5
+    risk_lookback: int = 252
+    risk_refit_every: int = 21
+
     spread_bps: float = 4.0
     commission_bps: float = 1.0
     impact_eta: float = 0.10
@@ -68,6 +77,10 @@ class Settings(BaseSettings):
     fred_api_key: str = ""
     finnhub_api_key: str = ""
     edgar_user_agent: str = "GIG Trading Algorithm (research; set EDGAR_USER_AGENT to your email)"
+
+    # Local research desk (Ollama). Never used for order generation.
+    ollama_host: str = "http://127.0.0.1:11434"
+    ollama_model: str = "llama3.2"
 
     @model_validator(mode="after")
     def unprefixed_secrets(self) -> Settings:
