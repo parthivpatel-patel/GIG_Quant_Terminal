@@ -111,11 +111,66 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
                 "hint": "Set ALPACA_API_KEY / ALPACA_SECRET_KEY and use the paper URL",
             }
         try:
+            from gig.data.lake import db_lock
             from gig.execution.trader import account_status
 
-            return {"available": True, **account_status(limit=limit)}
+            with db_lock():
+                return {"available": True, **account_status(limit=limit)}
         except Exception as exc:
-            return {"available": False, "error": f"{type(exc).__name__}: {exc}"}
+            msg = f"{type(exc).__name__}: {exc}"
+            if "DateParse" in type(exc).__name__ or "datetime" in msg.lower():
+                msg = "paper snapshot failed while reading account/target dates — retry refresh"
+            return {"available": False, "error": msg}
+
+    @app.get("/api/name/{symbol}")
+    def name_detail(symbol: str, limit: int = Query(cloud_limit, ge=20, le=1200)) -> dict[str, Any]:
+        """Single-name research card from the live cloud snapshot."""
+        sym = str(symbol or "").upper().strip()
+        if not sym:
+            return {"available": False, "error": "symbol required"}
+        cloud = cached_cloud(limit)
+        if not cloud.get("available"):
+            return {"available": False, "hint": cloud.get("hint") or "cloud unavailable"}
+        point = next((p for p in cloud.get("points") or [] if str(p.get("symbol")) == sym), None)
+        if point is None:
+            return {"available": False, "hint": f"{sym} not in current cloud"}
+        risk = cloud.get("risk") or {}
+        contrib = next(
+            (c for c in (risk.get("top_contributors") or []) if str(c.get("symbol")) == sym),
+            None,
+        )
+        return {
+            "available": True,
+            "asof": cloud.get("asof"),
+            "construction": cloud.get("construction"),
+            "names": cloud.get("names"),
+            "point": point,
+            "risk_contributor": contrib,
+            "book": cloud.get("book"),
+            "factor_ic": cloud.get("factor_ic"),
+        }
+
+    @app.get("/api/ops")
+    def ops() -> dict[str, Any]:
+        from gig.ops.status import ops_snapshot
+
+        return ops_snapshot()
+
+    @app.get("/api/attribution")
+    def attribution(limit: int = Query(cloud_limit, ge=20, le=1200)) -> dict[str, Any]:
+        from gig.research.attribution import attribution_snapshot
+
+        cloud = cached_cloud(limit)
+        return attribution_snapshot(
+            risk=cloud.get("risk") if cloud.get("available") else None,
+            factor_ic=cloud.get("factor_ic") if cloud.get("available") else None,
+        )
+
+    @app.get("/api/blotter")
+    def blotter(limit: int = Query(120, ge=20, le=600)) -> dict[str, Any]:
+        from gig.research.attribution import blotter_snapshot
+
+        return blotter_snapshot(limit=limit)
 
     @app.get("/api/ollama/status")
     def ollama_status_route() -> dict[str, Any]:
@@ -163,6 +218,11 @@ def serve(
         print('uvicorn is not installed. Run: pip install -e ".[web]"')
         return 1
 
+    from gig.service.snapshot import warm_status_cache
+
+    # Prime lake stats while DuckDB is free, before the paper loop contends.
+    warm_status_cache()
+
     if trade_every > 0:
         _start_paper_loop(
             every=trade_every,
@@ -188,20 +248,33 @@ def _start_paper_loop(*, every: int, limit: int, force: bool, dry_run: bool) -> 
 
     from gig.data.lake import db_lock
     from gig.logging import configure_logging
+    from gig.ops.killswitch import kill_switch
+    from gig.ops.status import touch_heartbeat
 
     log = configure_logging()
 
     def worker() -> None:
         from gig.execution.trader import run_once
 
-        # Let uvicorn bind before the first heavy target build.
-        time.sleep(3)
+        # Let uvicorn bind and the status strip warm before the first heavy target build.
+        time.sleep(8)
         while True:
             try:
-                with db_lock():
-                    run = run_once(dry_run=dry_run, limit=limit, force=force)
-                log.info("paper loop\n%s", run.report())
+                if kill_switch().engaged:
+                    touch_heartbeat(ok=True, detail="kill switch engaged — skipping pass")
+                    log.info("paper loop idle: kill switch engaged")
+                else:
+                    with db_lock():
+                        run = run_once(dry_run=dry_run, limit=limit, force=force)
+                    touch_heartbeat(
+                        ok=not run.blocked,
+                        detail=("blocked by risk gate" if run.blocked else "ok")
+                        + (f" · submitted={run.submitted}" if not dry_run else " · dry-run"),
+                        run_id=run.run_id,
+                    )
+                    log.info("paper loop\n%s", run.report())
             except Exception as exc:
+                touch_heartbeat(ok=False, detail=f"{type(exc).__name__}: {exc}")
                 log.warning("paper loop error: %s: %s", type(exc).__name__, exc)
             time.sleep(max(60, every))
 

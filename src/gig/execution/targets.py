@@ -99,7 +99,7 @@ def build_target_book(
 
     settings = get_settings()
     panel, _store = load_liquid_panel(limit=limit, lookback_days=lookback_days)
-    if panel is None or panel.close.empty:
+    if panel is None or panel.close is None or getattr(panel.close, "empty", True):
         return _empty("python -m gig universe refresh && python -m gig ingest")
 
     n_names = len(panel.symbols())
@@ -120,11 +120,19 @@ def build_target_book(
         use_news=use_news,
     )
     combo, tradable, _ic = strategy.scores(panel)
-    if combo.empty:
+    if combo is None or getattr(combo, "empty", True):
         return _empty("not enough history in DuckDB for a 12-1 momentum cross-section")
 
-    asof = pd.Timestamp(combo.index[-1])
+    raw_asof = combo.index[-1]
+    try:
+        asof = pd.Timestamp(raw_asof)
+    except Exception:
+        asof = pd.to_datetime(raw_asof, errors="coerce")
+    if asof is None or pd.isna(asof):
+        return _empty(f"latest score index is not a date ({raw_asof!r})")
     scores = combo.loc[asof]
+    if isinstance(scores, pd.DataFrame):
+        scores = scores.iloc[0]
     returns = panel.close.pct_change().tail(settings.risk_lookback)
 
     config = optimizer_config(settings, use_optimizer)

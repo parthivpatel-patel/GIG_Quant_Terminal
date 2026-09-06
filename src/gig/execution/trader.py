@@ -170,9 +170,15 @@ def run_once(
 ) -> TradeRun:
     """Compute a target, reconcile against the account, and optionally trade."""
     from gig.execution import pretrade as pretrade_mod
+    from gig.ops.killswitch import kill_switch
 
     log = configure_logging(get_settings().log_level)
     settings = get_settings()
+    kill = kill_switch().status()
+    if kill.get("engaged") and not dry_run:
+        log.warning("kill switch engaged — forcing dry_run (%s)", kill.get("reason"))
+        dry_run = True
+
     reconcile = reconcile or ReconcileConfig()
     execution = execution or ExecutionConfig()
     run_id = f"{datetime.now(UTC):%Y%m%dT%H%M%S}-{uuid.uuid4().hex[:6]}"
@@ -252,6 +258,17 @@ def run_once(
             for f in report.findings
         ]
     apply_drops(plan, report)
+
+    if kill.get("engaged"):
+        from gig.execution.pretrade import Rejection
+
+        report.findings = list(report.findings) + [
+            Rejection(
+                "kill_switch",
+                f"engaged: {kill.get('reason') or 'halted'} — orders suppressed",
+                True,
+            )
+        ]
 
     run = TradeRun(
         run_id=run_id,
@@ -364,11 +381,25 @@ def account_status(broker: Broker | None = None, limit: int = 300) -> dict[str, 
 
     broker = broker or _default_broker()
     book = build_target_book(limit=limit)
+    if not book.available:
+        return {
+            "nav": float(broker.nav()) if broker else None,
+            "n_positions": len(broker.positions()) if broker else 0,
+            "target": book.to_dict(),
+            "market_open": broker.is_open() if broker else None,
+            "worst_drift": 0.0,
+            "drift": [],
+            "hint": book.hint or "target book unavailable",
+        }
     nav = float(broker.nav())
-    positions = broker.positions()
+    positions = broker.positions() or {}
     symbols = sorted(set(map(str, book.weights.index)) | set(map(str, positions)))
     prices = _reference_prices(symbols, broker, book) if symbols else pd.Series(dtype=float)
+    if prices is None:
+        prices = pd.Series(dtype=float)
     drift = drift_report(book.weights, positions, prices, nav)
+    if drift is None:
+        drift = pd.DataFrame()
 
     summary: dict[str, Any] = {
         "nav": nav,

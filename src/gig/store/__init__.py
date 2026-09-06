@@ -187,6 +187,40 @@ class Store:
     def load_filings(self) -> pd.DataFrame:
         return self.con.execute("SELECT * FROM filings").df()
 
+    def upsert_fundamentals(self, frame: pd.DataFrame) -> int:
+        """Point-in-time fundamental fields. Requires asof_date, symbol, field, value."""
+        if frame is None or frame.empty:
+            return 0
+        df = frame.copy()
+        for col in ("asof_date", "symbol", "field", "value"):
+            if col not in df.columns:
+                raise ValueError(f"fundamentals missing column {col}")
+        if "source" not in df.columns:
+            df["source"] = "manual"
+        df["asof_date"] = pd.to_datetime(df["asof_date"]).dt.date
+        df["symbol"] = df["symbol"].astype(str)
+        df["field"] = df["field"].astype(str)
+        # SEC can emit multiple XBRL rows with the same filing date; keep last.
+        df = df.drop_duplicates(subset=["asof_date", "symbol", "field"], keep="last")
+        symbols = sorted(df["symbol"].unique().tolist())
+        for i in range(0, len(symbols), 400):
+            chunk = symbols[i : i + 400]
+            placeholders = ",".join(["?"] * len(chunk))
+            self.con.execute(
+                f"DELETE FROM fundamentals WHERE symbol IN ({placeholders})",
+                chunk,
+            )
+        self.con.execute(
+            "INSERT INTO fundamentals SELECT asof_date, symbol, field, value, source FROM df"
+        )
+        return len(df)
+
+    def load_fundamentals(self) -> pd.DataFrame:
+        try:
+            return self.con.execute("SELECT * FROM fundamentals").df()
+        except Exception:
+            return pd.DataFrame()
+
     def load_panel(self, start: date, end: date, symbols: list[str] | None = None) -> MarketPanel | None:
         if symbols:
             bars = self.con.execute(
@@ -333,6 +367,14 @@ class Store:
         return self.con.execute(f"SELECT * FROM orders ORDER BY ts DESC LIMIT {int(limit)}").df()
 
     def stats(self) -> dict[str, int]:
+        """
+        Table row counts for the status strip.
+
+        Full ``COUNT(*)`` on ``bars`` (multi-million rows) under the process lock
+        stalls every other DuckDB reader and makes the UI flash "Lake empty".
+        Prefer DuckDB's estimated_size; fall back to COUNT only for small tables
+        or when the estimate is missing.
+        """
         out: dict[str, int] = {}
         for table in (
             "bars",
@@ -349,10 +391,41 @@ class Store:
             "trade_runs",
             "target_book",
             "orders",
+            "fundamentals",
         ):
-            try:
-                n = self.con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-                out[table] = int(n)
-            except Exception:
-                out[table] = 0
+            out[table] = self._row_count(table, exact=table != "bars")
         return out
+
+    def _row_count(self, table: str, *, exact: bool = True) -> int:
+        if not exact:
+            try:
+                row = self.con.execute(
+                    "SELECT estimated_size FROM duckdb_tables() WHERE table_name = ?",
+                    [table],
+                ).fetchone()
+                if row and row[0] is not None and int(row[0]) > 0:
+                    return int(row[0])
+            except Exception:
+                pass
+            # Never full-scan multi-million bar tables on the status path.
+            try:
+                hit = self.con.execute(f"SELECT 1 FROM {table} LIMIT 1").fetchone()
+                if not hit:
+                    return 0
+                # Prefer last-day row count × distinct dates when cheap enough;
+                # otherwise report a sentinel >0 so the UI does not flash "empty".
+                day = self.con.execute(
+                    f"""
+                    SELECT COUNT(*) FROM {table}
+                    WHERE dt = (SELECT MAX(dt) FROM {table})
+                    """
+                ).fetchone()
+                n_day = int(day[0]) if day and day[0] is not None else 0
+                return max(n_day, 1)
+            except Exception:
+                return 0
+        try:
+            n = self.con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            return int(n or 0)
+        except Exception:
+            return 0

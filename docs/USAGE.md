@@ -521,14 +521,64 @@ Sanity rules before you believe any run:
 
 ---
 
-## 10. Daily rhythm
+## 10. Ops and 24/7
+
+### Kill switch and freshness
 
 ```bash
-python -m gig ingest                              # top up the lake
+python -m gig ops status          # JSON: kill, bar age, last trade run, alerts
+python -m gig ops halt --reason "manual"
+python -m gig ops resume
+python -m gig trade flatten --yes # close every paper position
+```
+
+When the kill switch is engaged, `trade run` / the embedded paper loop will not
+submit. Flatten still works. Bar age ≥ 5 calendar days is treated as hard-stale
+by the pre-trade gate — refresh the lake first.
+
+### Single-process paper terminal (Windows)
+
+Do **not** run a separate `trade loop` while `serve` holds DuckDB on Windows.
+
+```bash
+# dry-run rehearsal
+python scripts/run_24_7.py
+
+# submit paper orders every 15 minutes
+python scripts/run_24_7.py --trade-yes
+# or double-click:
+scripts\run_24_7.bat
+```
+
+Weekday lake top-up (Task Scheduler ~07:30 local):
+
+```bash
+python scripts/daily_ingest.py
+# or:
+scripts\daily_ingest.bat
+```
+
+For always-on: point **NSSM** or Task Scheduler at `scripts\run_24_7.bat`, and a
+second daily task at `scripts\daily_ingest.bat`. Keep `ALPACA_BASE_URL` on the
+paper endpoint until you deliberately go live.
+
+### Fundamentals (book-to-market)
+
+With `EDGAR_USER_AGENT` set, ingest pulls SEC companyfacts (book equity + shares)
+for the liquid sleeve and stores them in DuckDB `fundamentals`. The
+`book_to_price` factor joins on **filing date** and only activates when both
+fields are present — it does not invent values from yfinance `.info`.
+
+---
+
+## 11. Daily rhythm
+
+```bash
+python scripts/daily_ingest.py                    # liquid bars + vendor feeds
 python -m gig backtest --source yahoo --no-ml     # refresh metrics
-python -m gig serve                               # inspect the cross-section
-python -m gig trade plan                          # see today's trade list
-python -m gig trade run --yes                     # paper only
+python scripts/run_24_7.py --trade-yes            # terminal + paper loop
+python -m gig trade plan                          # inspect without submitting
+python -m gig ops status                          # ops strip / alerts
 ```
 
 Read the plan before running it. The gate will stop the obvious failures, but it

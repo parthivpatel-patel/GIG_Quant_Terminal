@@ -31,10 +31,23 @@ _SHARED: dict[str, object] = {}
 
 
 @contextmanager
-def db_lock() -> Iterator[None]:
-    """Serialize DuckDB use across UI threads and the paper loop."""
-    with _DB_LOCK:
+def db_lock(timeout: float | None = None) -> Iterator[None]:
+    """
+    Serialize DuckDB use across UI threads and the paper loop.
+
+    ``timeout`` (seconds) fails fast with ``TimeoutError`` so status pills can
+    keep serving last-known lake stats instead of hanging behind a rebalance.
+    """
+    if timeout is None:
+        with _DB_LOCK:
+            yield
+        return
+    if not _DB_LOCK.acquire(timeout=float(timeout)):
+        raise TimeoutError("database busy")
+    try:
         yield
+    finally:
+        _DB_LOCK.release()
 
 
 def open_store(*, read_only: bool = False, retries: int = 8, shared: bool = True):

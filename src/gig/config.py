@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     risk_factors: int = 5
     risk_lookback: int = 252
     risk_refit_every: int = 21
+    risk_shrinkage: float = 0.15
 
     spread_bps: float = 4.0
     commission_bps: float = 1.0

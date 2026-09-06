@@ -166,8 +166,9 @@
     select.value = sectors.includes(current) ? current : "";
     state.sector = select.value;
 
-    el("pill-asof").textContent = "asof " + cloud.asof;
-    el("pill-universe").textContent = cloud.names + " names";
+    el("pill-asof").textContent = "Data as-of " + cloud.asof;
+    el("pill-universe").textContent = "Universe " + cloud.names + " names";
+    el("pill-universe").className = "pill pill-ok";
     el("book-asof").textContent = cloud.asof;
 
     renderBook(cloud);
@@ -175,7 +176,6 @@
     renderRiskModel(cloud.risk);
     renderIC(cloud.factor_ic);
     renderSectorNet(cloud.sector_net || {});
-    renderPipeline(cloud.pipeline || [], cloud.risk || {});
     renderScree(cloud.risk || {});
     renderExposure(cloud.risk || {});
     state.lastRisk = cloud.risk || null;
@@ -209,7 +209,7 @@
     const held = cloud.points.filter((p) => p.side !== "flat");
     held.sort((a, z) => (z.score ?? 0) - (a.score ?? 0));
     const row = (p) =>
-      `<li title="${p.sector}"><span class="sym">${p.symbol}</span>` +
+      `<li data-sym="${p.symbol}" title="${p.sector} · click for detail"><span class="sym">${p.symbol}</span>` +
       `<span class="wt">${fmtPct(p.weight, 1)}</span>` +
       `<span class="sc">${fmtSigned(p.score, 2)}</span></li>`;
     el("list-long").innerHTML = held.filter((p) => p.side === "long").map(row).join("");
@@ -218,6 +218,15 @@
       .reverse()
       .map(row)
       .join("");
+    wireSymClicks(el("list-long"));
+    wireSymClicks(el("list-short"));
+  }
+
+  function wireSymClicks(host) {
+    if (!host) return;
+    host.querySelectorAll("[data-sym]").forEach((li) => {
+      li.addEventListener("click", () => openName(li.getAttribute("data-sym")));
+    });
   }
 
   function barRow(label, value, limit, text) {
@@ -292,11 +301,12 @@
     el("risk-contrib").innerHTML = (risk.top_contributors || [])
       .map(
         (c) =>
-          `<li title="${c.sector}"><span class="sym">${c.symbol}</span>` +
+          `<li data-sym="${c.symbol}" title="${c.sector}"><span class="sym">${c.symbol}</span>` +
           `<span class="wt">${fmtPct(c.weight, 1)}</span>` +
           `<span class="sc">${fmtPct(c.share, 1)}</span></li>`
       )
       .join("");
+    wireSymClicks(el("risk-contrib"));
   }
 
   function renderIC(ic) {
@@ -348,35 +358,78 @@
   function renderStatus(s) {
     window.__gigLimits = s.limits || {};
     const db = el("pill-db");
-    const bars = (s.tables || {}).bars || 0;
-    db.textContent = "db " + (bars ? bars.toLocaleString() + " bars" : "empty");
-    db.className = "pill " + (bars ? "pill-ok" : "pill-bad");
+    const tables = s.tables || {};
+    let bars = Number(tables.bars || 0);
+    const asofVal = s.asof || ((s.ops || {}).freshness || {}).asof || null;
+    // Never flash "Lake empty" when we clearly have an as-of date from ops/status.
+    if (!bars && (s.db_ready || asofVal)) {
+      bars = window.__gigLastBars || 1;
+    }
+    if (bars > 1) window.__gigLastBars = bars;
+    if (db) {
+      if (bars > 1) {
+        db.textContent = "Lake " + bars.toLocaleString() + " bars";
+        db.className = "pill pill-ok";
+      } else if (bars === 1 && asofVal) {
+        db.textContent = "Lake ready";
+        db.className = "pill pill-ok";
+        db.title = "Bar lake present (exact row count refreshing)";
+      } else if (asofVal) {
+        db.textContent = "Lake ready";
+        db.className = "pill pill-ok";
+      } else {
+        db.textContent = "Lake empty";
+        db.className = "pill pill-bad";
+      }
+    }
+
+    const asof = el("pill-asof");
+    if (asof) {
+      const ops = s.ops || {};
+      const f = ops.freshness || {};
+      asof.textContent = asofVal ? "Data as-of " + asofVal : "Data as-of —";
+      const level = f.level || (bars || asofVal ? "ok" : "bad");
+      asof.className =
+        "pill " +
+        (level === "ok" ? "pill-ok" : level === "warn" ? "pill-warn" : bars || asofVal ? "pill-warn" : "pill-bad");
+    }
+
+    const uni = el("pill-universe");
+    // universe pill filled from cloud; keep placeholder class until then
 
     const keys = s.keys || {};
     const live = keys.alpaca || keys.finnhub;
     const feed = el("pill-feed");
-    feed.textContent = keys.alpaca ? "feed alpaca iex" : keys.finnhub ? "feed finnhub" : "feed none";
+    feed.textContent = keys.alpaca ? "Quotes Alpaca IEX" : keys.finnhub ? "Quotes Finnhub" : "Quotes offline";
     feed.className = "pill " + (live ? "pill-ok" : "pill-warn");
 
     const ml = s.ml || {};
     const mlp = el("pill-ml");
     if (mlp) {
-      mlp.textContent = ml.lightgbm ? "ml lightgbm" : ml.sklearn ? "ml sklearn" : "ml none";
+      mlp.textContent = ml.lightgbm ? "Ranker LightGBM" : ml.sklearn ? "Ranker sklearn" : "Ranker off";
       mlp.className = "pill " + (ml.lightgbm || ml.sklearn ? "pill-ok" : "pill-warn");
     }
 
     const ol = s.ollama || {};
     const olp = el("pill-ollama");
     if (olp) {
-      olp.textContent = ol.available ? "desk ollama" : "desk structured";
-      olp.className = "pill " + (ol.available ? "pill-ok" : "pill-warn");
+      olp.textContent = ol.available && ol.model_ready ? "Desk Ollama" : ol.available ? "Desk model?" : "Desk structured";
+      olp.className = "pill " + (ol.available && ol.model_ready ? "pill-ok" : "pill-warn");
     }
 
     const paper = el("pill-paper");
     if (paper) {
-      paper.textContent = keys.alpaca ? "paper ready" : "paper keys?";
-      paper.className = "pill " + (keys.alpaca ? "pill-ok" : "pill-warn");
+      const kill = (s.ops && s.ops.kill_switch) || {};
+      if (kill.engaged) {
+        paper.textContent = "Paper HALTED";
+        paper.className = "pill pill-bad";
+      } else {
+        paper.textContent = keys.alpaca ? "Paper ready" : "Paper keys?";
+        paper.className = "pill " + (keys.alpaca ? "pill-ok" : "pill-warn");
+      }
     }
+
+    if (s.ops) renderOps(s.ops);
   }
 
   function renderSectorNet(sectorNet) {
@@ -385,10 +438,11 @@
     const lim = (window.__gigLimits || {}).max_sector_net || 0.1;
     const rows = Object.entries(sectorNet || {})
       .map(([k, v]) => [k, v])
+      .filter(([, v]) => isNum(v) && Math.abs(v) >= 1e-4)
       .sort((a, b) => Math.abs(b[1] || 0) - Math.abs(a[1] || 0))
       .slice(0, 8);
     if (!rows.length) {
-      host.innerHTML = '<div class="breach-none">no sector net yet</div>';
+      host.innerHTML = '<div class="breach-none">sector-neutral · near flat</div>';
       return;
     }
     host.innerHTML = rows
@@ -396,28 +450,10 @@
         const pct = clamp((Math.abs(value) / lim) * 100, 0, 100);
         const cls = Math.abs(value) > lim ? "bar-over" : value >= 0 ? "bar-pos" : "bar-neg";
         return `<div class="bar-row">
-          <div class="bar-top"><span class="k">${name}</span><span class="v">${fmtSigned(value, 3)}</span></div>
+          <div class="bar-top"><span class="k">${name}</span><span class="v">${fmtPct(value, 2)}</span></div>
           <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
         </div>`;
       })
-      .join("");
-  }
-
-  function renderPipeline(pipeline, risk) {
-    const host = el("pipe-steps");
-    const eq = el("pipe-eq");
-    if (eq) eq.textContent = (risk && risk.equation) || "Σ = BB′ + D";
-    if (!host) return;
-    if (!pipeline || !pipeline.length) {
-      host.innerHTML = '<div class="pipe-step"><span class="pipe-k">loading</span><span class="pipe-v">signal path</span></div>';
-      return;
-    }
-    host.innerHTML = pipeline
-      .map(
-        (s) =>
-          `<div class="pipe-step"><span class="pipe-k">${s.label || s.id}</span>` +
-          `<span class="pipe-v" title="${s.detail || ""}">${s.detail || ""}</span></div>`
-      )
       .join("");
   }
 
@@ -571,8 +607,16 @@
         '<div class="m"><span class="m-k">status</span><span class="m-v">offline</span></div>';
       if (drift) drift.innerHTML = "";
       if (open) open.textContent = "—";
-      if (note) note.textContent = (p && (p.hint || p.error)) || "Alpaca keys not loaded";
+      let msg = (p && (p.hint || p.error)) || "Alpaca keys not loaded";
+      if (msg && /NoneType.*empty|AttributeError/i.test(msg)) {
+        msg = "Paper snapshot busy — retry refresh (lake locked by rebalance)";
+      }
+      if (note) note.textContent = msg;
       return;
+    }
+    if (note) {
+      note.textContent =
+        "Read-only here. Orders: gig trade plan then trade run --yes. Halt: gig ops halt.";
     }
     const acct = p.account || {};
     const cell = (k, v, cls = "") =>
@@ -589,11 +633,212 @@
         .slice(0, 8)
         .map(
           (r) =>
-            `<li><span class="sym">${r.symbol}</span>` +
+            `<li data-sym="${r.symbol}"><span class="sym">${r.symbol}</span>` +
             `<span class="wt">${fmtPct(r.current_weight, 1)}</span>` +
             `<span class="sc">${fmtPct(r.drift, 1)}</span></li>`
         )
         .join("");
+      wireSymClicks(drift);
+    }
+  }
+
+  function renderOps(ops) {
+    const level = el("ops-level");
+    const fresh = el("ops-fresh");
+    const kill = el("ops-kill");
+    const hb = el("ops-hb");
+    const last = el("ops-last");
+    const alerts = el("ops-alerts");
+    if (!level) return;
+    if (!ops || !ops.available) {
+      level.textContent = "ops offline";
+      level.className = "ops-item warn";
+      return;
+    }
+    const lv = ops.level || "ok";
+    level.textContent =
+      lv === "ok" ? "System healthy" : lv === "warn" ? "System warning" : "System issue";
+    level.className = "ops-item " + lv;
+
+    const f = ops.freshness || {};
+    if (fresh) {
+      fresh.textContent = f.asof
+        ? "Market data " + f.asof + (isNum(f.age_days) ? ` (${f.age_days}d)` : "")
+        : "Market data —";
+      fresh.className = "ops-item " + (f.level || "warn");
+    }
+
+    const k = ops.kill_switch || {};
+    if (kill) {
+      kill.textContent = k.engaged ? "Kill switch ON" : "Kill switch off";
+      kill.className = "ops-item " + (k.engaged ? "bad" : "ok");
+      kill.title = k.reason || "Blocks new orders when on";
+    }
+
+    const h = ops.heartbeat || {};
+    if (hb) {
+      hb.textContent = h.ts ? "Rebalance loop " + (h.ok ? "OK" : "failed") : "Rebalance loop idle";
+      hb.className = "ops-item " + (h.ts ? (h.ok ? "ok" : "warn") : "warn");
+      hb.title = h.detail || "";
+    }
+
+    const lr = ops.last_run || null;
+    if (last) {
+      if (!lr || lr.error) {
+        last.textContent = "Last rebalance —";
+        last.className = "ops-item";
+        last.title = (lr && lr.error) || "";
+      } else {
+        last.textContent =
+          "Last rebalance " +
+          (lr.blocked ? "blocked" : lr.dry_run ? "dry-run" : "live") +
+          (isNum(lr.turnover) ? ` · turnover ${fmtPct(lr.turnover, 0)}` : "");
+        last.className = "ops-item " + (lr.blocked ? "warn" : "ok");
+      }
+    }
+
+    if (alerts) {
+      alerts.innerHTML = (ops.alerts || [])
+        .slice(0, 3)
+        .map((a) => `<span class="ops-alert ${a.level || ""}">${a.detail || a.code}</span>`)
+        .join("");
+    }
+  }
+
+  function renderBlotter(b) {
+    const metrics = el("blotter-metrics");
+    const rows = el("blotter-rows");
+    const note = el("blotter-note");
+    if (!metrics) return;
+    if (!b || !b.available) {
+      metrics.innerHTML =
+        '<div class="m"><span class="m-k">status</span><span class="m-v">—</span></div>';
+      if (rows) {
+        const auditRows = (b && b.rows) || [];
+        rows.innerHTML = auditRows
+          .slice(0, 12)
+          .map(
+            (r) =>
+              `<li><span class="sym">${r.symbol}</span>` +
+              `<span class="wt">${fmtPct(r.target, 1)}</span>` +
+              `<span class="sc">${r.side || ""}</span></li>`
+          )
+          .join("");
+      }
+      if (note) note.textContent = (b && (b.hint || b.error)) || "offline";
+      return;
+    }
+    const cell = (k, v) =>
+      `<div class="m"><span class="m-k">${k}</span><span class="m-v">${v}</span></div>`;
+    metrics.innerHTML = [
+      cell("gross tgt", fmt(b.target_gross, 2)),
+      cell("net tgt", fmtSigned(b.target_net, 3)),
+      cell("worst |Δ|", fmtPct(b.worst_drift, 2)),
+      cell("held", String(b.n_positions ?? "—")),
+    ].join("");
+    if (note) note.textContent = (b.target_asof || "—") + (b.construction ? " · " + b.construction : "");
+    if (rows) {
+      rows.innerHTML = (b.rows || [])
+        .slice(0, 14)
+        .map(
+          (r) =>
+            `<li data-sym="${r.symbol}" title="held ${fmtPct(r.held, 2)} → tgt ${fmtPct(r.target, 2)}">` +
+            `<span class="sym">${r.symbol}</span>` +
+            `<span class="wt">${fmtPct(r.held, 1)}</span>` +
+            `<span class="sc">${fmtPct(r.drift, 1)}</span></li>`
+        )
+        .join("");
+      wireSymClicks(rows);
+    }
+  }
+
+  function renderAttribution(a) {
+    const metrics = el("attr-metrics");
+    const signal = el("attr-signal");
+    const note = el("attr-note");
+    if (!metrics) return;
+    if (!a || !a.available) {
+      metrics.innerHTML =
+        '<div class="m"><span class="m-k">attribution</span><span class="m-v">—</span></div>';
+      return;
+    }
+    const research = a.research || {};
+    const m = research.metrics || {};
+    const risk = a.risk || {};
+    const paper = a.paper || {};
+    const cell = (k, v, cls = "") =>
+      `<div class="m"><span class="m-k">${k}</span><span class="m-v ${cls}">${v}</span></div>`;
+    metrics.innerHTML = [
+      cell("bt sharpe", fmt(m.sharpe, 2), isNum(m.sharpe) && m.sharpe >= 0 ? "good" : "bad"),
+      cell("sys share", fmtPct(risk.systematic_share, 0)),
+      cell("pred/real", isNum(risk.pred_over_real) ? risk.pred_over_real.toFixed(2) + "x" : "—"),
+      cell("paper Δ", fmtPct(paper.total_return, 1)),
+    ].join("");
+    if (note) {
+      note.textContent =
+        (research.source || "research") +
+        (isNum(risk.shrinkage) ? "" : "") +
+        (paper.available ? " · paper trail" : "");
+    }
+    const sig = a.signal || research.signal || [];
+    if (signal) {
+      signal.innerHTML = sig.length
+        ? sig
+            .slice(0, 6)
+            .map((s) => {
+              const pct = clamp((s.share || 0) * 100, 2, 100);
+              const cls = (s.ic || 0) >= 0 ? "bar-pos" : "bar-neg";
+              return `<div class="bar-row">
+                <div class="bar-top"><span class="k">${s.name}</span><span class="v">${fmt(s.ic, 3)} · ${fmtPct(s.share, 0)}</span></div>
+                <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+              </div>`;
+            })
+            .join("")
+        : '<div class="breach-none">no IC yet</div>';
+    }
+    renderNavSpark(paper);
+  }
+
+  function renderNavSpark(paper) {
+    const c = el("nav-spark");
+    if (!c) return;
+    const ctx2 = c.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.parentElement.clientWidth || 280;
+    const h = 64;
+    c.width = w * dpr;
+    c.height = h * dpr;
+    c.style.width = w + "px";
+    c.style.height = h + "px";
+    ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx2.clearRect(0, 0, w, h);
+    const note = el("nav-note");
+    const pts = (paper && paper.points) || [];
+    const navs = pts.map((p) => p.nav).filter(isNum);
+    if (navs.length < 2) {
+      ctx2.fillStyle = "#556070";
+      ctx2.font = "10px IBM Plex Mono, monospace";
+      ctx2.fillText("paper NAV after live trade runs", 10, 36);
+      if (note) note.textContent = "no trail";
+      return;
+    }
+    const min = Math.min(...navs);
+    const max = Math.max(...navs);
+    const span = max - min || 1;
+    ctx2.beginPath();
+    navs.forEach((v, i) => {
+      const x = (i / (navs.length - 1)) * (w - 8) + 4;
+      const y = h - 8 - ((v - min) / span) * (h - 20);
+      if (i === 0) ctx2.moveTo(x, y);
+      else ctx2.lineTo(x, y);
+    });
+    ctx2.strokeStyle = "#9ef01a";
+    ctx2.lineWidth = 1.5;
+    ctx2.stroke();
+    if (note) {
+      note.textContent =
+        (isNum(paper.total_return) ? fmtPct(paper.total_return, 1) : "—") +
+        (isNum(paper.nav_last) ? " · $" + Math.round(paper.nav_last).toLocaleString() : "");
     }
   }
 
@@ -702,14 +947,127 @@
 
       const dir = isNum(chg) && chg > 0 ? "up" : isNum(chg) && chg < 0 ? "down" : "";
       html.push(
-        `<span class="tick ${dir} ${moved ? "flash" : ""}">` +
+        `<span class="tick ${dir} ${moved ? "flash" : ""}" data-sym="${q.symbol}" role="button" tabindex="0">` +
           `<span class="t-sym">${q.symbol}</span>` +
           `<span class="t-px">${isNum(px) ? px.toFixed(2) : "—"}</span>` +
           `<span class="t-sym">${isNum(chg) ? fmtPct(chg, 2) : ""}</span></span>`
       );
     }
     strip.innerHTML = html.join("");
+    strip.querySelectorAll("[data-sym]").forEach((node) => {
+      node.addEventListener("click", () => openName(node.getAttribute("data-sym")));
+    });
     if (state.axisY === "live") retarget();
+  }
+
+  async function openName(symbol) {
+    const sym = String(symbol || "").toUpperCase().trim();
+    if (!sym) return;
+    const drawer = el("name-drawer");
+    const backdrop = el("drawer-backdrop");
+    if (!drawer) return;
+    drawer.hidden = false;
+    if (backdrop) backdrop.hidden = false;
+    el("drawer-sym").textContent = sym;
+    el("drawer-meta").textContent = "loading…";
+    el("drawer-metrics").innerHTML = "";
+    el("drawer-signals").innerHTML = "";
+    el("drawer-book").innerHTML = "";
+    const icHost = el("drawer-ic");
+    if (icHost) icHost.innerHTML = "";
+    el("drawer-note").textContent = "";
+    try {
+      const data = await getJSON("/api/name/" + encodeURIComponent(sym));
+      if (!data.available) {
+        el("drawer-meta").textContent = data.hint || data.error || "not in cloud";
+        return;
+      }
+      const p = data.point || {};
+      const book = data.book || {};
+      el("drawer-meta").textContent =
+        (p.sector || "unknown sector") +
+        " · as-of " +
+        (data.asof || "—") +
+        " · " +
+        (p.side || "flat");
+      const cell = (k, v) =>
+        `<div class="m"><span class="m-k">${k}</span><span class="m-v">${v}</span></div>`;
+      el("drawer-metrics").innerHTML = [
+        cell("Alpha score", fmtSigned(p.score, 3)),
+        cell("Target weight", fmtPct(p.weight, 2)),
+        cell("Last close", isNum(p.close) ? p.close.toFixed(2) : "—"),
+        cell("ADV 21d", fmtAdv(p.adv)),
+        cell("Live change", fmtPct(p.chg, 2)),
+        cell("Score rank", isNum(p.score_pct) ? (p.score_pct * 100).toFixed(0) + "th %ile" : "—"),
+      ].join("");
+      const signals = [
+        ["Momentum 12-1", p.momentum],
+        ["Idiosyncratic vol", p.ivol],
+        ["Short-term reversal", p.reversal],
+        ["PC1 exposure", p.pc1],
+        ["PC2 exposure", p.pc2],
+        ["PC3 exposure", p.pc3],
+      ];
+      el("drawer-signals").innerHTML = signals
+        .map(([name, value]) => {
+          const pct = clamp((Math.abs(value || 0) / 3) * 100, 2, 100);
+          const cls = (value || 0) >= 0 ? "bar-pos" : "bar-neg";
+          return `<div class="bar-row">
+            <div class="bar-top"><span class="k">${name}</span><span class="v">${fmtSigned(value, 3)}</span></div>
+            <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+          </div>`;
+        })
+        .join("");
+      const c = data.risk_contributor;
+      el("drawer-book").innerHTML = [
+        cell("Side", p.side || "flat"),
+        cell("Vol contribution", c ? fmtPct(c.share, 1) : "—"),
+        cell("Book gross", fmtPct(book.gross, 1)),
+        cell("Book net", fmtPct(book.net, 1)),
+        cell("Construction", data.construction || "—"),
+        cell("Universe", data.names != null ? String(data.names) + " names" : "—"),
+      ].join("");
+      if (icHost) {
+        const fic = data.factor_ic || {};
+        const rows = Object.entries(fic)
+          .map(([name, v]) => {
+            const ic = typeof v === "object" && v ? v.ic_mean ?? v.mean : v;
+            const t = typeof v === "object" && v ? v.ic_tstat_nw ?? v.tstat : null;
+            return [name, ic, t];
+          })
+          .filter(([, ic]) => isNum(ic))
+          .slice(0, 6);
+        icHost.innerHTML = rows.length
+          ? rows
+              .map(([name, ic, t]) => {
+                const pct = clamp((Math.abs(ic) / 0.05) * 100, 4, 100);
+                const cls = ic >= 0 ? "bar-pos" : "bar-neg";
+                const label = t != null && isNum(t) ? `${fmtSigned(ic, 3)} (t=${fmt(t, 1)})` : fmtSigned(ic, 3);
+                return `<div class="bar-row">
+                  <div class="bar-top"><span class="k">${name}</span><span class="v">${label}</span></div>
+                  <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+                </div>`;
+              })
+              .join("")
+          : '<div class="breach-none">no factor IC on this snapshot</div>';
+      }
+      el("drawer-note").textContent =
+        "Name card from the live research path (same scores as the book). Not a trade recommendation.";
+      const point = state.byId.get(sym);
+      if (point) {
+        state.hover = point;
+        paintTip(point);
+      }
+    } catch (err) {
+      el("drawer-meta").textContent = String(err);
+    }
+  }
+
+  function closeDrawer() {
+    const drawer = el("name-drawer");
+    const backdrop = el("drawer-backdrop");
+    if (drawer) drawer.hidden = true;
+    if (backdrop) backdrop.hidden = true;
   }
 
   /* ── 3D projection ───────────────────────────────────────────── */
@@ -1063,12 +1421,41 @@
         await refreshStatus();
         await refreshCloud();
         await refreshPaper();
+        await refreshOpsExtras();
         try {
           renderResearch(await getJSON("/api/research"));
           renderSpark(await getJSON("/api/experiments"));
         } catch (_) {}
       });
     }
+
+    const searchForm = el("search-form");
+    const searchInput = el("search-input");
+    if (searchForm && searchInput) {
+      searchForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        openName(searchInput.value);
+      });
+    }
+    const drawerClose = el("drawer-close");
+    if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
+    const backdrop = el("drawer-backdrop");
+    if (backdrop) backdrop.addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeDrawer();
+    });
+
+    // Click a near point to open the name card (not while dragging).
+    let moved = false;
+    canvas.addEventListener("pointerdown", () => {
+      moved = false;
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (state.dragging) moved = true;
+    });
+    canvas.addEventListener("pointerup", () => {
+      if (!moved && state.hover && state.hover.symbol) openName(state.hover.symbol);
+    });
   }
 
   function startClock() {
@@ -1113,6 +1500,24 @@
     }
   }
 
+  async function refreshOpsExtras() {
+    try {
+      renderBlotter(await getJSON("/api/blotter?limit=120"));
+    } catch (err) {
+      console.error("blotter", err);
+    }
+    try {
+      renderAttribution(await getJSON("/api/attribution"));
+    } catch (err) {
+      console.error("attribution", err);
+    }
+    try {
+      renderOps(await getJSON("/api/ops"));
+    } catch (err) {
+      console.error("ops", err);
+    }
+  }
+
   async function boot() {
     resize();
     // Browsers restore <select> values across reloads, which would leave the
@@ -1123,6 +1528,7 @@
     wireEvents();
     wireDesk();
     startClock();
+    setModeLabels();
     requestAnimationFrame(render);
 
     await refreshStatus();
@@ -1135,11 +1541,13 @@
     }
     refreshTape();
     refreshPaper();
+    refreshOpsExtras();
 
     setInterval(refreshTape, 5000);
     setInterval(refreshStatus, 30000);
     setInterval(refreshCloud, 120000);
     setInterval(refreshPaper, 45000);
+    setInterval(refreshOpsExtras, 60000);
   }
 
   boot();

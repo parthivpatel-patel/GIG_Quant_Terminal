@@ -55,6 +55,25 @@ def _open_store():
     return open_store(read_only=True)
 
 
+_STATUS_CACHE: dict[str, Any] = {"ts": 0.0, "tables": {}, "asof": None}
+
+
+def warm_status_cache() -> None:
+    """Prime lake stats before the paper loop contends for DuckDB."""
+    global _STATUS_CACHE
+    try:
+        from gig.data.lake import db_lock
+
+        with db_lock(timeout=30.0):
+            store = _open_store()
+            tables = store.stats()
+            last = store.con.execute("SELECT MAX(dt) FROM bars").fetchone()
+            asof = str(pd.Timestamp(last[0]).date()) if last and last[0] is not None else None
+        _STATUS_CACHE = {"ts": time.time(), "tables": tables, "asof": asof}
+    except Exception:
+        pass
+
+
 def service_status() -> dict[str, Any]:
     """Install, data source, key availability, and DuckDB row counts."""
     settings = get_settings()
@@ -96,14 +115,72 @@ def service_status() -> dict[str, Any]:
     except Exception as exc:
         payload["ollama"] = {"available": False, "error": f"{type(exc).__name__}: {exc}"}
     try:
-        store = _open_store()
-        payload["tables"] = store.stats()
-        last = store.con.execute("SELECT MAX(dt) FROM bars").fetchone()
-        if last and last[0] is not None:
-            payload["asof"] = str(pd.Timestamp(last[0]).date())
-        payload["db_ready"] = bool(payload["tables"].get("bars", 0))
+        from gig.ops.status import ops_snapshot
+
+        payload["ops"] = ops_snapshot()
+    except Exception as exc:
+        payload["ops"] = {"available": False, "error": f"{type(exc).__name__}: {exc}"}
+    try:
+        from gig.data.lake import db_lock
+
+        now = time.time()
+        # Reuse lake stats briefly so the status strip never blocks on a full scan
+        # while the paper loop / factor cloud holds the DuckDB lock.
+        if now - float(_STATUS_CACHE["ts"] or 0) < 45 and _STATUS_CACHE.get("tables"):
+            payload["tables"] = dict(_STATUS_CACHE["tables"])
+            payload["asof"] = _STATUS_CACHE.get("asof")
+            payload["db_ready"] = bool(payload["tables"].get("bars", 0))
+        else:
+            try:
+                with db_lock(timeout=0.75):
+                    store = _open_store()
+                    tables = store.stats()
+                    last = store.con.execute("SELECT MAX(dt) FROM bars").fetchone()
+                    asof = None
+                    if last and last[0] is not None:
+                        asof = str(pd.Timestamp(last[0]).date())
+            except TimeoutError:
+                # Prefer stale-but-true over a red "Lake empty" flash.
+                if _STATUS_CACHE.get("tables"):
+                    payload["tables"] = dict(_STATUS_CACHE["tables"])
+                    payload["asof"] = _STATUS_CACHE.get("asof")
+                    payload["db_ready"] = bool(payload["tables"].get("bars", 0))
+                elif (payload.get("ops") or {}).get("freshness", {}).get("asof"):
+                    payload["asof"] = payload["ops"]["freshness"]["asof"]
+                    payload["db_ready"] = True
+                    payload["tables"] = {
+                        "bars": int((_STATUS_CACHE.get("tables") or {}).get("bars") or 1)
+                    }
+                else:
+                    dbp = settings.db_path
+                    if dbp.exists() and dbp.stat().st_size > 1_000_000:
+                        payload["db_ready"] = True
+                        payload["tables"] = {"bars": 1}
+                        payload["error"] = "database busy — showing lake present"
+                    else:
+                        payload["error"] = "database busy"
+                return payload
+            prev_bars = int((_STATUS_CACHE.get("tables") or {}).get("bars") or 0)
+            cur_bars = int(tables.get("bars") or 0)
+            if prev_bars > cur_bars > 0:
+                tables["bars"] = prev_bars
+            _STATUS_CACHE["ts"] = now
+            _STATUS_CACHE["tables"] = tables
+            _STATUS_CACHE["asof"] = asof
+            payload["tables"] = tables
+            payload["asof"] = asof
+            payload["db_ready"] = bool(tables.get("bars", 0))
     except Exception as exc:
         payload["error"] = f"{type(exc).__name__}: {exc}"
+        # Keep last-known lake stats so the strip does not flash "Lake empty".
+        if _STATUS_CACHE.get("tables"):
+            payload["tables"] = dict(_STATUS_CACHE["tables"])
+            payload["asof"] = _STATUS_CACHE.get("asof") or payload.get("asof")
+            payload["db_ready"] = bool(payload["tables"].get("bars", 0))
+        elif (payload.get("ops") or {}).get("freshness", {}).get("asof"):
+            payload["asof"] = payload["ops"]["freshness"]["asof"]
+            payload["db_ready"] = True
+            payload["tables"] = {"bars": 1}
     return payload
 
 
@@ -262,7 +339,7 @@ def _factor_cloud_impl(
 
     settings = get_settings()
     panel, _store = _load_cloud_panel(limit, lookback_days)
-    if panel is None or panel.close.empty:
+    if panel is None or panel.close is None or getattr(panel.close, "empty", True):
         return {
             "available": False,
             "hint": "python -m gig universe refresh && python -m gig ingest",
@@ -291,7 +368,17 @@ def _factor_cloud_impl(
     if combo.empty:
         return {"available": False, "hint": "not enough history in DuckDB", "points": []}
 
-    asof = pd.Timestamp(combo.index[-1])
+    raw_asof = combo.index[-1]
+    try:
+        asof = pd.Timestamp(raw_asof)
+    except Exception:
+        asof = pd.to_datetime(raw_asof, errors="coerce")
+    if asof is None or pd.isna(asof):
+        return {
+            "available": False,
+            "hint": f"latest score index is not a date ({raw_asof!r})",
+            "points": [],
+        }
     raw = {
         "momentum": Momentum12m1().compute(panel),
         "reversal": ShortTermReversal().compute(panel),
@@ -438,7 +525,11 @@ def _factor_cloud_impl(
             "longs": int((weights > 0).sum()),
             "shorts": int((weights < 0).sum()),
         },
-        "sector_net": {str(k): _f(v) for k, v in sector_net.items() if _f(v)},
+        "sector_net": {
+            str(k): fv
+            for k, v in sector_net.items()
+            if (fv := _f(v)) is not None and abs(fv) >= 1e-4
+        },
         "breaches": [
             {"name": b.name, "value": _f(b.value), "limit": _f(b.limit)} for b in breaches
         ],
@@ -526,30 +617,35 @@ def live_tape(limit: int = 40) -> dict[str, Any]:
 
 def _closes_as_quotes(limit: int) -> list[dict[str, Any]]:
     try:
-        store = _open_store()
-        rows = store.con.execute(
-            f"""
-            SELECT symbol, close, dollar_volume
-            FROM bars
-            WHERE dt = (SELECT MAX(dt) FROM bars)
-            ORDER BY dollar_volume DESC NULLS LAST
-            LIMIT {int(limit)}
-            """
-        ).df()
+        from gig.data.lake import db_lock
+
+        with db_lock():
+            store = _open_store()
+            rows = store.con.execute(
+                f"""
+                SELECT symbol, close, dollar_volume
+                FROM bars
+                WHERE dt = (SELECT MAX(dt) FROM bars)
+                ORDER BY dollar_volume DESC NULLS LAST
+                LIMIT {int(limit)}
+                """
+            ).df()
     except Exception:
         return []
-    if rows.empty:
+    if rows is None or rows.empty:
         return []
-    return [
-        {
-            "symbol": str(r["symbol"]),
-            "bid": None,
-            "ask": None,
-            "last": _f(r["close"]),
-            "source": "duckdb_last_close",
-        }
-        for _, r in rows.iterrows()
-    ]
+    out: list[dict[str, Any]] = []
+    for r in rows.to_dict(orient="records"):
+        out.append(
+            {
+                "symbol": str(r.get("symbol") or ""),
+                "bid": None,
+                "ask": None,
+                "last": _f(r.get("close")),
+                "source": "duckdb_last_close",
+            }
+        )
+    return out
 
 
 def terminal_payload(limit: int = 220) -> dict[str, Any]:

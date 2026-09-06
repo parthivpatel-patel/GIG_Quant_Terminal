@@ -20,42 +20,58 @@
       <span class="brand-sub" id="brand-build">factor-neutral · lambdarank · paper</span>
     </div>
   </div>
-  <div class="pills" id="pills">
-    <span class="pill" id="pill-db">db —</span>
-    <span class="pill" id="pill-universe">universe —</span>
-    <span class="pill" id="pill-asof">asof —</span>
-    <span class="pill" id="pill-feed">feed —</span>
-    <span class="pill" id="pill-ml">ml —</span>
-    <span class="pill" id="pill-ollama">ollama —</span>
-    <span class="pill" id="pill-paper">paper —</span>
+
+  <form class="search" id="search-form" autocomplete="off">
+    <input id="search-input" type="search" maxlength="12" placeholder="Find ticker…" aria-label="Search ticker" />
+    <button class="btn" type="submit">lookup</button>
+  </form>
+
+  <div class="pills" id="pills" title="System health">
+    <span class="pill" id="pill-db" title="Rows stored in the local DuckDB lake">Lake —</span>
+    <span class="pill" id="pill-universe" title="Names in the active research universe">Universe —</span>
+    <span class="pill" id="pill-asof" title="Date of the newest price bar">Data as-of —</span>
+    <span class="pill" id="pill-feed" title="Live quote vendor">Quotes —</span>
+    <span class="pill" id="pill-ml" title="Walk-forward ranker backend">Ranker —</span>
+    <span class="pill" id="pill-ollama" title="Local research desk LLM">Desk —</span>
+    <span class="pill" id="pill-paper" title="Alpaca paper broker">Paper —</span>
   </div>
+
   <div class="top-actions">
-    <button class="btn" id="btn-refresh" title="Clear cache and reload">refresh</button>
+    <button class="btn" id="btn-refresh" title="Clear cache and reload">Refresh</button>
     <div class="clock" id="clock">--:--:--</div>
   </div>
 </header>
+
+<div class="ops-strip" id="ops-strip" title="Trading operations — why this strip exists: lake freshness, kill switch, and rebalance loop health">
+  <span class="ops-item" id="ops-level">System —</span>
+  <span class="ops-item" id="ops-fresh">Market data —</span>
+  <span class="ops-item" id="ops-kill">Kill switch off</span>
+  <span class="ops-item" id="ops-hb">Rebalance loop —</span>
+  <span class="ops-item" id="ops-last">Last rebalance —</span>
+  <span class="ops-alerts" id="ops-alerts"></span>
+</div>
 
 <main class="layout">
 
   <section class="rail rail-left">
     <div class="panel">
       <div class="panel-head">
-        <h2>Book</h2>
+        <h2>Target book</h2>
         <span class="panel-note" id="book-asof">—</span>
       </div>
       <div class="book-stats">
-        <div class="stat"><span class="stat-k">gross</span><span class="stat-v" id="bk-gross">—</span></div>
-        <div class="stat"><span class="stat-k">net</span><span class="stat-v" id="bk-net">—</span></div>
-        <div class="stat"><span class="stat-k">longs</span><span class="stat-v" id="bk-longs">—</span></div>
-        <div class="stat"><span class="stat-k">shorts</span><span class="stat-v" id="bk-shorts">—</span></div>
-        <div class="stat wide"><span class="stat-k">build</span><span class="stat-v" id="bk-build">—</span></div>
+        <div class="stat"><span class="stat-k">Gross</span><span class="stat-v" id="bk-gross">—</span></div>
+        <div class="stat"><span class="stat-k">Net</span><span class="stat-v" id="bk-net">—</span></div>
+        <div class="stat"><span class="stat-k">Longs</span><span class="stat-v" id="bk-longs">—</span></div>
+        <div class="stat"><span class="stat-k">Shorts</span><span class="stat-v" id="bk-shorts">—</span></div>
+        <div class="stat wide"><span class="stat-k">Construction</span><span class="stat-v" id="bk-build">—</span></div>
       </div>
       <div class="leg">
-        <div class="leg-head leg-long">LONG</div>
+        <div class="leg-head leg-long">Long book</div>
         <ul class="leg-list" id="list-long"></ul>
       </div>
       <div class="leg">
-        <div class="leg-head leg-short">SHORT</div>
+        <div class="leg-head leg-short">Short book</div>
         <ul class="leg-list" id="list-short"></ul>
       </div>
     </div>
@@ -66,37 +82,53 @@
         <span class="panel-note" id="paper-open">—</span>
       </div>
       <div class="metrics" id="paper-metrics"></div>
-      <div class="panel-sub">Largest drift vs target</div>
+      <div class="panel-sub">Largest weight drift vs target</div>
       <ul class="leg-list" id="paper-drift"></ul>
+      <div class="panel-sub">Paper equity trail</div>
+      <canvas id="nav-spark" height="56"></canvas>
       <p class="disclaimer" id="paper-note">
-        Orders are not sent from this UI. Use
-        <code>python -m gig trade plan</code> then
-        <code>trade run --yes</code>.
+        Read-only here. Orders: <code>gig trade plan</code> then <code>trade run --yes</code>.
+        Halt: <code>gig ops halt</code>.
       </p>
+      <span class="panel-note" id="nav-note" hidden></span>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Trade blotter</h2>
+        <span class="panel-note" id="blotter-note">held vs target</span>
+      </div>
+      <div class="metrics" id="blotter-metrics"></div>
+      <ul class="leg-list" id="blotter-rows"></ul>
     </div>
   </section>
 
   <section class="stage">
     <div class="stage-head">
       <div>
-        <h2>Neutralized factor space</h2>
-        <p class="stage-blurb" id="stage-blurb">momentum · idiosyncratic vol · short-term reversal · alpha rank colour</p>
+        <h2>Factor space</h2>
+        <p class="stage-blurb" id="stage-blurb">Neutralized momentum · idiosyncratic vol · short-term reversal · alpha colour</p>
       </div>
       <div class="controls">
+        <div class="mode-tabs" id="mode-tabs">
+          <button class="mode-tab active" data-mode="alpha" type="button">Alpha</button>
+          <button class="mode-tab" data-mode="risk" type="button">Risk PCA</button>
+          <button class="mode-tab" data-mode="held" type="button">Held only</button>
+        </div>
         <label class="ctl" id="ctl-y">
-          <span>Y</span>
+          <span>Y-axis</span>
           <select id="axis-y" autocomplete="off">
-            <option value="ivol">idiosyncratic vol</option>
-            <option value="live">live % change</option>
-            <option value="score">alpha score</option>
+            <option value="ivol">Idiosyncratic vol</option>
+            <option value="live">Live % change</option>
+            <option value="score">Alpha score</option>
           </select>
         </label>
         <label class="ctl">
           <span>Sector</span>
-          <select id="sector-filter" autocomplete="off"><option value="">all</option></select>
+          <select id="sector-filter" autocomplete="off"><option value="">All</option></select>
         </label>
-        <button class="btn" id="btn-spin" data-on="1">spin</button>
-        <button class="btn" id="btn-reset">reset</button>
+        <button class="btn" id="btn-spin" data-on="1">Spin</button>
+        <button class="btn" id="btn-reset">Reset view</button>
       </div>
     </div>
 
@@ -104,25 +136,25 @@
       <canvas id="scene"></canvas>
       <div class="tip" id="tip" hidden></div>
       <div class="axis-legend">
-        <div><span class="ax ax-x"></span>x — <span id="legend-x">12-1 momentum</span></div>
-        <div><span class="ax ax-y"></span>y — <span id="legend-y">idiosyncratic vol</span></div>
-        <div><span class="ax ax-z"></span>z — <span id="legend-z">short-term reversal</span></div>
-        <div class="legend-note" id="legend-note">rank-normalized · ring = held · pulse = new quote</div>
+        <div><span class="ax ax-x"></span>X — <span id="legend-x">12-1 momentum</span></div>
+        <div><span class="ax ax-y"></span>Y — <span id="legend-y">idiosyncratic vol</span></div>
+        <div><span class="ax ax-z"></span>Z — <span id="legend-z">short-term reversal</span></div>
+        <div class="legend-note" id="legend-note">Click a point or search a ticker · ring = held · pulse = new quote</div>
       </div>
       <div class="stage-empty" id="stage-empty" hidden>
-        <p>No bars in DuckDB yet.</p>
+        <p>No price history in the lake yet.</p>
         <code>python -m gig universe refresh</code>
-        <code>python -m gig ingest</code>
+        <code>python scripts/daily_ingest.py</code>
       </div>
     </div>
 
     <div class="stage-foot">
       <div class="panel flat">
-        <div class="panel-head"><h2>Sector net</h2><span class="panel-note">|net| ≤ limit</span></div>
+        <div class="panel-head"><h2>Sector net exposure</h2><span class="panel-note">vs sector limit</span></div>
         <div id="sector-bars" class="bars compact"></div>
       </div>
       <div class="panel flat">
-        <div class="panel-head"><h2>Experiment path</h2><span class="panel-note">Sharpe trail</span></div>
+        <div class="panel-head"><h2>Backtest Sharpe path</h2><span class="panel-note">experiment trail</span></div>
         <canvas id="spark" height="64"></canvas>
       </div>
     </div>
@@ -137,13 +169,25 @@
 
     <div class="panel">
       <div class="panel-head">
-        <h2>Ex-ante risk</h2>
+        <h2>Predicted risk</h2>
         <span class="panel-note" id="risk-model-note">—</span>
       </div>
       <div class="metrics" id="risk-metrics"></div>
       <div class="bars" id="risk-split"></div>
+      <div class="panel-sub">Factor exposures · Σ = BB′ + D</div>
+      <div class="bars" id="exposure-bars"></div>
+      <canvas id="scree" height="56"></canvas>
       <div class="panel-sub">Top volatility contributors</div>
       <ul class="leg-list" id="risk-contrib"></ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Performance attribution</h2>
+        <span class="panel-note" id="attr-note">signal · risk</span>
+      </div>
+      <div class="metrics" id="attr-metrics"></div>
+      <div class="bars" id="attr-signal"></div>
     </div>
 
     <div class="panel">
@@ -167,15 +211,34 @@
       </div>
       <div class="prompts" id="desk-prompts"></div>
       <div class="desk-chat" id="desk-chat">
-        <div class="desk-msg muted">Ask about the book, risk, or last backtest. Numbers come from the live snapshot — not invented.</div>
+        <div class="desk-msg muted">Ask about the book, risk, or last backtest. Answers use live snapshot numbers only.</div>
       </div>
       <form class="desk-form" id="desk-form">
         <input id="desk-input" type="text" maxlength="500" placeholder="e.g. Is the book factor-neutral today?" autocomplete="off" />
-        <button class="btn primary" type="submit">ask</button>
+        <button class="btn primary" type="submit">Ask</button>
       </form>
     </div>
   </section>
 </main>
+
+<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+<aside class="drawer" id="name-drawer" hidden aria-label="Name research card">
+  <div class="drawer-head">
+    <div>
+      <h2 id="drawer-sym">—</h2>
+      <p class="drawer-sub" id="drawer-meta">—</p>
+    </div>
+    <button class="btn" id="drawer-close" type="button">Close</button>
+  </div>
+  <div class="panel-sub">Snapshot</div>
+  <div class="metrics" id="drawer-metrics"></div>
+  <div class="panel-sub">Factor signals (neutralized z)</div>
+  <div class="bars" id="drawer-signals"></div>
+  <div class="panel-sub">Book · risk · IC context</div>
+  <div class="metrics" id="drawer-book"></div>
+  <div class="bars" id="drawer-ic"></div>
+  <p class="disclaimer" id="drawer-note"></p>
+</aside>
 
 <footer class="tape">
   <div class="tape-strip" id="tape-strip"></div>

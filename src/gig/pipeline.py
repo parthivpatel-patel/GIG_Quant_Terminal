@@ -227,7 +227,7 @@ def _ingest_vendor_feeds(
     filing_symbols: list[str] | None = None,
     quote_symbols: list[str] | None = None,
 ) -> dict[str, int]:
-    out = {"news": 0, "macro": 0, "filings": 0, "quotes": 0, "calendar": 0}
+    out = {"news": 0, "macro": 0, "filings": 0, "quotes": 0, "calendar": 0, "fundamentals": 0}
     filing_symbols = filing_symbols or symbols
     quote_symbols = quote_symbols or symbols[:50]
     if use_news:
@@ -247,10 +247,16 @@ def _ingest_vendor_feeds(
     if settings.keys_status()["edgar"]:
         try:
             from gig.data.providers.edgar import fetch_cik_map, fetch_filings
+            from gig.data.providers.fundamentals_sec import fetch_book_equity
 
             cik = fetch_cik_map(user_agent=settings.edgar_user_agent)
             out["filings"] = store.upsert_filings(
                 fetch_filings(filing_symbols, cik, settings.edgar_user_agent)
+            )
+            # Value factor sleeve: liquid names only (companyfacts is one HTTP call each).
+            fund_syms = list(dict.fromkeys([*(quote_symbols or []), *filing_symbols[:60]]))[:80]
+            out["fundamentals"] = store.upsert_fundamentals(
+                fetch_book_equity(fund_syms, cik, settings.edgar_user_agent)
             )
         except Exception as extra:
             log.warning("EDGAR ingest skipped: %s", extra)
@@ -315,6 +321,12 @@ def _load_live_panel(settings, use_news: bool) -> MarketPanel:
         filings = store.load_filings()
         if filings is not None and not filings.empty:
             panel.filings = filings
+        try:
+            fundamentals = store.load_fundamentals()
+            if fundamentals is not None and not fundamentals.empty:
+                panel.fundamentals = fundamentals
+        except Exception:
+            pass
         macro = store.load_macro()
         if macro is not None and not macro.empty:
             panel.macro = macro

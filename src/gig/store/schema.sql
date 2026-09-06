@@ -96,6 +96,17 @@ CREATE TABLE IF NOT EXISTS calendar (
     extra VARCHAR
 );
 
+-- Point-in-time fundamentals (Compustat/Norgate-shaped). Never backfill
+-- without an asof_date — the factor join is as-of that timestamp.
+CREATE TABLE IF NOT EXISTS fundamentals (
+    asof_date DATE NOT NULL,
+    symbol VARCHAR NOT NULL,
+    field VARCHAR NOT NULL,
+    value DOUBLE,
+    source VARCHAR,
+    PRIMARY KEY (asof_date, symbol, field)
+);
+
 -- Trading audit trail. Append-only on purpose: the value of these three tables
 -- is being able to reconstruct, after the fact, what the strategy wanted, what
 -- the risk gate said about it, and what was actually sent. Rewriting history

@@ -33,7 +33,9 @@ pip install -e ".[ml]"          # LightGBM lambdarank (auto-selected)
 
 ## Additions that would add depth
 
-1. **Fundamentals (value/quality)** — point-in-time book equity, earnings, accruals. Needs Compustat/Norgate, not yfinance `.info`.
+1. **Fundamentals (value/quality)** — SEC companyfacts book equity + shares
+   (`Store.upsert_fundamentals`, `BookToPrice`). Filing date is the as-of.
+   Compustat/Norgate remain the gold standard for full history.
 2. **Filings NLP** — 8-K/10-K from SEC EDGAR, parsed at *file datetime*, not “the document mentions AAPL.” Same as-of join as news.
 3. **CatBoost ranker** — same walk-forward wrapper once LightGBM paper drift looks clean.
 4. **Earnings surprise** — SUE against a stale consensus snapshot, which must be point-in-time.
