@@ -22,11 +22,17 @@ htmlcov/
 *.db-shm
 *.db-wal
 
-# Local data lakes (GitHub rejects files over 100 MB)
+# Runtime junk (recreated locally)
+run_24_7_pid.txt
+run_24_7_stdout.log
+run_24_7_stderr.log
+*.log
+
+# Optional large DuckDB naming variants (keep gig_database.db tracked)
 *.duckdb
 *.duckdb.wal
 data/cache/
-results/
+
 .DS_Store
 Thumbs.db
 .idea/
