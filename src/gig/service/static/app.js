@@ -34,6 +34,12 @@
     lastPipeline: null,
   };
 
+  const present = new URLSearchParams(location.search).get("present") === "1";
+  if (present) {
+    state.axisY = "score";
+    document.documentElement.classList.add("present");
+  }
+
   const el = (id) => document.getElementById(id);
   const canvas = el("scene");
   const ctx = canvas.getContext("2d");
@@ -772,7 +778,11 @@
       cell("bt sharpe", fmt(m.sharpe, 2), isNum(m.sharpe) && m.sharpe >= 0 ? "good" : "bad"),
       cell("sys share", fmtPct(risk.systematic_share, 0)),
       cell("pred/real", isNum(risk.pred_over_real) ? risk.pred_over_real.toFixed(2) + "x" : "—"),
-      cell("paper Δ", fmtPct(paper.total_return, 1)),
+      isNum(paper.total_return)
+        ? cell("paper Δ", fmtPct(paper.total_return, 1))
+        : present
+          ? cell("ann return", fmtPct(m.ann_return, 1), isNum(m.ann_return) && m.ann_return >= 0 ? "good" : "bad")
+          : cell("paper Δ", "—"),
     ].join("");
     if (note) {
       note.textContent =
@@ -1021,7 +1031,11 @@
       const c = data.risk_contributor;
       el("drawer-book").innerHTML = [
         cell("Side", p.side || "flat"),
-        cell("Vol contribution", c ? fmtPct(c.share, 1) : "—"),
+        c
+          ? cell("Vol contribution", fmtPct(c.share, 1))
+          : present
+            ? cell("ADV", fmtAdv(p.adv))
+            : cell("Vol contribution", "—"),
         cell("Book gross", fmtPct(book.gross, 1)),
         cell("Book net", fmtPct(book.net, 1)),
         cell("Construction", data.construction || "—"),

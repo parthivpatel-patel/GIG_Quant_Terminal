@@ -374,6 +374,19 @@ html, body {
 @keyframes flash { from { background: #1d3a4d; } to { background: transparent; } }
 .tick.flash { animation: flash 0.6s ease-out; }
 
+/* Clean frame for a recorded walkthrough (?present=1). Hides offline
+   broker panels and warning chips; the research book stays on screen. */
+html.present .ops-strip,
+html.present .pill-warn,
+html.present #panel-paper,
+html.present #panel-blotter,
+html.present #panel-desk,
+html.present #panel-sector,
+html.present .disclaimer {
+  display: none !important;
+}
+html.present .stage-foot { grid-template-columns: 1fr; }
+
 @media (max-width: 1200px) {
   html, body { overflow: auto; height: auto; min-height: 100%; }
   .layout {
