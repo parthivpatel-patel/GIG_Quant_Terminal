@@ -166,9 +166,6 @@
     select.value = sectors.includes(current) ? current : "";
     state.sector = select.value;
 
-    el("pill-asof").textContent = "Data as-of " + cloud.asof;
-    el("pill-universe").textContent = "Universe " + cloud.names + " names";
-    el("pill-universe").className = "pill pill-ok";
     el("book-asof").textContent = cloud.asof;
 
     renderBook(cloud);
@@ -357,79 +354,6 @@
 
   function renderStatus(s) {
     window.__gigLimits = s.limits || {};
-    const db = el("pill-db");
-    const tables = s.tables || {};
-    let bars = Number(tables.bars || 0);
-    const asofVal = s.asof || ((s.ops || {}).freshness || {}).asof || null;
-    // Never flash "Lake empty" when we clearly have an as-of date from ops/status.
-    if (!bars && (s.db_ready || asofVal)) {
-      bars = window.__gigLastBars || 1;
-    }
-    if (bars > 1) window.__gigLastBars = bars;
-    if (db) {
-      if (bars > 1) {
-        db.textContent = "Lake " + bars.toLocaleString() + " bars";
-        db.className = "pill pill-ok";
-      } else if (bars === 1 && asofVal) {
-        db.textContent = "Lake ready";
-        db.className = "pill pill-ok";
-        db.title = "Bar lake present (exact row count refreshing)";
-      } else if (asofVal) {
-        db.textContent = "Lake ready";
-        db.className = "pill pill-ok";
-      } else {
-        db.textContent = "Lake empty";
-        db.className = "pill pill-bad";
-      }
-    }
-
-    const asof = el("pill-asof");
-    if (asof) {
-      const ops = s.ops || {};
-      const f = ops.freshness || {};
-      asof.textContent = asofVal ? "Data as-of " + asofVal : "Data as-of —";
-      const level = f.level || (bars || asofVal ? "ok" : "bad");
-      asof.className =
-        "pill " +
-        (level === "ok" ? "pill-ok" : level === "warn" ? "pill-warn" : bars || asofVal ? "pill-warn" : "pill-bad");
-    }
-
-    const uni = el("pill-universe");
-    // universe pill filled from cloud; keep placeholder class until then
-
-    const keys = s.keys || {};
-    const live = keys.alpaca || keys.finnhub;
-    const feed = el("pill-feed");
-    feed.textContent = keys.alpaca ? "Quotes Alpaca IEX" : keys.finnhub ? "Quotes Finnhub" : "Quotes offline";
-    feed.className = "pill " + (live ? "pill-ok" : "pill-warn");
-
-    const ml = s.ml || {};
-    const mlp = el("pill-ml");
-    if (mlp) {
-      mlp.textContent = ml.lightgbm ? "Ranker LightGBM" : ml.sklearn ? "Ranker sklearn" : "Ranker off";
-      mlp.className = "pill " + (ml.lightgbm || ml.sklearn ? "pill-ok" : "pill-warn");
-    }
-
-    const ol = s.ollama || {};
-    const olp = el("pill-ollama");
-    if (olp) {
-      olp.textContent = ol.available && ol.model_ready ? "Desk Ollama" : ol.available ? "Desk model?" : "Desk structured";
-      olp.className = "pill " + (ol.available && ol.model_ready ? "pill-ok" : "pill-warn");
-    }
-
-    const paper = el("pill-paper");
-    if (paper) {
-      const kill = (s.ops && s.ops.kill_switch) || {};
-      if (kill.engaged) {
-        paper.textContent = "Paper HALTED";
-        paper.className = "pill pill-bad";
-      } else {
-        paper.textContent = keys.alpaca ? "Paper ready" : "Paper keys?";
-        paper.className = "pill " + (keys.alpaca ? "pill-ok" : "pill-warn");
-      }
-    }
-
-    if (s.ops) renderOps(s.ops);
   }
 
   function renderSectorNet(sectorNet) {
@@ -639,69 +563,6 @@
         )
         .join("");
       wireSymClicks(drift);
-    }
-  }
-
-  function renderOps(ops) {
-    const level = el("ops-level");
-    const fresh = el("ops-fresh");
-    const kill = el("ops-kill");
-    const hb = el("ops-hb");
-    const last = el("ops-last");
-    const alerts = el("ops-alerts");
-    if (!level) return;
-    if (!ops || !ops.available) {
-      level.textContent = "ops offline";
-      level.className = "ops-item warn";
-      return;
-    }
-    const lv = ops.level || "ok";
-    level.textContent =
-      lv === "ok" ? "System healthy" : lv === "warn" ? "System warning" : "System issue";
-    level.className = "ops-item " + lv;
-
-    const f = ops.freshness || {};
-    if (fresh) {
-      fresh.textContent = f.asof
-        ? "Market data " + f.asof + (isNum(f.age_days) ? ` (${f.age_days}d)` : "")
-        : "Market data —";
-      fresh.className = "ops-item " + (f.level || "warn");
-    }
-
-    const k = ops.kill_switch || {};
-    if (kill) {
-      kill.textContent = k.engaged ? "Kill switch ON" : "Kill switch off";
-      kill.className = "ops-item " + (k.engaged ? "bad" : "ok");
-      kill.title = k.reason || "Blocks new orders when on";
-    }
-
-    const h = ops.heartbeat || {};
-    if (hb) {
-      hb.textContent = h.ts ? "Rebalance loop " + (h.ok ? "OK" : "failed") : "Rebalance loop idle";
-      hb.className = "ops-item " + (h.ts ? (h.ok ? "ok" : "warn") : "warn");
-      hb.title = h.detail || "";
-    }
-
-    const lr = ops.last_run || null;
-    if (last) {
-      if (!lr || lr.error) {
-        last.textContent = "Last rebalance —";
-        last.className = "ops-item";
-        last.title = (lr && lr.error) || "";
-      } else {
-        last.textContent =
-          "Last rebalance " +
-          (lr.blocked ? "blocked" : lr.dry_run ? "dry-run" : "live") +
-          (isNum(lr.turnover) ? ` · turnover ${fmtPct(lr.turnover, 0)}` : "");
-        last.className = "ops-item " + (lr.blocked ? "warn" : "ok");
-      }
-    }
-
-    if (alerts) {
-      alerts.innerHTML = (ops.alerts || [])
-        .slice(0, 3)
-        .map((a) => `<span class="ops-alert ${a.level || ""}">${a.detail || a.code}</span>`)
-        .join("");
     }
   }
 
@@ -1422,6 +1283,7 @@
         await refreshCloud();
         await refreshPaper();
         await refreshOpsExtras();
+        await refreshModels();
         try {
           renderResearch(await getJSON("/api/research"));
           renderSpark(await getJSON("/api/experiments"));
@@ -1511,10 +1373,111 @@
     } catch (err) {
       console.error("attribution", err);
     }
+  }
+
+  function textSpan(cls, text) {
+    const span = document.createElement("span");
+    span.className = cls;
+    span.textContent = text;
+    return span;
+  }
+
+  function renderModelRegistry(payload) {
+    const list = el("model-list");
+    list.replaceChildren();
+    const rows = (payload && payload.models) || [];
+    if (!rows.length) {
+      const li = document.createElement("li");
+      li.append(textSpan("sym", "DATA UNAVAILABLE"));
+      list.append(li);
+      return;
+    }
+    rows.forEach((row) => {
+      const li = document.createElement("li");
+      li.title = row.notes || "";
+      li.append(
+        textSpan("sym", row.model_id || "—"),
+        textSpan("wt", row.status || "—"),
+        textSpan("sc", row.family || "—")
+      );
+      list.append(li);
+    });
+  }
+
+  function renderMarketModels(payload) {
+    const note = el("model-note");
+    const metrics = el("model-metrics");
+    const bars = el("hmm-bars");
+    const cell = (k, v) => {
+      const box = document.createElement("div");
+      box.className = "m";
+      const kEl = document.createElement("span");
+      kEl.className = "m-k";
+      kEl.textContent = k;
+      const vEl = document.createElement("span");
+      vEl.className = "m-v";
+      vEl.textContent = v;
+      box.append(kEl, vEl);
+      return box;
+    };
+    metrics.replaceChildren();
+    bars.replaceChildren();
+    if (!payload || !payload.available) {
+      note.textContent = (payload && payload.reason) || "DATA UNAVAILABLE";
+      metrics.append(cell("fit", "DATA UNAVAILABLE"));
+      return;
+    }
+    const cmp = payload.variance_forecast_comparison || {};
+    const garch = payload.garch || {};
+    const ewma = payload.ewma || {};
+    const hmm = payload.hmm || {};
+    const scale = payload.suggested_exposure_scale || {};
+    note.textContent = `research · ${payload.asof || "—"} · ${payload.n || 0}d`;
+    metrics.append(
+      cell("GARCH vol", isNum(garch.next_vol_annualized) ? fmtPct(garch.next_vol_annualized, 1) : "—"),
+      cell("EWMA vol", isNum(ewma.next_vol_annualized) ? fmtPct(ewma.next_vol_annualized, 1) : "—"),
+      cell("lower QLIKE", cmp.lower_score || "—"),
+      cell("exposure scale", isNum(scale.value) ? scale.value.toFixed(2) : "—")
+    );
+    const probs = hmm.filtered_last || [];
+    const ranked = hmm.post_hoc_by_mean || {};
+    probs.forEach((p, i) => {
+      const rank = Object.keys(ranked).find((key) => ranked[key] && ranked[key].state === i);
+      const label = rank || `state ${i}`;
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      const top = document.createElement("div");
+      top.className = "bar-top";
+      const k = document.createElement("span");
+      k.className = "k";
+      k.textContent = label;
+      const v = document.createElement("span");
+      v.className = "v";
+      v.textContent = isNum(p) ? (p * 100).toFixed(1) + "%" : "—";
+      top.append(k, v);
+      const track = document.createElement("div");
+      track.className = "bar-track";
+      const fill = document.createElement("div");
+      fill.className = "bar-fill bar-neutral";
+      fill.style.width = `${clamp((isNum(p) ? p : 0) * 100, 0, 100)}%`;
+      track.append(fill);
+      row.append(top, track);
+      bars.append(row);
+    });
+  }
+
+  async function refreshModels() {
     try {
-      renderOps(await getJSON("/api/ops"));
+      renderModelRegistry(await getJSON("/api/models"));
     } catch (err) {
-      console.error("ops", err);
+      console.error("models", err);
+      renderModelRegistry(null);
+    }
+    try {
+      renderMarketModels(await getJSON("/api/models/market"));
+    } catch (err) {
+      console.error("market models", err);
+      renderMarketModels({ available: false, reason: "DATA UNAVAILABLE" });
     }
   }
 
@@ -1542,6 +1505,7 @@
     refreshTape();
     refreshPaper();
     refreshOpsExtras();
+    refreshModels();
 
     setInterval(refreshTape, 5000);
     setInterval(refreshStatus, 30000);

@@ -17,9 +17,9 @@ from __future__ import annotations
 
 import threading
 import time
-from contextlib import contextmanager
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from datetime import date, timedelta
-from typing import Iterator
 
 import pandas as pd
 
@@ -88,10 +88,8 @@ def reset_shared_stores() -> None:
     """Close and drop process-local connections (tests / clean shutdown)."""
     with _DB_LOCK:
         for store in list(_SHARED.values()):
-            try:
+            with suppress(Exception):
                 store.close()  # type: ignore[attr-defined]
-            except Exception:
-                pass
         _SHARED.clear()
 
 

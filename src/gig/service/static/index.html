@@ -26,30 +26,11 @@
     <button class="btn" type="submit">lookup</button>
   </form>
 
-  <div class="pills" id="pills" title="System health">
-    <span class="pill" id="pill-db" title="Rows stored in the local DuckDB lake">Lake —</span>
-    <span class="pill" id="pill-universe" title="Names in the active research universe">Universe —</span>
-    <span class="pill" id="pill-asof" title="Date of the newest price bar">Data as-of —</span>
-    <span class="pill" id="pill-feed" title="Live quote vendor">Quotes —</span>
-    <span class="pill" id="pill-ml" title="Walk-forward ranker backend">Ranker —</span>
-    <span class="pill" id="pill-ollama" title="Local research desk LLM">Desk —</span>
-    <span class="pill" id="pill-paper" title="Alpaca paper broker">Paper —</span>
-  </div>
-
   <div class="top-actions">
     <button class="btn" id="btn-refresh" title="Clear cache and reload">Refresh</button>
     <div class="clock" id="clock">--:--:--</div>
   </div>
 </header>
-
-<div class="ops-strip" id="ops-strip" title="Trading operations — why this strip exists: lake freshness, kill switch, and rebalance loop health">
-  <span class="ops-item" id="ops-level">System —</span>
-  <span class="ops-item" id="ops-fresh">Market data —</span>
-  <span class="ops-item" id="ops-kill">Kill switch off</span>
-  <span class="ops-item" id="ops-hb">Rebalance loop —</span>
-  <span class="ops-item" id="ops-last">Last rebalance —</span>
-  <span class="ops-alerts" id="ops-alerts"></span>
-</div>
 
 <main class="layout">
 
@@ -202,6 +183,21 @@
     <div class="panel">
       <div class="panel-head"><h2>Factor IC</h2><span class="panel-note">Newey–West t</span></div>
       <div id="ic-bars" class="bars"></div>
+    </div>
+
+    <div class="panel" id="model-council">
+      <div class="panel-head">
+        <h2>Model council</h2>
+        <span class="panel-note" id="model-note">research</span>
+      </div>
+      <div class="metrics" id="model-metrics"></div>
+      <div class="panel-sub">Registry · maintained package</div>
+      <ul class="leg-list" id="model-list"></ul>
+      <div class="panel-sub">HMM filtered probability · causal</div>
+      <div class="bars" id="hmm-bars"></div>
+      <p class="disclaimer" id="model-disclaimer">
+        Research fits do not change the book. Confidence on signals is a relative score.
+      </p>
     </div>
 
     <div class="panel desk">

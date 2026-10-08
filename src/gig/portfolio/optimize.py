@@ -297,10 +297,7 @@ def optimize_book(
     b = model.exposures.reindex(symbols).fillna(0.0).to_numpy(dtype=float)
 
     c, constraint_names = _neutralization_matrix(symbols, model, sectors, config)
-    if c is None:
-        raw = d_inv * a
-    else:
-        raw = d_inv * _gls_residual(a, c, d_inv)
+    raw = d_inv * a if c is None else d_inv * _gls_residual(a, c, d_inv)
 
     gross = float(np.abs(raw).sum())
     if not np.isfinite(gross) or gross <= 0:

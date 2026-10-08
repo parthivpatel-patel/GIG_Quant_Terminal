@@ -4,7 +4,6 @@ from datetime import date
 
 from gig.data.providers.fundamentals_sec import parse_companyfacts
 
-
 SAMPLE = """
 {
   "facts": {
@@ -46,6 +45,7 @@ def test_parse_companyfacts_uses_filed_date():
 def test_upsert_fundamentals_dedupes(tmp_path, monkeypatch):
     import duckdb
     import pandas as pd
+
     from gig.config import get_settings
     from gig.store import Store
 

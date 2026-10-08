@@ -218,3 +218,35 @@ def test_cache_holds_until_cleared():
     snapshot.clear_cache()
     assert snapshot._cached("k", 60.0, build) is not first
     assert calls["n"] == 2
+
+
+def test_model_routes_do_not_invent_a_champion_or_a_fit(isolated):
+    from fastapi.testclient import TestClient
+
+    from gig.service.app import create_app
+
+    client = TestClient(create_app())
+    spec = client.get("/api/openapi.json")
+    assert spec.status_code == 200
+    paths = spec.json()["paths"]
+    assert "/api/models" in paths
+    assert "/api/models/market" in paths
+    assert "/api/signals" in paths
+
+    inventory = client.get("/api/models")
+    assert inventory.status_code == 200
+    body = inventory.json()
+    assert body["champion"] is None
+    assert body["models"]
+    assert all(row["status"] != "CHAMPION" for row in body["models"])
+
+    market = client.get("/api/models/market")
+    assert market.status_code == 200
+    assert market.json()["available"] is False
+    assert market.json()["reason"] == "DATA UNAVAILABLE"
+
+    signals = client.get("/api/signals")
+    assert signals.status_code == 200
+    assert signals.json()["available"] is False
+    assert signals.json()["reason"] == "DATA UNAVAILABLE"
+    assert signals.json()["signals"] == []
