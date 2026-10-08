@@ -19,7 +19,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
     try:
-        from fastapi import Body, FastAPI, Query, Request
+        from fastapi import FastAPI, Query
         from fastapi.responses import FileResponse, JSONResponse
         from fastapi.staticfiles import StaticFiles
     except ImportError as exc:  # pragma: no cover - exercised by the CLI message
@@ -178,13 +178,60 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
 
         return {**ollama_status(), "prompts": default_prompts()}
 
+    @app.get("/api/models")
+    def models() -> dict[str, Any]:
+        from gig.governance.registry import model_inventory
+
+        rows = model_inventory()
+        return {
+            "models": rows,
+            "champion": None,
+            "note": "Registry of the maintained src/gig package. RESEARCH models are fitted on request and do not change weights.",
+        }
+
+    @app.get("/api/models/market")
+    def market_models() -> dict[str, Any]:
+        from gig.models.diagnostics import diagnostics_from_lake
+
+        return diagnostics_from_lake()
+
+    @app.get("/api/signals")
+    def signals(limit: int = Query(80, ge=20, le=400)) -> dict[str, Any]:
+        from gig.service import snapshot
+        from gig.signals.contract import signal_from_weight
+
+        cloud = snapshot.factor_cloud(limit=limit)
+        if not cloud.get("available"):
+            return {
+                "available": False,
+                "reason": "DATA UNAVAILABLE",
+                "signals": [],
+                "hint": cloud.get("hint"),
+            }
+        asof = str(cloud.get("asof"))
+        built = [
+            signal_from_weight(
+                str(point.get("symbol")),
+                asof,
+                point.get("weight"),
+                point.get("score"),
+                asof,
+            ).as_dict()
+            for point in cloud.get("points") or []
+        ]
+        return {
+            "available": True,
+            "asof": asof,
+            "confidence_kind": "relative_score",
+            "signals": built,
+        }
+
     @app.post("/api/ollama/brief")
-    async def ollama_brief(request: Request, body: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
+    async def ollama_brief(body: dict[str, Any] | None = None, q: str = "") -> dict[str, Any]:
         from gig.nlp.ollama import research_brief
 
         payload = body or {}
-        # Some clients POST raw text; fall back to the query string.
-        question = str(payload.get("question") or request.query_params.get("q") or "").strip()
+        question = str(payload.get("question") or q or "").strip()
         if not question:
             return {"available": False, "error": "question is required"}
         return research_brief(question, model=payload.get("model"))

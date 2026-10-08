@@ -6,4 +6,4 @@ COPY tests ./tests
 COPY configs ./configs
 COPY examples ./examples
 RUN pip install --no-cache-dir -e ".[dev]"
-CMD ["qalpha", "doctor"]
+CMD ["python", "-m", "gig", "doctor"]

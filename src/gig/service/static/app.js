@@ -1422,6 +1422,7 @@
         await refreshCloud();
         await refreshPaper();
         await refreshOpsExtras();
+        await refreshModels();
         try {
           renderResearch(await getJSON("/api/research"));
           renderSpark(await getJSON("/api/experiments"));
@@ -1518,6 +1519,112 @@
     }
   }
 
+  function textSpan(cls, text) {
+    const span = document.createElement("span");
+    span.className = cls;
+    span.textContent = text;
+    return span;
+  }
+
+  function renderModelRegistry(payload) {
+    const list = el("model-list");
+    list.replaceChildren();
+    const rows = (payload && payload.models) || [];
+    if (!rows.length) {
+      const li = document.createElement("li");
+      li.append(textSpan("sym", "DATA UNAVAILABLE"));
+      list.append(li);
+      return;
+    }
+    rows.forEach((row) => {
+      const li = document.createElement("li");
+      li.title = row.notes || "";
+      li.append(
+        textSpan("sym", row.model_id || "—"),
+        textSpan("wt", row.status || "—"),
+        textSpan("sc", row.family || "—")
+      );
+      list.append(li);
+    });
+  }
+
+  function renderMarketModels(payload) {
+    const note = el("model-note");
+    const metrics = el("model-metrics");
+    const bars = el("hmm-bars");
+    const cell = (k, v) => {
+      const box = document.createElement("div");
+      box.className = "m";
+      const kEl = document.createElement("span");
+      kEl.className = "m-k";
+      kEl.textContent = k;
+      const vEl = document.createElement("span");
+      vEl.className = "m-v";
+      vEl.textContent = v;
+      box.append(kEl, vEl);
+      return box;
+    };
+    metrics.replaceChildren();
+    bars.replaceChildren();
+    if (!payload || !payload.available) {
+      note.textContent = (payload && payload.reason) || "DATA UNAVAILABLE";
+      metrics.append(cell("fit", "DATA UNAVAILABLE"));
+      return;
+    }
+    const cmp = payload.variance_forecast_comparison || {};
+    const garch = payload.garch || {};
+    const ewma = payload.ewma || {};
+    const hmm = payload.hmm || {};
+    const scale = payload.suggested_exposure_scale || {};
+    note.textContent = `research · ${payload.asof || "—"} · ${payload.n || 0}d`;
+    metrics.append(
+      cell("GARCH vol", isNum(garch.next_vol_annualized) ? fmtPct(garch.next_vol_annualized, 1) : "—"),
+      cell("EWMA vol", isNum(ewma.next_vol_annualized) ? fmtPct(ewma.next_vol_annualized, 1) : "—"),
+      cell("lower QLIKE", cmp.lower_score || "—"),
+      cell("exposure scale", isNum(scale.value) ? scale.value.toFixed(2) : "—")
+    );
+    const probs = hmm.filtered_last || [];
+    const ranked = hmm.post_hoc_by_mean || {};
+    probs.forEach((p, i) => {
+      const rank = Object.keys(ranked).find((key) => ranked[key] && ranked[key].state === i);
+      const label = rank || `state ${i}`;
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      const top = document.createElement("div");
+      top.className = "bar-top";
+      const k = document.createElement("span");
+      k.className = "k";
+      k.textContent = label;
+      const v = document.createElement("span");
+      v.className = "v";
+      v.textContent = isNum(p) ? (p * 100).toFixed(1) + "%" : "—";
+      top.append(k, v);
+      const track = document.createElement("div");
+      track.className = "bar-track";
+      const fill = document.createElement("div");
+      fill.className = "bar-fill bar-neutral";
+      fill.style.width = `${clamp((isNum(p) ? p : 0) * 100, 0, 100)}%`;
+      track.append(fill);
+      row.append(top, track);
+      bars.append(row);
+    });
+  }
+
+  async function refreshModels() {
+    try {
+      renderModelRegistry(await getJSON("/api/models"));
+    } catch (err) {
+      console.error("models", err);
+      renderModelRegistry(null);
+    }
+    try {
+      renderMarketModels(await getJSON("/api/models/market"));
+    } catch (err) {
+      console.error("market models", err);
+      renderMarketModels({ available: false, reason: "DATA UNAVAILABLE" });
+    }
+  }
+
   async function boot() {
     resize();
     // Browsers restore <select> values across reloads, which would leave the
@@ -1542,6 +1649,7 @@
     refreshTape();
     refreshPaper();
     refreshOpsExtras();
+    refreshModels();
 
     setInterval(refreshTape, 5000);
     setInterval(refreshStatus, 30000);

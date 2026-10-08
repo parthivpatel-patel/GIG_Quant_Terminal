@@ -286,7 +286,7 @@ def test_closed_market_blocks_and_is_the_only_forceable_check():
     plan = build_trade_plan(book.weights, {}, PRICES, 1_000_000.0)
     report = pretrade_check(plan, book, Settings(), market_open=False)
     assert [f.code for f in report.blocking] == ["market_closed"]
-    assert FORCEABLE == {"market_closed"}
+    assert {"market_closed"} == FORCEABLE
 
 
 def test_limit_breach_in_the_target_blocks_the_run():

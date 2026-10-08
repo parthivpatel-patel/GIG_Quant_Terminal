@@ -182,6 +182,8 @@ html, body {
   border-bottom: 1px solid #0f141d; cursor: pointer;
 }
 .leg-list li:hover { background: var(--bg-raised); }
+#model-list { max-height: 280px; }
+#model-list li { cursor: default; grid-template-columns: 1.4fr auto auto; }
 .leg-list .sym { color: var(--fg); }
 .leg-list .wt { color: var(--fg-dim); }
 .leg-list .sc { color: var(--fg-faint); }

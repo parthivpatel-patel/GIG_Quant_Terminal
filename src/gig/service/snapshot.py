@@ -463,8 +463,8 @@ def _factor_cloud_impl(
     )
     sector_net = sector_net_exposure(weights, panel.sectors)
 
-    from gig.risk.factor_model import risk_report
     from gig.ml.ranker import available_backends
+    from gig.risk.factor_model import risk_report
 
     risk = risk_report(
         weights,

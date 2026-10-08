@@ -57,7 +57,7 @@ def _usd_points(facts: dict[str, Any], tags: tuple[str, ...]) -> list[dict[str, 
                 value = float(val)
             except (TypeError, ValueError):
                 continue
-            if not (value == value):  # NaN
+            if value != value:  # NaN
                 continue
             out.append(
                 {

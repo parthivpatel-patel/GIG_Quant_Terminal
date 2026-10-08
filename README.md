@@ -6,7 +6,7 @@ The research loop is: point-in-time universe → factors → neutralization → 
 
 Python is the research layer. Tight loops (cross-sectional neutralization) also ship as optional **C++** (`src/cpp/speed.cpp`, module `gig._speed`). If a compiler is missing, the same math runs in Python.
 
-Operating guide: [docs/USAGE.md](docs/USAGE.md).
+Operating guide: [docs/USAGE.md](docs/USAGE.md). What is actually wired, and what is still research-only: [docs/TRANSFORMATION_PLAN.md](docs/TRANSFORMATION_PLAN.md), [docs/MODEL_INVENTORY.md](docs/MODEL_INVENTORY.md). A free-VM layout that does not enable billing: [docs/CLOUD_DEPLOYMENT.md](docs/CLOUD_DEPLOYMENT.md).
 
 ## Components
 

@@ -12,8 +12,6 @@ from __future__ import annotations
 import math
 from typing import Any
 
-import pandas as pd
-
 
 def _f(value: Any) -> float | None:
     try:
@@ -29,10 +27,7 @@ def signal_attribution(factor_ic: dict[str, Any] | None) -> list[dict[str, Any]]
         return []
     rows: list[tuple[str, float]] = []
     for name, payload in factor_ic.items():
-        if isinstance(payload, dict):
-            ic = payload.get("ic_mean", payload.get("mean"))
-        else:
-            ic = payload
+        ic = payload.get("ic_mean", payload.get("mean")) if isinstance(payload, dict) else payload
         val = _f(ic)
         if val is None:
             continue

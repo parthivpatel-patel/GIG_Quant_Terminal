@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -410,10 +411,8 @@ def account_status(broker: Broker | None = None, limit: int = 300) -> dict[str, 
         "drift": drift.head(25).to_dict(orient="records") if not drift.empty else [],
     }
     if hasattr(broker, "account_summary"):
-        try:
+        with suppress(Exception):
             summary["account"] = broker.account_summary()
-        except Exception:
-            pass
     return summary
 
 

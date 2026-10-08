@@ -31,6 +31,10 @@ pip install -e ".[ml]"          # LightGBM lambdarank (auto-selected)
 # without lightgbm, walk_forward_scores falls back to sklearn HistGBDT
 ```
 
+## Research fits that do not change the book
+
+`src/gig/models/` fits a Gaussian HMM (EM, states unlabeled until after estimation), a Gaussian GARCH(1,1) by maximum likelihood, and a causal Kalman regression. `GET /api/models/market` runs the HMM and GARCH against EWMA on stored bars and returns `DATA UNAVAILABLE` when the lake is short. In-sample QLIKE does not promote either model. Fractional Kelly, Black-Litterman, a logistic exposure scale, and an Almgren-Chriss trajectory live beside them and are not called by `gig trade`. The code registry is `src/gig/governance/registry.py`. Inventory and the prototype duplicates: [MODEL_INVENTORY.md](MODEL_INVENTORY.md).
+
 ## Additions that would add depth
 
 1. **Fundamentals (value/quality)** — SEC companyfacts book equity + shares
