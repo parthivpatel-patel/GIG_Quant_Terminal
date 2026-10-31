@@ -1,6 +1,21 @@
 """Ollama research desk — status is always safe; brief needs a live daemon."""
 
 from gig.nlp.ollama import default_prompts, ollama_status, research_brief
+import pytest
+from urllib.error import URLError
+
+
+@pytest.fixture(autouse=True)
+def offline_desk(monkeypatch):
+    """Exercise the fallback without a daemon, credentials, or a data lake."""
+    def unavailable(*args, **kwargs):
+        raise URLError("offline test fixture")
+    def unexpected_generation(*args, **kwargs):
+        raise AssertionError("offline desk must not request model generation")
+    monkeypatch.setattr("gig.nlp.ollama._get", unavailable)
+    monkeypatch.setattr("gig.nlp.ollama._post", unexpected_generation)
+    monkeypatch.setattr("gig.nlp.ollama._snapshot_context", lambda: {
+        "status": {}, "research": {"available": False}, "cloud": {}})
 
 
 def test_ollama_status_never_raises():

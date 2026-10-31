@@ -212,7 +212,9 @@ def test_cache_holds_until_cleared():
         return {"n": calls["n"]}
 
     first = snapshot._cached("k", 60.0, build)
-    assert snapshot._cached("k", 60.0, build) is first
+    cached = snapshot._cached("k", 60.0, build)
+    assert cached == first
+    assert cached is not first  # every caller receives a detached wire snapshot
     assert calls["n"] == 1
 
     snapshot.clear_cache()

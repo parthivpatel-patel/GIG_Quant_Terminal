@@ -31,7 +31,7 @@ class YahooProvider(DataProvider):
     ) -> MarketPanel:
         names = list(dict.fromkeys(symbols or list(self.sector_map)))
         try:
-            import yfinance as yf  # noqa: F401
+            __import__("yfinance")
         except ImportError as exc:
             raise ImportError("Install yfinance: pip install yfinance") from exc
 

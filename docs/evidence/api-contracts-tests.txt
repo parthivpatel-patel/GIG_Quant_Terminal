@@ -1,0 +1,20 @@
+test_all_twelve_views_in_both_modes (test_api_contracts.HTTPBoundaryTests.test_all_twelve_views_in_both_modes) ... Executing <Task finished name='Task-1' coro=<HTTPBoundaryTests.asyncSetUp() done, defined at /workspace/work/gig-accelerated-2026/tests/test_api_contracts.py:24> result=None created at /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:100> took 0.129 seconds
+ok
+test_bad_mode_unknown_routes_and_invalid_model_fields (test_api_contracts.HTTPBoundaryTests.test_bad_mode_unknown_routes_and_invalid_model_fields) ... ok
+test_cache_headers_and_local_assets (test_api_contracts.HTTPBoundaryTests.test_cache_headers_and_local_assets) ... ok
+test_default_is_local_and_broker_is_never_constructed (test_api_contracts.HTTPBoundaryTests.test_default_is_local_and_broker_is_never_constructed) ... ok
+test_duplicate_keys_and_nonfinite_are_rejected_before_pydantic (test_api_contracts.HTTPBoundaryTests.test_duplicate_keys_and_nonfinite_are_rejected_before_pydantic) ... ok
+test_exception_sanitization_including_exception_groups (test_api_contracts.HTTPBoundaryTests.test_exception_sanitization_including_exception_groups) ... ok
+test_kalman_hmm_garch_and_microstructure_connected (test_api_contracts.HTTPBoundaryTests.test_kalman_hmm_garch_and_microstructure_connected) ... ok
+test_malformed_json_utf8_and_control_characters (test_api_contracts.HTTPBoundaryTests.test_malformed_json_utf8_and_control_characters) ... ok
+test_nonfinite_success_result_becomes_sanitized_error (test_api_contracts.HTTPBoundaryTests.test_nonfinite_success_result_becomes_sanitized_error) ... ok
+test_openapi_declares_typed_envelope (test_api_contracts.HTTPBoundaryTests.test_openapi_declares_typed_envelope) ... ok
+test_published_option_reference_through_http (test_api_contracts.HTTPBoundaryTests.test_published_option_reference_through_http) ... ok
+test_resource_bounds_reject_before_work (test_api_contracts.HTTPBoundaryTests.test_resource_bounds_reject_before_work) ... ok
+test_strict_serialization_precedes_framework_coercion (test_api_contracts.HTTPBoundaryTests.test_strict_serialization_precedes_framework_coercion) ... ok
+test_unsupported_object_never_leaks_its_repr (test_api_contracts.HTTPBoundaryTests.test_unsupported_object_never_leaks_its_repr) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 1.632s
+
+OK

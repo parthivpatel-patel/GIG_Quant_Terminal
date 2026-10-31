@@ -74,6 +74,9 @@ class FakeBroker(Broker):
     def last_prices(self, symbols):
         return PRICES.reindex([s for s in symbols if s in PRICES.index]).dropna()
 
+    def shortable(self, symbols):
+        return {str(symbol): True for symbol in symbols}
+
     def cancel_open_orders(self):
         self.cancelled += 1
         return 3
@@ -460,7 +463,7 @@ def test_force_does_not_override_a_limit_breach(monkeypatch):
     assert broker.submitted == []
 
 
-def test_rejected_order_is_recorded_and_does_not_abort_the_run(stub_target):
+def test_submission_failure_is_unknown_and_halts_for_reconciliation(stub_target):
     broker = FakeBroker(reject={"AAA"})
     run = run_once(
         dry_run=False,
@@ -470,9 +473,9 @@ def test_rejected_order_is_recorded_and_does_not_abort_the_run(stub_target):
     )
 
     statuses = {o["symbol"]: o["status"] for o in run.orders}
-    assert statuses["AAA"] == "rejected"
-    assert statuses["CCC"] == "submitted"
-    assert run.submitted == 1
+    assert statuses["AAA"] == "submission_unknown"
+    assert "CCC" not in statuses
+    assert run.submitted == 0
     assert any("AAA" in e for e in run.errors)
 
 
@@ -502,10 +505,12 @@ def test_existing_positions_are_reconciled_not_rebought(stub_target):
 def test_broker_failure_is_reported_not_raised(stub_target):
     class Broken(FakeBroker):
         def nav(self):
-            raise RuntimeError("api down")
+            raise RuntimeError("api down FAKE_PROVIDER_SECRET")
 
     run = run_once(dry_run=True, broker=Broken(), record=False)
-    assert any("nav unavailable" in e for e in run.errors)
+    assert "BROKER_NAV_UNAVAILABLE" in run.errors
+    assert "FAKE_PROVIDER_SECRET" not in " ".join(run.errors)
+    assert run.blocked
     assert run.plan.trades == []
 
 

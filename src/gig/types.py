@@ -60,6 +60,21 @@ class Fill:
     price: float
     cost: float
     order_id: str = ""
+    classification: str = "UNSPECIFIED"
+
+
+@dataclass(frozen=True, slots=True)
+class OrderAcknowledgement:
+    """Accepted order intent. It contains no executed price or filled quantity."""
+
+    timestamp: datetime
+    symbol: str
+    side: Side
+    requested_quantity: float
+    order_id: str
+    client_order_id: str
+    status: str
+    classification: str = "BROKER_ACKNOWLEDGED"
 
 
 @dataclass(slots=True)

@@ -15,7 +15,10 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 from typing import Any
+
+from gig.service.serialization import public_error
 
 from gig.config import get_settings
 
@@ -26,6 +29,20 @@ DEFAULT_MODEL = "llama3.2"
 def _host() -> str:
     settings = get_settings()
     return (getattr(settings, "ollama_host", None) or DEFAULT_HOST).rstrip("/")
+
+
+def _public_host() -> str:
+    """Never return configured endpoint credentials, query strings, or paths."""
+    try:
+        parsed = urlsplit(_host())
+        if parsed.username is not None or parsed.password is not None:
+            return "REDACTED_CONFIGURED_ENDPOINT"
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            return "INVALID_CONFIGURED_ENDPOINT"
+        host = f"[{parsed.hostname}]" if ":" in parsed.hostname else parsed.hostname
+        return f"{parsed.scheme}://{host}" + (f":{parsed.port}" if parsed.port is not None else "")
+    except ValueError:
+        return "INVALID_CONFIGURED_ENDPOINT"
 
 
 def _model() -> str:
@@ -58,16 +75,16 @@ def ollama_status() -> dict[str, Any]:
         models = [m.get("name", "") for m in (tags.get("models") or [])]
         return {
             "available": True,
-            "host": _host(),
+            "host": _public_host(),
             "model": _model(),
             "models": models,
             "model_ready": any(_model().split(":")[0] in m for m in models) if models else False,
             "desk": "ollama",
         }
-    except Exception as exc:
+    except Exception:
         return {
             "available": False,
-            "host": _host(),
+            "host": _public_host(),
             "model": _model(),
             "models": [],
             "model_ready": False,
@@ -77,7 +94,7 @@ def ollama_status() -> dict[str, Any]:
                 + _model()
                 + " — until then the desk uses a structured snapshot briefing."
             ),
-            "error": f"{type(exc).__name__}: {exc}",
+            "error": public_error()["message"],
         }
 
 
@@ -112,8 +129,8 @@ def _snapshot_context() -> dict[str, Any]:
                     if p.get("side") == "short"
                 ][:8],
             }
-    except Exception as exc:
-        payload["cloud_error"] = f"{type(exc).__name__}: {exc}"
+    except Exception:
+        payload["cloud_error"] = public_error()["message"]
     return payload
 
 
@@ -264,7 +281,7 @@ def research_brief(question: str, *, model: str | None = None) -> dict[str, Any]
     context = json.dumps(ctx, indent=2, default=str)[:12000]
     prompt = (
         f"{SYSTEM}\n\nCONTEXT (JSON):\n{context}\n\n"
-        f"OPERATOR QUESTION:\n{question.strip()}\n\n"
+        f"OPERATOR QUESTION:\n{question}\n\n"
         "Answer from the context only."
     )
     try:
@@ -285,23 +302,23 @@ def research_brief(question: str, *, model: str | None = None) -> dict[str, Any]
             "available": True,
             "ollama": ollama_ok,
             "source": source,
-            "host": _host(),
+            "host": _public_host(),
             "model": chosen,
             "question": question,
             "answer": answer,
             "eval_count": raw.get("eval_count"),
             "total_duration_ns": raw.get("total_duration"),
         }
-    except Exception as exc:
+    except Exception:
         return {
             "available": True,
             "ollama": False,
             "source": "structured",
-            "host": _host(),
+            "host": _public_host(),
             "model": chosen,
             "question": question,
             "answer": local,
-            "error": f"{type(exc).__name__}: {exc}",
+            "error": public_error()["message"],
             "hint": status.get("hint") or f"ollama pull {chosen}",
         }
 

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import time
 import uuid
+import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -81,7 +82,7 @@ class TradeRun:
     def report(self) -> str:
         """Human-readable summary for the CLI."""
         lines: list[str] = []
-        mode = "DRY RUN — nothing sent" if self.dry_run else "LIVE — orders sent to broker"
+        mode = "DRY RUN — nothing sent" if self.dry_run else "SUBMISSION ATTEMPT — inspect acknowledgements"
         lines.append(f"run {self.run_id}   {mode}")
         if not self.book.available:
             lines.append(f"  no target book: {self.book.hint}")
@@ -190,14 +191,25 @@ def run_once(
 
     try:
         nav = float(broker.nav())
-    except Exception as exc:
+    except Exception:
         nav = 0.0
-        errors.append(f"nav unavailable: {type(exc).__name__}: {exc}")
+        errors.append("BROKER_NAV_UNAVAILABLE")
+    if not math.isfinite(nav) or nav <= 0:
+        nav = 0.0
+        errors.append("BROKER_NAV_INVALID")
     try:
         positions = broker.positions()
-    except Exception as exc:
+    except Exception:
         positions = {}
-        errors.append(f"positions unavailable: {type(exc).__name__}: {exc}")
+        errors.append("BROKER_POSITIONS_UNAVAILABLE")
+    try:
+        if (not isinstance(positions, dict) or any(not isinstance(symbol, str)
+            or isinstance(quantity, bool) or not math.isfinite(float(quantity))
+            for symbol, quantity in positions.items())):
+            raise ValueError("invalid account position")
+    except (ValueError, TypeError, OverflowError):
+        positions = {}
+        errors.append("BROKER_POSITIONS_INVALID")
 
     symbols = sorted(set(map(str, book.weights.index)) | set(map(str, positions)))
     prices = _reference_prices(symbols, broker, book) if symbols else pd.Series(dtype=float)
@@ -227,8 +239,9 @@ def run_once(
     if short_candidates:
         try:
             shortable = broker.shortable(short_candidates)
-        except Exception as exc:
-            errors.append(f"borrow check skipped: {type(exc).__name__}: {exc}")
+        except Exception:
+            errors.append("BROKER_BORROW_UNAVAILABLE")
+            shortable = {symbol: False for symbol in short_candidates}
 
     # The high-water mark lives in the audit trail, so it is read on the same
     # condition that writes to it. A run that is not part of the audited
@@ -252,6 +265,10 @@ def run_once(
         shortable=shortable,
         nav_high_water=high_water,
     )
+    if any(code.startswith(("BROKER_NAV_", "BROKER_POSITIONS_")) for code in errors):
+        from gig.execution.pretrade import Rejection
+
+        report.findings.append(Rejection("account_unavailable", "account state is unavailable or invalid"))
     if force and report.findings:
         report.findings = [
             f if f.code not in FORCEABLE else type(f)(f.code, f.detail + " [forced]", False)
@@ -296,8 +313,9 @@ def _submit(run: TradeRun, broker: Broker, execution: ExecutionConfig, log) -> N
         cancelled = broker.cancel_open_orders()
         if cancelled:
             log.info("cancelled %s working orders before rebalancing", cancelled)
-    except Exception as exc:
-        run.errors.append(f"cancel_open_orders failed: {type(exc).__name__}: {exc}")
+    except Exception:
+        run.errors.append("BROKER_CANCELLATION_FAILED: rebalance submission halted")
+        return
 
     for trade in run.plan.trades:
         children = slice_shares(
@@ -321,15 +339,21 @@ def _submit(run: TradeRun, broker: Broker, execution: ExecutionConfig, log) -> N
                 "note": trade.note,
             }
             try:
-                fill = broker.submit(trade.symbol, trade.side, qty, limit_price=px)
+                acknowledgement = broker.submit(trade.symbol, trade.side, qty, limit_price=px)
                 row["status"] = "submitted"
-                row["broker_order_id"] = fill.order_id
-            except Exception as exc:
-                row["status"] = "rejected"
+                row["broker_order_id"] = acknowledgement.order_id
+                row["classification"] = acknowledgement.classification
+            except Exception:
+                # A timeout may follow broker acceptance. Unknown submission
+                # state requires reconciliation; it is not a confirmed rejection.
+                row["status"] = "submission_unknown"
                 row["broker_order_id"] = ""
-                row["note"] = f"{row['note']} {type(exc).__name__}: {exc}".strip()
-                run.errors.append(f"{trade.symbol}: {type(exc).__name__}: {exc}")
+                row["classification"] = "UNKNOWN"
+                row["note"] = "submission outcome unknown; reconcile before retry"
+                run.errors.append(f"{trade.symbol}: BROKER_SUBMISSION_UNKNOWN")
             run.orders.append(row)
+            if row["status"] == "submission_unknown":
+                return
             if execution.slice_pause_s > 0 and len(children) > 1:
                 time.sleep(execution.slice_pause_s)
 
@@ -369,9 +393,9 @@ def _record(run: TradeRun) -> None:
             for t in run.plan.trades
         ]
         store.record_orders(run.run_id, rows, ts=run.ts)
-    except Exception as exc:
+    except Exception:
         configure_logging(get_settings().log_level).warning(
-            "trade run not persisted: %s: %s", type(exc).__name__, exc
+            "TRADE_RUN_PERSISTENCE_FAILED"
         )
 
 
@@ -383,11 +407,12 @@ def account_status(broker: Broker | None = None, limit: int = 300) -> dict[str, 
     book = build_target_book(limit=limit)
     if not book.available:
         return {
+            "available": False,
             "nav": float(broker.nav()) if broker else None,
             "n_positions": len(broker.positions()) if broker else 0,
             "target": book.to_dict(),
             "market_open": broker.is_open() if broker else None,
-            "worst_drift": 0.0,
+            "worst_drift": None,
             "drift": [],
             "hint": book.hint or "target book unavailable",
         }
@@ -402,6 +427,7 @@ def account_status(broker: Broker | None = None, limit: int = 300) -> dict[str, 
         drift = pd.DataFrame()
 
     summary: dict[str, Any] = {
+        "available": True,
         "nav": nav,
         "n_positions": len(positions),
         "target": book.to_dict(),
@@ -430,9 +456,16 @@ def flatten(broker: Broker | None = None, dry_run: bool = True) -> dict[str, Any
     positions = {s: q for s, q in broker.positions().items() if q}
     if dry_run:
         return {"dry_run": True, "would_close": positions, "n": len(positions)}
-    fills = broker.close_all()
+    from gig.types import Fill, OrderAcknowledgement
+
+    results = broker.close_all()
+    fills = [result for result in results if isinstance(result, Fill)]
+    acknowledgements = [result for result in results if isinstance(result, OrderAcknowledgement)]
     return {
         "dry_run": False,
         "closed": [{"symbol": f.symbol, "side": f.side, "quantity": f.quantity} for f in fills],
         "n": len(fills),
+        "close_requests": [{"symbol": a.symbol, "side": a.side, "requested_quantity": a.requested_quantity,
+                            "status": a.status, "classification": a.classification} for a in acknowledgements],
+        "n_requests": len(acknowledgements),
     }

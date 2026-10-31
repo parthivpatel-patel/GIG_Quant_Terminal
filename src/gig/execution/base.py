@@ -3,11 +3,9 @@ Broker protocol. Live adapters implement this; backtests do not call it.
 
 ``submit`` / ``positions`` / ``nav`` are abstract because no adapter is useful
 without them. The rest are operational queries a trading loop needs but a
-minimal adapter should not be forced to implement, so they have permissive
-defaults and each adapter overrides what it can actually answer. The defaults
-are chosen so that a broker which cannot answer a question does not silently
-*block* trading — the pre-trade gate decides that — with one exception noted on
-``is_open``.
+minimal adapter should not be forced to implement for research. Unknown market
+and borrow states do not authorize execution. Submission-capable adapters must
+explicitly implement working-order cancellation.
 """
 
 from __future__ import annotations
@@ -16,7 +14,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from gig.types import Fill, Side
+from gig.types import Fill, OrderAcknowledgement, Side
 
 
 class Broker(ABC):
@@ -28,7 +26,7 @@ class Broker(ABC):
         quantity: float,
         *,
         limit_price: float | None = None,
-    ) -> Fill:
+    ) -> Fill | OrderAcknowledgement:
         raise NotImplementedError
 
     @abstractmethod
@@ -50,8 +48,8 @@ class Broker(ABC):
         return None
 
     def shortable(self, symbols: list[str]) -> dict[str, bool]:
-        """Per-name borrow availability. Unknown names default to shortable."""
-        return {str(s): True for s in symbols}
+        """Unknown borrow capability never authorizes a short position."""
+        return {str(s): False for s in symbols}
 
     def last_prices(self, symbols: list[str]) -> pd.Series:
         """Reference prices from the broker, or empty to fall back to the lake."""
@@ -59,16 +57,16 @@ class Broker(ABC):
 
     def cancel_open_orders(self) -> int:
         """Cancel working orders so a new run starts from a clean book."""
-        return 0
+        raise NotImplementedError("adapter must confirm working-order cancellation")
 
-    def close_all(self, limit_offset_bps: float = 25.0) -> list[Fill]:
+    def close_all(self, limit_offset_bps: float = 25.0) -> list[Fill | OrderAcknowledgement]:
         """
         Flatten every position.
 
         Implemented against ``positions`` and ``submit`` so any adapter gets a
         working kill switch without writing one.
         """
-        fills: list[Fill] = []
+        fills: list[Fill | OrderAcknowledgement] = []
         for symbol, qty in self.positions().items():
             if not qty:
                 continue

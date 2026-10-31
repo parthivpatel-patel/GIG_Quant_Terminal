@@ -1,0 +1,9 @@
+{
+  "reproduced_news_error": "test_entity_boundaries_prevent_substring_false_match uses invalid 2026-01-03Z; strict timestamp rejects it",
+  "inspection_findings": [
+    "PIT latest freshness grouped source+instrument only; adjustment/currency/classification could mask stale series",
+    "PIT rows were not checked against original source snapshot payload on read",
+    "News direct analysis aggregates multiple knowledge revisions of one article identity",
+    "Legacy transformer_sentiment constructs remote model pipeline without local_files_only"
+  ]
+}

@@ -27,7 +27,7 @@ if Pybind11Extension is not None:
         Pybind11Extension(
             "gig._speed",
             ["src/cpp/speed.cpp"],
-            cxx_std=17,
+            cxx_std=20,
         )
     ]
 

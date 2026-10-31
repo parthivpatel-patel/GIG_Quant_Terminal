@@ -12,7 +12,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
-import pandas as pd
+from gig.service.serialization import public_error
+
 
 
 def _f(value: Any) -> float | None:
@@ -97,8 +98,8 @@ def paper_nav_trail(limit: int = 40) -> dict[str, Any]:
         with db_lock():
             store = open_store(read_only=True)
             df = store.load_trade_runs(limit=max(limit, 5))
-    except Exception as exc:
-        return {"available": False, "error": f"{type(exc).__name__}: {exc}"}
+    except Exception:
+        return {"available": False, "error": public_error()["message"]}
 
     if df is None or df.empty:
         return {"available": False, "hint": "no trade_runs yet — run trade plan/run"}
@@ -191,10 +192,10 @@ def blotter_snapshot(limit: int = 120, drift_n: int = 20) -> dict[str, Any]:
         from gig.execution.trader import account_status
 
         status = account_status(limit=limit)
-    except Exception as exc:
+    except Exception:
         return {
             "available": False,
-            "error": f"{type(exc).__name__}: {exc}",
+            "error": public_error()["message"],
             **_blotter_from_audit(limit=drift_n),
         }
 

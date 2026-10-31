@@ -389,31 +389,31 @@ def _doctor() -> int:
     except Exception:
         pass
     try:
-        import yfinance  # noqa: F401
+        __import__("yfinance")
 
         print("yfinance     ok")
     except ImportError:
         print("yfinance     MISSING  (pip install yfinance)")
     try:
-        import duckdb  # noqa: F401
+        __import__("duckdb")
 
         print("duckdb       ok  (no SQL server needed)")
     except ImportError:
         print("duckdb       MISSING  (pip install duckdb)")
     try:
-        import sklearn  # noqa: F401
+        __import__("sklearn")
 
         print("sklearn      ok  (walk-forward GBDT)")
     except ImportError:
         print("sklearn      MISSING  (pip install scikit-learn)")
     try:
-        from gig._speed import neutralize_cs  # noqa: F401
+        getattr(__import__("gig._speed", fromlist=["neutralize_cs"]), "neutralize_cs")
 
         print("cpp          ok  (gig._speed)")
     except Exception:
         print("cpp          Python fallback (install a C++ compiler, then pip install -e .)")
     try:
-        import lightgbm  # noqa: F401
+        __import__("lightgbm")
 
         print("lightgbm     ok  (lambdarank walk-forward)")
     except ImportError:
@@ -429,17 +429,16 @@ def _doctor() -> int:
     except Exception as exc:
         print(f"ollama       error {exc}")
     try:
-        import fastapi  # noqa: F401
-        import uvicorn  # noqa: F401
+        __import__("fastapi")
+        __import__("uvicorn")
 
         print("terminal     ok  (python -m gig serve)")
     except ImportError:
         print('terminal     MISSING  (pip install -e ".[web]")')
     try:
-        import alpaca  # noqa: F401
+        __import__("alpaca")
 
-        paper = "paper" in settings.alpaca_base_url
-        print(f"broker       ok  ({'paper' if paper else 'LIVE — check ALPACA_BASE_URL'})")
+        print("broker       adapter installed; live-money disabled; connectivity requires explicit paper approval")
     except ImportError:
         print('broker       MISSING  (pip install -e ".[broker]" for python -m gig trade)')
     keys = settings.keys_status()

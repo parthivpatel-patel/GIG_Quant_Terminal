@@ -1,0 +1,298 @@
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: SetuptoolsDeprecationWarning: `project.license` as a TOML table is deprecated
+!!
+
+        ********************************************************************************
+        Please use a simple string containing a SPDX expression for `project.license`. You can also use `project.license-files`. (Both options available on setuptools>=77.0.0).
+
+        By 2027-Feb-18, you need to update your project and remove deprecated calls
+        or your builds will no longer be supported.
+
+        See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+        ********************************************************************************
+
+!!
+  corresp(dist, value, root_dir)
+running bdist_wheel
+running build
+running build_py
+running egg_info
+writing src/gig.egg-info/PKG-INFO
+writing dependency_links to src/gig.egg-info/dependency_links.txt
+writing entry points to src/gig.egg-info/entry_points.txt
+writing requirements to src/gig.egg-info/requires.txt
+writing top-level names to src/gig.egg-info/top_level.txt
+reading manifest file 'src/gig.egg-info/SOURCES.txt'
+writing manifest file 'src/gig.egg-info/SOURCES.txt'
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/site-packages/setuptools/_distutils/cmd.py:90: SetuptoolsDeprecationWarning: setup.py install is deprecated.
+!!
+
+        ********************************************************************************
+        Please avoid running ``setup.py`` directly.
+        Instead, use pypa/build, pypa/installer or other
+        standards-based tools.
+
+        This deprecation is overdue, please update your project and remove deprecated
+        calls to avoid build errors in the future.
+
+        See https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html for details.
+        ********************************************************************************
+
+!!
+  self.initialize_options()
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/gig
+copying build/lib/gig/config.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/execution
+copying build/lib/gig/execution/base.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/alpaca.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/trader.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/oms.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/twap.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/targets.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/algo.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/paper.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/pretrade.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/simulator.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/execution/reconcile.py -> build/bdist.linux-x86_64/wheel/./gig/execution
+copying build/lib/gig/cli.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/ops
+copying build/lib/gig/ops/killswitch.py -> build/bdist.linux-x86_64/wheel/./gig/ops
+copying build/lib/gig/ops/maintenance.py -> build/bdist.linux-x86_64/wheel/./gig/ops
+copying build/lib/gig/ops/status.py -> build/bdist.linux-x86_64/wheel/./gig/ops
+copying build/lib/gig/ops/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/ops
+copying build/lib/gig/__main__.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/service
+copying build/lib/gig/service/snapshot.py -> build/bdist.linux-x86_64/wheel/./gig/service
+copying build/lib/gig/service/app.py -> build/bdist.linux-x86_64/wheel/./gig/service
+copying build/lib/gig/service/contracts.py -> build/bdist.linux-x86_64/wheel/./gig/service
+copying build/lib/gig/service/serialization.py -> build/bdist.linux-x86_64/wheel/./gig/service
+copying build/lib/gig/service/terminal.py -> build/bdist.linux-x86_64/wheel/./gig/service
+creating build/bdist.linux-x86_64/wheel/gig/service/static
+copying build/lib/gig/service/static/index.html -> build/bdist.linux-x86_64/wheel/./gig/service/static
+copying build/lib/gig/service/static/app.js -> build/bdist.linux-x86_64/wheel/./gig/service/static
+copying build/lib/gig/service/static/styles.css -> build/bdist.linux-x86_64/wheel/./gig/service/static
+copying build/lib/gig/service/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/service
+creating build/bdist.linux-x86_64/wheel/gig/factors
+copying build/lib/gig/factors/base.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/momentum.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/fundamentals.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/volatility.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/neutralize.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/combine.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/macro.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+copying build/lib/gig/factors/filings.py -> build/bdist.linux-x86_64/wheel/./gig/factors
+creating build/bdist.linux-x86_64/wheel/gig/nlp
+copying build/lib/gig/nlp/ollama.py -> build/bdist.linux-x86_64/wheel/./gig/nlp
+copying build/lib/gig/nlp/workflow.py -> build/bdist.linux-x86_64/wheel/./gig/nlp
+copying build/lib/gig/nlp/news.py -> build/bdist.linux-x86_64/wheel/./gig/nlp
+copying build/lib/gig/nlp/sentiment.py -> build/bdist.linux-x86_64/wheel/./gig/nlp
+copying build/lib/gig/nlp/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/nlp
+copying build/lib/gig/nlp/lexicon.py -> build/bdist.linux-x86_64/wheel/./gig/nlp
+creating build/bdist.linux-x86_64/wheel/gig/options
+copying build/lib/gig/options/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/options
+copying build/lib/gig/options/analytics.py -> build/bdist.linux-x86_64/wheel/./gig/options
+copying build/lib/gig/timestamps.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/data
+copying build/lib/gig/data/validated.py -> build/bdist.linux-x86_64/wheel/./gig/data
+copying build/lib/gig/data/universe_spec.py -> build/bdist.linux-x86_64/wheel/./gig/data
+copying build/lib/gig/data/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/data
+copying build/lib/gig/data/listings.py -> build/bdist.linux-x86_64/wheel/./gig/data
+creating build/bdist.linux-x86_64/wheel/gig/data/providers
+copying build/lib/gig/data/providers/cached.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/base.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/alpaca_iex.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/edgar.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/finnhub.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/synthetic.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/fred.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/fundamentals_sec.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/providers/yahoo.py -> build/bdist.linux-x86_64/wheel/./gig/data/providers
+copying build/lib/gig/data/http.py -> build/bdist.linux-x86_64/wheel/./gig/data
+copying build/lib/gig/data/lake.py -> build/bdist.linux-x86_64/wheel/./gig/data
+copying build/lib/gig/data/universe.py -> build/bdist.linux-x86_64/wheel/./gig/data
+copying build/lib/gig/logging.py -> build/bdist.linux-x86_64/wheel/./gig
+copying build/lib/gig/types.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/risk
+copying build/lib/gig/risk/factor_model.py -> build/bdist.linux-x86_64/wheel/./gig/risk
+copying build/lib/gig/risk/limits.py -> build/bdist.linux-x86_64/wheel/./gig/risk
+copying build/lib/gig/risk/var.py -> build/bdist.linux-x86_64/wheel/./gig/risk
+copying build/lib/gig/risk/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/risk
+copying build/lib/gig/risk/exposures.py -> build/bdist.linux-x86_64/wheel/./gig/risk
+copying build/lib/gig/risk/analytics.py -> build/bdist.linux-x86_64/wheel/./gig/risk
+creating build/bdist.linux-x86_64/wheel/gig/assets
+copying build/lib/gig/assets/options.py -> build/bdist.linux-x86_64/wheel/./gig/assets
+copying build/lib/gig/assets/futures.py -> build/bdist.linux-x86_64/wheel/./gig/assets
+copying build/lib/gig/assets/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/assets
+copying build/lib/gig/artifacts.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/microstructure
+copying build/lib/gig/microstructure/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/microstructure
+copying build/lib/gig/microstructure/analytics.py -> build/bdist.linux-x86_64/wheel/./gig/microstructure
+copying build/lib/gig/__init__.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/backtest
+copying build/lib/gig/backtest/costs.py -> build/bdist.linux-x86_64/wheel/./gig/backtest
+copying build/lib/gig/backtest/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/backtest
+copying build/lib/gig/backtest/metrics.py -> build/bdist.linux-x86_64/wheel/./gig/backtest
+copying build/lib/gig/backtest/simulator.py -> build/bdist.linux-x86_64/wheel/./gig/backtest
+creating build/bdist.linux-x86_64/wheel/gig/ml
+copying build/lib/gig/ml/regimes.py -> build/bdist.linux-x86_64/wheel/./gig/ml
+copying build/lib/gig/ml/volatility.py -> build/bdist.linux-x86_64/wheel/./gig/ml
+copying build/lib/gig/ml/ranker.py -> build/bdist.linux-x86_64/wheel/./gig/ml
+copying build/lib/gig/ml/state_space.py -> build/bdist.linux-x86_64/wheel/./gig/ml
+copying build/lib/gig/ml/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/ml
+copying build/lib/gig/py.typed -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/store
+copying build/lib/gig/store/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/store
+copying build/lib/gig/store/schema.sql -> build/bdist.linux-x86_64/wheel/./gig/store
+creating build/bdist.linux-x86_64/wheel/gig/research
+copying build/lib/gig/research/workflow.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/experiment.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/multiple_testing.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/state_models.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/stat_arb.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/attribution.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/ic.py -> build/bdist.linux-x86_64/wheel/./gig/research
+copying build/lib/gig/research/walkforward.py -> build/bdist.linux-x86_64/wheel/./gig/research
+creating build/bdist.linux-x86_64/wheel/gig/strategies
+copying build/lib/gig/strategies/equity_ls.py -> build/bdist.linux-x86_64/wheel/./gig/strategies
+copying build/lib/gig/strategies/futures_tsmom.py -> build/bdist.linux-x86_64/wheel/./gig/strategies
+copying build/lib/gig/strategies/options_vrp.py -> build/bdist.linux-x86_64/wheel/./gig/strategies
+copying build/lib/gig/strategies/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/strategies
+creating build/bdist.linux-x86_64/wheel/gig/native
+copying build/lib/gig/native/rolling.py -> build/bdist.linux-x86_64/wheel/./gig/native
+copying build/lib/gig/native/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/native
+copying build/lib/gig/pipeline.py -> build/bdist.linux-x86_64/wheel/./gig
+creating build/bdist.linux-x86_64/wheel/gig/portfolio
+copying build/lib/gig/portfolio/optimizer.py -> build/bdist.linux-x86_64/wheel/./gig/portfolio
+copying build/lib/gig/portfolio/construct.py -> build/bdist.linux-x86_64/wheel/./gig/portfolio
+copying build/lib/gig/portfolio/allocation.py -> build/bdist.linux-x86_64/wheel/./gig/portfolio
+copying build/lib/gig/portfolio/__init__.py -> build/bdist.linux-x86_64/wheel/./gig/portfolio
+copying build/lib/gig/portfolio/optimize.py -> build/bdist.linux-x86_64/wheel/./gig/portfolio
+running install_egg_info
+Copying src/gig.egg-info to build/bdist.linux-x86_64/wheel/./gig-0.1.0-py3.12.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/gig-0.1.0.dist-info/WHEEL
+creating '/workspace/work/evidence/wheels/gig-0.1.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'gig/__init__.py'
+adding 'gig/__main__.py'
+adding 'gig/artifacts.py'
+adding 'gig/cli.py'
+adding 'gig/config.py'
+adding 'gig/logging.py'
+adding 'gig/pipeline.py'
+adding 'gig/py.typed'
+adding 'gig/timestamps.py'
+adding 'gig/types.py'
+adding 'gig/assets/__init__.py'
+adding 'gig/assets/futures.py'
+adding 'gig/assets/options.py'
+adding 'gig/backtest/__init__.py'
+adding 'gig/backtest/costs.py'
+adding 'gig/backtest/metrics.py'
+adding 'gig/backtest/simulator.py'
+adding 'gig/data/__init__.py'
+adding 'gig/data/http.py'
+adding 'gig/data/lake.py'
+adding 'gig/data/listings.py'
+adding 'gig/data/universe.py'
+adding 'gig/data/universe_spec.py'
+adding 'gig/data/validated.py'
+adding 'gig/data/providers/__init__.py'
+adding 'gig/data/providers/alpaca_iex.py'
+adding 'gig/data/providers/base.py'
+adding 'gig/data/providers/cached.py'
+adding 'gig/data/providers/edgar.py'
+adding 'gig/data/providers/finnhub.py'
+adding 'gig/data/providers/fred.py'
+adding 'gig/data/providers/fundamentals_sec.py'
+adding 'gig/data/providers/synthetic.py'
+adding 'gig/data/providers/yahoo.py'
+adding 'gig/execution/__init__.py'
+adding 'gig/execution/algo.py'
+adding 'gig/execution/alpaca.py'
+adding 'gig/execution/base.py'
+adding 'gig/execution/oms.py'
+adding 'gig/execution/paper.py'
+adding 'gig/execution/pretrade.py'
+adding 'gig/execution/reconcile.py'
+adding 'gig/execution/simulator.py'
+adding 'gig/execution/targets.py'
+adding 'gig/execution/trader.py'
+adding 'gig/execution/twap.py'
+adding 'gig/factors/__init__.py'
+adding 'gig/factors/base.py'
+adding 'gig/factors/combine.py'
+adding 'gig/factors/filings.py'
+adding 'gig/factors/fundamentals.py'
+adding 'gig/factors/macro.py'
+adding 'gig/factors/momentum.py'
+adding 'gig/factors/neutralize.py'
+adding 'gig/factors/volatility.py'
+adding 'gig/microstructure/__init__.py'
+adding 'gig/microstructure/analytics.py'
+adding 'gig/ml/__init__.py'
+adding 'gig/ml/ranker.py'
+adding 'gig/ml/regimes.py'
+adding 'gig/ml/state_space.py'
+adding 'gig/ml/volatility.py'
+adding 'gig/native/__init__.py'
+adding 'gig/native/rolling.py'
+adding 'gig/nlp/__init__.py'
+adding 'gig/nlp/lexicon.py'
+adding 'gig/nlp/news.py'
+adding 'gig/nlp/ollama.py'
+adding 'gig/nlp/sentiment.py'
+adding 'gig/nlp/workflow.py'
+adding 'gig/ops/__init__.py'
+adding 'gig/ops/killswitch.py'
+adding 'gig/ops/maintenance.py'
+adding 'gig/ops/status.py'
+adding 'gig/options/__init__.py'
+adding 'gig/options/analytics.py'
+adding 'gig/portfolio/__init__.py'
+adding 'gig/portfolio/allocation.py'
+adding 'gig/portfolio/construct.py'
+adding 'gig/portfolio/optimize.py'
+adding 'gig/portfolio/optimizer.py'
+adding 'gig/research/__init__.py'
+adding 'gig/research/attribution.py'
+adding 'gig/research/experiment.py'
+adding 'gig/research/ic.py'
+adding 'gig/research/multiple_testing.py'
+adding 'gig/research/stat_arb.py'
+adding 'gig/research/state_models.py'
+adding 'gig/research/walkforward.py'
+adding 'gig/research/workflow.py'
+adding 'gig/risk/__init__.py'
+adding 'gig/risk/analytics.py'
+adding 'gig/risk/exposures.py'
+adding 'gig/risk/factor_model.py'
+adding 'gig/risk/limits.py'
+adding 'gig/risk/var.py'
+adding 'gig/service/__init__.py'
+adding 'gig/service/app.py'
+adding 'gig/service/contracts.py'
+adding 'gig/service/serialization.py'
+adding 'gig/service/snapshot.py'
+adding 'gig/service/terminal.py'
+adding 'gig/service/static/app.js'
+adding 'gig/service/static/index.html'
+adding 'gig/service/static/styles.css'
+adding 'gig/store/__init__.py'
+adding 'gig/store/schema.sql'
+adding 'gig/strategies/__init__.py'
+adding 'gig/strategies/equity_ls.py'
+adding 'gig/strategies/futures_tsmom.py'
+adding 'gig/strategies/options_vrp.py'
+adding 'gig-0.1.0.dist-info/METADATA'
+adding 'gig-0.1.0.dist-info/WHEEL'
+adding 'gig-0.1.0.dist-info/entry_points.txt'
+adding 'gig-0.1.0.dist-info/top_level.txt'
+adding 'gig-0.1.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
