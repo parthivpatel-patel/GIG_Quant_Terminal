@@ -1,0 +1,13 @@
+{
+  "n_samples": 24873,
+  "n_symbols": 40,
+  "symbols_tried": 40,
+  "bull_pct": 55.93213524705504,
+  "ic_mom5": 0.0053,
+  "ic_rsi": -0.0314,
+  "trained_at": "2026-03-30T09:28:51.019430",
+  "val_ic": 0.1004,
+  "train_secs": 13659.5,
+  "n_train": 19898,
+  "n_val": 4975
+}

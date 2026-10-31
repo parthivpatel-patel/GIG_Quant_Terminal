@@ -1,0 +1,3 @@
+strategy: options_vrp
+entry_threshold: 0.02
+note: "Short vol when IV-RV > threshold; long vol when IV is cheap."

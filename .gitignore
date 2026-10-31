@@ -1,0 +1,39 @@
+# Secrets — do not publish
+.env
+.env.*
+!.env.example
+
+# Local interpreters and caches (not source)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.so
+*.pyd
+*.db-shm
+*.db-wal
+
+# Runtime junk (recreated locally)
+run_24_7_pid.txt
+run_24_7_stdout.log
+run_24_7_stderr.log
+*.log
+
+# Optional large DuckDB naming variants (keep gig_database.db tracked)
+*.duckdb
+*.duckdb.wal
+data/cache/
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
