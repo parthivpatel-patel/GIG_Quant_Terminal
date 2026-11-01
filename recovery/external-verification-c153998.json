@@ -1,0 +1,13 @@
+{
+  "publication_commit": "4cd5e9ea95f251eeb781a338dfd42d43d8b267e9",
+  "source_commit": "c153998517213baf76b15d1ebcb7a5f77af0d523",
+  "external_download": "IMMUTABLE_GITHUB_RAW_URLS",
+  "baseline_previously_downloaded_independently": true,
+  "artifact_hashes_verified": true,
+  "base_plus_incremental_bare_restore": "PASS",
+  "git_fsck": "PASS",
+  "recovered_source_files": 371,
+  "restricted_weights_included": false,
+  "sole_verified_external_storage_provider": "GitHub",
+  "second_storage_provider_verified": false
+}

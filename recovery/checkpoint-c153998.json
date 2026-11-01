@@ -18,5 +18,6 @@
       "sha256": "c1d3c4a58044772382b11bfc9e2a4288930a98a89db329d1560aaf0a9db32bf7"
     }
   ],
-  "verification": "Local bundle verification passed; independent external download and bare restoration pending"
+  "verification": "PASS: independently downloaded baseline and update artifacts, verified hashes, restored exact source c153998 in a fresh bare repository, and passed git fsck",
+  "external_verification_report": "external-verification-c153998.json"
 }
