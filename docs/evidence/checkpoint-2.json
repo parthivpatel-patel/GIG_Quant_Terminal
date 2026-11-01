@@ -1,0 +1,40 @@
+{
+  "checkpoint": "persisted-workspace-native-integration",
+  "previous_local": "27f9fe6bb3a59b5ce3e60e2991af1c8d3b2f499b",
+  "previous_remote": "e6cd769a535c587c2a94746708abf915ac3f9026",
+  "branch": "development/gig-accelerated-2026",
+  "pytest": {
+    "passed": 482,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0,
+    "all_previous_duckdb_tests_executed": true
+  },
+  "frontend": {
+    "passed": 27,
+    "browser_visual_qa": false
+  },
+  "mypy": {
+    "checked_source_files": 107,
+    "errors": 0,
+    "flags": [
+      "--follow-imports=skip",
+      "--ignore-missing-imports",
+      "--disable-error-code=import-untyped"
+    ]
+  },
+  "ruff_configured_rules": "PASS",
+  "pyflakes": "PASS",
+  "compileall": "PASS",
+  "native_wheel_install_import_http": "PASS",
+  "native_max_abs_reference_difference": 1.7763568394002505e-15,
+  "container_restart": "PASS_ON_RECORDED_SOURCE_MANIFEST",
+  "container_current_workspace_revision": "REQUIRES_FINAL_IMAGE_REBUILD",
+  "arm64_validated": false,
+  "broker_connections": 0,
+  "paper_or_live_orders": 0,
+  "public_deployments": 0,
+  "T4": "T4_NOT_CERTIFIED",
+  "requirements_authority": "Uploaded master directive; original219-section authority unavailable;139UNSUPPLIED"
+}

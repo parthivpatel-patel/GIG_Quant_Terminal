@@ -1,0 +1,20 @@
+{
+  "name": "duckdb",
+  "version": "2.0.0",
+  "filename": "duckdb-2.0.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+  "source": "https://pypi.org/pypi/duckdb/2.0.0/json",
+  "download_url": "https://files.pythonhosted.org/packages/cc/33/01ad2535ee897db2bad70cbc800655167c53afd0b955eed84f0759c2f417/duckdb-2.0.0-cp312-abi3-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+  "sha256": "ab51ec57d329d6f3df37c0287b55d71c3fc07bb54b61d1afed09104f953b1431",
+  "expected_sha256": "ab51ec57d329d6f3df37c0287b55d71c3fc07bb54b61d1afed09104f953b1431",
+  "sha256_verified": true,
+  "requirement": "duckdb>=1.0",
+  "target": "/workspace/work/dependencies",
+  "proxy_preserved": true,
+  "supported_sandbox_network_grant": true,
+  "import_version": "2.0.0",
+  "distribution_version": "2.0.0",
+  "distribution_metadata_sha256": "d52a3ae8a9492d2a1a063800d72e2243fbfdd2f47380bcc3d1532284b1645e0b",
+  "distribution_record_sha256": "03cae8a1afd45b6da386681087ac5da34689a32ca4da40747e6c2fe07c4a908a",
+  "import_path": "/workspace/work/dependencies/duckdb/__init__.py",
+  "query_smoke": "PASS"
+}

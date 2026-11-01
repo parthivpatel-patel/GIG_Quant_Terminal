@@ -11,6 +11,7 @@ explicitly implement working-order cancellation.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 
 import pandas as pd
 
@@ -59,7 +60,7 @@ class Broker(ABC):
         """Cancel working orders so a new run starts from a clean book."""
         raise NotImplementedError("adapter must confirm working-order cancellation")
 
-    def close_all(self, limit_offset_bps: float = 25.0) -> list[Fill | OrderAcknowledgement]:
+    def close_all(self, limit_offset_bps: float = 25.0) -> Sequence[Fill | OrderAcknowledgement]:
         """
         Flatten every position.
 

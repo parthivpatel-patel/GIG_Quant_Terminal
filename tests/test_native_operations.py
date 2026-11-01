@@ -1,10 +1,10 @@
 """Native parity and operational recovery tests; no network or broker calls."""
 import io
 import json
-from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -27,7 +27,7 @@ class RollingTests(unittest.TestCase):
                 for ddof in [0, min(1, window-1)]:
                     reference = rolling_stats(data, window, ddof=ddof)
                     actual = rolling_stats(data, window, ddof=ddof, backend="native")
-                    for expected, found in zip(reference, actual):
+                    for expected, found in zip(reference, actual, strict=True):
                         np.testing.assert_allclose(found, expected, rtol=2e-10, atol=2e-8, equal_nan=True)
 
     def test_invalid_input_rejected(self):

@@ -24,7 +24,8 @@ import pandas as pd
 
 from gig import __version__
 from gig.config import get_settings
-from gig.service.serialization import DEFAULT_LIMITS, dumps, loads as strict_loads, normalize, public_error
+from gig.service.serialization import DEFAULT_LIMITS, dumps, normalize, public_error
+from gig.service.serialization import loads as strict_loads
 
 _CACHE: dict[str, tuple[float, bytes]] = {}
 _CACHE_LOCK = threading.RLock()
@@ -520,8 +521,8 @@ def _factor_cloud_impl(
     )
     sector_net = sector_net_exposure(weights, panel.sectors)
 
-    from gig.risk.factor_model import risk_report
     from gig.ml.ranker import available_backends
+    from gig.risk.factor_model import risk_report
 
     risk = risk_report(
         weights,
@@ -629,6 +630,7 @@ def live_tape(limit: int = 40) -> dict[str, Any]:
     research stack untrustworthy.
     """
     ts = time.time()
+    error: str | None
     try:
         if get_settings().broker_connectivity_enabled:
             from gig.pipeline import live_quotes

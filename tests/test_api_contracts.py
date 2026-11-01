@@ -4,9 +4,9 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-from decimal import Decimal
 import math
 import unittest
+from decimal import Decimal
 from unittest.mock import patch
 
 import httpx

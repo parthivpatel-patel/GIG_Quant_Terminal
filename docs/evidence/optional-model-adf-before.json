@@ -1,0 +1,14 @@
+{
+  "component": "gig.research.stat_arb.adf_test",
+  "runtime": "statsmodels0.15.0",
+  "fixture": "400 deterministic normal observations from numpy.default_rng(20261031)",
+  "observed_before": {
+    "state": "ERROR",
+    "code": "ADF_NUMERICAL_DIAGNOSTIC",
+    "statistic": null,
+    "pvalue": null
+  },
+  "actual_underlying_statistic": -20.032477640708702,
+  "non_numerical_warning": "FutureWarning: adfuller currently returns a plain tuple whose length depends on the store and autolag arguments. In release 0.16 or after July 2027, whichever is later, the default behavior will switch to always returning an ADFullerResult. Set result_object=True to switch now, or result_object=False to keep the current behavior and silence this warning.",
+  "repair": "Set result_object=False only when the installed adfuller signature supports it; numerical warnings remain fail-closed."
+}

@@ -1,27 +1,26 @@
 """Offline numerical and persistence checks; run with Python unittest."""
 
-from datetime import UTC, datetime, timedelta, timezone
-from decimal import Decimal, localcontext
-from pathlib import Path
 import sqlite3
 import sys
 import tempfile
 import unittest
+from datetime import UTC, datetime, timedelta, timezone
+from decimal import Decimal, localcontext
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
+
+import pandas as pd
 
 from gig.execution.alpaca import AlpacaBroker
 from gig.execution.oms import OfflineOMS, OrderError
 from gig.execution.paper import PaperBroker
-from gig.execution.twap import plan_twap
-from gig.execution.simulator import simulate_signals
 from gig.execution.pretrade import check as risk_check
 from gig.execution.reconcile import build_trade_plan
+from gig.execution.simulator import SimulationLimits, simulate_signals
 from gig.execution.targets import TargetBook
-from gig.execution.simulator import SimulationLimits
+from gig.execution.twap import plan_twap
 from gig.types import Fill, OrderAcknowledgement
-import pandas as pd
-
 
 NOW = datetime(2026, 10, 31, 12, tzinfo=UTC)
 
@@ -222,9 +221,8 @@ class BrokerGuardTests(unittest.TestCase):
         for endpoint in ["https://api.alpaca.markets", "https://paper-api.alpaca.markets.evil.invalid", "http://paper-api.alpaca.markets",
                          "https://paper-api.alpaca.markets@evil.invalid", "https://paper-api.alpaca.markets/other", "https://paper-api.alpaca.markets?x=1"]:
             settings = SimpleNamespace(alpaca_base_url=endpoint, broker_connectivity_enabled=True)
-            with self.subTest(endpoint=endpoint), patch("gig.execution.alpaca.get_settings", return_value=settings):
-                with self.assertRaisesRegex(RuntimeError, "approved Alpaca paper endpoint"):
-                    AlpacaBroker()
+            with self.subTest(endpoint=endpoint), patch("gig.execution.alpaca.get_settings", return_value=settings), self.assertRaisesRegex(RuntimeError, "approved Alpaca paper endpoint"):
+                AlpacaBroker()
 
     def test_in_memory_paper_rejects_nonfinite_and_negative_intents(self):
         broker = PaperBroker(lambda symbol: 100)

@@ -15,7 +15,6 @@ from typing import Any
 from gig.service.serialization import public_error
 
 
-
 def _f(value: Any) -> float | None:
     try:
         out = float(value)
@@ -30,16 +29,13 @@ def signal_attribution(factor_ic: dict[str, Any] | None) -> list[dict[str, Any]]
         return []
     rows: list[tuple[str, float]] = []
     for name, payload in factor_ic.items():
-        if isinstance(payload, dict):
-            ic = payload.get("ic_mean", payload.get("mean"))
-        else:
-            ic = payload
+        ic = payload.get("ic_mean", payload.get("mean")) if isinstance(payload, dict) else payload
         val = _f(ic)
         if val is None:
             continue
         rows.append((str(name), abs(val)))
     total = sum(v for _, v in rows) or 1.0
-    out = [
+    out: list[dict[str, Any]] = [
         {
             "name": name,
             "ic": _f((factor_ic.get(name) or {}).get("ic_mean") if isinstance(factor_ic.get(name), dict) else factor_ic.get(name)),
@@ -107,8 +103,8 @@ def paper_nav_trail(limit: int = 40) -> dict[str, Any]:
     live = df[df["dry_run"] == False] if "dry_run" in df.columns else df  # noqa: E712
     use = live if not live.empty else df
     use = use.sort_values("ts")
-    points = []
-    prev = None
+    points: list[dict[str, Any]] = []
+    prev: float | None = None
     for _, row in use.tail(limit).iterrows():
         nav = _f(row.get("nav"))
         chg = None if prev is None or nav is None or prev <= 0 else (nav / prev) - 1.0
@@ -127,8 +123,8 @@ def paper_nav_trail(limit: int = 40) -> dict[str, Any]:
     if not points:
         return {"available": False}
 
-    first = next((p["nav"] for p in points if p["nav"]), None)
-    last = next((p["nav"] for p in reversed(points) if p["nav"]), None)
+    first: float | None = next((p["nav"] for p in points if p["nav"]), None)
+    last: float | None = next((p["nav"] for p in reversed(points) if p["nav"]), None)
     total = None if first is None or last is None or first <= 0 else (last / first) - 1.0
     return {
         "available": True,

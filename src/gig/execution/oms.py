@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from decimal import Context, Decimal, Inexact, InvalidOperation, localcontext
 from functools import wraps
 from pathlib import Path
-from typing import Iterator
 
 
 class OrderError(ValueError):
@@ -48,7 +48,11 @@ def _decimal(value: str | int | Decimal, *, positive: bool = True) -> Decimal:
         raise OrderError("invalid decimal") from None
     if not number.is_finite() or (number <= 0 if positive else number < 0):
         raise OrderError("decimal must be finite and positive" if positive else "decimal must be nonnegative")
-    if len(number.as_tuple().digits) > 24 or abs(number.as_tuple().exponent) > 12:
+    decimal_tuple = number.as_tuple()
+    exponent = decimal_tuple.exponent
+    if not isinstance(exponent, int):
+        raise OrderError("decimal must have a finite numeric exponent")
+    if len(decimal_tuple.digits) > 24 or abs(exponent) > 12:
         raise OrderError("decimal exceeds supported precision")
     return number
 

@@ -1,10 +1,10 @@
 """Broker-free regressions for admission, unknown outcomes, and crash replay."""
-from datetime import UTC, datetime, timedelta
-from dataclasses import asdict
-from pathlib import Path
-from types import SimpleNamespace
 import tempfile
 import unittest
+from dataclasses import asdict
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pandas as pd
@@ -43,15 +43,14 @@ class AdapterSafetyTests(unittest.TestCase):
             ("AAA", 1, True, "x"), ("AAA", 1, 100, ""),
             ("AAA", 1, 100, "secret\n"), ("AAA", 1, 100, 42),
         ]:
-            with self.subTest(symbol=symbol, quantity=quantity, price=price, client_id=client_id):
-                with self.assertRaises(ValueError):
-                    broker.submit(symbol, "buy", quantity, limit_price=price, client_order_id=client_id)
+            with self.subTest(symbol=symbol, quantity=quantity, price=price, client_id=client_id), self.assertRaises(ValueError):
+                broker.submit(symbol, "buy", quantity, limit_price=price, client_order_id=client_id)
         broker._client.submit_order.assert_not_called()
 
     def test_unknown_clock_remains_unknown(self):
         broker = self.broker()
         for state in (None, "true", 1):
-            broker._client = SimpleNamespace(get_clock=lambda: SimpleNamespace(is_open=state))
+            broker._client = SimpleNamespace(get_clock=lambda state=state: SimpleNamespace(is_open=state))
             self.assertIsNone(broker.is_open())
         broker._client = SimpleNamespace(get_clock=lambda: SimpleNamespace(is_open=False))
         self.assertIs(broker.is_open(), False)
@@ -59,7 +58,7 @@ class AdapterSafetyTests(unittest.TestCase):
     def test_cancellation_requires_known_success_for_every_response(self):
         broker = self.broker()
         for responses in (None, {}, [SimpleNamespace(status=500)], [SimpleNamespace()]):
-            broker._client = SimpleNamespace(cancel_orders=lambda: responses)
+            broker._client = SimpleNamespace(cancel_orders=lambda responses=responses: responses)
             with self.subTest(responses=responses), self.assertRaisesRegex(RuntimeError, "cancellation failed"):
                 broker.cancel_open_orders()
         broker._client = SimpleNamespace(cancel_orders=lambda: [])

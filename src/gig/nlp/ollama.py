@@ -15,12 +15,11 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from urllib.parse import urlsplit
 from typing import Any
-
-from gig.service.serialization import public_error
+from urllib.parse import urlsplit
 
 from gig.config import get_settings
+from gig.service.serialization import public_error
 
 DEFAULT_HOST = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "llama3.2"

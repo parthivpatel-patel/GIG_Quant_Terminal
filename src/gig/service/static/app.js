@@ -17,6 +17,7 @@
     { id: "operations", label: "Operations", icon: "M3 12h4l3-7 4 14 3-7h4M4 3h16M4 21h16", description: "Dependency readiness, safe configuration, restart recovery, and operating status." },
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
+  const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate" };
   const state = { section: sections[0], mode: "local", payload: null, rows: [], columns: [], sort: null, request: null, chart: null, points: [], projected: [], angle: -.55, tilt: .40, zoom: 1, dimension: 3, drag: null };
   const numberFormat = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 7 });
   const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -109,10 +110,13 @@
     $("breadcrumb").textContent = state.section.label;
     $("section-description").textContent = state.section.description;
     document.title = `${state.section.label} · GIG Quant Terminal`;
-    $("workbench").classList.toggle("hidden", !["models", "options", "research", "markets", "stat-arb"].includes(state.section.id));
+    $("workbench").classList.remove("hidden");
     if (state.section.id === "options") $("analytics-kind").value = "options";
     else if (state.section.id === "models") $("analytics-kind").value = "kalman";
-    else if (state.section.id === "markets") $("analytics-kind").value = "microstructure";
+    else if (state.section.id === "markets") $("analytics-kind").value = "workspace-bars";
+    else if (state.section.id === "news") $("analytics-kind").value = "workspace-news";
+    else if (state.section.id === "research") $("analytics-kind").value = "workspace-research";
+    else if (state.section.id === "execution") $("analytics-kind").value = "workspace-simulate";
     loadExample();
     state.sort = null;
     $("table-search").value = "";
@@ -136,7 +140,17 @@
     renderChart();
     const timeout = setTimeout(() => controller.abort("timeout"), 20000);
     try {
-      const response = await fetch(`/api/v1/terminal/${encodeURIComponent(state.section.id)}?mode=${encodeURIComponent(state.mode)}`, { signal: controller.signal, cache: "no-store", headers: { Accept: "application/json" } });
+      let query = `mode=${encodeURIComponent(state.mode)}`;
+      if (state.mode === "local") {
+        const maximumAge = $("freshness-policy").value;
+        if (!["3600", "86400", "604800"].includes(maximumAge)) throw new Error("Unsupported freshness policy.");
+        query += `&max_age_seconds=${maximumAge}`;
+        // The server admits aware timestamps. Keep the original text so
+        // browser Date parsing cannot truncate nanosecond point-in-time data.
+        const cutoff = $("replay-asof").value;
+        if (cutoff !== "") query += `&as_of=${encodeURIComponent(cutoff)}`;
+      }
+      const response = await fetch(`/api/v1/terminal/${encodeURIComponent(state.section.id)}?${query}`, { signal: controller.signal, cache: "no-store", headers: { Accept: "application/json" } });
       const payload = await response.json();
       if (state.request !== controller) return;
       if (!validContract(payload) || (!response.ok && payload.state !== "ERROR")) throw new Error("Backend returned an unsupported truth-state contract.");
@@ -161,7 +175,7 @@
     $("state-badge").dataset.state = payload.state;
     $("source-label").textContent = `${printable(provenance.source)} · ${classification}`;
     $("asof-label").textContent = `As of ${provenance.as_of === null || provenance.as_of === undefined ? "unknown" : String(provenance.as_of)}`;
-    $("truth-notice").textContent = `${payload.state === "STALE" ? "STALE · Historical snapshot; freshness requirement is not satisfied. " : ""}${synthetic ? "SYNTHETIC INPUTS · Demonstration and research only · No broker-observed performance" : "Research output requires review before any trading use."}`;
+    $("truth-notice").textContent = `${payload.state === "STALE" ? "STALE · Historical snapshot; freshness requirement is not satisfied. " : ""}${synthetic ? "SYNTHETIC INPUTS · Demonstration and research only · No broker-observed performance" : provenance.evidence_state === "CALLER_SUPPLIED_NOT_VENDOR_VERIFIED" ? "Caller-supplied provenance · Vendor authenticity unverified · Research only" : "Research output requires review before any trading use."}`;
     if (data.title) $("section-title").textContent = String(data.title);
     if (data.description) $("section-description").textContent = String(data.description);
     const errorMessage = payload.error && (payload.error.message || payload.error.code);
@@ -169,7 +183,7 @@
       $("error-panel").textContent = `${payload.error.code || payload.state}: ${errorMessage}`;
       $("error-panel").classList.remove("hidden");
     } else if (["UNAVAILABLE", "UNKNOWN"].includes(payload.state)) {
-      $("error-panel").textContent = "This capability has no supported data available in the selected environment. Select another section or explicitly choose the synthetic research demo.";
+      $("error-panel").textContent = "No admissible data satisfies this view and its time/freshness policy. Admit supported local evidence in the workbench, adjust the explicit cutoff, or select the synthetic research demo.";
       $("error-panel").classList.remove("hidden");
     }
     renderMetrics(data.metrics);
@@ -400,7 +414,17 @@
     hmm: { observations: [-0.02, -0.01, 0.01, 0.02, -0.01, 0.03, 0.02, -0.02], states: 2, max_iterations: 50 },
     microstructure: { quotes: [{ timestamp_ns: 100, bid: 99, ask: 101, bid_size: 10, ask_size: 12, instrument: "SYN001", source: "deterministic-demo", data_kind: "SYNTHETIC" }], trades: [{ timestamp_ns: 101, price: 101, size: 5, instrument: "SYN001", source: "deterministic-demo", data_kind: "SYNTHETIC" }] },
   };
-  function loadExample() { $("analytics-input").value = JSON.stringify(examples[$("analytics-kind").value], null, 2); }
+  const fixtureTimestamp = (day) => `2026-09-${String(day).padStart(2, "0")}T20:00:00+00:00`;
+  examples["workspace-bars"] = { source: "authored-synthetic-workbench-v1", classification: "SYNTHETIC", corporate_action_policy: "RAW", currency: "USD", rows: Array.from({ length: 28 }, (_, index) => ["SYN001", "SYN002"].map((instrument_id, instrument) => { const close = instrument ? 50 - index * .2 : 100 + index * .5; return { instrument_id, timestamp: fixtureTimestamp(index + 1), available_at: fixtureTimestamp(index + 1), open: close - .2, high: close + 1, low: close - 1, close, volume: 1000000 }; })).flat() };
+  examples["workspace-news"] = { as_of: fixtureTimestamp(28), aliases: { "SYN001": "SYN001" }, articles: [{ source: "authored-synthetic-workbench-v1", article_id: "synthetic-fixture-news-1", url: "", license: "Authored synthetic research fixture", title: "SYN001 reports profit growth", body: "This authored synthetic example mentions SYN001. Profit growth is a lexical research input, not an observed article or validated signal.", published_at: fixtureTimestamp(28), available_at: fixtureTimestamp(28), symbols: ["SYN001"] }] };
+  examples["workspace-research"] = { source: "authored-synthetic-workbench-v1", classification: "SYNTHETIC", model: "ridge", min_train: 10, test_size: 5, embargo: 1, rows: Array.from({ length: 28 }, (_, index) => ({ timestamp: fixtureTimestamp(index + 1), available_at: fixtureTimestamp(index + 1), label_end: fixtureTimestamp(index + 2), features: { authored_factor: Math.sin(index / 3), lagged_feature: Math.cos(index / 4) }, target: .01 * Math.sin((index + 1) / 3) })) };
+  examples["workspace-simulate"] = { source_id: "authored-synthetic-workbench-v1", classification: "SYNTHETIC", currency: "USD", run_id: "authored-synthetic-rehearsal-1", asof: fixtureTimestamp(28), now: fixtureTimestamp(28), scores: { SYN001: 1, SYN002: -1 }, prices: { SYN001: 113.5, SYN002: 44.6 }, sectors: { SYN001: "Authored sector A", SYN002: "Authored sector B" }, nav: 1000000, n_long: 1, n_short: 1 };
+  function loadExample() {
+    const kind = $("analytics-kind").value;
+    $("analytics-input").value = JSON.stringify(examples[kind], null, 2);
+    $("run-analysis").textContent = workspaceActions[kind] ? (kind === "workspace-simulate" ? "Run offline simulation" : kind === "workspace-research" ? "Run and save research" : "Admit and save locally") : "Run local calculation";
+    $("workbench-scope").textContent = workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.";
+  }
   async function runAnalysis() {
     const output = $("analytics-output");
     const sourceText = $("analytics-input").value;
@@ -413,9 +437,14 @@
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
     try {
-      const response = await fetch(`/api/v1/analytics/${encodeURIComponent($("analytics-kind").value)}`, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: sourceText, signal: controller.signal, cache: "no-store" });
+      const kind = $("analytics-kind").value;
+      const action = workspaceActions[kind];
+      const endpoint = action ? `/api/v1/workspace/${action}` : `/api/v1/analytics/${encodeURIComponent(kind)}`;
+      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: sourceText, signal: controller.signal, cache: "no-store" });
       const result = await response.json();
-      output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${JSON.stringify(result, null, 2)}`;
+      if (!validContract(result) || (!response.ok && result.state !== "ERROR")) throw new Error("Unsupported response contract.");
+      output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
+      if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();
     } catch { output.textContent = "Analysis response could not be loaded. Check the local service, supported input contract, and retry."; }
     finally { clearTimeout(timer); button.disabled = false; }
   }
@@ -433,6 +462,8 @@
   updateClock(); setInterval(updateClock, 1000);
   $("theme-toggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
   $("data-mode").addEventListener("change", () => { state.mode = $("data-mode").value; loadSection(); });
+  $("freshness-policy").addEventListener("change", loadSection);
+  $("replay-asof").addEventListener("change", loadSection);
   $("refresh").addEventListener("click", loadSection);
   $("table-search").addEventListener("input", renderTable);
   $("export-csv").addEventListener("click", exportCsv);

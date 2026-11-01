@@ -1,0 +1,7 @@
+{
+  "error_type": "SerializationError",
+  "code": "TOO_MANY_NODES",
+  "persisted_articles_after_error": 1,
+  "state_directory_created": true,
+  "body_characters": 56000
+}

@@ -49,7 +49,7 @@ def _relevance_labels(y: pd.Series, n_bins: int = 5) -> np.ndarray:
     absolute cut-points as a volatile one. Empty or single-name days fall back
     to zeros.
     """
-    out = np.zeros(len(y), dtype=np.int32)
+    out: np.ndarray = np.zeros(len(y), dtype=np.int32)
     # Work on a contiguous positional index so group masks align with `out`.
     ordered = y.sort_index(level=0)
     pos = 0

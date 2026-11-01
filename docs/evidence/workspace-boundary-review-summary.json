@@ -1,0 +1,20 @@
+{
+  "tests": 34,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "ruff": "PASS",
+  "mypy_workspace": "PASS",
+  "files": [
+    "src/gig/service/workspace.py",
+    "tests/test_terminal_workspace.py"
+  ],
+  "repairs": [
+    "Full news-result preflight before state writes, including future-known evidence",
+    "Bounded detached JSON admission without integer/text coercion",
+    "Registered model view reflects actual trained immutable registry state",
+    "Research/model envelopes preserve model identity",
+    "Bounded provenance excerpt with count, completeness flag and aggregate identity over all hashes",
+    "Statistical-arbitrage analytical windows over2000 observations return UNKNOWN"
+  ]
+}

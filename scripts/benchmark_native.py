@@ -28,8 +28,8 @@ def main():
     data = np.random.default_rng(107).normal(0, 0.02, args.samples)
     reference = rolling_stats(data, 252)
     actual = rolling_stats(data, 252, backend="native")
-    max_error = max(float(np.nanmax(np.abs(a-b))) for a, b in zip(reference, actual))
-    for a, b in zip(reference, actual):
+    max_error = max(float(np.nanmax(np.abs(a-b))) for a, b in zip(reference, actual, strict=True))
+    for a, b in zip(reference, actual, strict=True):
         np.testing.assert_allclose(a, b, rtol=1e-10, atol=1e-12, equal_nan=True)
     report = {"seed": 107, "samples": args.samples, "window": 252,
               "repeats": args.repeats, "architecture": platform.machine(),

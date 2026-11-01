@@ -5,19 +5,21 @@ The app is a thin shell over `gig.service.snapshot`: every route returns a
 payload that module already built. FastAPI is an optional extra, so it is
 imported inside `create_app()` and the package stays importable without it.
 
-Read-only by design. There is no order-entry route, because a research UI that
-can send orders is a production system with none of the controls of one.
+Workspace writes admit caller evidence and run local research or simulations.
+There is no brokerage order-entry route and no automatic provider connection.
 """
 
-from functools import wraps
 import inspect
+import threading
+from datetime import UTC, datetime
+from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 STATIC_DIR = Path(__file__).parent / "static"
 
 
-def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
+def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Path | None = None) -> Any:
     try:
         from fastapi import Body, FastAPI, Query, Request
         from fastapi.exceptions import RequestValidationError
@@ -32,9 +34,21 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
         ) from exc
 
     from gig import __version__
+    from gig.config import get_settings
     from gig.service import snapshot
     from gig.service.contracts import Contract, EnvelopeSchema, State
-    from gig.service.serialization import DEFAULT_LIMITS, SerializationError, dumps, loads, public_error
+    from gig.service.serialization import (
+        DEFAULT_LIMITS,
+        SerializationError,
+        dumps,
+        loads,
+        public_error,
+    )
+    from gig.service.workspace import TerminalWorkspace
+    from gig.timestamps import aware_timestamp
+
+    workspace = TerminalWorkspace(state_dir if state_dir is not None else get_settings().data_dir / "terminal")
+    workspace_write_lock = threading.Lock()
 
     class StrictJSONResponse(JSONResponse):
         def render(self, content: Any) -> bytes:
@@ -64,11 +78,12 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
     app = FastAPI(
         title="GIG Trading Algorithm",
         version=__version__,
-        description="Read-only research terminal: factor space, book, risk limits, tape, Ollama desk.",
+        description="Local research terminal with admitted evidence, reproducible experiments, and offline simulation. No brokerage order-entry API.",
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
     )
     app.router.route_class = StrictRoute
+    app.state.workspace = workspace
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request, exc):
@@ -122,11 +137,50 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
         return response
 
     @app.get("/api/v1/terminal/{section}", response_model=EnvelopeSchema)
-    def terminal_section(section: str, mode: str = Query("local", pattern="^(local|synthetic)$")) -> Any:
+    def terminal_section(section: str, mode: str = Query("local", pattern="^(local|synthetic)$"),
+                         as_of: str | None = Query(None, max_length=100),
+                         max_age_seconds: float | None = Query(None, ge=0, le=366 * 86400)) -> Any:
         from gig.service.terminal import SECTIONS, section_snapshot
         if section not in SECTIONS:
             return failure("INVALID_REQUEST", 404)
+        try:
+            cutoff = aware_timestamp(as_of if as_of is not None else datetime.now(UTC))
+        except (ValueError, TypeError, OverflowError):
+            return failure("INVALID_REQUEST", 422)
+        if mode == "local":
+            result = workspace.section(section, cutoff, max_age_seconds)
+            if result is not None:
+                return result
         return section_snapshot(section, mode)
+
+    @app.post("/api/v1/workspace/{action}", response_model=EnvelopeSchema)
+    async def workspace_action(action: str, request: Request) -> Any:
+        methods = {"bars": workspace.ingest_bars, "news": workspace.ingest_news,
+                   "research": workspace.run_research, "simulate": workspace.simulate}
+        if action not in methods:
+            return failure("INVALID_REQUEST", 404)
+        # Local mutations require JSON and reject cross-origin browser writes.
+        # Reads and numerical calculations confer no broker authority.
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not workspace_write_lock.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            payload = loads(await request.body())
+            if not isinstance(payload, dict):
+                return failure("INVALID_REQUEST", 422)
+            return await run_in_threadpool(methods[action], payload)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        except (ValueError, TypeError, KeyError, OverflowError):
+            return failure("INVALID_REQUEST", 422)
+        except ImportError:
+            return failure("DEPENDENCY_UNAVAILABLE", 503)
+        finally:
+            workspace_write_lock.release()
 
     @app.post("/api/v1/analytics/{kind}", response_model=EnvelopeSchema)
     async def numerical_research(kind: str, request: Request) -> Any:
@@ -269,7 +323,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
         return {**ollama_status(), "prompts": default_prompts()}
 
     @app.post("/api/ollama/brief")
-    async def ollama_brief(request: Request, body: dict[str, Any] = Body(default_factory=dict)) -> dict[str, Any]:
+    async def ollama_brief(request: Request, body: Annotated[dict[str, Any] | None, Body()] = None) -> dict[str, Any]:
         from gig.nlp.ollama import research_brief
 
         payload = body or {}

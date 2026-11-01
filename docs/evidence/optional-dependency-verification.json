@@ -1,0 +1,226 @@
+{
+  "project_requirement": {
+    "lightgbm": ">=4.3",
+    "statsmodels": ">=0.14",
+    "patsy": ">=0.5.6",
+    "pybind11": ">=2.12"
+  },
+  "dependencies": [
+    {
+      "name": "lightgbm",
+      "version": "4.7.0",
+      "url": "https://files.pythonhosted.org/packages/15/eb/837ea3b40cc36e22eeebb9785c01e42b2c255d033eea1d2d9ee8e2540e55/lightgbm-4.7.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "d23e922acd891e77212e4d0fbcee9ba973c96dee479491341d05ba595357ebb7",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "narwhals>=1.15",
+        "numpy>=1.21.3",
+        "scipy",
+        "narwhals[pyarrow]; extra == \"arrow\"",
+        "pyarrow>=16.0.0; extra == \"arrow\"",
+        "dask[array,dataframe,distributed]>=2.0.0; extra == \"dask\"",
+        "narwhals[pandas]; extra == \"dask\"",
+        "pandas>=1.3.4; extra == \"dask\"",
+        "narwhals[pandas]; extra == \"pandas\"",
+        "pandas>=1.3.4; extra == \"pandas\"",
+        "graphviz; extra == \"plotting\"",
+        "matplotlib; extra == \"plotting\"",
+        "narwhals[polars]; extra == \"polars\"",
+        "polars>=1.0.0; extra == \"polars\"",
+        "scikit-learn>=1.0.2; extra == \"scikit-learn\""
+      ],
+      "installed_version": "4.7.0",
+      "official_pypi_sha256": "d23e922acd891e77212e4d0fbcee9ba973c96dee479491341d05ba595357ebb7",
+      "pip_archive_hash_matches_official_pypi": true
+    },
+    {
+      "name": "statsmodels",
+      "version": "0.15.0",
+      "url": "https://files.pythonhosted.org/packages/41/c7/aeadca282baf51d7b9c135674bac79ded91f4db79c69c188575d22234342/statsmodels-0.15.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+      "sha256": "c6f2bd48915cc9b3b95c3c7f6ac363b6f8aaa38172962ba5f7f6885f0dfe57f2",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "numpy<3,>=1.23.5",
+        "scipy!=1.9.2,>=1.8",
+        "pandas!=2.1.0,>=1.4",
+        "patsy>=0.5.6",
+        "packaging>=21.3",
+        "formulaic>=1.1.0",
+        "pytest<10,>=8.4.1; extra == \"test\"",
+        "pytest-randomly; extra == \"test\"",
+        "pytest-run-parallel; extra == \"test\"",
+        "pytest-xdist; extra == \"test\"",
+        "pytest-cov; extra == \"test\"",
+        "coverage[toml]; extra == \"test\"",
+        "meson; extra == \"test\"",
+        "ninja; sys_platform != \"emscripten\" and extra == \"test\"",
+        "sphinx; extra == \"doc\"",
+        "pandas!=2.1.0,>=2.2.2; extra == \"doc\"",
+        "pydata-sphinx-theme; extra == \"doc\"",
+        "jupyter; extra == \"doc\"",
+        "notebook; extra == \"doc\"",
+        "nbsphinx; extra == \"doc\"",
+        "nbconvert; extra == \"doc\"",
+        "pyyaml; extra == \"doc\"",
+        "pandas-datareader; extra == \"doc\"",
+        "simplegeneric; extra == \"doc\"",
+        "seaborn; extra == \"doc\"",
+        "numpydoc; extra == \"doc\"",
+        "pymc; os_name != \"nt\" and extra == \"doc\"",
+        "arviz; os_name != \"nt\" and extra == \"doc\"",
+        "jinja2; extra == \"doc\"",
+        "pickleshare; extra == \"doc\"",
+        "pytest<10,>=8.4.1; extra == \"doc\"",
+        "cython<4,>=3.0.10; extra == \"dev\"",
+        "setuptools_scm~=9.0; extra == \"dev\"",
+        "meson-python>=0.18.0; extra == \"dev\"",
+        "meson; extra == \"dev\"",
+        "ninja; extra == \"dev\"",
+        "matplotlib>=3; extra == \"dev\"",
+        "colorama; extra == \"dev\"",
+        "joblib; extra == \"dev\"",
+        "pywinpty; os_name == \"nt\" and extra == \"dev\"",
+        "ruff; extra == \"dev\"",
+        "polars>=1.0.0; extra == \"polars\""
+      ],
+      "installed_version": "0.15.0",
+      "official_pypi_sha256": "c6f2bd48915cc9b3b95c3c7f6ac363b6f8aaa38172962ba5f7f6885f0dfe57f2",
+      "pip_archive_hash_matches_official_pypi": true
+    },
+    {
+      "name": "patsy",
+      "version": "1.0.3",
+      "url": "https://files.pythonhosted.org/packages/20/70/cd3cf5cff538323076a879edef02cce6f13f7d75e03d12f211b0a0dbd178/patsy-1.0.3-py2.py3-none-any.whl",
+      "sha256": "d3dbebe8fd5f46e29912d030b63c6268647b59bf788a99e2af28a30234cf357c",
+      "requires_python": ">=3.6",
+      "requires_dist": [
+        "numpy>=1.4",
+        "packaging",
+        "pytest; extra == \"test\"",
+        "pytest-cov; extra == \"test\"",
+        "scipy; extra == \"test\""
+      ],
+      "installed_version": "1.0.3",
+      "official_pypi_sha256": "d3dbebe8fd5f46e29912d030b63c6268647b59bf788a99e2af28a30234cf357c",
+      "pip_archive_hash_matches_official_pypi": true
+    },
+    {
+      "name": "pybind11",
+      "version": "3.1.0",
+      "url": "https://files.pythonhosted.org/packages/33/fd/8762f7ee3e4e4be6d1d846cffb4916dd9bb02b2f800d3603718a0efe494c/pybind11-3.1.0-py3-none-any.whl",
+      "sha256": "b8488090f8acffbcb6b5d6a85571a6827a0a2981ffb75e5a0b27b87c4a6b7dd0",
+      "requires_python": ">=3.9",
+      "requires_dist": [
+        "pybind11-global==3.1.0; extra == \"global\""
+      ],
+      "installed_version": "3.1.0",
+      "official_pypi_sha256": "b8488090f8acffbcb6b5d6a85571a6827a0a2981ffb75e5a0b27b87c4a6b7dd0",
+      "pip_archive_hash_matches_official_pypi": true
+    },
+    {
+      "name": "narwhals",
+      "version": "2.28.0",
+      "url": "https://files.pythonhosted.org/packages/cf/82/8ef9c7e0f50493307a49c09cfa7f00c5a778b6d1921f7b2dabe1d3a5809e/narwhals-2.28.0-py3-none-any.whl",
+      "sha256": "1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+      "requires_python": ">=3.10",
+      "requires_dist": [
+        "cudf-cu12>=24.10.0 ; sys_platform == 'linux' and extra == 'cudf'",
+        "dask[dataframe]>=2024.8 ; extra == 'dask'",
+        "duckdb>=1.1 ; extra == 'duckdb'",
+        "ibis-framework>=6.0.0 ; extra == 'ibis'",
+        "packaging>=21.3 ; extra == 'ibis'",
+        "pyarrow-hotfix>=0.7 ; extra == 'ibis'",
+        "modin>=0.22.0 ; extra == 'modin'",
+        "pandas>=1.3.4 ; extra == 'pandas'",
+        "polars>=0.20.4 ; extra == 'polars'",
+        "pyarrow>=13.0.0 ; extra == 'pyarrow'",
+        "pyspark>=3.5.0 ; extra == 'pyspark'",
+        "pyspark[connect]>=3.5.0 ; extra == 'pyspark-connect'",
+        "narwhals[duckdb] ; extra == 'sql'",
+        "sqlparse>=0.5.5 ; extra == 'sql'",
+        "sqlframe>=3.22.0,!=3.39.3 ; extra == 'sqlframe'"
+      ],
+      "installed_version": "2.28.0",
+      "official_pypi_sha256": "1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+      "pip_archive_hash_matches_official_pypi": true
+    },
+    {
+      "name": "formulaic",
+      "version": "1.2.2",
+      "url": "https://files.pythonhosted.org/packages/fc/75/0576b03f7889ad25b5385b4f6c69e0543713425a6f193b056c9b0a2e65ce/formulaic-1.2.2-py3-none-any.whl",
+      "sha256": "0f84ff49e3fc9dc0e68ab08a0a9427874021aa6c558e66b44dc634a35739b09b",
+      "requires_python": ">=3.9",
+      "requires_dist": [
+        "interface-meta>=1.2.0",
+        "narwhals>=1.17",
+        "numpy>=1.20.0",
+        "pandas>=1.3",
+        "scipy>=1.6",
+        "typing-extensions>=4.2.0",
+        "wrapt>=1.0; python_version < '3.13'",
+        "wrapt>=1.17.0rc1; python_version >= '3.13'",
+        "pyarrow>=1; extra == 'arrow'",
+        "sympy!=1.10,>=1.3; extra == 'calculus'",
+        "polars>=1; extra == 'polars'"
+      ],
+      "installed_version": "1.2.2",
+      "official_pypi_sha256": "0f84ff49e3fc9dc0e68ab08a0a9427874021aa6c558e66b44dc634a35739b09b",
+      "pip_archive_hash_matches_official_pypi": true
+    },
+    {
+      "name": "interface_meta",
+      "version": "2.0.1",
+      "url": "https://files.pythonhosted.org/packages/a1/d3/20a61a248feb1249cd81f83ce731f0bdf5170ed96a08a298f7081cda9e90/interface_meta-2.0.1-py3-none-any.whl",
+      "sha256": "f38016bef9a4429b6d0792d809be7b65e9781820c674bf7f463999086b6e6323",
+      "requires_python": ">=3.10",
+      "requires_dist": [],
+      "installed_version": "2.0.1",
+      "official_pypi_sha256": "f38016bef9a4429b6d0792d809be7b65e9781820c674bf7f463999086b6e6323",
+      "pip_archive_hash_matches_official_pypi": true
+    },
+    {
+      "name": "wrapt",
+      "version": "2.5.2",
+      "url": "https://files.pythonhosted.org/packages/dd/26/a6caa9a84ef5db4a273787949cea7ab51f6001d2548768af4c8e3c49debd/wrapt-2.5.2-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl",
+      "sha256": "092472b7b1494deef40dac5e9f6295013a9d51b112b5fbc4350f64dc2574e46a",
+      "requires_python": ">=3.9",
+      "requires_dist": [
+        "pytest; extra == \"dev\"",
+        "setuptools; extra == \"dev\""
+      ],
+      "installed_version": "2.5.2",
+      "official_pypi_sha256": "092472b7b1494deef40dac5e9f6295013a9d51b112b5fbc4350f64dc2574e46a",
+      "pip_archive_hash_matches_official_pypi": true
+    }
+  ],
+  "inherited_versions": {
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "packaging": "26.3"
+  },
+  "smoke_tests": {
+    "statsmodels_OLS_params": [
+      1.0000000000000129,
+      1.9999999999999998
+    ],
+    "patsy_design_shape": [
+      60,
+      2
+    ],
+    "lightgbm_in_sample_mse": 3.266668135500539,
+    "lightgbm_predictions_finite": true,
+    "pybind11_include": "/workspace/work/dependencies/pybind11/include",
+    "formulaic_dataframe_design_shape": [
+      10,
+      2
+    ]
+  },
+  "limitations": [
+    "Smoke tests establish package operation, not economic validation or model generalization"
+  ],
+  "no_deps_install": true,
+  "proxy_preserved": true,
+  "all_official_pypi_hashes_verified": true
+}

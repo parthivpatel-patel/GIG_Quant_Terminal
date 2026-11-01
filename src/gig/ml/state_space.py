@@ -134,8 +134,10 @@ def kalman_filter(
         means[t], covs[t] = x, p
         innovations[t], innovation_cov[t] = v, s
     return KalmanResult(
-        *map(_freeze, (means, covs, predicted, predicted_cov, innovations, innovation_cov)),
-        loglik, _freeze(f),
+        filtered_mean=_freeze(means), filtered_covariance=_freeze(covs),
+        predicted_mean=_freeze(predicted), predicted_covariance=_freeze(predicted_cov),
+        innovations=_freeze(innovations), innovation_covariance=_freeze(innovation_cov),
+        log_likelihood=loglik, transition=_freeze(f),
     )
 
 

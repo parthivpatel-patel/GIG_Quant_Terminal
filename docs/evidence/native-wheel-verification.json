@@ -1,0 +1,8 @@
+{
+  "isolated_installed_wheel": true,
+  "native_parity": "PASS",
+  "workspace_http_writes": 4,
+  "persisted_local_views": 9,
+  "broker_connections": 0,
+  "result": "PASS"
+}

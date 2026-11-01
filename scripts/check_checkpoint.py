@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import ast
 import json
-from pathlib import Path
 import sys
 import unittest
+from pathlib import Path
 
 
 def main() -> int:

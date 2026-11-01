@@ -1,0 +1,10 @@
+{
+  "tests": 27,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "repair": "Drain scalar SELECT MAX result with fetchall before DuckDB relation registration",
+  "changed_file": "src/gig/store/__init__.py",
+  "mypy": "PASS",
+  "diff_check": "PASS"
+}

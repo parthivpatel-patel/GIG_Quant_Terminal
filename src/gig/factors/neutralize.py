@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 import pandas as pd
 
 # Prefer the C++ kernel when it is importable. The Python path stays as the
 # reference and as the fallback when no extension was built.
-_CPP_NEUTRALIZE = None
+_CPP_NEUTRALIZE: Callable[..., np.ndarray] | None = None
 try:
-    from gig._speed import neutralize_cs as _CPP_NEUTRALIZE
+    from gig._speed import neutralize_cs
+
+    _CPP_NEUTRALIZE = neutralize_cs
 except Exception:
     _CPP_NEUTRALIZE = None
 
@@ -25,20 +29,23 @@ def neutralize(
     """
     For each date, OLS-residualize the factor on a constant + sector dummies.
 
-    ``use_cpp`` defaults to True when ``gig._speed`` is available. Pass False to
-    force the NumPy path (tests that compare against the reference).
+    ``use_cpp`` defaults to native when available, with a Python fallback on
+    native errors. Explicit True requires the native backend and never silently
+    substitutes Python. Nonfinite observations are excluded in both paths.
     """
     sector_codes = sectors.reindex(factor.columns).fillna("unknown")
     dummy = pd.get_dummies(sector_codes, drop_first=True).astype(float)
     dummy_vals = np.ascontiguousarray(dummy.to_numpy(dtype=float))
     values = np.ascontiguousarray(factor.to_numpy(dtype=float, copy=True))
-    mask_all = ~np.isnan(values)
+    mask_all = np.isfinite(values)
     if tradable is not None:
         mask_all &= tradable.reindex_like(factor).fillna(False).to_numpy()
     # Must stay boolean for the Python path. NumPy reads a uint8 array as
     # integer indices, which silently residualizes columns 0/1 only.
     mask_all = np.ascontiguousarray(mask_all, dtype=bool)
 
+    if use_cpp is True and _CPP_NEUTRALIZE is None:
+        raise RuntimeError("requested C++ neutralization backend is unavailable")
     want_cpp = (_CPP_NEUTRALIZE is not None) if use_cpp is None else bool(use_cpp)
     if want_cpp and _CPP_NEUTRALIZE is not None:
         try:
@@ -49,8 +56,9 @@ def neutralize(
                 demean,
             )
             return pd.DataFrame(arr, index=factor.index, columns=factor.columns)
-        except Exception:
-            pass
+        except Exception as exc:
+            if use_cpp is True or isinstance(exc, OverflowError):
+                raise
     return _python_neutralize(values, dummy_vals, mask_all, demean, factor.index, factor.columns)
 
 
@@ -84,6 +92,8 @@ def _python_neutralize(values, dummy_vals, mask_all, demean, index, columns) -> 
         resid = y - x @ coef
         if demean:
             resid -= resid.mean()
+        if not np.isfinite(resid).all():
+            raise ValueError("neutralization residual arithmetic overflow")
         out[i, mask] = resid
 
     return pd.DataFrame(out, index=index, columns=columns)

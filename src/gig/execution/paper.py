@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable
 from datetime import UTC, datetime
 from itertools import count
-import math
 
 from gig.execution.base import Broker
 from gig.types import Fill, Side

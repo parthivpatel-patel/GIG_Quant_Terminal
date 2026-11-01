@@ -114,7 +114,7 @@ class CrossSectionalBacktest:
             scores = scores.where(tradable)
 
         weights = pd.DataFrame(0.0, index=scores.index, columns=scores.columns)
-        rebal_mask = np.zeros(len(scores), dtype=bool)
+        rebal_mask: np.ndarray = np.zeros(len(scores), dtype=bool)
         rebal_mask[:: self.rebalance_every] = True
 
         risk: RollingRiskModel | None = None

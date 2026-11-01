@@ -18,9 +18,9 @@ the optimizer's own report. The optimizer is the thing being checked.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import date
-import math
 from typing import Any
 
 import pandas as pd

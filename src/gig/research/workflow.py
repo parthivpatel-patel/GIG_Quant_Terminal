@@ -17,8 +17,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from gig.research.walkforward import WalkForwardSplit
 from gig.artifacts import write_immutable
+from gig.research.walkforward import WalkForwardSplit
 from gig.timestamps import aware_timestamp
 
 _MAX_ROWS = 20_000

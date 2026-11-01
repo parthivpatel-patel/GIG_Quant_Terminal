@@ -407,7 +407,7 @@ def _doctor() -> int:
     except ImportError:
         print("sklearn      MISSING  (pip install scikit-learn)")
     try:
-        getattr(__import__("gig._speed", fromlist=["neutralize_cs"]), "neutralize_cs")
+        _ = __import__("gig._speed", fromlist=["neutralize_cs"]).neutralize_cs
 
         print("cpp          ok  (gig._speed)")
     except Exception:

@@ -9,8 +9,15 @@ import numpy as np
 import pandas as pd
 
 from gig.research.stat_arb import (
-    fit_pair, evaluate_pair, mean_reversion_diagnostics, cointegration_test,
-    adf_test, select_pairs, kalman_hedge, walk_forward_pair, backtest_pair,
+    adf_test,
+    backtest_pair,
+    cointegration_test,
+    evaluate_pair,
+    fit_pair,
+    kalman_hedge,
+    mean_reversion_diagnostics,
+    select_pairs,
+    walk_forward_pair,
 )
 
 

@@ -1,10 +1,10 @@
 """Ops kill-switch and snapshot stay local and JSON-safe."""
 
 import json
+from datetime import date, timedelta
 
 from gig.ops.killswitch import KillSwitch
 from gig.ops.status import FRESH_BLOCK_DAYS, _freshness, ops_snapshot, touch_heartbeat
-from datetime import date, timedelta
 
 
 def test_kill_switch_roundtrip(tmp_path):

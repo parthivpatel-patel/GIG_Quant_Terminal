@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import math
 from bisect import bisect_right
+from collections.abc import Sequence
 from dataclasses import dataclass
 from numbers import Integral
-from typing import Sequence
 
 import numpy as np
 
@@ -207,7 +207,7 @@ def order_flow_imbalance(quotes: Sequence[Quote]) -> np.ndarray:
     keys = [(q.timestamp_ns, q.sequence) for q in quotes]
     if keys != sorted(keys):
         raise ValueError("quotes must be chronologically ordered")
-    out = np.zeros(len(quotes), dtype=float)
+    out: np.ndarray = np.zeros(len(quotes), dtype=float)
     for i in range(1, len(quotes)):
         old, new = quotes[i - 1], quotes[i]
         out[i] = (
@@ -276,15 +276,15 @@ def vpin(
     if any(s not in (-1, 0, 1) for s in directions):
         raise ValueError("sign must be -1, 0, or 1")
     try:
-        total = math.fsum(v for v, s in zip(volumes, directions) if s)
-        unknown = math.fsum(v for v, s in zip(volumes, directions) if not s)
+        total = math.fsum(v for v, s in zip(volumes, directions, strict=True) if s)
+        unknown = math.fsum(v for v, s in zip(volumes, directions, strict=True) if not s)
     except OverflowError as exc:
         raise ValueError("aggregate trade volume overflow") from exc
     if not math.isfinite(total) or total / bucket_volume > max_buckets:
         raise ValueError("maximum bucket count exceeded")
     imbalance, filled = 0.0, 0.0
     buckets: list[float] = []
-    for volume, sign in zip(volumes, directions):
+    for volume, sign in zip(volumes, directions, strict=True):
         if not sign:
             continue
         remaining = volume

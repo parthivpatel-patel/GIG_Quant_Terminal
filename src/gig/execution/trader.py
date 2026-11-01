@@ -21,9 +21,10 @@ change is visible, rather than to bypass the gate from a command line.
 
 from __future__ import annotations
 
+import contextlib
+import math
 import time
 import uuid
-import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -436,10 +437,8 @@ def account_status(broker: Broker | None = None, limit: int = 300) -> dict[str, 
         "drift": drift.head(25).to_dict(orient="records") if not drift.empty else [],
     }
     if hasattr(broker, "account_summary"):
-        try:
+        with contextlib.suppress(Exception):
             summary["account"] = broker.account_summary()
-        except Exception:
-            pass
     return summary
 
 

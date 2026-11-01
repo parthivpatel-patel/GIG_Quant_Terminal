@@ -6,8 +6,9 @@ volatility is annualized decimal. No market feed or proprietary metrics implied.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Literal, TypedDict
 
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
@@ -15,6 +16,52 @@ from scipy.optimize import brentq
 from scipy.stats import norm
 
 from gig.assets.options import black_scholes as _legacy_black_scholes
+
+
+class UnavailableExposure(TypedDict):
+    state: Literal["UNAVAILABLE"]
+    classification: Literal["MODEL_ESTIMATE"]
+    positions: list[dict[str, float | str]]
+
+
+class AvailableExposure(TypedDict):
+    state: Literal["AVAILABLE"]
+    classification: Literal["MODEL_ESTIMATE"]
+    underlying: str
+    currency: str
+    spot: float
+    positions: list[dict[str, float | str]]
+    price: float
+    delta: float
+    gamma: float
+    vega: float
+    theta: float
+    rho: float
+    units: dict[str, str]
+
+
+class ScenarioRow(TypedDict):
+    spot_shock: float
+    volatility_shock: float
+    spot: float
+    value: float
+    model_pnl: float
+
+
+class ScenarioBase(TypedDict):
+    state: str
+    classification: str
+    scenarios: list[ScenarioRow]
+
+
+class ScenarioResult(ScenarioBase, total=False):
+    base_value: float
+    underlying: str
+    currency: str
+    elapsed_years: float
+    spot_shock_unit: str
+    volatility_shock_unit: str
+    sources: list[str]
 
 
 def _finite(value: float, name: str, *, positive: bool = False) -> float:
@@ -172,7 +219,7 @@ def diagnose_call_slice(
         if q.price < lo - tolerance or q.price > ds + tolerance:
             violations.append({"code": "PRICE_BOUND", "strike": q.strike})
     slopes = []
-    for left, right in zip(rows, rows[1:]):
+    for left, right in zip(rows, rows[1:], strict=False):
         slope = (right.price - left.price) / (right.strike - left.strike)
         slopes.append(slope)
         if slope > tolerance or slope < -df - tolerance:
@@ -207,7 +254,7 @@ def validate_surface(points: Sequence[SurfacePoint], *, tolerance: float = 1e-12
     comparisons = 0
     for k, rows in groups.items():
         ordered = sorted(rows, key=lambda p: p.ttm)
-        for before, after in zip(ordered, ordered[1:]):
+        for before, after in zip(ordered, ordered[1:], strict=False):
             comparisons += 1
             if after.volatility ** 2 * after.ttm < before.volatility ** 2 * before.ttm - tolerance:
                 violations.append((k, before.ttm, after.ttm))
@@ -271,7 +318,7 @@ class OptionPosition:
 
 def portfolio_exposure(
     positions: Sequence[OptionPosition], *, spot: float, rate: float = 0.0, div: float = 0.0,
-) -> dict[str, object]:
+) -> AvailableExposure | UnavailableExposure:
     """Aggregate model PV and Greeks for one underlying and currency.
 
     Quantity is signed contracts. Delta uses underlying units; gamma is delta
@@ -287,8 +334,8 @@ def portfolio_exposure(
     if len({p.instrument for p in positions}) != len(positions):
         raise ValueError("duplicate option instrument identity")
     keys = ("price", "delta", "gamma", "vega", "theta", "rho")
-    totals = {key: [] for key in keys}
-    rows = []
+    totals: dict[str, list[float]] = {key: [] for key in keys}
+    rows: list[dict[str, float | str]] = []
     for p in positions:
         value = black_scholes(spot, p.strike, rate, div, p.volatility, p.ttm, p.call)
         signed_units = p.quantity * p.multiplier
@@ -305,7 +352,9 @@ def portfolio_exposure(
         raise ValueError("aggregate exposure overflow") from exc
     return {"state": "AVAILABLE", "classification": "MODEL_ESTIMATE",
             "underlying": positions[0].underlying, "currency": positions[0].currency,
-            "spot": float(spot), "positions": rows, **aggregate,
+            "spot": float(spot), "positions": rows,
+            "price": aggregate["price"], "delta": aggregate["delta"], "gamma": aggregate["gamma"],
+            "vega": aggregate["vega"], "theta": aggregate["theta"], "rho": aggregate["rho"],
             "units": {"price": "currency", "delta": "underlying_units", "gamma": "underlying_units/spot_currency",
                       "vega": "currency/vol_percentage_point", "theta": "currency/calendar_day",
                       "rho": "currency/rate_percentage_point"}}
@@ -315,7 +364,7 @@ def scenario_grid(
     positions: Sequence[OptionPosition], *, spot: float,
     spot_shocks: Sequence[float], volatility_shocks: Sequence[float],
     rate: float = 0.0, div: float = 0.0, elapsed_years: float = 0.0,
-) -> dict[str, object]:
+) -> ScenarioResult:
     """Full BSM repricing grid; scenario P&L is a model difference, never realized.
 
     Spot shocks are relative decimal changes; volatility shocks are absolute
@@ -329,7 +378,7 @@ def scenario_grid(
     if elapsed_years < 0:
         raise ValueError("elapsed_years must be nonnegative")
     base = portfolio_exposure(positions, spot=spot, rate=rate, div=div)
-    if not positions or not spot_shocks or not volatility_shocks:
+    if base["state"] != "AVAILABLE" or not spot_shocks or not volatility_shocks:
         return {"state": "UNAVAILABLE", "classification": "MODEL_ESTIMATE", "scenarios": []}
     if any(p.ttm <= elapsed_years for p in positions):
         raise ValueError("scenario reaches expiry outside smooth BSM domain")
@@ -339,13 +388,15 @@ def scenario_grid(
         raise ValueError("spot shock must exceed -1")
     if any(p.volatility + dv <= 0 for p in positions for dv in vols):
         raise ValueError("shocked volatility must remain positive")
-    rows = []
+    rows: list[ScenarioRow] = []
     for ds in spots:
         for dv in vols:
             changed = [OptionPosition(p.instrument, p.underlying, p.strike, p.ttm - elapsed_years,
                                       p.volatility + dv, p.quantity, p.multiplier, p.call, p.currency, p.source)
                        for p in positions]
             exposure = portfolio_exposure(changed, spot=spot * (1 + ds), rate=rate, div=div)
+            if exposure["state"] != "AVAILABLE":
+                raise ValueError("scenario exposure is unavailable")
             pnl = exposure["price"] - base["price"]
             if not math.isfinite(pnl):
                 raise ValueError("scenario P&L overflow")

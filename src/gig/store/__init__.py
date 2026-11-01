@@ -125,7 +125,9 @@ class Store:
     def update_cap_buckets(self, buckets: pd.Series) -> None:
         if buckets is None or buckets.empty:
             return
-        asof = self.con.execute("SELECT MAX(asof_date) FROM listings").fetchone()[0]
+        # Drain the scalar result before registering another relation. DuckDB
+        # 2.x keeps a fetchone() result open until the cursor is exhausted.
+        asof = self.con.execute("SELECT MAX(asof_date) FROM listings").fetchall()[0][0]
         if asof is None:
             return
         df = buckets.rename("cap_bucket").rename_axis("yahoo_symbol").reset_index()

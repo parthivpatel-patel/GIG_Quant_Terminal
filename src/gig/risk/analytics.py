@@ -6,6 +6,7 @@ estimates; no routine grants order approval or implies economic validation.
 from __future__ import annotations
 
 import numpy as np
+from numpy.typing import NDArray
 
 MAX_OBSERVATIONS = 1_000_000
 MAX_ASSETS = 512
@@ -63,7 +64,7 @@ def drawdown_report(returns) -> dict:
         raise ValueError("compounded wealth overflow")
     high = np.maximum.accumulate(np.r_[1., wealth])[1:]
     drawdowns = wealth/high-1
-    durations = np.zeros(len(values), dtype=int)
+    durations: NDArray[np.int64] = np.zeros(len(values), dtype=np.int64)
     for i, value in enumerate(drawdowns):
         if value < -1e-14:
             durations[i] = (durations[i-1] if i else 0)+1

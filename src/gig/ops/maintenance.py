@@ -11,9 +11,9 @@ import importlib.util
 import io
 import json
 import os
-from pathlib import Path, PurePosixPath
 import platform
 import tarfile
+from pathlib import Path, PurePosixPath
 
 MAX_BYTES = 512 * 1024 * 1024
 MAX_FILES = 10000
@@ -50,7 +50,7 @@ def create_backup(source: Path, archive: Path, *, quiesced: bool = False) -> dic
         raise ValueError("source must be a directory and archive must be new")
     if source == archive or source in archive.parents:
         raise ValueError("archive must be outside source")
-    payloads = []
+    payloads: list[tuple[str, bytes]] = []
     total = 0
     for path in sorted(source.rglob("*")):
         relative = path.relative_to(source)
@@ -71,20 +71,19 @@ def create_backup(source: Path, archive: Path, *, quiesced: bool = False) -> dic
         {"path": name, "size": len(content), "sha256": hashlib.sha256(content).hexdigest()}
         for name, content in payloads]}
     archive.parent.mkdir(parents=True, exist_ok=True)
-    with archive.open("xb") as stream:
-        with tarfile.open(fileobj=stream, mode="w:gz") as tar:
-            for name, content in payloads + [("manifest.json", json.dumps(manifest, sort_keys=True).encode())]:
-                info = tarfile.TarInfo(name)
-                info.size = len(content)
-                info.mode = 0o600
-                tar.addfile(info, io.BytesIO(content))
+    with archive.open("xb") as stream, tarfile.open(fileobj=stream, mode="w:gz") as tar:
+        for name, content in payloads + [("manifest.json", json.dumps(manifest, sort_keys=True).encode())]:
+            info = tarfile.TarInfo(name)
+            info.size = len(content)
+            info.mode = 0o600
+            tar.addfile(info, io.BytesIO(content))
     verified = verify_backup(archive)
     return {"sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
             "file_count": len(verified["files"]), "durable_external_backup": False}
 
 
 def _read_backup(archive: Path):
-    payloads = {}
+    payloads: dict[str, bytes] = {}
     total = 0
     with tarfile.open(archive, "r:gz") as tar:
         for member in tar:

@@ -91,6 +91,7 @@ for (const match of html.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)) {
 }
 elements.get("analytics-kind").value = "options";
 elements.get("data-mode").value = "local";
+elements.get("freshness-policy").value = "86400";
 elements.get("observations-table").append(new Element("thead"), new Element("tbody"));
 const documentRoot = new Element("html");
 const walk = (node) => [node, ...node.children.filter((child) => child instanceof Element).flatMap(walk)];
@@ -161,7 +162,7 @@ function checked(label, callback) { callback(); checks++; console.log(`PASS ${la
 
 await settle();
 checked("initial request uses local mode and renders explicit unavailable", () => {
-  assert.equal(calls[0].url, "/api/v1/terminal/command-center?mode=local");
+  assert.equal(calls[0].url, "/api/v1/terminal/command-center?mode=local&max_age_seconds=86400");
   assert.equal(get("state-badge").textContent, "UNAVAILABLE");
   assert.equal(tbody().children.length, 0);
   assert.match(get("error-panel").textContent, /DATA_UNAVAILABLE/);
@@ -171,10 +172,22 @@ checked("initial request uses local mode and renders explicit unavailable", () =
 for (const section of sections) {
   location.hash = `#${section}`;
   await windowEvents.get("hashchange")(); await settle();
-  assert.equal(calls.at(-1).url, `/api/v1/terminal/${section}?mode=local`);
+  assert.equal(calls.at(-1).url, `/api/v1/terminal/${section}?mode=local&max_age_seconds=86400`);
   assert.equal(get("state-badge").textContent, "UNAVAILABLE");
 }
 checked("all twelve sections request typed backend paths", () => assert.equal(document.querySelectorAll(".nav-link").filter((link) => link.getAttribute("aria-current") === "page").length, 1));
+get("freshness-policy").value = "3600";
+await get("freshness-policy").dispatch("change"); await settle();
+checked("local queries use the visible explicit freshness policy", () => assert.match(calls.at(-1).url, /max_age_seconds=3600$/));
+const replayCutoff = "2026-09-28T20:00:00.123456789+00:00";
+get("replay-asof").value = replayCutoff;
+await get("replay-asof").dispatch("change"); await settle();
+checked("point-in-time input preserves original timezone and nanosecond precision", () => {
+  assert(calls.at(-1).url.endsWith(`&as_of=${encodeURIComponent(replayCutoff)}`));
+  assert.equal(get("replay-asof").value, replayCutoff);
+});
+get("freshness-policy").value = "86400";
+get("replay-asof").value = "";
 get("data-mode").value = "synthetic";
 await get("data-mode").dispatch("change"); await settle();
 checked("synthetic mode requires explicit selection and shows provenance", () => {
@@ -307,4 +320,45 @@ checked("invalid workbench JSON is rejected before transport", () => {
   assert.equal(calls.length, before);
   assert.match(get("analytics-output").textContent, /No request was sent/);
 });
+replyOverride = { body: fixture() };
+const submittedWorkspaceExamples = {};
+for (const action of ["bars", "news", "research", "simulate"]) {
+  get("analytics-kind").value = `workspace-${action}`;
+  const priorCalls = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, priorCalls, "Loading authored examples must not admit data automatically");
+  const example = get("analytics-input").value;
+  const parsed = JSON.parse(example);
+  submittedWorkspaceExamples[action] = parsed;
+  assert.match(example, /synthetic/i);
+  if (action === "bars" || action === "research") assert.equal(parsed.classification, "SYNTHETIC");
+  if (action === "simulate") assert.equal(parsed.classification, "SYNTHETIC");
+  await get("run-analysis").dispatch("click"); await settle();
+  assert.equal(calls.at(-1).url, `/api/v1/workspace/${action}`);
+  assert.equal(calls.at(-1).options.method, "POST");
+  assert.equal(calls.at(-1).options.headers["Content-Type"], "application/json");
+  assert.equal(calls.at(-1).options.body, example);
+}
+checked("all four explicit workspace actions use distinct JSON endpoints without automatic admission", () => {
+  assert.match(get("workbench-scope").textContent, /writes caller-supplied evidence/);
+  assert.match(get("analytics-output").textContent, /no broker orders/);
+  assert.equal(get("data-mode").value, "synthetic", "A saved fixture must not silently switch environments");
+});
+replyOverride = { ok: false, status: 422, body: fixture({ state: "ERROR", data: null, error: { code: "INVALID_REQUEST", message: "The request does not satisfy the API contract." } }) };
+get("analytics-kind").value = "workspace-bars";
+const rawAdmission = ' {"rows":[],"volume":9007199254740993,"source_text":" Original NaN ","source":"one","source":"two"} ';
+get("analytics-input").value = rawAdmission;
+const beforeRejected = calls.length;
+await get("run-analysis").dispatch("click"); await settle();
+checked("rejected workspace admission preserves exact raw evidence and cannot render successful save", () => {
+  assert.equal(calls.length, beforeRejected + 1, "Failed admission must not trigger a follow-up success refresh");
+  assert.equal(calls.at(-1).options.body, rawAdmission);
+  assert.match(get("analytics-output").textContent, /^HTTP 422\nERROR/);
+  assert(!get("analytics-output").textContent.includes("SAVED"));
+  assert.equal(get("run-analysis").disabled, false);
+});
+replyOverride = { body: fixture({ provenance: { source: "caller-asserted-source", classification: "HISTORICAL", as_of: replayCutoff, evidence_state: "CALLER_SUPPLIED_NOT_VENDOR_VERIFIED" } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("persisted caller source claims never become vendor authenticity", () => assert.match(get("truth-notice").textContent, /Caller-supplied provenance · Vendor authenticity unverified/));
+if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

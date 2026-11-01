@@ -1,0 +1,16 @@
+[
+  {
+    "case": "threshold",
+    "python_finite_count": 10,
+    "native_finite_count": 0,
+    "expected_sample_threshold": 10,
+    "nan_parity": false
+  },
+  {
+    "case": "masked_baseline",
+    "python_finite_count": 20,
+    "native_finite_count": 0,
+    "expected_sample_threshold": 10,
+    "nan_parity": false
+  }
+]

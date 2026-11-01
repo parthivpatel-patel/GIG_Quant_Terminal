@@ -106,9 +106,9 @@ def section_snapshot(section: str, mode: str = "local") -> Contract:
         for tenor in (.1, .25, .5, 1.0, 2.0):
             for strike in (75, 85, 95, 100, 105, 115, 125):
                 vol = .18 + .25 * (np.log(strike / 100)) ** 2 + .02 * np.sqrt(tenor)
-                model = black_scholes(100, strike, .03, 0, float(vol), tenor)
+                option_value = black_scholes(100, strike, .03, 0, float(vol), tenor)
                 rows.append({"strike": strike, "tenor_years": tenor, "iv": float(vol),
-                             "price": model["price"], "price_kind": "MODEL_ESTIMATE"})
+                             "price": option_value["price"], "price_kind": "MODEL_ESTIMATE"})
         data["rows"] = rows
         data["metrics"] = {"spot_assumption": 100, "risk_free_assumption": .03,
                            "observed_option_quotes": 0, "VTS": "AUTHORITY_UNSUPPLIED",
@@ -127,7 +127,7 @@ def section_snapshot(section: str, mode: str = "local") -> Contract:
         data["diagnostics"] = {"filtered_mean": model.filtered_mean[-1].tolist(),
                                "offline_smoothed_mean": smooth.mean[-1].tolist()}
     elif section == "stat-arb":
-        from gig.research.stat_arb import fit_pair, evaluate_pair, mean_reversion_diagnostics
+        from gig.research.stat_arb import evaluate_pair, fit_pair, mean_reversion_diagnostics
         fit = fit_pair(prices[:, 0], prices[:, 1], dependent=symbols[0],
                        independent=symbols[1], training_rows=120)
         evaluation = evaluate_pair(fit, prices[120:, 0], prices[120:, 1])
@@ -218,6 +218,7 @@ def _bounded_array(value: Any, *, maximum: int = 2000, dimensions: int = 2) -> n
 def analytics(kind: str, payload: dict[str, Any]) -> Contract:
     """Compute supported numerical research; no imports contact providers."""
     scope = f"analytics.{kind}"
+    result: dict[str, Any]
     if kind == "options":
         from gig.options import black_scholes, implied_volatility
         allowed = {"spot", "strike", "rate", "div", "vol", "ttm", "call", "market_price"}
@@ -253,10 +254,10 @@ def analytics(kind: str, payload: dict[str, Any]) -> Contract:
         iterations = payload.get("max_iterations", 100)
         if isinstance(iterations, bool) or not isinstance(iterations, int) or not 1 <= iterations <= 200:
             raise ValueError("iterations out of range")
-        fit = fit_garch11(payload["returns"], max_iterations=iterations)
-        result = asdict(fit)
-        result["conditional_variances"] = fit.model.conditional_variances(payload["returns"])
-        result["next_variance"] = fit.model.forecast(payload["returns"])
+        garch_fit = fit_garch11(payload["returns"], max_iterations=iterations)
+        result = asdict(garch_fit)
+        result["conditional_variances"] = garch_fit.model.conditional_variances(payload["returns"])
+        result["next_variance"] = garch_fit.model.forecast(payload["returns"])
         return _response(result, scope=scope, source="user-supplied-returns")
     if kind == "hmm":
         from gig.ml.regimes import fit_gaussian_hmm, state_duration_diagnostics
@@ -268,13 +269,13 @@ def analytics(kind: str, payload: dict[str, Any]) -> Contract:
             raise ValueError("states out of range")
         if not isinstance(iterations, int) or isinstance(iterations, bool) or not 1 <= iterations <= 200:
             raise ValueError("iterations out of range")
-        fit = fit_gaussian_hmm(observations, states=states, max_iterations=iterations)
-        result = asdict(fit)
-        inference = fit.model.infer(observations)
+        hmm_fit = fit_gaussian_hmm(observations, states=states, max_iterations=iterations)
+        result = asdict(hmm_fit)
+        inference = hmm_fit.model.infer(observations)
         result["filtered_probabilities"] = inference.filtered_probabilities
         result["offline_smoothed_probabilities"] = inference.smoothed_probabilities
         result["smoothing_uses_future_observations"] = True
-        result["duration_diagnostics"] = state_duration_diagnostics(fit.model.decode(observations), fit.model.transition)
+        result["duration_diagnostics"] = state_duration_diagnostics(hmm_fit.model.decode(observations), hmm_fit.model.transition)
         return _response(result, scope=scope, source="user-supplied-observations")
     if kind == "microstructure":
         from gig.microstructure import Quote, Trade, lee_ready, match_quotes, order_flow_imbalance

@@ -12,9 +12,10 @@ import hashlib
 import json
 import math
 import sqlite3
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 import pandas as pd
 
@@ -217,7 +218,7 @@ class PointInTimeStore:
                     if stored is None:
                         raise ValueError("source snapshot evidence absent; reingest original admitted snapshot")
                     evidence = DataSnapshot(bytes(stored[0]), digest).as_dict()
-                    metadata = (evidence["source"], evidence["classification"],
+                    metadata: tuple[str, ...] = (evidence["source"], evidence["classification"],
                                 evidence["corporate_action_policy"], evidence["currency"])
                     anchors[digest] = (metadata, {_canonical(item) for item in evidence["rows"]})
                 metadata, source_rows = anchors[digest]

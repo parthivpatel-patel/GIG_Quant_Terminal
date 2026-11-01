@@ -1,0 +1,47 @@
+{
+  "scope": "actual optional CPU model and statistical inference validation",
+  "versions": {
+    "lightgbm": "4.7.0",
+    "statsmodels": "0.15.0",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scipy": "1.17.0"
+  },
+  "new_tests": 16,
+  "existing_stat_arb_tests": 14,
+  "combined_pytest": {
+    "tests": 30,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "ruff": "PASS",
+  "compileall": "PASS",
+  "source_mypy": {
+    "files": 1,
+    "errors": 0,
+    "flags": [
+      "follow-imports=skip",
+      "ignore-missing-imports",
+      "disable-error-code=import-untyped"
+    ]
+  },
+  "changes": [
+    {
+      "path": "src/gig/research/stat_arb.py",
+      "sha256": "838fda9f6cfdda6204c14298c8a0c4695b79380d03ddd5ccb1e0c9446ce08f93"
+    },
+    {
+      "path": "tests/test_optional_research_models.py",
+      "sha256": "de8bd9f0657d3bcdc85d0ba55da4d93a0f500b3d51467dcca043328b36b67bda"
+    },
+    {
+      "path": "docs/optional-model-validation.md",
+      "sha256": "e624a40507200a0169c773310ddddaea793f2a26266997f6061d168635aa2095"
+    }
+  ],
+  "broker_calls": 0,
+  "network_calls": 0,
+  "trading_approved": false,
+  "economic_validation": false
+}

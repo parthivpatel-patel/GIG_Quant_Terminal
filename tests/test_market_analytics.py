@@ -8,12 +8,23 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 
 from gig.microstructure import (
-    Quote, Trade, MatchedTrade, match_quotes, lee_ready,
-    order_flow_imbalance, kyle_lambda, vpin,
+    MatchedTrade,
+    Quote,
+    Trade,
+    kyle_lambda,
+    lee_ready,
+    match_quotes,
+    order_flow_imbalance,
+    vpin,
 )
 from gig.options import (
-    black_scholes, implied_volatility, OptionQuote, SurfacePoint,
-    diagnose_call_slice, validate_surface, interpolate_total_variance,
+    OptionQuote,
+    SurfacePoint,
+    black_scholes,
+    diagnose_call_slice,
+    implied_volatility,
+    interpolate_total_variance,
+    validate_surface,
 )
 
 

@@ -3,8 +3,13 @@ import unittest
 
 import numpy as np
 
-from gig.risk.analytics import drawdown_report, historical_loss_risk, portfolio_risk, stress_positions
 from gig.portfolio.allocation import black_litterman, fractional_kelly, risk_parity
+from gig.risk.analytics import (
+    drawdown_report,
+    historical_loss_risk,
+    portfolio_risk,
+    stress_positions,
+)
 
 
 class RiskAnalyticsTests(unittest.TestCase):

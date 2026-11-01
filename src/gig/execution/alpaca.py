@@ -7,8 +7,8 @@ before loading the SDK or constructing a client, prevents substring spoofing.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import math
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 from uuid import uuid4
 

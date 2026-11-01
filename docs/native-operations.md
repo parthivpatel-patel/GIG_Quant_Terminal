@@ -43,9 +43,9 @@ raw timings are in the batch evidence, not derived from a single timing.
 
 Only x86_64 Linux was exercised. C++20 has no architecture-specific intrinsics,
 but ARM64 compilation, numerical behavior and performance remain unverified.
-The historical pybind neutralization extension now requests C++20 in setup.py;
-its historical rank-deficient normal-equation behavior is a separate unverified
-limitation. This batch does not claim historical native-fit-cache verification.
+The pybind sector-neutralization extension requests C++20 in setup.py and its
+verified repair is described below. The historical native-fit-cache issue is
+absent from the available source; no historical cache verification is claimed.
 
 A fresh resumed build and 31-repeat rerun confirmed the same maximum absolute
 error, 6.94e-18, at 200,000 samples/window 252. Native p50/p95/p99 were
@@ -53,6 +53,65 @@ error, 6.94e-18, at 200,000 samples/window 252. Native p50/p95/p99 were
 this workload. Native throughput was 46.50 million samples/second. Tracked peak
 allocation remained 4.80 MB vs 20.99 MB. Raw evidence is
 `native-benchmark-resumed.json`; these are local measurements, not ARM64 evidence.
+
+## C++20 categorical sector projection
+
+The available source uses a constant plus `drop_first=True` sector dummies.
+The full design is identifiable. However, tradable masking can remove a sector
+or the baseline group and make the remaining design rank deficient. Actual
+compiled pre-repair evidence reproduced two failures: ten eligible observations
+produced ten NumPy residuals but no native residuals due to an off-by-one sample
+threshold; excluding the baseline group produced twenty NumPy residuals but no
+native residuals due to singular normal equations. These are current source
+reproductions, not claims about unavailable historical checkpoints.
+
+The repaired kernel projects onto categorical group means directly. This is
+exactly the OLS fitted-value subspace for an intercept plus mutually exclusive
+sector dummies, including absent groups. It avoids forming or inverting normal
+equations. The public native design is explicitly categorical: zero/one entries
+with at most one nonzero per row. Arbitrary continuous or overlapping designs
+are rejected rather than mislabeled as sector projection. The NumPy reference
+continues to use `numpy.linalg.lstsq`, independently exercising the projection.
+
+Both backends exclude NaN and infinities, use the same `n_sector_dummies + 8`
+minimum eligible count, preserve labels and masks, and never mutate inputs.
+Native centered long-double accumulation avoids overflowing representable group
+means; residual overflow fails explicitly. Incomplete cross-sections remain NaN
+internally and must not be presented as finite observed values. Explicit
+`use_cpp=True` requires native availability and propagates native failures;
+default automatic selection retains the documented Python fallback.
+
+Build with an installed compiler and the project's pybind development extra:
+
+```sh
+CXX=g++ CC=gcc python setup.py build_ext --inplace --force
+PYTHONPATH=src python -m unittest discover -s tests -p test_native_neutralize.py -v
+```
+
+The executor's default compiler name `clang++` was absent, while `/usr/bin/g++`
+was available; the explicit compiler selection above was used. Importing the
+package never builds native code. The numerical suite covers rank-deficient
+masked designs, exact sample thresholds, missing sectors, finite/NaN masks,
+shape/design admission, mutation, extreme finite constants and output overflow.
+Native tests explicitly skip if the optional extension is not built; the
+reported run built it and exercised every native test.
+
+An x86_64 end-to-end benchmark used seed 176, 252 dates, 1,000 names, ten sector
+groups, approximately 85% tradability, one BLAS thread, and 31 repetitions per
+backend. It includes pandas admission and output construction. Maximum absolute
+OLS/native residual error was `1.7763568394002505e-15`. Native p50/p95/p99 were
+4.747/5.931/6.501 ms, versus NumPy 39.148/41.614/44.567 ms: a measured p50 ratio
+of 8.247 for this workload. Python-tracked peak allocation was 4,692,671 versus
+5,014,085 bytes; this excludes some native vector allocations and is not RSS.
+Raw timings are preserved in `native-neutralize-benchmark.json` alongside the
+pre-repair evidence and build/test logs. ARM64 remains unverified.
+
+A minimal reproduction uses `np.random.default_rng(176)`, a `(252,1000)` normal
+panel, sector labels `S{i % 10}`, and a following uniform draw `> .15` as the
+tradable mask. Call `neutralize(panel,sectors,mask,use_cpp=False)` and `True`
+once for warmup and 31 timed repetitions each with `OPENBLAS_NUM_THREADS=1`;
+compare the complete arrays with `equal_nan=True`. Benchmarking is evidence of
+this computation, not approved trading use or institutional certification.
 
 ## Local deployment recipes
 

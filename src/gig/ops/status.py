@@ -12,9 +12,8 @@ import math
 from datetime import UTC, date, datetime
 from typing import Any
 
-from gig.service.serialization import public_error
-
 from gig.ops.killswitch import kill_switch
+from gig.service.serialization import public_error
 
 # Soft / hard staleness thresholds for the equity tape (calendar days).
 FRESH_WARN_DAYS = 3

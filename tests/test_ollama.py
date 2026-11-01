@@ -1,8 +1,10 @@
 """Ollama research desk — status is always safe; brief needs a live daemon."""
 
-from gig.nlp.ollama import default_prompts, ollama_status, research_brief
-import pytest
 from urllib.error import URLError
+
+import pytest
+
+from gig.nlp.ollama import default_prompts, ollama_status, research_brief
 
 
 @pytest.fixture(autouse=True)

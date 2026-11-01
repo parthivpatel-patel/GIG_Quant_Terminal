@@ -1,8 +1,8 @@
 """Build the optional local C ABI kernel. Never runs during package import."""
 
-from pathlib import Path
 import os
 import subprocess
+from pathlib import Path
 
 
 def main():

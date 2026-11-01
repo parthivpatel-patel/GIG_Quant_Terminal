@@ -1,0 +1,31 @@
+{
+  "image_id": "sha256:38c0d3cda8b64e6fa051d911591f90da7bc19819620e2030cf7798c459ac279a",
+  "architecture": "amd64",
+  "network_mode": "none",
+  "published_ports": false,
+  "read_only_root": true,
+  "first": {
+    "health": true,
+    "uid": 10001,
+    "native_cpp20": true,
+    "broker_connectivity_enabled": false,
+    "classification": "SYNTHETIC",
+    "source_receipt_sha256": "eb5d53510f430496b075c20e707f4230a8c8541c5f8e1b84bc2a5e3b5643265a",
+    "market_content_sha256": "b775913f88979ccf517c6072e6df6f0a9a5c0592239a13c306058ab19d1397b6",
+    "persisted_rows": 2
+  },
+  "after_restart": {
+    "health": true,
+    "uid": 10001,
+    "native_cpp20": true,
+    "broker_connectivity_enabled": false,
+    "classification": "SYNTHETIC",
+    "source_receipt_sha256": "eb5d53510f430496b075c20e707f4230a8c8541c5f8e1b84bc2a5e3b5643265a",
+    "market_content_sha256": "b775913f88979ccf517c6072e6df6f0a9a5c0592239a13c306058ab19d1397b6",
+    "persisted_rows": 2
+  },
+  "restart_persistence_verified": true,
+  "credentials_forwarded": false,
+  "production_deployment": false,
+  "arm64_validated": false
+}

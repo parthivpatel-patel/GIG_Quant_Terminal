@@ -135,7 +135,7 @@ class GaussianHMM:
             candidates = values[:, None] + log_transition
             previous[t] = np.argmax(candidates, axis=0)
             values = candidates[previous[t], np.arange(len(self.initial))] + emissions[t]
-        path = np.empty(len(x), dtype=np.int64)
+        path: np.ndarray = np.empty(len(x), dtype=np.int64)
         path[-1] = np.argmax(values)
         for t in range(len(x) - 2, -1, -1):
             path[t] = previous[t + 1, path[t + 1]]

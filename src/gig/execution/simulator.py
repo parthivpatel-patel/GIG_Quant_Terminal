@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import json
+import math
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from decimal import Decimal, ROUND_DOWN, localcontext
+from decimal import ROUND_DOWN, Decimal, localcontext
 from hashlib import sha256
-import math
-import json
-from typing import Mapping
 
 import pandas as pd
 
@@ -128,13 +128,13 @@ def simulate_signals(
         notional_cap = Decimal(str(nav)) * Decimal(str(settings.max_name_weight))
         for trade in plan.trades:
             client_id = "sim-" + sha256(f"{run_id}:{trade.symbol}:{trade.side}".encode()).hexdigest()
-            quantity, price = Decimal(str(trade.shares)), Decimal(str(trade.price))
-            cap = (notional_cap / price).quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
-            oms.create(client_id, trade.symbol, trade.side, quantity, limit_price=price, now=at)
-            oms.approve(client_id, reference_price=price, price_asof=observed,
+            quantity, decimal_price = Decimal(str(trade.shares)), Decimal(str(trade.price))
+            cap = (notional_cap / decimal_price).quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
+            oms.create(client_id, trade.symbol, trade.side, quantity, limit_price=decimal_price, now=at)
+            oms.approve(client_id, reference_price=decimal_price, price_asof=observed,
                         max_notional=notional_cap, max_position_quantity=cap, now=at)
             oms.acknowledge(client_id, now=at)
-            order = oms.fill(client_id, f"{client_id}:fill", quantity, price, now=at)
+            order = oms.fill(client_id, f"{client_id}:fill", quantity, decimal_price, now=at)
             orders.append(order)
             expected[trade.symbol] = expected.get(trade.symbol, Decimal(0)) + (quantity if trade.side == "buy" else -quantity)
     reconciliation = oms.reconcile(expected)
