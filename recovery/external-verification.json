@@ -1,0 +1,25 @@
+{
+  "source_commit": "e19d6886c7ce7d04219d905c7bef8c18ff068ee9",
+  "artifact_commit": "756124e86d3ecb13c05efb8eaede235ab01befe0",
+  "independent_destination": "GitHub repository, downloaded through immutable raw URLs",
+  "artifacts": [
+    {
+      "url": "https://raw.githubusercontent.com/parthivpatel-patel/GIG_Quant_Terminal/756124e86d3ecb13c05efb8eaede235ab01befe0/recovery/checkpoint-e19d688.bundle",
+      "path": "checkpoint-e19d688.bundle",
+      "sha256": "1b1f1d8a46dc3cbad3d06cfad42e4a90262f41f8be9ede9b932cbd5ffe9900ab",
+      "bytes": 4615892,
+      "download_verified": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/parthivpatel-patel/GIG_Quant_Terminal/756124e86d3ecb13c05efb8eaede235ab01befe0/recovery/checkpoint-e19d688-evidence.tar.gz",
+      "path": "checkpoint-e19d688-evidence.tar.gz",
+      "sha256": "fec11087e6baaabc307e6f1d28c129eb14b37b7fbcf8be7243722a14addfcfca",
+      "bytes": 73452,
+      "download_verified": true
+    }
+  ],
+  "bundle_verify": "PASS",
+  "fresh_clone_and_git_fsck": "PASS",
+  "restored_source_head_matches": true,
+  "runtime_account_state_included": false
+}
