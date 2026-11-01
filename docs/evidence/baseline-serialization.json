@@ -1,0 +1,29 @@
+{
+  "upstream_baseline": "f946b23790e92b048a8cbd0160f876509b43455e",
+  "source_snapshot_commit": "4ae7e4a2d2db8bb71711f8af88af9b643d4aa259",
+  "baseline_snapshot_source_sha256": "fc87d4f693c82f28c813030e22ed4b434cabfca82c29f154e656a42a50bf4916",
+  "reproductions": {
+    "source_text_rewrite": {
+      "input_source": "NaN Analytics",
+      "actual_source": "null Analytics",
+      "defect": true
+    },
+    "cache_mutation": {
+      "original_value": 1,
+      "actual_after_mutation": 99,
+      "defect": true
+    },
+    "integer_identity_rounding": {
+      "input": "9007199254740993",
+      "actual": "9007199254740992.0",
+      "defect": true
+    },
+    "raw_exception_leak": {
+      "actual": {
+        "available": false,
+        "error": "RuntimeError: SYNTHETIC_FAKE_PROVIDER_SECRET"
+      },
+      "defect": true
+    }
+  }
+}

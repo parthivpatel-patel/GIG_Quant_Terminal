@@ -142,13 +142,13 @@ def _fit_sklearn(x_tr: pd.DataFrame, y_tr: pd.Series, x_te: pd.DataFrame) -> np.
 def available_backends() -> dict[str, bool]:
     out = {"sklearn": True, "lightgbm": False}
     try:
-        import lightgbm  # noqa: F401
+        __import__("lightgbm")
 
         out["lightgbm"] = True
     except ImportError:
         pass
     try:
-        import sklearn  # noqa: F401
+        __import__("sklearn")
     except ImportError:
         out["sklearn"] = False
     return out

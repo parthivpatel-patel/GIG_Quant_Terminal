@@ -1,249 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GIG — Research Terminal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/static/styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>GIG Quant Terminal</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
-<div class="vignette" aria-hidden="true"></div>
-
-<header class="topbar">
-  <div class="brand">
-    <span class="mark">GIG</span>
-    <div class="brand-text">
-      <span class="brand-title">Research Terminal</span>
-      <span class="brand-sub" id="brand-build">factor-neutral · lambdarank · paper</span>
-    </div>
+  <a class="skip-link" href="#content">Skip to analysis</a>
+  <aside class="sidebar" aria-label="Terminal navigation">
+    <a class="brand" href="#command-center" aria-label="GIG command center"><span class="brand-mark">G</span><span>GIG<span class="brand-sub">QUANT TERMINAL</span></span></a>
+    <div class="nav-caption">WORKSPACE <span>01</span></div>
+    <nav id="section-nav" aria-label="Analytics sections"></nav>
+    <div class="sidebar-footer"><span class="connection-dot"></span>LOCAL RESEARCH ENVIRONMENT<p>Orders disabled · Research only</p></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="workspace-label"><span class="workspace-icon" aria-hidden="true">▦</span> Research workspace <span class="divider">/</span> <span id="breadcrumb">Command Center</span></div>
+      <div class="top-actions"><time id="clock" aria-label="Current UTC time"></time><button class="icon-button" id="theme-toggle" aria-label="Switch to light theme" title="Switch theme">◐</button><span class="user-mark" title="Local research session">GQ</span></div>
+    </header>
+    <main id="content" tabindex="-1">
+      <div class="page-heading">
+        <div><p class="eyebrow">GIG / INSTITUTIONAL RESEARCH</p><h1 id="section-title">Command Center</h1><p class="section-description" id="section-description">Portfolio intelligence, research, and operational controls.</p></div>
+        <div class="view-controls"><label for="data-mode">Data environment</label><div class="control-row"><select id="data-mode"><option value="local">Local supported data</option><option value="synthetic">Synthetic research demo</option></select><button class="button refresh-button" id="refresh"><span aria-hidden="true">↻</span> Refresh</button></div></div>
+      </div>
+      <div class="truth-strip" id="truth-strip" role="status" aria-live="polite"><span class="state-badge" id="state-badge">UNKNOWN</span><span id="source-label">Awaiting backend response</span><span class="truth-divider"></span><span id="asof-label">As of —</span><span class="truth-notice" id="truth-notice">Research output requires review before any trading use.</span></div>
+      <div id="error-panel" class="message-panel hidden" role="alert"></div>
+      <section class="metrics-grid" id="metrics" aria-label="Section metrics"></section>
+      <div class="analysis-grid" id="analysis-grid">
+        <section class="panel chart-panel" id="chart-panel" aria-labelledby="chart-title">
+          <div class="panel-header"><div><p class="panel-kicker">ANALYTICAL VIEW</p><h2 id="chart-title">Data visualization</h2></div><div class="segmented" role="group" aria-label="Chart dimension"><button id="view-3d" aria-pressed="true">3D</button><button id="view-2d" aria-pressed="false">2D</button></div></div>
+          <div class="chart-container" id="chart-container"><canvas id="analytics-chart" tabindex="0" aria-label="Interactive analytical chart. Drag to rotate, scroll to zoom. Arrow keys rotate, plus and minus zoom. Use the 2D button for a flat view."></canvas><div class="chart-tooltip hidden" id="chart-tooltip" role="status"></div><div class="chart-empty" id="chart-empty">No supported chart data in this response.</div></div>
+          <div class="chart-footer"><span id="chart-legend">Axes and units are supplied by the backend.</span><button class="text-button" id="chart-reset">Reset view</button></div>
+          <p class="chart-instructions">Drag to rotate · Scroll to zoom · Arrow keys to navigate · 2D alternative available</p>
+        </section>
+        <section class="panel context-panel" aria-labelledby="context-title"><div class="panel-header"><div><p class="panel-kicker">EVIDENCE & SCOPE</p><h2 id="context-title">Research context</h2></div><span class="tiny-label">READ ONLY</span></div><div id="context-content" class="context-content"></div></section>
+      </div>
+      <section class="panel table-panel" aria-labelledby="table-title"><div class="panel-header"><div><p class="panel-kicker">DETAIL EXPLORER</p><h2 id="table-title">Underlying observations <span class="count-badge" id="row-count">0</span></h2></div><div class="table-actions"><input id="table-search" type="search" placeholder="Filter observations…" aria-label="Filter observations"><button class="button" id="export-csv">Export CSV</button></div></div><div class="table-scroll" id="table-wrap" tabindex="0" aria-label="Scrollable underlying observations"><table id="observations-table"><caption class="sr-only">Underlying section observations. Null values are displayed as unknown.</caption><thead></thead><tbody></tbody></table></div><div class="table-empty" id="table-empty">No observations available.</div><div class="table-footer"><span id="table-summary">No rows loaded</span><span>Null ≠ zero · Synthetic ≠ observed</span></div></section>
+      <section class="panel workbench hidden" id="workbench" aria-labelledby="workbench-title"><div class="panel-header"><div><p class="panel-kicker">LOCAL COMPUTATION</p><h2 id="workbench-title">Analytics workbench</h2></div><span class="tiny-label">NO ORDER ENTRY</span></div><div class="workbench-body"><div><label for="analytics-kind">Analysis</label><select id="analytics-kind"><option value="options">European option valuation</option><option value="kalman">Kalman filter / RTS smoother</option><option value="garch">GARCH volatility</option><option value="hmm">Hidden Markov regime model</option><option value="microstructure">Microstructure diagnostics</option></select><label for="analytics-input">JSON research inputs</label><textarea id="analytics-input" spellcheck="false" rows="10"></textarea><div class="workbench-actions"><button class="button" id="load-example">Load example</button><button class="button primary" id="run-analysis">Run local analysis <span aria-hidden="true">↗</span></button></div><p class="muted">Examples are synthetic inputs. Valuations are model estimates, never observed quotes or approved trading signals.</p></div><div><div id="analytics-output-label" class="output-label">Backend result</div><pre id="analytics-output" tabindex="0" aria-labelledby="analytics-output-label">Select an analysis and submit inputs to calculate a result.</pre></div></div></section>
+      <footer class="page-footer"><span><strong>GIG</strong> Quant Terminal <span class="footer-separator">/</span> Research environment</span><span>Broker connectivity disabled by default · T4_NOT_CERTIFIED</span></footer>
+    </main>
   </div>
-
-  <form class="search" id="search-form" autocomplete="off">
-    <input id="search-input" type="search" maxlength="12" placeholder="Find ticker…" aria-label="Search ticker" />
-    <button class="btn" type="submit">lookup</button>
-  </form>
-
-  <div class="pills" id="pills" title="System health">
-    <span class="pill" id="pill-db" title="Rows stored in the local DuckDB lake">Lake —</span>
-    <span class="pill" id="pill-universe" title="Names in the active research universe">Universe —</span>
-    <span class="pill" id="pill-asof" title="Date of the newest price bar">Data as-of —</span>
-    <span class="pill" id="pill-feed" title="Live quote vendor">Quotes —</span>
-    <span class="pill" id="pill-ml" title="Walk-forward ranker backend">Ranker —</span>
-    <span class="pill" id="pill-ollama" title="Local research desk LLM">Desk —</span>
-    <span class="pill" id="pill-paper" title="Alpaca paper broker">Paper —</span>
-  </div>
-
-  <div class="top-actions">
-    <button class="btn" id="btn-refresh" title="Clear cache and reload">Refresh</button>
-    <div class="clock" id="clock">--:--:--</div>
-  </div>
-</header>
-
-<div class="ops-strip" id="ops-strip" title="Trading operations — why this strip exists: lake freshness, kill switch, and rebalance loop health">
-  <span class="ops-item" id="ops-level">System —</span>
-  <span class="ops-item" id="ops-fresh">Market data —</span>
-  <span class="ops-item" id="ops-kill">Kill switch off</span>
-  <span class="ops-item" id="ops-hb">Rebalance loop —</span>
-  <span class="ops-item" id="ops-last">Last rebalance —</span>
-  <span class="ops-alerts" id="ops-alerts"></span>
-</div>
-
-<main class="layout">
-
-  <section class="rail rail-left">
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Target book</h2>
-        <span class="panel-note" id="book-asof">—</span>
-      </div>
-      <div class="book-stats">
-        <div class="stat"><span class="stat-k">Gross</span><span class="stat-v" id="bk-gross">—</span></div>
-        <div class="stat"><span class="stat-k">Net</span><span class="stat-v" id="bk-net">—</span></div>
-        <div class="stat"><span class="stat-k">Longs</span><span class="stat-v" id="bk-longs">—</span></div>
-        <div class="stat"><span class="stat-k">Shorts</span><span class="stat-v" id="bk-shorts">—</span></div>
-        <div class="stat wide"><span class="stat-k">Construction</span><span class="stat-v" id="bk-build">—</span></div>
-      </div>
-      <div class="leg">
-        <div class="leg-head leg-long">Long book</div>
-        <ul class="leg-list" id="list-long"></ul>
-      </div>
-      <div class="leg">
-        <div class="leg-head leg-short">Short book</div>
-        <ul class="leg-list" id="list-short"></ul>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Paper account</h2>
-        <span class="panel-note" id="paper-open">—</span>
-      </div>
-      <div class="metrics" id="paper-metrics"></div>
-      <div class="panel-sub">Largest weight drift vs target</div>
-      <ul class="leg-list" id="paper-drift"></ul>
-      <div class="panel-sub">Paper equity trail</div>
-      <canvas id="nav-spark" height="56"></canvas>
-      <p class="disclaimer" id="paper-note">
-        Read-only here. Orders: <code>gig trade plan</code> then <code>trade run --yes</code>.
-        Halt: <code>gig ops halt</code>.
-      </p>
-      <span class="panel-note" id="nav-note" hidden></span>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Trade blotter</h2>
-        <span class="panel-note" id="blotter-note">held vs target</span>
-      </div>
-      <div class="metrics" id="blotter-metrics"></div>
-      <ul class="leg-list" id="blotter-rows"></ul>
-    </div>
-  </section>
-
-  <section class="stage">
-    <div class="stage-head">
-      <div>
-        <h2>Factor space</h2>
-        <p class="stage-blurb" id="stage-blurb">Neutralized momentum · idiosyncratic vol · short-term reversal · alpha colour</p>
-      </div>
-      <div class="controls">
-        <div class="mode-tabs" id="mode-tabs">
-          <button class="mode-tab active" data-mode="alpha" type="button">Alpha</button>
-          <button class="mode-tab" data-mode="risk" type="button">Risk PCA</button>
-          <button class="mode-tab" data-mode="held" type="button">Held only</button>
-        </div>
-        <label class="ctl" id="ctl-y">
-          <span>Y-axis</span>
-          <select id="axis-y" autocomplete="off">
-            <option value="ivol">Idiosyncratic vol</option>
-            <option value="live">Live % change</option>
-            <option value="score">Alpha score</option>
-          </select>
-        </label>
-        <label class="ctl">
-          <span>Sector</span>
-          <select id="sector-filter" autocomplete="off"><option value="">All</option></select>
-        </label>
-        <button class="btn" id="btn-spin" data-on="1">Spin</button>
-        <button class="btn" id="btn-reset">Reset view</button>
-      </div>
-    </div>
-
-    <div class="canvas-wrap">
-      <canvas id="scene"></canvas>
-      <div class="tip" id="tip" hidden></div>
-      <div class="axis-legend">
-        <div><span class="ax ax-x"></span>X — <span id="legend-x">12-1 momentum</span></div>
-        <div><span class="ax ax-y"></span>Y — <span id="legend-y">idiosyncratic vol</span></div>
-        <div><span class="ax ax-z"></span>Z — <span id="legend-z">short-term reversal</span></div>
-        <div class="legend-note" id="legend-note">Click a point or search a ticker · ring = held · pulse = new quote</div>
-      </div>
-      <div class="stage-empty" id="stage-empty" hidden>
-        <p>No price history in the lake yet.</p>
-        <code>python -m gig universe refresh</code>
-        <code>python scripts/daily_ingest.py</code>
-      </div>
-    </div>
-
-    <div class="stage-foot">
-      <div class="panel flat">
-        <div class="panel-head"><h2>Sector net exposure</h2><span class="panel-note">vs sector limit</span></div>
-        <div id="sector-bars" class="bars compact"></div>
-      </div>
-      <div class="panel flat">
-        <div class="panel-head"><h2>Backtest Sharpe path</h2><span class="panel-note">experiment trail</span></div>
-        <canvas id="spark" height="64"></canvas>
-      </div>
-    </div>
-  </section>
-
-  <section class="rail rail-right">
-    <div class="panel">
-      <div class="panel-head"><h2>Risk limits</h2></div>
-      <div id="risk-bars" class="bars"></div>
-      <div id="breaches" class="breaches"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Predicted risk</h2>
-        <span class="panel-note" id="risk-model-note">—</span>
-      </div>
-      <div class="metrics" id="risk-metrics"></div>
-      <div class="bars" id="risk-split"></div>
-      <div class="panel-sub">Factor exposures · Σ = BB′ + D</div>
-      <div class="bars" id="exposure-bars"></div>
-      <canvas id="scree" height="56"></canvas>
-      <div class="panel-sub">Top volatility contributors</div>
-      <ul class="leg-list" id="risk-contrib"></ul>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Performance attribution</h2>
-        <span class="panel-note" id="attr-note">signal · risk</span>
-      </div>
-      <div class="metrics" id="attr-metrics"></div>
-      <div class="bars" id="attr-signal"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Last backtest</h2>
-        <span class="panel-note" id="research-src">—</span>
-      </div>
-      <div class="metrics" id="metrics"></div>
-      <p class="disclaimer" id="research-note"></p>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h2>Factor IC</h2><span class="panel-note">Newey–West t</span></div>
-      <div id="ic-bars" class="bars"></div>
-    </div>
-
-    <div class="panel desk">
-      <div class="panel-head">
-        <h2>Research desk</h2>
-        <span class="panel-note" id="desk-status">ollama</span>
-      </div>
-      <div class="prompts" id="desk-prompts"></div>
-      <div class="desk-chat" id="desk-chat">
-        <div class="desk-msg muted">Ask about the book, risk, or last backtest. Answers use live snapshot numbers only.</div>
-      </div>
-      <form class="desk-form" id="desk-form">
-        <input id="desk-input" type="text" maxlength="500" placeholder="e.g. Is the book factor-neutral today?" autocomplete="off" />
-        <button class="btn primary" type="submit">Ask</button>
-      </form>
-    </div>
-  </section>
-</main>
-
-<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
-<aside class="drawer" id="name-drawer" hidden aria-label="Name research card">
-  <div class="drawer-head">
-    <div>
-      <h2 id="drawer-sym">—</h2>
-      <p class="drawer-sub" id="drawer-meta">—</p>
-    </div>
-    <button class="btn" id="drawer-close" type="button">Close</button>
-  </div>
-  <div class="panel-sub">Snapshot</div>
-  <div class="metrics" id="drawer-metrics"></div>
-  <div class="panel-sub">Factor signals (neutralized z)</div>
-  <div class="bars" id="drawer-signals"></div>
-  <div class="panel-sub">Book · risk · IC context</div>
-  <div class="metrics" id="drawer-book"></div>
-  <div class="bars" id="drawer-ic"></div>
-  <p class="disclaimer" id="drawer-note"></p>
-</aside>
-
-<footer class="tape">
-  <div class="tape-strip" id="tape-strip"></div>
-</footer>
-
-<script src="/static/app.js"></script>
 </body>
 </html>

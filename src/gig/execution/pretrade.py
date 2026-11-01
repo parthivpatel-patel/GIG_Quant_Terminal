@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+import math
 from typing import Any
 
 import pandas as pd
@@ -98,8 +99,35 @@ def check(
         report.findings.append(Rejection("no_target", book.hint or "target book unavailable"))
         return report
 
+    # Nonfinite inputs must fail before comparisons or pandas reductions can
+    # silently treat them as absent or make every limit comparison false.
+    scalar_inputs = [plan.nav, plan.turnover, settings.max_gross_leverage,
+                     settings.max_net_exposure, settings.max_name_weight,
+                     settings.max_sector_net, settings.max_drawdown,
+                     config.min_nav, config.max_turnover, config.max_ex_ante_vol]
+    if nav_high_water is not None:
+        scalar_inputs.append(nav_high_water)
+    vector_inputs = [*book.weights, *plan.current, *plan.target]
+    for trade in plan.trades:
+        vector_inputs.extend([trade.shares, trade.price, trade.notional, trade.current_weight, trade.target_weight])
+    try:
+        valid = all(not isinstance(value, bool) and math.isfinite(float(value)) for value in scalar_inputs + vector_inputs)
+        valid = valid and all(float(value) >= 0 for value in scalar_inputs)
+        valid = valid and (nav_high_water is None or nav_high_water > 0)
+        valid = valid and isinstance(config.require_market_open, bool)
+        valid = valid and all(isinstance(value, int) and not isinstance(value, bool) and value >= 0
+                              for value in (config.max_stale_days, config.max_orders))
+        valid = valid and all(trade.side in {"buy", "sell"} and trade.shares > 0 and trade.price > 0 for trade in plan.trades)
+    except (TypeError, ValueError, OverflowError):
+        valid = False
+    if not valid:
+        report.findings.append(Rejection("invalid_risk_input", "risk inputs must be finite and within their declared domains"))
+        return report
+
     if book.asof is not None:
         stale = (today - book.asof).days
+        if stale < 0:
+            report.findings.append(Rejection("future_data", "target timestamp is in the future"))
         if stale > config.max_stale_days:
             report.findings.append(
                 Rejection(
@@ -108,18 +136,22 @@ def check(
                     "run `python -m gig ingest`",
                 )
             )
+    else:
+        report.findings.append(Rejection("unknown_data_time", "target timestamp is unavailable"))
 
     if market_open is False and config.require_market_open:
         report.findings.append(
             Rejection("market_closed", "regular session is closed; pass --force to override")
         )
+    elif market_open is not True and config.require_market_open:
+        report.findings.append(Rejection("market_unknown", "market-open state is unknown"))
 
     if plan.nav < config.min_nav:
         report.findings.append(
             Rejection("nav_floor", f"NAV {plan.nav:,.0f} below floor {config.min_nav:,.0f}")
         )
 
-    if nav_high_water and nav_high_water > 0:
+    if nav_high_water is not None:
         drawdown = plan.nav / nav_high_water - 1.0
         if drawdown < -abs(settings.max_drawdown):
             report.findings.append(
@@ -149,6 +181,14 @@ def check(
         )
 
     ex_ante = book.diagnostics.get("ex_ante_vol")
+    if ex_ante is not None:
+        try:
+            finite_vol = math.isfinite(float(ex_ante)) and float(ex_ante) >= 0
+        except (TypeError, ValueError, OverflowError):
+            finite_vol = False
+        if not finite_vol:
+            report.findings.append(Rejection("invalid_ex_ante_vol", "model volatility is invalid"))
+            ex_ante = None
     if ex_ante is not None and pd.notna(ex_ante) and ex_ante > config.max_ex_ante_vol:
         report.findings.append(
             Rejection(

@@ -1,1554 +1,467 @@
-/*
- * GIG research terminal.
- *
- * The 3D factor cloud is rendered with a hand-rolled perspective projection on
- * a 2D canvas: no WebGL library, no CDN, so the UI works offline. Points hold a
- * target position and a current position and are eased toward the target every
- * frame, which is what makes axis changes and live ticks animate instead of
- * snapping.
- */
+/* GIG local research terminal. Backend truth states and source evidence are retained. */
+"use strict";
 (() => {
-  "use strict";
-
-  const SPAN = 95;        // world half-extent for a +/-3 z-score axis
-  const FOCAL = 780;
-  const EASE = 0.12;
-
-  const state = {
-    points: [],
-    byId: new Map(),
-    live: new Map(),       // symbol -> { last, prev, chg }
-    yaw: 0.62,
-    pitch: -0.32,
-    dist: 340,
-    spin: true,
-    dragging: false,
-    axisY: "ivol",
-    mode: "alpha",         // alpha | risk | held
-    sector: "",
-    mouse: { x: -1e4, y: -1e4 },
-    hover: null,
-    width: 0,
-    height: 0,
-    lastRisk: null,
-    lastPipeline: null,
-  };
-
-  const el = (id) => document.getElementById(id);
-  const canvas = el("scene");
-  const ctx = canvas.getContext("2d");
-  const tip = el("tip");
-
-  /* ── formatting ──────────────────────────────────────────────── */
-
-  const isNum = (v) => typeof v === "number" && isFinite(v);
-  const fmt = (v, dp = 2) => (isNum(v) ? v.toFixed(dp) : "—");
-  const fmtPct = (v, dp = 2) => (isNum(v) ? (v * 100).toFixed(dp) + "%" : "—");
-  const fmtSigned = (v, dp = 2) => (isNum(v) ? (v >= 0 ? "+" : "") + v.toFixed(dp) : "—");
-
-  function fmtAdv(v) {
-    if (!isNum(v)) return "—";
-    if (v >= 1e9) return "$" + (v / 1e9).toFixed(1) + "B";
-    if (v >= 1e6) return "$" + (v / 1e6).toFixed(0) + "M";
-    if (v >= 1e3) return "$" + (v / 1e3).toFixed(0) + "K";
-    return "$" + v.toFixed(0);
-  }
-
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-
-  async function getJSON(url) {
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!res.ok) throw new Error(url + " -> " + res.status);
-    return res.json();
-  }
-
-  /* ── colour ──────────────────────────────────────────────────── */
-
-  const SHORT = [255, 59, 92];
-  const MID = [96, 108, 128];
-  const LONG = [34, 227, 154];
-
-  const mix = (a, b, u) => [
-    Math.round(a[0] + (b[0] - a[0]) * u),
-    Math.round(a[1] + (b[1] - a[1]) * u),
-    Math.round(a[2] + (b[2] - a[2]) * u),
+  const $ = (id) => document.getElementById(id);
+  const sections = [
+    { id: "command-center", label: "Command Center", icon: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z", description: "Portfolio intelligence, research, and operational controls." },
+    { id: "markets", label: "Markets", icon: "M3 17l5-5 4 3 8-10M15 5h5v5M3 21h18", description: "Market observations, instrument identity, freshness, and source provenance." },
+    { id: "signals", label: "Signals", icon: "M3 12h4l3-8 4 16 3-8h4", description: "Factor research and model scores. Research outputs require trading approval." },
+    { id: "portfolio", label: "Portfolio", icon: "M3 7h18v13H3zM8 7V3h8v4M3 12h18M10 12v3h4v-3", description: "Portfolio construction, constraints, allocation, and exposure evidence." },
+    { id: "risk", label: "Risk", icon: "M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM12 8v5M12 16h.01", description: "Risk estimates, stress scenarios, and valuation assumptions." },
+    { id: "models", label: "Models", icon: "M5 5h4v4H5zM15 5h4v4h-4zM10 16h4v4h-4zM7 9v4h10V9M12 13v3", description: "Model capability, versions, diagnostics, and reproducible CPU research." },
+    { id: "news", label: "NLP / News", icon: "M4 4h13v16H4zM17 8h3v12h-3M7 7h7M7 11h7M7 15h4", description: "Attributed financial text, entity links, and sentiment evidence." },
+    { id: "stat-arb", label: "Statistical Arbitrage", icon: "M3 6c6 0 6 12 12 12h6M3 18c6 0 6-12 12-12h6", description: "Spread research, hedge ratios, mean reversion, and uncertainty." },
+    { id: "options", label: "Options", icon: "M3 20h18M4 16c4-13 12-13 16 0M12 3v17", description: "European option estimates, volatility structures, and numerical diagnostics." },
+    { id: "execution", label: "Execution", icon: "M4 7h15M15 3l4 4-4 4M20 17H5M9 13l-4 4 4 4", description: "Offline order lifecycle and reconciliation. Broker connectivity is disabled by default." },
+    { id: "research", label: "Research", icon: "M9 3h6M10 3v6L4 19c-.5 1 .5 2 2 2h12c1.5 0 2.5-1 2-2L14 9V3M7 15h10", description: "Reproducible experiments, research artifacts, and evidence-backed analysis." },
+    { id: "operations", label: "Operations", icon: "M3 12h4l3-7 4 14 3-7h4M4 3h16M4 21h16", description: "Dependency readiness, safe configuration, restart recovery, and operating status." },
   ];
-
-  function scoreColor(p) {
-    // Rank percentile, not the raw z-score: the z-score cross-section piles up
-    // near zero, which renders as one grey blob with two coloured outliers.
-    const pct = isNum(p.score_pct)
-      ? p.score_pct
-      : isNum(p.score)
-        ? clamp((p.score + 2) / 4, 0, 1)
-        : 0.5;
-    return pct < 0.5 ? mix(SHORT, MID, pct * 2) : mix(MID, LONG, (pct - 0.5) * 2);
+  const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
+  const state = { section: sections[0], mode: "local", payload: null, rows: [], columns: [], sort: null, request: null, chart: null, points: [], projected: [], angle: -.55, tilt: .40, zoom: 1, dimension: 3, drag: null };
+  const numberFormat = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 7 });
+  const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+  function scalarTag(value) {
+    if (!isObject(value) || Object.keys(value).length !== 1) return null;
+    if (typeof value.$integer === "string" && /^-?\d+$/.test(value.$integer)) return value.$integer;
+    if (typeof value.$decimal === "string" && /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value.$decimal)) return value.$decimal;
+    return null;
   }
-
-  const rgba = (c, alpha) => `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
-
-  /* ── data -> world coordinates ───────────────────────────────── */
-
-  function axisValue(p) {
-    if (state.axisY === "live") {
-      const tick = state.live.get(p.symbol);
-      const chg = tick && isNum(tick.chg) ? tick.chg : p.chg;
-      return isNum(chg) ? clamp(chg / 0.05, -3, 3) : 0;   // +/-5% fills the axis
-    }
-    if (state.axisY === "score") return isNum(p.score) ? p.score : 0;
-    return isNum(p.ivol) ? p.ivol : 0;
-  }
-
-  function retarget() {
-    const k = SPAN / 3;
-    const risk = state.mode === "risk";
-    for (const p of state.points) {
-      if (risk) {
-        p.tx = (isNum(p.pc1) ? p.pc1 : 0) * k;
-        p.ty = (isNum(p.pc2) ? p.pc2 : 0) * k;
-        p.tz = (isNum(p.pc3) ? p.pc3 : 0) * k;
-      } else {
-        p.tx = (isNum(p.momentum) ? p.momentum : 0) * k;
-        p.ty = axisValue(p) * k;
-        p.tz = (isNum(p.reversal) ? p.reversal : 0) * k;
-      }
-    }
-  }
-
-  function applyCloud(cloud) {
-    const empty = el("stage-empty");
-    if (!cloud || !cloud.available || !cloud.points.length) {
-      empty.hidden = false;
-      state.points = [];
-      return;
-    }
-    empty.hidden = true;
-
-    const advs = cloud.points.map((p) => p.adv).filter(isNum).sort((a, b) => a - b);
-    const advRank = (v) => {
-      if (!isNum(v) || !advs.length) return 0.35;
-      let lo = 0;
-      let hi = advs.length - 1;
-      while (lo < hi) {
-        const mid = (lo + hi) >> 1;
-        if (advs[mid] < v) lo = mid + 1;
-        else hi = mid;
-      }
-      return lo / Math.max(1, advs.length - 1);
+  function exactNumericOrder(left, right) {
+    // Compare tagged decimals/integers by sign, decimal order, and significand.
+    // Exponents are compared as BigInt; no expanded zero strings or binary64
+    // conversion can round an identity or allocate an exponent-sized buffer.
+    const parts = (value) => {
+      const tagged = scalarTag(value);
+      const text = tagged !== null ? tagged : typeof value === "number" && Number.isFinite(value) ? String(value) : null;
+      if (text === null) return null;
+      const match = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(text);
+      if (!match) return null;
+      const digits = (match[2] + (match[3] || "")).replace(/^0+/, "");
+      if (!digits) return { sign: 0, digits: "", order: 0n };
+      const exponent = BigInt(match[4] || "0") - BigInt((match[3] || "").length);
+      return { sign: match[1] === "-" ? -1 : 1, digits, order: BigInt(digits.length) + exponent };
     };
-
-    const next = [];
-    const seen = new Map();
-    for (const raw of cloud.points) {
-      const prev = state.byId.get(raw.symbol);
-      const p = Object.assign({}, raw);
-      p.size = 2.4 + advRank(raw.adv) * 4.2;
-      p.pulse = prev ? prev.pulse : 0;
-      // Keep the current position across refreshes so the cloud eases rather
-      // than jumping when a new cross-section arrives.
-      p.cx = prev ? prev.cx : (Math.random() - 0.5) * SPAN * 2.4;
-      p.cy = prev ? prev.cy : (Math.random() - 0.5) * SPAN * 2.4;
-      p.cz = prev ? prev.cz : (Math.random() - 0.5) * SPAN * 2.4;
-      next.push(p);
-      seen.set(p.symbol, p);
+    const a = parts(left), b = parts(right);
+    if (!a || !b) return null;
+    if (a.sign !== b.sign) return a.sign < b.sign ? -1 : 1;
+    if (!a.sign) return 0;
+    if (a.order !== b.order) return (a.order < b.order ? -1 : 1) * a.sign;
+    for (let index = 0; index < Math.max(a.digits.length, b.digits.length); index++) {
+      const x = a.digits[index] || "0", y = b.digits[index] || "0";
+      if (x !== y) return (x < y ? -1 : 1) * a.sign;
     }
-    state.points = next;
-    state.byId = seen;
-    retarget();
-
-    // sector filter options
-    const select = el("sector-filter");
-    const sectors = [...new Set(next.map((p) => p.sector))].sort();
-    const current = select.value;
-    select.innerHTML =
-      '<option value="">all sectors</option>' +
-      sectors.map((s) => `<option value="${s}">${s}</option>`).join("");
-    select.value = sectors.includes(current) ? current : "";
-    state.sector = select.value;
-
-    el("pill-asof").textContent = "Data as-of " + cloud.asof;
-    el("pill-universe").textContent = "Universe " + cloud.names + " names";
-    el("pill-universe").className = "pill pill-ok";
-    el("book-asof").textContent = cloud.asof;
-
-    renderBook(cloud);
-    renderRisk(cloud);
-    renderRiskModel(cloud.risk);
-    renderIC(cloud.factor_ic);
-    renderSectorNet(cloud.sector_net || {});
-    renderScree(cloud.risk || {});
-    renderExposure(cloud.risk || {});
-    state.lastRisk = cloud.risk || null;
-    state.lastPipeline = cloud.pipeline || null;
-    const brand = el("brand-build");
-    if (brand) {
-      brand.textContent =
-        (cloud.construction === "risk_constrained" ? "factor-neutral" : "equal-weight") +
-        " · lambdarank · paper";
-    }
-    setModeLabels();
+    return 0;
   }
-
-  /* ── panels ──────────────────────────────────────────────────── */
-
-  function renderBook(cloud) {
-    const b = cloud.book || {};
-    el("bk-gross").textContent = fmt(b.gross, 2);
-    el("bk-net").textContent = fmtSigned(b.net, 3);
-    el("bk-longs").textContent = b.longs ?? "—";
-    el("bk-shorts").textContent = b.shorts ?? "—";
-    const build = el("bk-build");
-    if (build) {
-      const label = {
-        risk_constrained: "risk-neutral",
-        quantile_equal_weight: "equal-wt",
-      }[cloud.construction] || cloud.construction || "—";
-      build.textContent = label;
-    }
-
-    const held = cloud.points.filter((p) => p.side !== "flat");
-    held.sort((a, z) => (z.score ?? 0) - (a.score ?? 0));
-    const row = (p) =>
-      `<li data-sym="${p.symbol}" title="${p.sector} · click for detail"><span class="sym">${p.symbol}</span>` +
-      `<span class="wt">${fmtPct(p.weight, 1)}</span>` +
-      `<span class="sc">${fmtSigned(p.score, 2)}</span></li>`;
-    el("list-long").innerHTML = held.filter((p) => p.side === "long").map(row).join("");
-    el("list-short").innerHTML = held
-      .filter((p) => p.side === "short")
-      .reverse()
-      .map(row)
-      .join("");
-    wireSymClicks(el("list-long"));
-    wireSymClicks(el("list-short"));
+  function validContract(payload) {
+    if (!isObject(payload) || payload.schema_version !== "1" || !validStates.has(payload.state) || !isObject(payload.provenance)) return false;
+    if (typeof payload.provenance.source !== "string" || typeof payload.provenance.classification !== "string") return false;
+    const hasData = ["AVAILABLE", "STALE"].includes(payload.state);
+    if (hasData ? !isObject(payload.data) : payload.data !== null) return false;
+    if (payload.state === "STALE" && typeof payload.provenance.as_of !== "string") return false;
+    if (payload.state === "ERROR" && (!isObject(payload.error) || typeof payload.error.code !== "string" || typeof payload.error.message !== "string")) return false;
+    if (payload.state === "AVAILABLE" && payload.error !== null) return false;
+    return true;
   }
-
-  function wireSymClicks(host) {
-    if (!host) return;
-    host.querySelectorAll("[data-sym]").forEach((li) => {
-      li.addEventListener("click", () => openName(li.getAttribute("data-sym")));
+  function printable(value) {
+    if (value === null || value === undefined) return "Unknown";
+    if (typeof value === "number") return Number.isFinite(value) ? (Object.is(value, -0) ? "−0" : numberFormat.format(value)) : "Invalid numeric value";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (scalarTag(value) !== null) return scalarTag(value);
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value);
+  }
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+  function nav() {
+    const fragment = document.createDocumentFragment();
+    sections.forEach((section, index) => {
+      const link = el("a", "nav-link");
+      link.href = `#${section.id}`;
+      link.title = section.label;
+      link.setAttribute("aria-label", section.label);
+      const icon = el("span", "nav-icon");
+      icon.setAttribute("aria-hidden", "true");
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", section.icon);
+      svg.append(path);
+      icon.append(svg);
+      link.append(icon, el("span", "", section.label));
+      if (index === 0) link.append(el("span", "nav-shortcut", "⌘"));
+      fragment.append(link);
     });
+    $("section-nav").append(fragment);
   }
-
-  function barRow(label, value, limit, text) {
-    const pct = limit ? clamp((Math.abs(value) / limit) * 100, 0, 100) : 0;
-    const cls = Math.abs(value) > limit ? "bar-over" : "bar-neutral";
-    return `<div class="bar-row">
-      <div class="bar-top"><span class="k">${label}</span><span class="v">${text}</span></div>
-      <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-    </div>`;
-  }
-
-  function renderRisk(cloud) {
-    const b = cloud.book || {};
-    const lim = (window.__gigLimits || {});
-    const html = [
-      barRow("gross leverage", b.gross ?? 0, lim.max_gross_leverage ?? 2,
-        `${fmt(b.gross, 2)} / ${fmt(lim.max_gross_leverage, 2)}`),
-      barRow("net exposure", b.net ?? 0, lim.max_net_exposure ?? 0.1,
-        `${fmtSigned(b.net, 3)} / ${fmt(lim.max_net_exposure, 2)}`),
-      barRow("max name", b.max_name ?? 0, lim.max_name_weight ?? 0.05,
-        `${fmtPct(b.max_name, 1)} / ${fmtPct(lim.max_name_weight, 1)}`),
-    ].join("");
-    el("risk-bars").innerHTML = html;
-
-    const breaches = cloud.breaches || [];
-    el("breaches").innerHTML = breaches.length
-      ? breaches
-          .map(
-            (b2) =>
-              `<div class="breach">${b2.name} ${fmt(b2.value, 3)} &gt; ${fmt(b2.limit, 3)}</div>`
-          )
-          .join("")
-      : '<div class="breach-none">all limits clear</div>';
-  }
-
-  function renderRiskModel(risk) {
-    const note = el("risk-model-note");
-    if (!risk || !risk.available) {
-      note.textContent = "unavailable";
-      el("risk-metrics").innerHTML =
-        '<div class="m"><span class="m-k">needs history</span><span class="m-v">—</span></div>';
-      el("risk-split").innerHTML = "";
-      el("risk-contrib").innerHTML = "";
-      return;
-    }
-
-    note.textContent = `${risk.n_factors} PC · ${risk.n_obs}d`;
-
-    const cell = (k, v, cls = "") =>
-      `<div class="m"><span class="m-k">${k}</span><span class="m-v ${cls}">${v}</span></div>`;
-    // Predicted vs realized on the same window is the model's own honesty check.
-    const gap =
-      isNum(risk.ex_ante_vol) && isNum(risk.realized_vol) && risk.realized_vol > 0
-        ? risk.ex_ante_vol / risk.realized_vol
-        : null;
-    el("risk-metrics").innerHTML = [
-      cell("predicted vol", fmtPct(risk.ex_ante_vol, 1)),
-      cell("realized vol", fmtPct(risk.realized_vol, 1)),
-      cell("effective names", fmt(risk.effective_names, 1)),
-      cell("pred / real", isNum(gap) ? gap.toFixed(2) + "x" : "—"),
-    ].join("");
-
-    const sysPct = clamp((risk.systematic_share || 0) * 100, 0, 100);
-    el("risk-split").innerHTML = `<div class="bar-row">
-      <div class="bar-top">
-        <span class="k">systematic / specific</span>
-        <span class="v">${fmtPct(risk.systematic_share, 0)} / ${fmtPct(risk.specific_share, 0)}</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill bar-neutral" style="width:${sysPct}%"></div></div>
-    </div>`;
-
-    el("risk-contrib").innerHTML = (risk.top_contributors || [])
-      .map(
-        (c) =>
-          `<li data-sym="${c.symbol}" title="${c.sector}"><span class="sym">${c.symbol}</span>` +
-          `<span class="wt">${fmtPct(c.weight, 1)}</span>` +
-          `<span class="sc">${fmtPct(c.share, 1)}</span></li>`
-      )
-      .join("");
-    wireSymClicks(el("risk-contrib"));
-  }
-
-  function renderIC(ic) {
-    if (!ic) return;
-    const rows = Object.entries(ic).sort(
-      (a, b) => Math.abs(b[1].ic_mean ?? 0) - Math.abs(a[1].ic_mean ?? 0)
-    );
-    el("ic-bars").innerHTML = rows
-      .map(([name, s]) => {
-        const mean = s.ic_mean ?? 0;
-        const pct = clamp((Math.abs(mean) / 0.05) * 100, 2, 100);
-        const cls = mean >= 0 ? "bar-pos" : "bar-neg";
-        const t = isNum(s.ic_tstat_nw) ? `t ${s.ic_tstat_nw.toFixed(1)}` : "t —";
-        return `<div class="bar-row">
-          <div class="bar-top"><span class="k">${name}</span><span class="v">${fmt(mean, 4)} · ${t}</span></div>
-          <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-        </div>`;
-      })
-      .join("");
-  }
-
-  function renderResearch(r) {
-    if (!r || !r.available) {
-      el("metrics").innerHTML =
-        '<div class="m"><span class="m-k">no run yet</span><span class="m-v">—</span></div>';
-      el("research-note").textContent =
-        "Run: python -m gig backtest --source yahoo --no-ml";
-      return;
-    }
-    const m = r.metrics || {};
-    const cell = (k, v, cls = "") =>
-      `<div class="m"><span class="m-k">${k}</span><span class="m-v ${cls}">${v}</span></div>`;
-    const sign = (v) => (isNum(v) ? (v >= 0 ? "good" : "bad") : "");
-    el("metrics").innerHTML = [
-      cell("sharpe", fmt(m.sharpe, 2), sign(m.sharpe)),
-      cell("ann return", fmtPct(m.ann_return, 1), sign(m.ann_return)),
-      cell("ann vol", fmtPct(m.ann_vol, 1)),
-      cell("max dd", fmtPct(m.max_drawdown, 1), "bad"),
-      cell("turnover", fmt(m.ann_turnover, 1) + "x"),
-      cell("deflated sharpe", fmt(m.dsr, 3)),
-    ].join("");
-    el("research-src").textContent = (r.source || "—") + " · " + (r.modified || "");
-    el("research-note").textContent =
-      r.source === "synthetic"
-        ? "Synthetic panel: the premium is planted. This measures the pipeline, not an edge."
-        : "Current listing tape, not survivorship-free. Treat as research, not live performance.";
-  }
-
-  function renderStatus(s) {
-    window.__gigLimits = s.limits || {};
-    const db = el("pill-db");
-    const tables = s.tables || {};
-    let bars = Number(tables.bars || 0);
-    const asofVal = s.asof || ((s.ops || {}).freshness || {}).asof || null;
-    // Never flash "Lake empty" when we clearly have an as-of date from ops/status.
-    if (!bars && (s.db_ready || asofVal)) {
-      bars = window.__gigLastBars || 1;
-    }
-    if (bars > 1) window.__gigLastBars = bars;
-    if (db) {
-      if (bars > 1) {
-        db.textContent = "Lake " + bars.toLocaleString() + " bars";
-        db.className = "pill pill-ok";
-      } else if (bars === 1 && asofVal) {
-        db.textContent = "Lake ready";
-        db.className = "pill pill-ok";
-        db.title = "Bar lake present (exact row count refreshing)";
-      } else if (asofVal) {
-        db.textContent = "Lake ready";
-        db.className = "pill pill-ok";
-      } else {
-        db.textContent = "Lake empty";
-        db.className = "pill pill-bad";
-      }
-    }
-
-    const asof = el("pill-asof");
-    if (asof) {
-      const ops = s.ops || {};
-      const f = ops.freshness || {};
-      asof.textContent = asofVal ? "Data as-of " + asofVal : "Data as-of —";
-      const level = f.level || (bars || asofVal ? "ok" : "bad");
-      asof.className =
-        "pill " +
-        (level === "ok" ? "pill-ok" : level === "warn" ? "pill-warn" : bars || asofVal ? "pill-warn" : "pill-bad");
-    }
-
-    const uni = el("pill-universe");
-    // universe pill filled from cloud; keep placeholder class until then
-
-    const keys = s.keys || {};
-    const live = keys.alpaca || keys.finnhub;
-    const feed = el("pill-feed");
-    feed.textContent = keys.alpaca ? "Quotes Alpaca IEX" : keys.finnhub ? "Quotes Finnhub" : "Quotes offline";
-    feed.className = "pill " + (live ? "pill-ok" : "pill-warn");
-
-    const ml = s.ml || {};
-    const mlp = el("pill-ml");
-    if (mlp) {
-      mlp.textContent = ml.lightgbm ? "Ranker LightGBM" : ml.sklearn ? "Ranker sklearn" : "Ranker off";
-      mlp.className = "pill " + (ml.lightgbm || ml.sklearn ? "pill-ok" : "pill-warn");
-    }
-
-    const ol = s.ollama || {};
-    const olp = el("pill-ollama");
-    if (olp) {
-      olp.textContent = ol.available && ol.model_ready ? "Desk Ollama" : ol.available ? "Desk model?" : "Desk structured";
-      olp.className = "pill " + (ol.available && ol.model_ready ? "pill-ok" : "pill-warn");
-    }
-
-    const paper = el("pill-paper");
-    if (paper) {
-      const kill = (s.ops && s.ops.kill_switch) || {};
-      if (kill.engaged) {
-        paper.textContent = "Paper HALTED";
-        paper.className = "pill pill-bad";
-      } else {
-        paper.textContent = keys.alpaca ? "Paper ready" : "Paper keys?";
-        paper.className = "pill " + (keys.alpaca ? "pill-ok" : "pill-warn");
-      }
-    }
-
-    if (s.ops) renderOps(s.ops);
-  }
-
-  function renderSectorNet(sectorNet) {
-    const host = el("sector-bars");
-    if (!host) return;
-    const lim = (window.__gigLimits || {}).max_sector_net || 0.1;
-    const rows = Object.entries(sectorNet || {})
-      .map(([k, v]) => [k, v])
-      .filter(([, v]) => isNum(v) && Math.abs(v) >= 1e-4)
-      .sort((a, b) => Math.abs(b[1] || 0) - Math.abs(a[1] || 0))
-      .slice(0, 8);
-    if (!rows.length) {
-      host.innerHTML = '<div class="breach-none">sector-neutral · near flat</div>';
-      return;
-    }
-    host.innerHTML = rows
-      .map(([name, value]) => {
-        const pct = clamp((Math.abs(value) / lim) * 100, 0, 100);
-        const cls = Math.abs(value) > lim ? "bar-over" : value >= 0 ? "bar-pos" : "bar-neg";
-        return `<div class="bar-row">
-          <div class="bar-top"><span class="k">${name}</span><span class="v">${fmtPct(value, 2)}</span></div>
-          <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-        </div>`;
-      })
-      .join("");
-  }
-
-  function renderScree(risk) {
-    const c = el("scree");
-    if (!c) return;
-    const ctx2 = c.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const w = c.parentElement.clientWidth || 200;
-    const h = 72;
-    c.width = w * dpr;
-    c.height = h * dpr;
-    c.style.width = w + "px";
-    c.style.height = h + "px";
-    ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx2.clearRect(0, 0, w, h);
-    const shares = (risk && risk.eigenvalue_share) || [];
-    if (!shares.length) {
-      ctx2.fillStyle = "#556070";
-      ctx2.font = "10px IBM Plex Mono, monospace";
-      ctx2.fillText("PCA scree after cloud loads", 10, 40);
-      return;
-    }
-    const n = shares.length;
-    const gap = 6;
-    const barW = Math.max(10, (w - 16 - gap * (n - 1)) / n);
-    shares.forEach((s, i) => {
-      const bh = Math.max(2, s * (h - 22));
-      const x = 8 + i * (barW + gap);
-      const y = h - 10 - bh;
-      ctx2.fillStyle = i === 0 ? "#6cb6ff" : i === 1 ? "#b8e63b" : "#8b97a8";
-      ctx2.fillRect(x, y, barW, bh);
-      ctx2.fillStyle = "#9aa6b5";
-      ctx2.font = "9px IBM Plex Mono, monospace";
-      ctx2.fillText("PC" + (i + 1), x, h - 2);
-      ctx2.fillStyle = "#e8eef6";
-      ctx2.fillText((100 * s).toFixed(0) + "%", x, y - 3);
+  function selectSection() {
+    const id = location.hash.slice(1);
+    state.section = sections.find((section) => section.id === id) || sections[0];
+    document.querySelectorAll(".nav-link").forEach((link) => {
+      if (link.hash === `#${state.section.id}`) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
     });
+    $("section-title").textContent = state.section.label;
+    $("breadcrumb").textContent = state.section.label;
+    $("section-description").textContent = state.section.description;
+    document.title = `${state.section.label} · GIG Quant Terminal`;
+    $("workbench").classList.toggle("hidden", !["models", "options", "research", "markets", "stat-arb"].includes(state.section.id));
+    if (state.section.id === "options") $("analytics-kind").value = "options";
+    else if (state.section.id === "models") $("analytics-kind").value = "kalman";
+    else if (state.section.id === "markets") $("analytics-kind").value = "microstructure";
+    loadExample();
+    state.sort = null;
+    $("table-search").value = "";
+    loadSection();
   }
-
-  function renderExposure(risk) {
-    const host = el("exposure-bars");
-    if (!host) return;
-    const exp = (risk && risk.factor_exposure) || {};
-    const rows = Object.entries(exp);
-    if (!rows.length) {
-      host.innerHTML = '<div class="breach-none">no B′w yet</div>';
-      return;
-    }
-    const maxAbs = Math.max(...rows.map(([, v]) => Math.abs(v || 0)), 1e-12);
-    host.innerHTML = rows
-      .map(([name, value]) => {
-        const pct = clamp((Math.abs(value) / maxAbs) * 100, 0, 100);
-        const cls = Math.abs(value) < 1e-6 ? "bar-neutral" : value >= 0 ? "bar-pos" : "bar-neg";
-        return `<div class="bar-row">
-          <div class="bar-top"><span class="k">${name}</span><span class="v">${fmtSigned(value, 4)}</span></div>
-          <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-        </div>`;
-      })
-      .join("");
-  }
-
-  function setModeLabels() {
-    const blurb = el("stage-blurb");
-    const lx = el("legend-x");
-    const ly = el("legend-y");
-    const lz = el("legend-z");
-    const note = el("legend-note");
-    const ctlY = el("ctl-y");
-    if (state.mode === "risk") {
-      if (blurb) blurb.textContent = "PCA risk space · PC1 · PC2 · PC3 · α colour · Σ = BB′ + D";
-      if (lx) lx.textContent = "PC1 (systematic)";
-      if (ly) ly.textContent = "PC2";
-      if (lz) lz.textContent = "PC3";
-      if (note) note.textContent = "exposures from statistical risk model · ring = held";
-      if (ctlY) ctlY.style.display = "none";
-    } else {
-      if (blurb) {
-        blurb.textContent =
-          state.mode === "held"
-            ? "held names only · neutralized factors · alpha colour"
-            : "neutralized momentum · ivol · reversal · alpha colour";
-      }
-      if (lx) lx.textContent = "12-1 momentum";
-      if (ly) {
-        ly.textContent =
-          { ivol: "idiosyncratic vol", live: "live % change", score: "alpha score" }[state.axisY] ||
-          "idiosyncratic vol";
-      }
-      if (lz) lz.textContent = "short-term reversal";
-      if (note) note.textContent = "rank-normalized · ring = held · pulse = quote";
-      if (ctlY) ctlY.style.display = "";
-    }
-  }
-
-  function renderSpark(experiments) {
-    const c = el("spark");
-    if (!c) return;
-    const ctx2 = c.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const w = c.parentElement.clientWidth || 280;
-    const h = 64;
-    c.width = w * dpr;
-    c.height = h * dpr;
-    c.style.width = w + "px";
-    c.style.height = h + "px";
-    ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx2.clearRect(0, 0, w, h);
-
-    const runs = (experiments && experiments.runs) || [];
-    const ys = runs.map((r) => r.sharpe).filter(isNum);
-    if (ys.length < 2) {
-      ctx2.fillStyle = "#556070";
-      ctx2.font = "10px IBM Plex Mono, monospace";
-      ctx2.fillText("run more backtests to see the path", 10, 34);
-      return;
-    }
-    const min = Math.min(...ys, 0);
-    const max = Math.max(...ys, 0);
-    const span = max - min || 1;
-    ctx2.strokeStyle = "#1a2330";
-    ctx2.beginPath();
-    ctx2.moveTo(0, h * (1 - (0 - min) / span));
-    ctx2.lineTo(w, h * (1 - (0 - min) / span));
-    ctx2.stroke();
-
-    ctx2.beginPath();
-    ys.forEach((y, i) => {
-      const x = (i / (ys.length - 1)) * (w - 8) + 4;
-      const yy = h - 6 - ((y - min) / span) * (h - 12);
-      if (i === 0) ctx2.moveTo(x, yy);
-      else ctx2.lineTo(x, yy);
-    });
-    ctx2.strokeStyle = "#7dd3fc";
-    ctx2.lineWidth = 1.5;
-    ctx2.stroke();
-    const last = ys[ys.length - 1];
-    ctx2.fillStyle = last >= 0 ? "#3dffa8" : "#ff4d6d";
-    ctx2.font = "10px IBM Plex Mono, monospace";
-    ctx2.fillText("Sharpe " + last.toFixed(2), 8, 14);
-  }
-
-  function renderPaper(p) {
-    const metrics = el("paper-metrics");
-    const drift = el("paper-drift");
-    const note = el("paper-note");
-    const open = el("paper-open");
-    if (!metrics) return;
-    if (!p || !p.available) {
-      metrics.innerHTML =
-        '<div class="m"><span class="m-k">status</span><span class="m-v">offline</span></div>';
-      if (drift) drift.innerHTML = "";
-      if (open) open.textContent = "—";
-      let msg = (p && (p.hint || p.error)) || "Alpaca keys not loaded";
-      if (msg && /NoneType.*empty|AttributeError/i.test(msg)) {
-        msg = "Paper snapshot busy — retry refresh (lake locked by rebalance)";
-      }
-      if (note) note.textContent = msg;
-      return;
-    }
-    if (note) {
-      note.textContent =
-        "Read-only here. Orders: gig trade plan then trade run --yes. Halt: gig ops halt.";
-    }
-    const acct = p.account || {};
-    const cell = (k, v, cls = "") =>
-      `<div class="m"><span class="m-k">${k}</span><span class="m-v ${cls}">${v}</span></div>`;
-    metrics.innerHTML = [
-      cell("NAV", isNum(p.nav) ? p.nav.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—"),
-      cell("held", String(p.n_positions ?? "—")),
-      cell("worst drift", fmtPct(p.worst_drift, 2)),
-      cell("session", p.market_open === true ? "open" : p.market_open === false ? "closed" : "—"),
-    ].join("");
-    if (open) open.textContent = acct.paper ? "paper" : "account";
-    if (drift) {
-      drift.innerHTML = (p.drift || [])
-        .slice(0, 8)
-        .map(
-          (r) =>
-            `<li data-sym="${r.symbol}"><span class="sym">${r.symbol}</span>` +
-            `<span class="wt">${fmtPct(r.current_weight, 1)}</span>` +
-            `<span class="sc">${fmtPct(r.drift, 1)}</span></li>`
-        )
-        .join("");
-      wireSymClicks(drift);
-    }
-  }
-
-  function renderOps(ops) {
-    const level = el("ops-level");
-    const fresh = el("ops-fresh");
-    const kill = el("ops-kill");
-    const hb = el("ops-hb");
-    const last = el("ops-last");
-    const alerts = el("ops-alerts");
-    if (!level) return;
-    if (!ops || !ops.available) {
-      level.textContent = "ops offline";
-      level.className = "ops-item warn";
-      return;
-    }
-    const lv = ops.level || "ok";
-    level.textContent =
-      lv === "ok" ? "System healthy" : lv === "warn" ? "System warning" : "System issue";
-    level.className = "ops-item " + lv;
-
-    const f = ops.freshness || {};
-    if (fresh) {
-      fresh.textContent = f.asof
-        ? "Market data " + f.asof + (isNum(f.age_days) ? ` (${f.age_days}d)` : "")
-        : "Market data —";
-      fresh.className = "ops-item " + (f.level || "warn");
-    }
-
-    const k = ops.kill_switch || {};
-    if (kill) {
-      kill.textContent = k.engaged ? "Kill switch ON" : "Kill switch off";
-      kill.className = "ops-item " + (k.engaged ? "bad" : "ok");
-      kill.title = k.reason || "Blocks new orders when on";
-    }
-
-    const h = ops.heartbeat || {};
-    if (hb) {
-      hb.textContent = h.ts ? "Rebalance loop " + (h.ok ? "OK" : "failed") : "Rebalance loop idle";
-      hb.className = "ops-item " + (h.ts ? (h.ok ? "ok" : "warn") : "warn");
-      hb.title = h.detail || "";
-    }
-
-    const lr = ops.last_run || null;
-    if (last) {
-      if (!lr || lr.error) {
-        last.textContent = "Last rebalance —";
-        last.className = "ops-item";
-        last.title = (lr && lr.error) || "";
-      } else {
-        last.textContent =
-          "Last rebalance " +
-          (lr.blocked ? "blocked" : lr.dry_run ? "dry-run" : "live") +
-          (isNum(lr.turnover) ? ` · turnover ${fmtPct(lr.turnover, 0)}` : "");
-        last.className = "ops-item " + (lr.blocked ? "warn" : "ok");
-      }
-    }
-
-    if (alerts) {
-      alerts.innerHTML = (ops.alerts || [])
-        .slice(0, 3)
-        .map((a) => `<span class="ops-alert ${a.level || ""}">${a.detail || a.code}</span>`)
-        .join("");
-    }
-  }
-
-  function renderBlotter(b) {
-    const metrics = el("blotter-metrics");
-    const rows = el("blotter-rows");
-    const note = el("blotter-note");
-    if (!metrics) return;
-    if (!b || !b.available) {
-      metrics.innerHTML =
-        '<div class="m"><span class="m-k">status</span><span class="m-v">—</span></div>';
-      if (rows) {
-        const auditRows = (b && b.rows) || [];
-        rows.innerHTML = auditRows
-          .slice(0, 12)
-          .map(
-            (r) =>
-              `<li><span class="sym">${r.symbol}</span>` +
-              `<span class="wt">${fmtPct(r.target, 1)}</span>` +
-              `<span class="sc">${r.side || ""}</span></li>`
-          )
-          .join("");
-      }
-      if (note) note.textContent = (b && (b.hint || b.error)) || "offline";
-      return;
-    }
-    const cell = (k, v) =>
-      `<div class="m"><span class="m-k">${k}</span><span class="m-v">${v}</span></div>`;
-    metrics.innerHTML = [
-      cell("gross tgt", fmt(b.target_gross, 2)),
-      cell("net tgt", fmtSigned(b.target_net, 3)),
-      cell("worst |Δ|", fmtPct(b.worst_drift, 2)),
-      cell("held", String(b.n_positions ?? "—")),
-    ].join("");
-    if (note) note.textContent = (b.target_asof || "—") + (b.construction ? " · " + b.construction : "");
-    if (rows) {
-      rows.innerHTML = (b.rows || [])
-        .slice(0, 14)
-        .map(
-          (r) =>
-            `<li data-sym="${r.symbol}" title="held ${fmtPct(r.held, 2)} → tgt ${fmtPct(r.target, 2)}">` +
-            `<span class="sym">${r.symbol}</span>` +
-            `<span class="wt">${fmtPct(r.held, 1)}</span>` +
-            `<span class="sc">${fmtPct(r.drift, 1)}</span></li>`
-        )
-        .join("");
-      wireSymClicks(rows);
-    }
-  }
-
-  function renderAttribution(a) {
-    const metrics = el("attr-metrics");
-    const signal = el("attr-signal");
-    const note = el("attr-note");
-    if (!metrics) return;
-    if (!a || !a.available) {
-      metrics.innerHTML =
-        '<div class="m"><span class="m-k">attribution</span><span class="m-v">—</span></div>';
-      return;
-    }
-    const research = a.research || {};
-    const m = research.metrics || {};
-    const risk = a.risk || {};
-    const paper = a.paper || {};
-    const cell = (k, v, cls = "") =>
-      `<div class="m"><span class="m-k">${k}</span><span class="m-v ${cls}">${v}</span></div>`;
-    metrics.innerHTML = [
-      cell("bt sharpe", fmt(m.sharpe, 2), isNum(m.sharpe) && m.sharpe >= 0 ? "good" : "bad"),
-      cell("sys share", fmtPct(risk.systematic_share, 0)),
-      cell("pred/real", isNum(risk.pred_over_real) ? risk.pred_over_real.toFixed(2) + "x" : "—"),
-      cell("paper Δ", fmtPct(paper.total_return, 1)),
-    ].join("");
-    if (note) {
-      note.textContent =
-        (research.source || "research") +
-        (isNum(risk.shrinkage) ? "" : "") +
-        (paper.available ? " · paper trail" : "");
-    }
-    const sig = a.signal || research.signal || [];
-    if (signal) {
-      signal.innerHTML = sig.length
-        ? sig
-            .slice(0, 6)
-            .map((s) => {
-              const pct = clamp((s.share || 0) * 100, 2, 100);
-              const cls = (s.ic || 0) >= 0 ? "bar-pos" : "bar-neg";
-              return `<div class="bar-row">
-                <div class="bar-top"><span class="k">${s.name}</span><span class="v">${fmt(s.ic, 3)} · ${fmtPct(s.share, 0)}</span></div>
-                <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-              </div>`;
-            })
-            .join("")
-        : '<div class="breach-none">no IC yet</div>';
-    }
-    renderNavSpark(paper);
-  }
-
-  function renderNavSpark(paper) {
-    const c = el("nav-spark");
-    if (!c) return;
-    const ctx2 = c.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    const w = c.parentElement.clientWidth || 280;
-    const h = 64;
-    c.width = w * dpr;
-    c.height = h * dpr;
-    c.style.width = w + "px";
-    c.style.height = h + "px";
-    ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx2.clearRect(0, 0, w, h);
-    const note = el("nav-note");
-    const pts = (paper && paper.points) || [];
-    const navs = pts.map((p) => p.nav).filter(isNum);
-    if (navs.length < 2) {
-      ctx2.fillStyle = "#556070";
-      ctx2.font = "10px IBM Plex Mono, monospace";
-      ctx2.fillText("paper NAV after live trade runs", 10, 36);
-      if (note) note.textContent = "no trail";
-      return;
-    }
-    const min = Math.min(...navs);
-    const max = Math.max(...navs);
-    const span = max - min || 1;
-    ctx2.beginPath();
-    navs.forEach((v, i) => {
-      const x = (i / (navs.length - 1)) * (w - 8) + 4;
-      const y = h - 8 - ((v - min) / span) * (h - 20);
-      if (i === 0) ctx2.moveTo(x, y);
-      else ctx2.lineTo(x, y);
-    });
-    ctx2.strokeStyle = "#9ef01a";
-    ctx2.lineWidth = 1.5;
-    ctx2.stroke();
-    if (note) {
-      note.textContent =
-        (isNum(paper.total_return) ? fmtPct(paper.total_return, 1) : "—") +
-        (isNum(paper.nav_last) ? " · $" + Math.round(paper.nav_last).toLocaleString() : "");
-    }
-  }
-
-  function deskAppend(cls, text) {
-    const chat = el("desk-chat");
-    if (!chat) return;
-    const div = document.createElement("div");
-    div.className = "desk-msg " + cls;
-    div.textContent = text;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
-
-  async function askDesk(question) {
-    if (!question) return;
-    deskAppend("user", question);
-    deskAppend("muted", "thinking…");
-    const chat = el("desk-chat");
-    const thinking = chat ? chat.lastChild : null;
+  async function loadSection() {
+    if (state.request) state.request.abort();
+    const controller = new AbortController();
+    state.request = controller;
+    $("refresh").disabled = true;
+    $("state-badge").textContent = "LOADING";
+    $("state-badge").removeAttribute("data-state");
+    $("source-label").textContent = "Fetching backend evidence…";
+    $("asof-label").textContent = "As of —";
+    $("metrics").replaceChildren();
+    $("context-content").replaceChildren();
+    $("error-panel").classList.add("hidden");
+    state.rows = [];
+    state.chart = null;
+    renderTable();
+    renderChart();
+    const timeout = setTimeout(() => controller.abort("timeout"), 20000);
     try {
-      const res = await fetch("/api/ollama/brief", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ question }),
-      });
-      const data = await res.json();
-      if (thinking) thinking.remove();
-      if (!data.available) {
-        deskAppend("err", data.error || data.hint || "Desk unavailable");
-        return;
-      }
-      const tag = data.source === "ollama" ? "" : " [structured]";
-      deskAppend("assistant", (data.answer || "(empty reply)") + tag);
-    } catch (err) {
-      if (thinking) thinking.remove();
-      deskAppend("err", String(err));
+      const response = await fetch(`/api/v1/terminal/${encodeURIComponent(state.section.id)}?mode=${encodeURIComponent(state.mode)}`, { signal: controller.signal, cache: "no-store", headers: { Accept: "application/json" } });
+      const payload = await response.json();
+      if (state.request !== controller) return;
+      if (!validContract(payload) || (!response.ok && payload.state !== "ERROR")) throw new Error("Backend returned an unsupported truth-state contract.");
+      state.payload = payload;
+      renderPayload(payload);
+    } catch (error) {
+      if (state.request !== controller) return;
+      state.payload = null;
+      renderPayload({ state: "ERROR", data: null, provenance: { source: "Backend request", classification: "UNAVAILABLE", as_of: null }, error: { code: controller.signal.reason === "timeout" ? "REQUEST_TIMEOUT" : "REQUEST_FAILED", message: controller.signal.reason === "timeout" ? "Backend request timed out. Refresh to retry." : "The backend response could not be loaded. Check the local service and retry." } });
+    } finally {
+      clearTimeout(timeout);
+      if (state.request === controller) $("refresh").disabled = false;
     }
   }
-
-  function wireDesk() {
-    const form = el("desk-form");
-    const input = el("desk-input");
-    const prompts = el("desk-prompts");
-    if (form && input) {
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const q = input.value.trim();
-        input.value = "";
-        askDesk(q);
-      });
+  function renderPayload(payload) {
+    const provenance = isObject(payload.provenance) ? payload.provenance : {};
+    const data = isObject(payload.data) ? payload.data : {};
+    const classification = provenance.classification || "UNKNOWN";
+    const synthetic = String(classification).toUpperCase() === "SYNTHETIC";
+    $("truth-strip").classList.toggle("synthetic", synthetic);
+    $("state-badge").textContent = payload.state;
+    $("state-badge").dataset.state = payload.state;
+    $("source-label").textContent = `${printable(provenance.source)} · ${classification}`;
+    $("asof-label").textContent = `As of ${provenance.as_of === null || provenance.as_of === undefined ? "unknown" : String(provenance.as_of)}`;
+    $("truth-notice").textContent = `${payload.state === "STALE" ? "STALE · Historical snapshot; freshness requirement is not satisfied. " : ""}${synthetic ? "SYNTHETIC INPUTS · Demonstration and research only · No broker-observed performance" : "Research output requires review before any trading use."}`;
+    if (data.title) $("section-title").textContent = String(data.title);
+    if (data.description) $("section-description").textContent = String(data.description);
+    const errorMessage = payload.error && (payload.error.message || payload.error.code);
+    if (errorMessage) {
+      $("error-panel").textContent = `${payload.error.code || payload.state}: ${errorMessage}`;
+      $("error-panel").classList.remove("hidden");
+    } else if (["UNAVAILABLE", "UNKNOWN"].includes(payload.state)) {
+      $("error-panel").textContent = "This capability has no supported data available in the selected environment. Select another section or explicitly choose the synthetic research demo.";
+      $("error-panel").classList.remove("hidden");
     }
-    if (prompts) {
-      getJSON("/api/ollama/status")
-        .then((s) => {
-          const st = el("desk-status");
-          if (st) {
-            st.textContent = s.available
-              ? s.model || "ollama"
-              : "structured · install ollama for LLM";
-          }
-          prompts.innerHTML = (s.prompts || [])
-            .map((p) => `<button type="button" class="prompt-chip">${p}</button>`)
-            .join("");
-          prompts.querySelectorAll(".prompt-chip").forEach((btn) => {
-            btn.addEventListener("click", () => askDesk(btn.textContent));
-          });
-        })
-        .catch(() => {
-          const st = el("desk-status");
-          if (st) st.textContent = "offline";
-        });
-    }
-  }
-
-  /* ── tape ────────────────────────────────────────────────────── */
-
-  function renderTape(payload) {
-    const label = el("tape-label");
-    if (label) {
-      // Feed source stays in the header pill — no banner on the tape.
-      label.hidden = true;
-    }
-    if (!payload || !payload.available) {
-      return;
-    }
-
-    const strip = el("tape-strip");
-    if (!strip) return;
-    const html = [];
-    for (const q of payload.quotes) {
-      const px = isNum(q.last) ? q.last : isNum(q.bid) && isNum(q.ask) ? (q.bid + q.ask) / 2 : null;
-      const prev = state.live.get(q.symbol);
-      let chg = prev && isNum(prev.chg) ? prev.chg : null;
-      let moved = false;
-
-      if (isNum(px)) {
-        const base = prev && isNum(prev.base) ? prev.base : px;
-        chg = base ? (px - base) / base : 0;
-        moved = !!prev && isNum(prev.last) && prev.last !== px;
-        state.live.set(q.symbol, { base, last: px, chg });
-        if (moved) {
-          const point = state.byId.get(q.symbol);
-          if (point) point.pulse = 1;
-        }
-      }
-
-      const dir = isNum(chg) && chg > 0 ? "up" : isNum(chg) && chg < 0 ? "down" : "";
-      html.push(
-        `<span class="tick ${dir} ${moved ? "flash" : ""}" data-sym="${q.symbol}" role="button" tabindex="0">` +
-          `<span class="t-sym">${q.symbol}</span>` +
-          `<span class="t-px">${isNum(px) ? px.toFixed(2) : "—"}</span>` +
-          `<span class="t-sym">${isNum(chg) ? fmtPct(chg, 2) : ""}</span></span>`
-      );
-    }
-    strip.innerHTML = html.join("");
-    strip.querySelectorAll("[data-sym]").forEach((node) => {
-      node.addEventListener("click", () => openName(node.getAttribute("data-sym")));
-    });
-    if (state.axisY === "live") retarget();
-  }
-
-  async function openName(symbol) {
-    const sym = String(symbol || "").toUpperCase().trim();
-    if (!sym) return;
-    const drawer = el("name-drawer");
-    const backdrop = el("drawer-backdrop");
-    if (!drawer) return;
-    drawer.hidden = false;
-    if (backdrop) backdrop.hidden = false;
-    el("drawer-sym").textContent = sym;
-    el("drawer-meta").textContent = "loading…";
-    el("drawer-metrics").innerHTML = "";
-    el("drawer-signals").innerHTML = "";
-    el("drawer-book").innerHTML = "";
-    const icHost = el("drawer-ic");
-    if (icHost) icHost.innerHTML = "";
-    el("drawer-note").textContent = "";
-    try {
-      const data = await getJSON("/api/name/" + encodeURIComponent(sym));
-      if (!data.available) {
-        el("drawer-meta").textContent = data.hint || data.error || "not in cloud";
-        return;
-      }
-      const p = data.point || {};
-      const book = data.book || {};
-      el("drawer-meta").textContent =
-        (p.sector || "unknown sector") +
-        " · as-of " +
-        (data.asof || "—") +
-        " · " +
-        (p.side || "flat");
-      const cell = (k, v) =>
-        `<div class="m"><span class="m-k">${k}</span><span class="m-v">${v}</span></div>`;
-      el("drawer-metrics").innerHTML = [
-        cell("Alpha score", fmtSigned(p.score, 3)),
-        cell("Target weight", fmtPct(p.weight, 2)),
-        cell("Last close", isNum(p.close) ? p.close.toFixed(2) : "—"),
-        cell("ADV 21d", fmtAdv(p.adv)),
-        cell("Live change", fmtPct(p.chg, 2)),
-        cell("Score rank", isNum(p.score_pct) ? (p.score_pct * 100).toFixed(0) + "th %ile" : "—"),
-      ].join("");
-      const signals = [
-        ["Momentum 12-1", p.momentum],
-        ["Idiosyncratic vol", p.ivol],
-        ["Short-term reversal", p.reversal],
-        ["PC1 exposure", p.pc1],
-        ["PC2 exposure", p.pc2],
-        ["PC3 exposure", p.pc3],
-      ];
-      el("drawer-signals").innerHTML = signals
-        .map(([name, value]) => {
-          const pct = clamp((Math.abs(value || 0) / 3) * 100, 2, 100);
-          const cls = (value || 0) >= 0 ? "bar-pos" : "bar-neg";
-          return `<div class="bar-row">
-            <div class="bar-top"><span class="k">${name}</span><span class="v">${fmtSigned(value, 3)}</span></div>
-            <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-          </div>`;
-        })
-        .join("");
-      const c = data.risk_contributor;
-      el("drawer-book").innerHTML = [
-        cell("Side", p.side || "flat"),
-        cell("Vol contribution", c ? fmtPct(c.share, 1) : "—"),
-        cell("Book gross", fmtPct(book.gross, 1)),
-        cell("Book net", fmtPct(book.net, 1)),
-        cell("Construction", data.construction || "—"),
-        cell("Universe", data.names != null ? String(data.names) + " names" : "—"),
-      ].join("");
-      if (icHost) {
-        const fic = data.factor_ic || {};
-        const rows = Object.entries(fic)
-          .map(([name, v]) => {
-            const ic = typeof v === "object" && v ? v.ic_mean ?? v.mean : v;
-            const t = typeof v === "object" && v ? v.ic_tstat_nw ?? v.tstat : null;
-            return [name, ic, t];
-          })
-          .filter(([, ic]) => isNum(ic))
-          .slice(0, 6);
-        icHost.innerHTML = rows.length
-          ? rows
-              .map(([name, ic, t]) => {
-                const pct = clamp((Math.abs(ic) / 0.05) * 100, 4, 100);
-                const cls = ic >= 0 ? "bar-pos" : "bar-neg";
-                const label = t != null && isNum(t) ? `${fmtSigned(ic, 3)} (t=${fmt(t, 1)})` : fmtSigned(ic, 3);
-                return `<div class="bar-row">
-                  <div class="bar-top"><span class="k">${name}</span><span class="v">${label}</span></div>
-                  <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-                </div>`;
-              })
-              .join("")
-          : '<div class="breach-none">no factor IC on this snapshot</div>';
-      }
-      el("drawer-note").textContent =
-        "Name card from the live research path (same scores as the book). Not a trade recommendation.";
-      const point = state.byId.get(sym);
-      if (point) {
-        state.hover = point;
-        paintTip(point);
-      }
-    } catch (err) {
-      el("drawer-meta").textContent = String(err);
-    }
-  }
-
-  function closeDrawer() {
-    const drawer = el("name-drawer");
-    const backdrop = el("drawer-backdrop");
-    if (drawer) drawer.hidden = true;
-    if (backdrop) backdrop.hidden = true;
-  }
-
-  /* ── 3D projection ───────────────────────────────────────────── */
-
-  function project(x, y, z) {
-    const cy = Math.cos(state.yaw);
-    const sy = Math.sin(state.yaw);
-    const cp = Math.cos(state.pitch);
-    const sp = Math.sin(state.pitch);
-
-    const x1 = x * cy - z * sy;
-    const z1 = x * sy + z * cy;
-    const y2 = y * cp - z1 * sp;
-    const z2 = y * sp + z1 * cp;
-
-    const depth = z2 + state.dist;
-    if (depth < 30) return null;
-    const f = FOCAL / depth;
-    return {
-      sx: state.width / 2 + x1 * f,
-      sy: state.height / 2 - y2 * f,
-      depth,
-      f,
-    };
-  }
-
-  function drawFrame() {
-    const step = SPAN / 2.5;
-
-    const origin = project(0, 0, 0);
-    if (!origin) return;
-
-    const axes = [
-      {
-        dir: [1, 0, 0],
-        color: "#ef6b7a",
-        label: state.mode === "risk" ? "PC1" : "momentum",
-      },
-      {
-        dir: [0, 1, 0],
-        color: "#9bd071",
-        label: state.mode === "risk" ? "PC2" : yLabel(),
-      },
-      {
-        dir: [0, 0, 1],
-        color: "#5fb2f5",
-        label: state.mode === "risk" ? "PC3" : "reversal",
-      },
+    renderMetrics(data.metrics);
+    const context = [
+      ["Source identity", provenance.source],
+      ["Data classification", classification],
+      ["Evidence state", payload.state],
+      ["Source timestamp", provenance.as_of],
+      ["Trading authority", "Research only. No trading approval is implied."],
     ];
-    ctx.font = "10px ui-monospace, monospace";
-    for (const ax of axes) {
-      const end = project(
-        ax.dir[0] * SPAN * 1.16,
-        ax.dir[1] * SPAN * 1.16,
-        ax.dir[2] * SPAN * 1.16
-      );
-      if (!end) continue;
-      ctx.strokeStyle = ax.color + "99";
-      ctx.lineWidth = 1.2;
-      line(origin, end);
-      ctx.fillStyle = ax.color;
-      ctx.fillText(ax.label, end.sx + 6, end.sy + 3);
-
-      // Sigma ticks so the spread has a scale rather than being decorative.
-      for (const tick of [-2, -1, 1, 2]) {
-        const at = project(
-          ax.dir[0] * tick * step,
-          ax.dir[1] * tick * step,
-          ax.dir[2] * tick * step
-        );
-        if (!at) continue;
-        ctx.fillStyle = "rgba(150,170,200,0.5)";
-        ctx.beginPath();
-        ctx.arc(at.sx, at.sy, 1.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "rgba(150,170,200,0.34)";
-        ctx.fillText(String(tick), at.sx + 4, at.sy - 4);
-      }
-    }
+    if (data.description) context.push(["Method & scope", data.description]);
+    if (data.notes) context.push(["Research notes", Array.isArray(data.notes) ? data.notes.join("\n") : data.notes]);
+    if (data.warnings) context.push(["Limitations", Array.isArray(data.warnings) ? data.warnings.join("\n") : data.warnings]);
+    Object.entries(provenance).filter(([key]) => !["source", "classification", "as_of"].includes(key)).forEach(([key, value]) => context.push([human(key), value]));
+    const extra = Object.entries(data).filter(([key]) => !["title", "description", "metrics", "rows", "chart", "notes", "warnings"].includes(key));
+    extra.forEach(([key, value]) => context.push([human(key), value]));
+    $("context-content").replaceChildren(...context.map(([label, value]) => {
+      const entry = el("div", "context-entry");
+      entry.append(el("div", "context-label", label), el("div", "context-value", printable(value)));
+      return entry;
+    }));
+    state.rows = Array.isArray(data.rows) ? data.rows.filter(isObject) : [];
+    state.chart = isObject(data.chart) ? data.chart : null;
+    renderTable();
+    renderChart();
   }
-
-  function line(a, b) {
-    ctx.beginPath();
-    ctx.moveTo(a.sx, a.sy);
-    ctx.lineTo(b.sx, b.sy);
-    ctx.stroke();
+  function renderMetrics(metrics) {
+    const entries = isObject(metrics) ? Object.entries(metrics) : Array.isArray(metrics) ? metrics.map((item, index) => [item.label || `Metric ${index + 1}`, item]) : [];
+    $("metrics").replaceChildren(...entries.slice(0, 12).map(([key, metric]) => {
+      const item = isObject(metric) && scalarTag(metric) === null ? metric : { value: metric };
+      const value = printable(item.value);
+      const card = el("article", "metric-card");
+      const label = el("div", "metric-label");
+      label.append(el("span", "", item.label || human(key)), el("span", "metric-marker"));
+      const valueElement = el("div", `metric-value${value.length > 15 ? " long-value" : ""}`, value);
+      const detail = [item.unit, item.state, item.description || item.note].filter((part) => part !== null && part !== undefined && part !== "").join(" · ");
+      card.append(label, valueElement, el("div", "metric-detail", detail || "Backend research metric"));
+      return card;
+    }));
   }
-
-  function yLabel() {
-    if (state.axisY === "live") return "live %";
-    if (state.axisY === "score") return "alpha";
-    return "ivol";
-  }
-
-  function render() {
-    if (state.spin && !state.dragging) state.yaw += 0.0016;
-
-    ctx.clearRect(0, 0, state.width, state.height);
-    ctx.fillStyle = "#0c1017";
-    ctx.fillRect(0, 0, state.width, state.height);
-
-    const drawable = [];
-    for (const p of state.points) {
-      p.cx += (p.tx - p.cx) * EASE;
-      p.cy += (p.ty - p.cy) * EASE;
-      p.cz += (p.tz - p.cz) * EASE;
-      if (p.pulse > 0) p.pulse = Math.max(0, p.pulse - 0.02);
-
-      const q = project(p.cx, p.cy, p.cz);
-      if (!q) continue;
-      p.sx = q.sx;
-      p.sy = q.sy;
-      p.depth = q.depth;
-      p.r = Math.max(1.2, p.size * q.f * 0.62);
-      p.dim =
-        (state.sector && p.sector !== state.sector) ||
-        (state.mode === "held" && p.side === "flat");
-      // In risk mode, size held names a bit larger so the book reads clearly.
-      if (state.mode === "risk" && p.side !== "flat") {
-        p.r *= 1.15 + Math.min(0.5, Math.abs(p.weight || 0) * 8);
-      }
-      drawable.push(p);
-    }
-
-    drawFrame();
-    drawable.sort((a, b) => b.depth - a.depth);
-
-    // Nearest point to the cursor, in screen space.
-    let hover = null;
-    let bestDist = 18;
-    for (const p of drawable) {
-      if (p.dim) continue;
-      const d = Math.hypot(p.sx - state.mouse.x, p.sy - state.mouse.y);
-      if (d < bestDist) {
-        bestDist = d;
-        hover = p;
-      }
-    }
-    state.hover = hover;
-
-    const near = 170;
-    const far = 640;
-    for (const p of drawable) {
-      p.fade = 1 - clamp((p.depth - near) / (far - near), 0, 1);
-      p.color = scoreColor(p);
-    }
-
-    // Pass 1 — additive halos. Stacked low-alpha rings are far cheaper than a
-    // radial gradient per point and read the same at this scale.
-    ctx.globalCompositeOperation = "lighter";
-    for (const p of drawable) {
-      if (p.dim) continue;
-      const held = p.side !== "flat";
-      const base = (held ? 0.1 : 0.05) * (0.35 + p.fade * 0.65);
-      for (const [scale, weight] of [[3.0, 0.5], [2.0, 0.8], [1.35, 1.0]]) {
-        ctx.beginPath();
-        ctx.arc(p.sx, p.sy, p.r * scale, 0, Math.PI * 2);
-        ctx.fillStyle = rgba(p.color, base * weight);
-        ctx.fill();
-      }
-    }
-    ctx.globalCompositeOperation = "source-over";
-
-    // Pass 2 — cores, rings, pulses.
-    for (const p of drawable) {
-      if (p.dim) {
-        ctx.beginPath();
-        ctx.arc(p.sx, p.sy, Math.max(1, p.r * 0.55), 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(120,135,160,0.13)";
-        ctx.fill();
-        continue;
-      }
-
-      ctx.beginPath();
-      ctx.arc(p.sx, p.sy, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(p.color, 0.55 + p.fade * 0.45);
-      ctx.fill();
-
-      if (p.side !== "flat") {
-        ctx.beginPath();
-        ctx.arc(p.sx, p.sy, p.r + 3, 0, Math.PI * 2);
-        ctx.strokeStyle = rgba(p.side === "long" ? LONG : SHORT, 0.4 + p.fade * 0.5);
-        ctx.lineWidth = 1.3;
-        ctx.stroke();
-      }
-
-      if (p.pulse > 0) {
-        ctx.beginPath();
-        ctx.arc(p.sx, p.sy, p.r + 3 + (1 - p.pulse) * 14, 0, Math.PI * 2);
-        ctx.strokeStyle = rgba(p.color, p.pulse * 0.55);
-        ctx.lineWidth = 1.1;
-        ctx.stroke();
-      }
-    }
-
-    if (hover) drawHover(hover);
-    paintTip(hover);
-    requestAnimationFrame(render);
-  }
-
-  function drawHover(p) {
-    // Drop line to the floor grid: without it, depth is ambiguous in a
-    // projected cloud and you cannot tell which point you are reading.
-    const foot = project(p.cx, -SPAN, p.cz);
-    if (foot) {
-      ctx.save();
-      ctx.setLineDash([2, 4]);
-      ctx.strokeStyle = "rgba(255,255,255,0.28)";
-      ctx.lineWidth = 1;
-      line({ sx: p.sx, sy: p.sy }, foot);
-      ctx.restore();
-      ctx.beginPath();
-      ctx.arc(foot.sx, foot.sy, 2, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.4)";
-      ctx.fill();
-    }
-
-    ctx.beginPath();
-    ctx.arc(p.sx, p.sy, p.r + 7, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(255,255,255,0.8)";
-    ctx.lineWidth = 1.3;
-    ctx.stroke();
-
-    ctx.fillStyle = "#fff";
-    ctx.font = "11px ui-monospace, monospace";
-    ctx.fillText(p.symbol, p.sx + p.r + 10, p.sy - p.r - 4);
-  }
-
-  function paintTip(p) {
-    if (!p) {
-      tip.hidden = true;
-      return;
-    }
-    const tick = state.live.get(p.symbol);
-    const px = tick && isNum(tick.last) ? tick.last : p.close;
-    const chg = tick && isNum(tick.chg) ? tick.chg : p.chg;
-    const riskRows =
-      state.mode === "risk"
-        ? `<div class="tip-row"><span>PC1 / 2 / 3</span><b>${fmtSigned(p.pc1, 1)} / ${fmtSigned(p.pc2, 1)} / ${fmtSigned(p.pc3, 1)}</b></div>`
-        : `<div class="tip-row"><span>mom / rev</span><b>${fmtSigned(p.momentum, 1)} / ${fmtSigned(p.reversal, 1)}</b></div>` +
-          `<div class="tip-row"><span>ivol</span><b>${fmtSigned(p.ivol, 1)}</b></div>`;
-    tip.innerHTML =
-      `<div class="tip-sym">${p.symbol}</div>` +
-      `<div class="tip-sec">${p.sector}</div>` +
-      `<div class="tip-row"><span>last</span><b>${isNum(px) ? px.toFixed(2) : "—"}</b></div>` +
-      `<div class="tip-row"><span>chg</span><b>${fmtPct(chg, 2)}</b></div>` +
-      `<div class="tip-row"><span>alpha z</span><b>${fmtSigned(p.score, 2)}</b></div>` +
-      riskRows +
-      `<div class="tip-row"><span>adv</span><b>${fmtAdv(p.adv)}</b></div>` +
-      `<div class="tip-row"><span>weight</span><b>${p.side === "flat" ? "flat" : fmtPct(p.weight, 2)}</b></div>`;
-    tip.hidden = false;
-    const pad = 14;
-    const rect = tip.getBoundingClientRect();
-    let x = p.sx + pad;
-    let y = p.sy + pad;
-    if (x + rect.width > state.width) x = p.sx - rect.width - pad;
-    if (y + rect.height > state.height) y = p.sy - rect.height - pad;
-    tip.style.left = Math.max(4, x) + "px";
-    tip.style.top = Math.max(4, y) + "px";
-  }
-
-  /* ── events ──────────────────────────────────────────────────── */
-
-  function resize() {
-    const wrap = canvas.parentElement;
-    const dpr = window.devicePixelRatio || 1;
-    state.width = wrap.clientWidth;
-    state.height = wrap.clientHeight;
-    canvas.width = state.width * dpr;
-    canvas.height = state.height * dpr;
-    canvas.style.width = state.width + "px";
-    canvas.style.height = state.height + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  function wireEvents() {
-    window.addEventListener("resize", resize);
-
-    canvas.addEventListener("pointerdown", (e) => {
-      state.dragging = true;
-      state.lastX = e.clientX;
-      state.lastY = e.clientY;
-      canvas.setPointerCapture(e.pointerId);
-    });
-    canvas.addEventListener("pointerup", (e) => {
-      state.dragging = false;
-      canvas.releasePointerCapture(e.pointerId);
-    });
-    canvas.addEventListener("pointermove", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      state.mouse.x = e.clientX - rect.left;
-      state.mouse.y = e.clientY - rect.top;
-      if (!state.dragging) return;
-      state.yaw += (e.clientX - state.lastX) * 0.006;
-      state.pitch = clamp(state.pitch + (e.clientY - state.lastY) * 0.005, -1.35, 1.35);
-      state.lastX = e.clientX;
-      state.lastY = e.clientY;
-    });
-    canvas.addEventListener("pointerleave", () => {
-      state.mouse.x = -1e4;
-      state.mouse.y = -1e4;
-    });
-    canvas.addEventListener(
-      "wheel",
-      (e) => {
-        e.preventDefault();
-        state.dist = clamp(state.dist * (1 + e.deltaY * 0.0012), 150, 900);
-      },
-      { passive: false }
-    );
-
-    el("axis-y").addEventListener("change", (e) => {
-      state.axisY = e.target.value;
-      el("legend-y").textContent =
-        { ivol: "idiosyncratic vol", live: "live % change", score: "alpha score" }[state.axisY];
-      retarget();
-    });
-
-    el("sector-filter").addEventListener("change", (e) => {
-      state.sector = e.target.value;
-    });
-
-    document.querySelectorAll(".mode-tab").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".mode-tab").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        state.mode = btn.dataset.mode || "alpha";
-        setModeLabels();
-        retarget();
-      });
-    });
-
-    const spin = el("btn-spin");
-    spin.addEventListener("click", () => {
-      state.spin = !state.spin;
-      spin.dataset.on = state.spin ? "1" : "0";
-    });
-
-    el("btn-reset").addEventListener("click", () => {
-      state.yaw = 0.62;
-      state.pitch = -0.32;
-      state.dist = 340;
-    });
-
-    const refresh = el("btn-refresh");
-    if (refresh) {
-      refresh.addEventListener("click", async () => {
-        try {
-          await fetch("/api/cache/clear", { method: "POST" });
-        } catch (_) {}
-        await refreshStatus();
-        await refreshCloud();
-        await refreshPaper();
-        await refreshOpsExtras();
-        try {
-          renderResearch(await getJSON("/api/research"));
-          renderSpark(await getJSON("/api/experiments"));
-        } catch (_) {}
+  function visibleRows() {
+    const term = $("table-search").value.toLocaleLowerCase();
+    const rows = state.rows.filter((row) => !term || Object.values(row).some((value) => printable(value).toLocaleLowerCase().includes(term)));
+    if (state.sort) {
+      const { key, direction } = state.sort;
+      rows.sort((a, b) => {
+        const x = a[key], y = b[key];
+        if (x === null || x === undefined) return y === null || y === undefined ? 0 : 1;
+        if (y === null || y === undefined) return -1;
+        const exact = exactNumericOrder(x, y);
+        const comparison = exact === null ? printable(x).localeCompare(printable(y)) : exact;
+        return comparison * direction;
       });
     }
-
-    const searchForm = el("search-form");
-    const searchInput = el("search-input");
-    if (searchForm && searchInput) {
-      searchForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        openName(searchInput.value);
-      });
-    }
-    const drawerClose = el("drawer-close");
-    if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
-    const backdrop = el("drawer-backdrop");
-    if (backdrop) backdrop.addEventListener("click", closeDrawer);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeDrawer();
-    });
-
-    // Click a near point to open the name card (not while dragging).
-    let moved = false;
-    canvas.addEventListener("pointerdown", () => {
-      moved = false;
-    });
-    canvas.addEventListener("pointermove", (e) => {
-      if (state.dragging) moved = true;
-    });
-    canvas.addEventListener("pointerup", () => {
-      if (!moved && state.hover && state.hover.symbol) openName(state.hover.symbol);
-    });
+    return rows;
   }
-
-  function startClock() {
-    const tickClock = () => {
-      el("clock").textContent = new Date().toLocaleTimeString("en-US", { hour12: false });
+  function renderTable() {
+    const columns = [];
+    state.rows.forEach((row) => Object.keys(row).forEach((key) => { if (!columns.includes(key)) columns.push(key); }));
+    state.columns = columns;
+    const header = el("tr");
+    columns.forEach((key) => {
+      const th = el("th");
+      th.scope = "col";
+      const sorted = state.sort && state.sort.key === key;
+      if (sorted) th.setAttribute("aria-sort", state.sort.direction === 1 ? "ascending" : "descending");
+      const button = el("button", "table-sort", `${human(key)}${sorted ? state.sort.direction === 1 ? " ↑" : " ↓" : ""}`);
+      button.addEventListener("click", () => { state.sort = { key, direction: sorted ? -state.sort.direction : 1 }; renderTable(); });
+      th.append(button);
+      header.append(th);
+    });
+    $("observations-table").querySelector("thead").replaceChildren(header);
+    const rows = visibleRows();
+    $("observations-table").querySelector("tbody").replaceChildren(...rows.slice(0, 500).map((row) => {
+      const tr = el("tr");
+      columns.forEach((key) => {
+        const value = row[key];
+        const td = el("td", value === null || value === undefined ? "unknown" : typeof value === "number" ? "numeric" : "", printable(value));
+        td.title = printable(value);
+        tr.append(td);
+      });
+      return tr;
+    }));
+    $("row-count").textContent = numberFormat.format(state.rows.length);
+    $("table-empty").classList.toggle("hidden", rows.length !== 0);
+    $("table-wrap").classList.toggle("hidden", rows.length === 0);
+    $("table-empty").textContent = state.rows.length ? "No observations match this filter." : "No supported observations in this response.";
+    $("table-summary").textContent = `Showing ${Math.min(rows.length, 500)} of ${rows.length} matching observations · ${state.rows.length} total`;
+    $("export-csv").disabled = !rows.length;
+  }
+  function exportCsv() {
+    // Spreadsheet formulas are text-escaped; all exported fields are quoted.
+    const csvValue = (value) => {
+      let text = value === null || value === undefined ? "" : scalarTag(value) !== null ? scalarTag(value) : typeof value === "object" ? JSON.stringify(value) : String(value);
+      if (scalarTag(value) !== null || (typeof value === "string" && (/^[\s\u0000-\u001f]*[=+\-@]/.test(text) || /^[\t\r]/.test(text)))) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
     };
-    tickClock();
-    setInterval(tickClock, 1000);
+    const rows = visibleRows();
+    const csv = [state.columns.map(csvValue).join(","), ...rows.map((row) => state.columns.map((key) => csvValue(row[key])).join(","))].join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = el("a");
+    link.href = url;
+    link.download = `gig-${state.section.id}-${state.mode}.csv`;
+    link.setAttribute("aria-label", "Download visible research observations as CSV");
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-
-  /* ── boot ────────────────────────────────────────────────────── */
-
-  async function refreshCloud() {
-    try {
-      applyCloud(await getJSON("/api/cloud"));
-    } catch (err) {
-      console.error("cloud", err);
+  function axisSpecs(chart) {
+    const kind = String(chart.kind || "").replace(/_/g, "-");
+    const definitions = kind.includes("volatility") ? [{ key: "strike", label: "Strike", unit: "currency" }, { key: "tenor_years", label: "Tenor", unit: "years" }, { key: "iv", label: "Implied volatility", unit: "annualized decimal" }] : kind.includes("risk") ? [{ key: "equity_shock", label: "Equity shock", unit: "decimal" }, { key: "volatility_shock", label: "Volatility shock", unit: "decimal" }, { key: "pnl", label: "Scenario P&L", unit: "model units" }] : [{ key: "x", label: "Factor X", unit: "standardized units" }, { key: "y", label: "Factor Y", unit: "standardized units" }, { key: "z", label: "Factor Z", unit: "standardized units" }];
+    if (Array.isArray(chart.axes)) chart.axes.slice(0, 3).forEach((axis, index) => { if (typeof axis === "string") definitions[index].label = axis; else if (isObject(axis)) Object.assign(definitions[index], axis); });
+    else if (isObject(chart.axes)) ["x", "y", "z"].forEach((axis, index) => { const supplied = chart.axes[axis]; if (typeof supplied === "string") definitions[index].label = supplied; else if (isObject(supplied)) Object.assign(definitions[index], supplied); });
+    return definitions;
+  }
+  function project(x, y, z, width, height) {
+    const scale = Math.min(width * .29, height * .33) * state.zoom;
+    if (state.dimension === 2) return { x: width * .48 + x * scale, y: height * .51 - z * scale, depth: y };
+    const a = state.angle, b = state.tilt;
+    const horizontal = x * Math.cos(a) - y * Math.sin(a);
+    const depth = x * Math.sin(a) + y * Math.cos(a);
+    return { x: width * .48 + horizontal * scale, y: height * .51 - (z * Math.cos(b) - depth * Math.sin(b)) * scale, depth };
+  }
+  function renderChart() {
+    const canvas = $("analytics-chart");
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const bounds = canvas.getBoundingClientRect();
+    const width = Math.max(bounds.width, 1), height = Math.max(bounds.height, 1);
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * pixelRatio);
+    canvas.height = Math.round(height * pixelRatio);
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.clearRect(0, 0, width, height);
+    const style = getComputedStyle(document.documentElement);
+    const muted = style.getPropertyValue("--muted").trim();
+    const grid = style.getPropertyValue("--grid").trim();
+    const accent = style.getPropertyValue("--accent").trim();
+    $("chart-tooltip").classList.add("hidden");
+    state.projected = [];
+    const chart = state.chart;
+    const axes = chart ? axisSpecs(chart) : [];
+    const rawPoints = chart && Array.isArray(chart.points) ? chart.points : [];
+    const points = rawPoints.filter((point) => isObject(point) && axes.every((axis) => typeof point[axis.key] === "number" && Number.isFinite(point[axis.key]))).slice(0, 1600);
+    state.points = points;
+    $("chart-empty").classList.toggle("hidden", points.length !== 0);
+    $("chart-title").textContent = chart && chart.title ? String(chart.title) : chart && chart.kind ? human(chart.kind) : `${state.section.label} analytical view`;
+    if (!points.length) { $("chart-legend").textContent = "Only finite backend observations are plotted."; return; }
+    $("chart-legend").textContent = axes.map((axis) => `${axis.label} (${axis.unit || "unspecified units"})`).join(" · ") + (state.dimension === 2 ? ` · 2D projection: ${axes[0].label} vs ${axes[2].label}; ${axes[1].label} retained in tooltips` : "") + (rawPoints.length > 1600 ? " · Plot limited to 1,600 observations; table retains rows" : "");
+    const ranges = axes.map((axis) => {
+      let lo = Infinity, hi = -Infinity;
+      points.forEach((point) => { lo = Math.min(lo, point[axis.key]); hi = Math.max(hi, point[axis.key]); });
+      return [lo, hi];
+    });
+    const normalize = (value, index) => ranges[index][0] === ranges[index][1] ? 0 : 2 * (value - ranges[index][0]) / (ranges[index][1] - ranges[index][0]) - 1;
+    const line = (from, to, color = grid, lineWidth = 1) => {
+      const a = project(...from, width, height), b = project(...to, width, height);
+      context.beginPath(); context.strokeStyle = color; context.lineWidth = lineWidth; context.moveTo(a.x, a.y); context.lineTo(b.x, b.y); context.stroke();
+    };
+    for (let index = 0; index <= 4; index++) {
+      const tick = -1 + index / 2;
+      line([-1, tick, -1], [1, tick, -1]);
+      line([tick, -1, -1], [tick, 1, -1]);
+      if (state.dimension === 2) line([-1, -1, tick], [1, -1, tick]);
+    }
+    const origin = [-1, -1, -1];
+    const endpoints = [[1.12, -1, -1], [-1, 1.12, -1], [-1, -1, 1.12]];
+    const axisColors = [accent, "#cf9e69", "#64bba5"];
+    context.font = "9px 'SFMono-Regular', Consolas, monospace";
+    endpoints.forEach((endpoint, index) => {
+      if (state.dimension === 2 && index === 1) return;
+      line(origin, endpoint, axisColors[index], 1.2);
+      const labelPoint = project(...endpoint, width, height);
+      context.fillStyle = axisColors[index];
+      const label = axes[index].label;
+      context.fillText(label.length > 24 ? `${label.slice(0, 22)}…` : label, Math.max(8, Math.min(labelPoint.x + 7, width - 115)), Math.max(14, Math.min(labelPoint.y - 5, height - 10)));
+      context.fillStyle = muted;
+      [0, 1].forEach((end) => {
+        const tickWorld = [...origin]; tickWorld[index] = end ? 1 : -1;
+        const tickPoint = project(...tickWorld, width, height);
+        context.fillText(printable(ranges[index][end]), Math.max(6, Math.min(tickPoint.x + 4, width - 65)), Math.max(12, Math.min(tickPoint.y + (index === 2 ? -7 : 13), height - 5)));
+      });
+    });
+    const projected = points.map((point, index) => {
+      const coordinates = axes.map((axis, axisIndex) => normalize(point[axis.key], axisIndex));
+      return { ...project(...coordinates, width, height), point, index, coordinates };
+    });
+    if (String(chart.kind).includes("surface")) {
+      // Connect only observations sharing an actual sampled axis value; no interpolation.
+      for (let direction = 0; direction < 2; direction++) {
+        const groups = new Map();
+        projected.forEach((point) => { const key = point.point[axes[direction].key]; if (!groups.has(key)) groups.set(key, []); groups.get(key).push(point); });
+        groups.forEach((group) => {
+          group.sort((a, b) => a.point[axes[1 - direction].key] - b.point[axes[1 - direction].key]);
+          for (let index = 1; index < group.length; index++) line(group[index - 1].coordinates, group[index].coordinates, grid, 1);
+        });
+      }
+    }
+    projected.sort((a, b) => a.depth - b.depth);
+    projected.forEach((point) => {
+      const colorPosition = Math.max(0, Math.min(1, (point.coordinates[2] + 1) / 2));
+      context.fillStyle = `hsl(${195 + colorPosition * 30} 65% ${document.documentElement.dataset.theme === "light" ? 40 : 55 + colorPosition * 17}%)`;
+      context.beginPath();
+      context.arc(point.x, point.y, String(chart.kind).includes("surface") ? 2.7 : 3.7, 0, Math.PI * 2);
+      context.fill();
+      if (point.point.symbol && points.length <= 25) { context.fillStyle = muted; context.font = "8px 'SFMono-Regular', Consolas, monospace"; context.fillText(String(point.point.symbol), point.x + 6, point.y - 5); }
+    });
+    state.projected = projected;
+    canvas.setAttribute("aria-label", `${$("chart-title").textContent}. ${points.length} backend observations. ${axes.map((axis) => `${axis.label}, ${axis.unit || "units unspecified"}`).join("; ")}. ${state.dimension}D view. Underlying observations also available in the table. Drag or use arrow keys to rotate; plus and minus zoom.`);
+  }
+  function chartPointer(event) {
+    const bounds = $("analytics-chart").getBoundingClientRect();
+    const x = event.clientX - bounds.left, y = event.clientY - bounds.top;
+    if (state.drag) { state.angle += (event.clientX - state.drag.x) / 180; state.tilt = Math.max(-1.2, Math.min(1.2, state.tilt + (event.clientY - state.drag.y) / 220)); state.drag = { x: event.clientX, y: event.clientY }; renderChart(); return; }
+    let selected = null, distance = 12;
+    state.projected.forEach((point) => { const d = Math.hypot(point.x - x, point.y - y); if (d < distance) { selected = point; distance = d; } });
+    const tooltip = $("chart-tooltip");
+    tooltip.classList.toggle("hidden", selected === null);
+    if (selected) {
+      tooltip.textContent = Object.entries(selected.point).slice(0, 10).map(([key, value]) => `${human(key)}: ${printable(value)}`).join("\n");
+      tooltip.style.left = `${Math.max(4, Math.min(x + 15, bounds.width - 225))}px`;
+      tooltip.style.top = `${Math.max(4, Math.min(y + 12, bounds.height - 140))}px`;
     }
   }
-
-  async function refreshTape() {
+  const examples = {
+    options: { spot: 100, strike: 100, rate: 0.05, div: 0, vol: 0.2, ttm: 1, call: true },
+    kalman: { observations: [[1], [2], [1.5], [2.2], [2.4]], transition: [[1]], observation: [[1]], process_covariance: [[0.1]], observation_covariance: [[1]], initial_mean: [0], initial_covariance: [[1]], smooth: true },
+    garch: { returns: [0.01, -0.015, 0.007, 0.02, -0.025, 0.012, -0.008, 0.009, -0.018, 0.013, 0.005, -0.009, 0.014, -0.021, 0.011, 0.008, -0.012, 0.017, -0.006, 0.009, -0.013, 0.004, 0.016, -0.008, 0.012, -0.019, 0.007, 0.015, -0.01, 0.006], max_iterations: 100 },
+    hmm: { observations: [-0.02, -0.01, 0.01, 0.02, -0.01, 0.03, 0.02, -0.02], states: 2, max_iterations: 50 },
+    microstructure: { quotes: [{ timestamp_ns: 100, bid: 99, ask: 101, bid_size: 10, ask_size: 12, instrument: "SYN001", source: "deterministic-demo", data_kind: "SYNTHETIC" }], trades: [{ timestamp_ns: 101, price: 101, size: 5, instrument: "SYN001", source: "deterministic-demo", data_kind: "SYNTHETIC" }] },
+  };
+  function loadExample() { $("analytics-input").value = JSON.stringify(examples[$("analytics-kind").value], null, 2); }
+  async function runAnalysis() {
+    const output = $("analytics-output");
+    const sourceText = $("analytics-input").value;
+    let inputs;
+    try { inputs = JSON.parse(sourceText); if (!isObject(inputs)) throw new Error(); }
+    catch { output.textContent = "Input must be a valid JSON object. No request was sent."; return; }
+    const button = $("run-analysis");
+    button.disabled = true;
+    output.textContent = "Computing with the local backend…";
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
     try {
-      renderTape(await getJSON("/api/tape?limit=40"));
-    } catch (err) {
-      console.error("tape", err);
-    }
+      const response = await fetch(`/api/v1/analytics/${encodeURIComponent($("analytics-kind").value)}`, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: sourceText, signal: controller.signal, cache: "no-store" });
+      const result = await response.json();
+      output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${JSON.stringify(result, null, 2)}`;
+    } catch { output.textContent = "Analysis response could not be loaded. Check the local service, supported input contract, and retry."; }
+    finally { clearTimeout(timer); button.disabled = false; }
   }
-
-  async function refreshStatus() {
-    try {
-      renderStatus(await getJSON("/api/status"));
-    } catch (err) {
-      console.error("status", err);
-    }
+  function setTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    $("theme-toggle").setAttribute("aria-label", `Switch to ${theme === "dark" ? "light" : "dark"} theme`);
+    try { localStorage.setItem("gig-theme", theme); } catch { /* Privacy mode may deny persistence. */ }
+    renderChart();
   }
-
-  async function refreshPaper() {
-    try {
-      renderPaper(await getJSON("/api/paper?limit=120"));
-    } catch (err) {
-      console.error("paper", err);
-    }
-  }
-
-  async function refreshOpsExtras() {
-    try {
-      renderBlotter(await getJSON("/api/blotter?limit=120"));
-    } catch (err) {
-      console.error("blotter", err);
-    }
-    try {
-      renderAttribution(await getJSON("/api/attribution"));
-    } catch (err) {
-      console.error("attribution", err);
-    }
-    try {
-      renderOps(await getJSON("/api/ops"));
-    } catch (err) {
-      console.error("ops", err);
-    }
-  }
-
-  async function boot() {
-    resize();
-    // Browsers restore <select> values across reloads, which would leave the
-    // controls showing one view while `state` renders another.
-    el("axis-y").value = state.axisY;
-    el("sector-filter").value = "";
-    state.sector = "";
-    wireEvents();
-    wireDesk();
-    startClock();
-    setModeLabels();
-    requestAnimationFrame(render);
-
-    await refreshStatus();
-    await refreshCloud();
-    try {
-      renderResearch(await getJSON("/api/research"));
-      renderSpark(await getJSON("/api/experiments"));
-    } catch (err) {
-      console.error("research", err);
-    }
-    refreshTape();
-    refreshPaper();
-    refreshOpsExtras();
-
-    setInterval(refreshTape, 5000);
-    setInterval(refreshStatus, 30000);
-    setInterval(refreshCloud, 120000);
-    setInterval(refreshPaper, 45000);
-    setInterval(refreshOpsExtras, 60000);
-  }
-
-  boot();
+  nav();
+  let storedTheme;
+  try { storedTheme = localStorage.getItem("gig-theme"); } catch { /* Keep default theme. */ }
+  setTheme(["light", "dark"].includes(storedTheme) ? storedTheme : "dark");
+  const updateClock = () => { const now = new Date(); $("clock").dateTime = now.toISOString(); $("clock").textContent = `${now.toISOString().slice(11, 19)} UTC`; };
+  updateClock(); setInterval(updateClock, 1000);
+  $("theme-toggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+  $("data-mode").addEventListener("change", () => { state.mode = $("data-mode").value; loadSection(); });
+  $("refresh").addEventListener("click", loadSection);
+  $("table-search").addEventListener("input", renderTable);
+  $("export-csv").addEventListener("click", exportCsv);
+  $("analytics-kind").addEventListener("change", loadExample);
+  $("load-example").addEventListener("click", loadExample);
+  $("run-analysis").addEventListener("click", runAnalysis);
+  window.addEventListener("hashchange", selectSection);
+  [2, 3].forEach((dimension) => $(`view-${dimension}d`).addEventListener("click", () => { state.dimension = dimension; [2, 3].forEach((d) => $(`view-${d}d`).setAttribute("aria-pressed", String(d === dimension))); renderChart(); }));
+  $("chart-reset").addEventListener("click", () => { state.angle = -.55; state.tilt = .40; state.zoom = 1; renderChart(); });
+  const canvas = $("analytics-chart");
+  canvas.addEventListener("pointerdown", (event) => { if (event.button !== 0) return; state.drag = { x: event.clientX, y: event.clientY }; canvas.setPointerCapture(event.pointerId); });
+  canvas.addEventListener("pointermove", chartPointer);
+  canvas.addEventListener("pointerup", () => { state.drag = null; });
+  canvas.addEventListener("pointercancel", () => { state.drag = null; });
+  canvas.addEventListener("pointerleave", () => $("chart-tooltip").classList.add("hidden"));
+  canvas.addEventListener("wheel", (event) => { if (!state.points.length) return; event.preventDefault(); state.zoom = Math.max(.45, Math.min(2.5, state.zoom * (event.deltaY > 0 ? .92 : 1.08))); renderChart(); }, { passive: false });
+  canvas.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "0"].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === "ArrowLeft") state.angle -= .1;
+    if (event.key === "ArrowRight") state.angle += .1;
+    if (event.key === "ArrowUp") state.tilt = Math.min(1.2, state.tilt + .1);
+    if (event.key === "ArrowDown") state.tilt = Math.max(-1.2, state.tilt - .1);
+    if (event.key === "+" || event.key === "=") state.zoom = Math.min(2.5, state.zoom * 1.1);
+    if (event.key === "-") state.zoom = Math.max(.45, state.zoom / 1.1);
+    if (event.key === "0") { state.angle = -.55; state.tilt = .40; state.zoom = 1; }
+    renderChart();
+  });
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(renderChart).observe($("chart-container"));
+  else window.addEventListener("resize", renderChart);
+  selectSection();
 })();

@@ -1,0 +1,29 @@
+[Unit]
+Description=GIG local quantitative research terminal
+After=network.target
+
+[Service]
+Type=simple
+User=gig
+Group=gig
+WorkingDirectory=/opt/gig
+Environment=GIG_BROKER_CONNECTIVITY_ENABLED=false
+Environment=GIG_DATA_DIR=/var/lib/gig/data
+Environment=GIG_DB_PATH=/var/lib/gig/data/gig.duckdb
+Environment=GIG_RESULTS_DIR=/var/lib/gig/results
+ExecStartPre=/opt/gig/.venv/bin/python -m gig.ops.maintenance check
+ExecStart=/opt/gig/.venv/bin/python -m gig serve --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+StateDirectory=gig
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/gig
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

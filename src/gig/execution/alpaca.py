@@ -1,41 +1,64 @@
 """
-Alpaca adapter. Imported only when gig[broker] is installed.
+Alpaca paper adapter. Connectivity is disabled until explicitly configured.
 
-Paper and live share one API surface at Alpaca, distinguished only by the base
-URL, which makes an accidental live connection a one-character mistake. So the
-constructor refuses to build unless the URL says ``paper``, and ``allow_live``
-has to be passed explicitly to get anything else. Guarding at construction
-rather than at submit means the wrong environment fails before a target book is
-even computed.
+The live-money endpoint is never supported. An exact endpoint check, performed
+before loading the SDK or constructing a client, prevents substring spoofing.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import math
+from urllib.parse import urlsplit
+from uuid import uuid4
 
 import pandas as pd
 
 from gig.config import get_settings
 from gig.execution.base import Broker
-from gig.types import Fill, Side
+from gig.types import OrderAcknowledgement, Side
 
 
 class AlpacaBroker(Broker):
     def __init__(self, allow_live: bool = False) -> None:
+        cfg = get_settings()
+        if allow_live:
+            raise RuntimeError("live-money trading is disabled")
+        try:
+            endpoint = urlsplit(cfg.alpaca_base_url)
+            port = endpoint.port
+        except ValueError:
+            raise RuntimeError("only the approved Alpaca paper endpoint is supported") from None
+        if (
+            endpoint.scheme != "https"
+            or endpoint.hostname != "paper-api.alpaca.markets"
+            or port not in (None, 443)
+            or endpoint.username is not None
+            or endpoint.password is not None
+            or endpoint.path not in ("", "/")
+            or endpoint.query
+            or endpoint.fragment
+        ):
+            raise RuntimeError("only the approved Alpaca paper endpoint is supported")
+        if not cfg.broker_connectivity_enabled:
+            raise RuntimeError("broker connectivity is disabled; explicit paper approval is required")
+        try:
+            data_endpoint = urlsplit(cfg.alpaca_data_url)
+            data_valid = (data_endpoint.scheme == "https" and data_endpoint.hostname == "data.alpaca.markets"
+                          and data_endpoint.port in (None, 443) and data_endpoint.username is None
+                          and data_endpoint.password is None and data_endpoint.path in ("", "/")
+                          and not data_endpoint.query and not data_endpoint.fragment)
+        except ValueError:
+            data_valid = False
+        if not data_valid:
+            raise RuntimeError("only the approved Alpaca data endpoint is supported")
         try:
             from alpaca.trading.client import TradingClient
         except ImportError as exc:
             raise ImportError("Install gig[broker] to use AlpacaBroker") from exc
-        cfg = get_settings()
         if not cfg.alpaca_api_key or not cfg.alpaca_secret_key:
             raise RuntimeError("ALPACA keys missing — set GIG_ALPACA_API_KEY / SECRET or ALPACA_* in .env")
-        paper = "paper" in cfg.alpaca_base_url
-        if not paper and not allow_live:
-            raise RuntimeError(
-                f"ALPACA_BASE_URL is {cfg.alpaca_base_url!r}, which is not a paper endpoint. "
-                "Point it at https://paper-api.alpaca.markets, or pass allow_live=True "
-                "if you genuinely intend to trade real money with this."
-            )
+        paper = True
         self.paper = paper
         self._settings = cfg
         self._client = TradingClient(cfg.alpaca_api_key, cfg.alpaca_secret_key, paper=paper)
@@ -48,7 +71,19 @@ class AlpacaBroker(Broker):
         quantity: float,
         *,
         limit_price: float | None = None,
-    ) -> Fill:
+        client_order_id: str | None = None,
+    ) -> OrderAcknowledgement:
+        if (not isinstance(symbol, str) or not symbol or len(symbol) > 128
+            or any(ord(char) < 32 for char in symbol)):
+            raise ValueError("valid instrument identity required")
+        if side not in {"buy", "sell"} or isinstance(quantity, bool) or not math.isfinite(quantity) or quantity <= 0:
+            raise ValueError("valid side and positive finite quantity required")
+        if limit_price is not None and (isinstance(limit_price, bool) or not math.isfinite(limit_price) or limit_price <= 0):
+            raise ValueError("limit price must be finite and positive")
+        client_order_id = f"gig-{uuid4().hex}" if client_order_id is None else client_order_id
+        if (not isinstance(client_order_id, str) or not 1 <= len(client_order_id) <= 48
+            or not client_order_id.isascii() or not all(c.isalnum() or c in "-_" for c in client_order_id)):
+            raise ValueError("invalid client order id")
         from alpaca.trading.enums import OrderSide, TimeInForce
         from alpaca.trading.requests import LimitOrderRequest, MarketOrderRequest
 
@@ -60,22 +95,27 @@ class AlpacaBroker(Broker):
                 side=side_enum,
                 time_in_force=TimeInForce.DAY,
                 limit_price=limit_price,
+                client_order_id=client_order_id,
             )
         else:
             req = MarketOrderRequest(
-                symbol=symbol, qty=quantity, side=side_enum, time_in_force=TimeInForce.DAY
+                symbol=symbol, qty=quantity, side=side_enum, time_in_force=TimeInForce.DAY,
+                client_order_id=client_order_id,
             )
         order = self._client.submit_order(req)
-        # Alpaca acknowledges asynchronously, so this records the *intent* with
-        # the broker's id. Realized price comes from the fills endpoint later.
-        return Fill(
+        if not getattr(order, "id", None):
+            raise RuntimeError("paper submission outcome is unknown; reconcile client order id")
+        # An acknowledgement supplies neither executed quantity nor price.
+        # There is no automatic retry after a network ambiguity: reconcile the
+        # same client_order_id before deciding whether to submit again.
+        return OrderAcknowledgement(
             timestamp=datetime.now(UTC),
             symbol=symbol,
             side=side,
-            quantity=float(quantity),
-            price=float(limit_price or 0.0),
-            cost=0.0,
+            requested_quantity=float(quantity),
             order_id=str(order.id),
+            client_order_id=client_order_id,
+            status=str(getattr(order, "status", "accepted")),
         )
 
     def positions(self) -> dict[str, float]:
@@ -107,7 +147,8 @@ class AlpacaBroker(Broker):
 
     def is_open(self) -> bool | None:
         try:
-            return bool(self._client.get_clock().is_open)
+            state = self._client.get_clock().is_open
+            return state if isinstance(state, bool) else None
         except Exception:
             return None
 
@@ -168,28 +209,52 @@ class AlpacaBroker(Broker):
     def cancel_open_orders(self) -> int:
         try:
             responses = self._client.cancel_orders()
+            if not isinstance(responses, list):
+                raise RuntimeError("cancellation outcome unknown")
+            if any(not 200 <= int(getattr(response, "status", 0)) < 300 for response in responses):
+                raise RuntimeError("cancellation response contains failures")
             return len(responses or [])
         except Exception:
-            return 0
+            raise RuntimeError("paper broker cancellation failed") from None
 
-    def close_all(self, limit_offset_bps: float = 25.0) -> list[Fill]:
+    def close_all(self, limit_offset_bps: float = 25.0) -> list[OrderAcknowledgement]:
         """Use Alpaca's own flatten endpoint, which handles shorts and odd lots."""
         held = self.positions()
         try:
-            self._client.close_all_positions(cancel_orders=True)
-        except Exception as exc:
-            raise RuntimeError(f"close_all_positions failed: {exc}") from exc
+            responses = self._client.close_all_positions(cancel_orders=True)
+        except Exception:
+            raise RuntimeError("paper broker flatten request failed") from None
         now = datetime.now(UTC)
-        return [
-            Fill(
+        acknowledgements = []
+        seen = set()
+        for response in responses or []:
+            symbol = str(getattr(response, "symbol", ""))
+            if symbol not in held:
+                continue
+            qty = held[symbol]
+            seen.add(symbol)
+            try:
+                status = int(getattr(response, "status", 0))
+            except (ValueError, TypeError):
+                status = 0
+            body = getattr(response, "body", None)
+            order_id = str(body.get("id", "") if isinstance(body, dict) else getattr(body, "id", ""))
+            acknowledgements.append(OrderAcknowledgement(
                 timestamp=now,
                 symbol=symbol,
                 side="sell" if qty > 0 else "buy",
-                quantity=abs(float(qty)),
-                price=0.0,
-                cost=0.0,
-                order_id="CLOSE_ALL",
-            )
-            for symbol, qty in held.items()
-            if qty
-        ]
+                requested_quantity=abs(float(qty)),
+                order_id=order_id,
+                client_order_id="",
+                status="close_acknowledged" if 200 <= status < 300 else ("close_rejected" if status >= 400 else "close_unknown"),
+                classification="BROKER_ACKNOWLEDGED" if 200 <= status < 300 else ("BROKER_REJECTED" if status >= 400 else "UNKNOWN"),
+            ))
+        for symbol in sorted(held.keys() - seen):
+            quantity = held[symbol]
+            if quantity:
+                acknowledgements.append(OrderAcknowledgement(
+                    timestamp=now, symbol=symbol, side="sell" if quantity > 0 else "buy",
+                    requested_quantity=abs(float(quantity)), order_id="", client_order_id="",
+                    status="close_unknown", classification="UNKNOWN",
+                ))
+        return acknowledgements

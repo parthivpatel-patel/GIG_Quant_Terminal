@@ -70,8 +70,11 @@ class Settings(BaseSettings):
     commission_bps: float = 1.0
     impact_eta: float = 0.10
 
-    alpaca_api_key: str = ""
-    alpaca_secret_key: str = ""
+    # Credentials alone never authorize a brokerage connection. Keep this false
+    # until an operator has separately approved paper-broker connectivity.
+    broker_connectivity_enabled: bool = False
+    alpaca_api_key: str = Field(default="", repr=False)
+    alpaca_secret_key: str = Field(default="", repr=False)
     alpaca_base_url: str = "https://paper-api.alpaca.markets"
     alpaca_data_url: str = "https://data.alpaca.markets"
 

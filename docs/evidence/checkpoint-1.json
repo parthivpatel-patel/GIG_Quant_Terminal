@@ -1,0 +1,38 @@
+{
+  "checkpoint": "accelerated-integration-1",
+  "upstream_main": "f946b23790e92b048a8cbd0160f876509b43455e",
+  "local_source_baseline": "4ae7e4a2d2db8bb71711f8af88af9b643d4aa259",
+  "branch": "development/gig-accelerated-2026",
+  "pytest": {
+    "passed": 401,
+    "failed": 0,
+    "deselected_missing_duckdb": 6,
+    "uncollected_service_tests_missing_duckdb": 12
+  },
+  "unittest": {
+    "passed": 275,
+    "failed": 0,
+    "skipped": 0,
+    "overlaps_pytest": true
+  },
+  "frontend": {
+    "passed": 22,
+    "browser_qa": false
+  },
+  "pyflakes": "PASS",
+  "compileall": "PASS",
+  "wheel_build_and_isolated_import": "PASS",
+  "typecheck": "PENDING_TOOLING",
+  "ruff": "UNAVAILABLE",
+  "broker_connections": 0,
+  "orders": 0,
+  "production_deployments": 0,
+  "T4": "T4_NOT_CERTIFIED",
+  "limitations": [
+    "Authoritative219-section spec unavailable;139 UNSUPPLIED",
+    "DuckDB-dependent legacy tests blocked",
+    "Real optional ML dependencies absent",
+    "No real broker, ARM64, economic or production validation",
+    "Local history is verified source snapshot; remote export must retain upstream binaries"
+  ]
+}

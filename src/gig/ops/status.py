@@ -12,6 +12,8 @@ import math
 from datetime import UTC, date, datetime
 from typing import Any
 
+from gig.service.serialization import public_error
+
 from gig.ops.killswitch import kill_switch
 
 # Soft / hard staleness thresholds for the equity tape (calendar days).
@@ -115,8 +117,8 @@ def _last_trade_run() -> dict[str, Any] | None:
             "construction": str(row.get("construction") or ""),
             "findings": findings[:8],
         }
-    except Exception as exc:
-        return {"error": _short_detail(f"{type(exc).__name__}: {exc}")}
+    except Exception:
+        return {"error": _short_detail(public_error()["message"])}
 
 
 def _f(value: Any) -> float | None:
@@ -202,6 +204,8 @@ def _alerts(
 def ops_snapshot() -> dict[str, Any]:
     """Full ops payload for `/api/ops` and the terminal strip."""
     kill = kill_switch().status()
+    if kill.get("error"):
+        kill = {**kill, "error": public_error()["message"]}
     fresh = _freshness(_bar_asof())
     last = _last_trade_run()
     hb = heartbeat()

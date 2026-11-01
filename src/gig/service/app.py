@@ -9,8 +9,8 @@ Read-only by design. There is no order-entry route, because a research UI that
 can send orders is a production system with none of the controls of one.
 """
 
-from __future__ import annotations
-
+from functools import wraps
+import inspect
 from pathlib import Path
 from typing import Any
 
@@ -20,8 +20,12 @@ STATIC_DIR = Path(__file__).parent / "static"
 def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
     try:
         from fastapi import Body, FastAPI, Query, Request
-        from fastapi.responses import FileResponse, JSONResponse
+        from fastapi.exceptions import RequestValidationError
+        from fastapi.responses import FileResponse, JSONResponse, Response
+        from fastapi.routing import APIRoute
         from fastapi.staticfiles import StaticFiles
+        from starlette.concurrency import run_in_threadpool
+        from starlette.exceptions import HTTPException
     except ImportError as exc:  # pragma: no cover - exercised by the CLI message
         raise ImportError(
             'FastAPI is not installed. Run: pip install -e ".[web]"'
@@ -29,6 +33,33 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
 
     from gig import __version__
     from gig.service import snapshot
+    from gig.service.contracts import Contract, EnvelopeSchema, State
+    from gig.service.serialization import DEFAULT_LIMITS, SerializationError, dumps, loads, public_error
+
+    class StrictJSONResponse(JSONResponse):
+        def render(self, content: Any) -> bytes:
+            return dumps(content).encode("utf-8")
+
+    class StrictRoute(APIRoute):
+        """Serialize the domain result before FastAPI's coercive jsonable_encoder."""
+        def __init__(self, path, endpoint, **kwargs):
+            @wraps(endpoint)
+            async def boundary(*args, **call_kwargs):
+                if inspect.iscoroutinefunction(endpoint):
+                    payload = await endpoint(*args, **call_kwargs)
+                else:
+                    payload = await run_in_threadpool(endpoint, *args, **call_kwargs)
+                if isinstance(payload, Response):
+                    return payload
+                if isinstance(payload, Contract):
+                    return Response(payload.wire, media_type="application/json")
+                return StrictJSONResponse(payload)
+            super().__init__(path, endpoint=boundary, **kwargs)
+
+    def failure(code: str, status: int = 500) -> Response:
+        contract = Contract.admit(State.ERROR, None, source="api-boundary", scope="api",
+                                  classification="UNAVAILABLE", error=public_error(code))
+        return Response(contract.wire, media_type="application/json", status_code=status)
 
     app = FastAPI(
         title="GIG Trading Algorithm",
@@ -37,6 +68,24 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
     )
+    app.router.route_class = StrictRoute
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request, exc):
+        # Do not echo Pydantic's input, provider diagnostics, or exception repr.
+        return failure("INVALID_REQUEST", 422)
+
+    @app.exception_handler(SerializationError)
+    async def invalid_result(request, exc):
+        return failure("SERIALIZATION_ERROR", 500)
+
+    @app.exception_handler(HTTPException)
+    async def http_error(request, exc):
+        return failure("INVALID_REQUEST", exc.status_code)
+
+    @app.exception_handler(Exception)
+    async def internal_error(request, exc):
+        return failure("INTERNAL_ERROR", 500)
 
     @app.middleware("http")
     async def no_store(request, call_next):
@@ -47,10 +96,52 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
         exactly like the code being broken. Research payloads are snapshots of a
         moving cross-section and are equally wrong to reuse.
         """
-        response = await call_next(request)
+        try:
+            if request.url.path.startswith("/api/") and request.method in ("POST", "PUT", "PATCH"):
+                chunks, count = [], 0
+                async for chunk in request.stream():
+                    count += len(chunk)
+                    if count > DEFAULT_LIMITS.max_bytes:
+                        return failure("INVALID_REQUEST", 413)
+                    chunks.append(chunk)
+                raw = b"".join(chunks)
+                # Starlette's cached request replays these same original bytes
+                # to FastAPI. No re-dumping, text trimming, or float coercion.
+                request._body = raw
+                if raw:
+                    loads(raw)
+            response = await call_next(request)
+        except SerializationError:
+            response = failure("INVALID_REQUEST", 400)
+        except Exception:
+            response = failure("INTERNAL_ERROR", 500)
         response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
         return response
+
+    @app.get("/api/v1/terminal/{section}", response_model=EnvelopeSchema)
+    def terminal_section(section: str, mode: str = Query("local", pattern="^(local|synthetic)$")) -> Any:
+        from gig.service.terminal import SECTIONS, section_snapshot
+        if section not in SECTIONS:
+            return failure("INVALID_REQUEST", 404)
+        return section_snapshot(section, mode)
+
+    @app.post("/api/v1/analytics/{kind}", response_model=EnvelopeSchema)
+    async def numerical_research(kind: str, request: Request) -> Any:
+        from gig.service.terminal import analytics
+        try:
+            payload = loads(await request.body())
+            if not isinstance(payload, dict):
+                return failure("INVALID_REQUEST", 422)
+            return await run_in_threadpool(analytics, kind, payload)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        except (ValueError, TypeError, KeyError, OverflowError):
+            return failure("INVALID_REQUEST", 422)
+        except ImportError:
+            return failure("DEPENDENCY_UNAVAILABLE", 503)
 
     def cached_cloud(limit: int) -> dict[str, Any]:
         return snapshot._cached(
@@ -105,6 +196,8 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
     def paper(limit: int = Query(120, ge=20, le=600)) -> dict[str, Any]:
         """Alpaca paper account vs target. Read-only — never submits."""
         settings = __import__("gig.config", fromlist=["get_settings"]).get_settings()
+        if not settings.broker_connectivity_enabled:
+            return {"available": False, "state": "UNAVAILABLE", "error": public_error("BROKER_DISABLED")}
         if not settings.keys_status().get("alpaca"):
             return {
                 "available": False,
@@ -116,11 +209,8 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
 
             with db_lock():
                 return {"available": True, **account_status(limit=limit)}
-        except Exception as exc:
-            msg = f"{type(exc).__name__}: {exc}"
-            if "DateParse" in type(exc).__name__ or "datetime" in msg.lower():
-                msg = "paper snapshot failed while reading account/target dates — retry refresh"
-            return {"available": False, "error": msg}
+        except Exception:
+            return {"available": False, "state": "ERROR", "error": public_error()}
 
     @app.get("/api/name/{symbol}")
     def name_detail(symbol: str, limit: int = Query(cloud_limit, ge=20, le=1200)) -> dict[str, Any]:
@@ -184,8 +274,8 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0) -> Any:
 
         payload = body or {}
         # Some clients POST raw text; fall back to the query string.
-        question = str(payload.get("question") or request.query_params.get("q") or "").strip()
-        if not question:
+        question = payload.get("question", request.query_params.get("q", ""))
+        if not isinstance(question, str) or not question.strip():
             return {"available": False, "error": "question is required"}
         return research_brief(question, model=payload.get("model"))
 

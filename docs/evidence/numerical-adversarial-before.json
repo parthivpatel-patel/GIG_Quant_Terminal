@@ -1,0 +1,53 @@
+{
+  "kelly_overflow": {
+    "accepted": true,
+    "result": {
+      "weights": [
+        0.25
+      ],
+      "gross": 0.25,
+      "net": 0.25,
+      "fraction": 0.25,
+      "max_name": 0.25,
+      "max_gross": 1.0,
+      "allow_short": false,
+      "model": "gaussian_small_return_capped_approximation",
+      "trading_approved": false
+    }
+  },
+  "black_litterman_overflow": {
+    "accepted": true,
+    "result": {
+      "expected_excess_returns": [
+        NaN
+      ],
+      "predictive_covariance": [
+        [
+          NaN
+        ]
+      ],
+      "mean_uncertainty": [
+        [
+          NaN
+        ]
+      ],
+      "equilibrium_prior": [
+        Infinity
+      ],
+      "tau": 1e+308,
+      "view_uncertainty_source": "diagonal_prior_view_variance"
+    }
+  },
+  "es_overflow": {
+    "accepted": true,
+    "result": {
+      "var": 1e+308,
+      "expected_shortfall": Infinity,
+      "confidence": 0.5,
+      "observations": 20,
+      "tail_mass": 10.0,
+      "units": "arithmetic_return_loss",
+      "method": "empirical_fractional_tail"
+    }
+  }
+}

@@ -21,18 +21,16 @@ def headline_sentiment(text: str) -> float:
         return lexicon_score(text)
 
 
-def transformer_sentiment(text: str) -> float | None:
-    """Optional ProsusAI/finbert. Returns None if transformers/torch are missing."""
-    try:
-        from transformers import pipeline
-    except Exception:
+def transformer_sentiment(text: str, *, local_directory: str | None = None) -> float | None:
+    """Explicit, local-only FinBERT inference; absence is never a neutral score.
+
+    Without a caller-selected local checkpoint return ``None`` without importing
+    Transformers. A supplied checkpoint must satisfy ``LocalFinBERT``'s manifest
+    and safetensors contract; load/inference failures propagate to the caller.
+    This helper never downloads weights or silently substitutes another model.
+    """
+    if local_directory is None:
         return None
-    nlp = pipeline("sentiment-analysis", model="ProsusAI/finbert")
-    out = nlp(text[:512])[0]
-    label = str(out["label"]).lower()
-    score = float(out["score"])
-    if "pos" in label:
-        return score
-    if "neg" in label:
-        return -score
-    return 0.0
+    from gig.nlp.workflow import LocalFinBERT
+
+    return float(LocalFinBERT(local_directory).score(text)["score"])

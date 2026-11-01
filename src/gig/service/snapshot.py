@@ -5,15 +5,18 @@ Nothing here imports a web framework, so the payloads are unit-testable and the
 HTTP layer stays a thin adapter. Every builder is read-only: it reads DuckDB and
 `results/`, computes factors in memory, and returns plain Python types.
 
-NaN is converted to ``None`` because strict JSON parsers reject bare NaN.
+Legacy nonfinite research metrics become explicit null values with admission
+evidence; the general wire boundary rejects nonfinite values.
 """
 
 from __future__ import annotations
 
-import json
+import hashlib
 import math
+import threading
 import time
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -21,31 +24,57 @@ import pandas as pd
 
 from gig import __version__
 from gig.config import get_settings
+from gig.service.serialization import DEFAULT_LIMITS, dumps, loads as strict_loads, normalize, public_error
 
-_CACHE: dict[str, tuple[float, Any]] = {}
+_CACHE: dict[str, tuple[float, bytes]] = {}
+_CACHE_LOCK = threading.RLock()
+_MAX_CACHE_ENTRIES = 128
 
 
 def _cached(key: str, ttl: float, build: Callable[[], Any]) -> Any:
-    now = time.time()
-    hit = _CACHE.get(key)
-    if hit is not None and now - hit[0] < ttl:
-        return hit[1]
-    value = build()
-    _CACHE[key] = (now, value)
-    return value
+    """Cache admitted immutable bytes and detach every returned value."""
+    if not isinstance(key, str) or not key or len(key) > 1024:
+        raise ValueError("cache key must be a nonempty bounded string")
+    if isinstance(ttl, bool) or not math.isfinite(ttl) or ttl < 0:
+        raise ValueError("cache ttl must be finite and nonnegative")
+    now = time.monotonic()
+    with _CACHE_LOCK:
+        hit = _CACHE.get(key)
+        if hit is not None and 0 <= now - hit[0] < ttl:
+            return strict_loads(hit[1])
+    wire = dumps(build()).encode("utf-8")
+    with _CACHE_LOCK:
+        if key not in _CACHE and len(_CACHE) >= _MAX_CACHE_ENTRIES:
+            _CACHE.pop(next(iter(_CACHE)))
+        _CACHE[key] = (time.monotonic(), wire)
+    return strict_loads(wire)
 
 
 def clear_cache() -> None:
-    _CACHE.clear()
+    with _CACHE_LOCK:
+        _CACHE.clear()
 
 
 def _f(value: Any) -> float | None:
     """Finite float or None. Keeps the wire format valid JSON."""
+    if isinstance(value, (bool, np.bool_)):
+        return None
     try:
         out = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     return out if math.isfinite(out) else None
+
+
+def _count(value: Any) -> int | None:
+    """Preserve exact nonnegative integer counts instead of routing via float."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, np.integer)):
+        return int(value) if value >= 0 else None
+    if isinstance(value, float) and math.isfinite(value) and 0 <= value <= 2**53 - 1 and value.is_integer():
+        return int(value)
+    return None
 
 
 def _open_store():
@@ -68,7 +97,7 @@ def warm_status_cache() -> None:
             store = _open_store()
             tables = store.stats()
             last = store.con.execute("SELECT MAX(dt) FROM bars").fetchone()
-            asof = str(pd.Timestamp(last[0]).date()) if last and last[0] is not None else None
+            asof = pd.Timestamp(last[0]).isoformat() if last and last[0] is not None else None
         _STATUS_CACHE = {"ts": time.time(), "tables": tables, "asof": asof}
     except Exception:
         pass
@@ -97,6 +126,9 @@ def service_status() -> dict[str, Any]:
         "tables": {},
         "asof": None,
         "db_ready": False,
+        "state": "UNKNOWN",
+        "data_freshness_state": "UNKNOWN",
+        "operational_readiness": "UNKNOWN",
         "construction": "risk_constrained" if settings.use_optimizer else "quantile_equal_weight",
         "target_vol": settings.target_vol,
         "ml": {},
@@ -111,15 +143,20 @@ def service_status() -> dict[str, Any]:
     try:
         from gig.nlp.ollama import ollama_status
 
-        payload["ollama"] = ollama_status()
-    except Exception as exc:
-        payload["ollama"] = {"available": False, "error": f"{type(exc).__name__}: {exc}"}
+        status = ollama_status()
+        # Provider diagnostics and configured URLs may contain credentials.
+        payload["ollama"] = {key: status[key] for key in
+                             ("available", "model_ready", "model", "models", "desk") if key in status}
+        if status.get("error"):
+            payload["ollama"]["error"] = public_error()["message"]
+    except Exception:
+        payload["ollama"] = {"available": False, "error": public_error()["message"]}
     try:
         from gig.ops.status import ops_snapshot
 
         payload["ops"] = ops_snapshot()
-    except Exception as exc:
-        payload["ops"] = {"available": False, "error": f"{type(exc).__name__}: {exc}"}
+    except Exception:
+        payload["ops"] = {"available": False, "error": public_error()["message"]}
     try:
         from gig.data.lake import db_lock
 
@@ -138,49 +175,34 @@ def service_status() -> dict[str, Any]:
                     last = store.con.execute("SELECT MAX(dt) FROM bars").fetchone()
                     asof = None
                     if last and last[0] is not None:
-                        asof = str(pd.Timestamp(last[0]).date())
+                        asof = pd.Timestamp(last[0]).isoformat()
             except TimeoutError:
                 # Prefer stale-but-true over a red "Lake empty" flash.
                 if _STATUS_CACHE.get("tables"):
                     payload["tables"] = dict(_STATUS_CACHE["tables"])
                     payload["asof"] = _STATUS_CACHE.get("asof")
                     payload["db_ready"] = bool(payload["tables"].get("bars", 0))
-                elif (payload.get("ops") or {}).get("freshness", {}).get("asof"):
-                    payload["asof"] = payload["ops"]["freshness"]["asof"]
-                    payload["db_ready"] = True
-                    payload["tables"] = {
-                        "bars": int((_STATUS_CACHE.get("tables") or {}).get("bars") or 1)
-                    }
                 else:
-                    dbp = settings.db_path
-                    if dbp.exists() and dbp.stat().st_size > 1_000_000:
-                        payload["db_ready"] = True
-                        payload["tables"] = {"bars": 1}
-                        payload["error"] = "database busy — showing lake present"
-                    else:
-                        payload["error"] = "database busy"
+                    payload["error"] = "database busy"
+                    payload["state"] = "UNKNOWN"
+                if payload.get("tables"):
+                    payload["state"] = "STALE"
                 return payload
-            prev_bars = int((_STATUS_CACHE.get("tables") or {}).get("bars") or 0)
-            cur_bars = int(tables.get("bars") or 0)
-            if prev_bars > cur_bars > 0:
-                tables["bars"] = prev_bars
             _STATUS_CACHE["ts"] = now
             _STATUS_CACHE["tables"] = tables
             _STATUS_CACHE["asof"] = asof
             payload["tables"] = tables
             payload["asof"] = asof
             payload["db_ready"] = bool(tables.get("bars", 0))
-    except Exception as exc:
-        payload["error"] = f"{type(exc).__name__}: {exc}"
+        payload["state"] = "AVAILABLE" if payload["db_ready"] else "UNAVAILABLE"
+    except Exception:
+        payload["error"] = public_error()["message"]
         # Keep last-known lake stats so the strip does not flash "Lake empty".
         if _STATUS_CACHE.get("tables"):
             payload["tables"] = dict(_STATUS_CACHE["tables"])
             payload["asof"] = _STATUS_CACHE.get("asof") or payload.get("asof")
             payload["db_ready"] = bool(payload["tables"].get("bars", 0))
-        elif (payload.get("ops") or {}).get("freshness", {}).get("asof"):
-            payload["asof"] = payload["ops"]["freshness"]["asof"]
-            payload["db_ready"] = True
-            payload["tables"] = {"bars": 1}
+        payload["state"] = "STALE" if payload.get("tables") else "ERROR"
     return payload
 
 
@@ -188,24 +210,40 @@ def research_snapshot() -> dict[str, Any]:
     """Metrics and per-factor IC from the last persisted backtest."""
     settings = get_settings()
     path = settings.results_dir / "equity_ls_last.json"
-    if not path.exists():
-        return {"available": False, "hint": "python -m gig backtest --source yahoo --no-ml"}
     try:
-        raw = json.loads(path.read_text(encoding="utf-8").replace("NaN", "null"))
-    except Exception as exc:
-        return {"available": False, "error": f"{type(exc).__name__}: {exc}"}
-
-    metrics = {k: _f(v) for k, v in (raw.get("metrics") or {}).items()}
-    ic = {k: _f(v) for k, v in (raw.get("factor_ic") or {}).items()}
-    ic_n = {k: _f(v) for k, v in (raw.get("factor_ic_n") or {}).items()}
+        if not path.exists():
+            return {"available": False, "state": "UNAVAILABLE",
+                    "hint": "python -m gig backtest --source yahoo --no-ml"}
+        with path.open("rb") as stream:
+            source_bytes = stream.read(DEFAULT_LIMITS.max_bytes + 1)
+        raw = strict_loads(source_bytes, legacy_nonfinite=True)
+        if not isinstance(raw, dict):
+            raise ValueError("research object required")
+        for key in ("metrics", "factor_ic", "factor_ic_n"):
+            if raw.get(key) is not None and not isinstance(raw[key], dict):
+                raise ValueError("research metric fields must be maps")
+        for key in ("source", "config_hash", "source_text"):
+            if raw.get(key) is not None and not isinstance(raw[key], str):
+                raise ValueError("research identity and source text must be strings")
+        metrics = {k: _f(v) for k, v in (raw.get("metrics") or {}).items()}
+        ic = {k: _f(v) for k, v in (raw.get("factor_ic") or {}).items()}
+        ic_n = {k: _count(v) for k, v in (raw.get("factor_ic_n") or {}).items()}
+        modified = datetime.fromtimestamp(path.stat().st_mtime, UTC).isoformat()
+    except Exception:
+        return {"available": False, "state": "ERROR", "error": public_error()["message"]}
     return {
         "available": True,
+        "state": "AVAILABLE",
         "source": raw.get("source"),
         "config_hash": raw.get("config_hash"),
         "metrics": metrics,
         "factor_ic": ic,
         "factor_ic_n": ic_n,
-        "modified": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(path.stat().st_mtime)),
+        "evidence": {"source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+                     "source_bytes": len(source_bytes), "legacy_reader": True,
+                     "nonfinite_policy": "LEGACY_NONFINITE_TO_NULL"},
+        "source_text": raw.get("source_text"),
+        "modified": modified,
     }
 
 
@@ -213,24 +251,46 @@ def experiment_history(limit: int = 40) -> dict[str, Any]:
     """Recent rows from results/experiments.jsonl, newest last."""
     settings = get_settings()
     path = settings.results_dir / "experiments.jsonl"
-    if not path.exists():
-        return {"available": False, "runs": []}
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 500:
+        raise ValueError("experiment limit must be an integer 1..500")
+    try:
+        if not path.exists():
+            return {"available": False, "state": "UNAVAILABLE", "runs": []}
+        with path.open("rb") as stream:
+            source_bytes = stream.read(DEFAULT_LIMITS.max_bytes + 1)
+        if len(source_bytes) > DEFAULT_LIMITS.max_bytes:
+            raise ValueError("research history exceeds source bound")
+        source_text = source_bytes.decode("utf-8", errors="strict")
+    except Exception:
+        return {"available": False, "state": "ERROR", "runs": [], "error": public_error()["message"]}
     runs: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line:
+    rejected = 0
+    for line in source_text.splitlines():
+        if not line.strip():
             continue
         try:
-            row = json.loads(line.replace("NaN", "null"))
+            row = strict_loads(line, legacy_nonfinite=True)
+            if not isinstance(row, dict):
+                raise ValueError("research run must be a map")
+            metrics = row.get("metrics")
+            if metrics is None:
+                metrics = {}
+            if not isinstance(metrics, dict) or (row.get("config") is not None and not isinstance(row["config"], dict)):
+                raise ValueError("research metrics must be a map")
+            for key in ("ts", "name", "config_hash", "source_text"):
+                if row.get(key) is not None and not isinstance(row[key], str):
+                    raise ValueError("research metadata must be strings")
         except Exception:
+            rejected += 1
             continue
-        metrics = row.get("metrics") or {}
         runs.append(
             {
                 "ts": row.get("ts"),
                 "name": row.get("name"),
                 "config_hash": row.get("config_hash"),
                 "config": row.get("config") or {},
+                "source_text": row.get("source_text"),
+                "source_line_sha256": hashlib.sha256(line.encode("utf-8")).hexdigest(),
                 "sharpe": _f(metrics.get("sharpe")),
                 "ann_return": _f(metrics.get("ann_return")),
                 "ann_vol": _f(metrics.get("ann_vol")),
@@ -239,7 +299,12 @@ def experiment_history(limit: int = 40) -> dict[str, Any]:
                 "dsr": _f(metrics.get("dsr")),
             }
         )
-    return {"available": True, "runs": runs[-limit:]}
+    state = "AVAILABLE" if runs else ("ERROR" if rejected else "UNAVAILABLE")
+    return {"available": bool(runs), "state": state, "runs": runs[-limit:],
+            "rejected_lines": rejected,
+            "evidence": {"source_sha256": hashlib.sha256(source_bytes).hexdigest(),
+                         "source_bytes": len(source_bytes), "legacy_reader": True},
+            **({"error": public_error()["message"]} if state == "ERROR" else {})}
 
 
 def _zscore(row: pd.Series, clip: float = 3.0) -> pd.Series:
@@ -279,16 +344,8 @@ def _rank_normal(row: pd.Series, clip: float = 2.5) -> pd.Series:
 
 
 def _clean(value: Any) -> Any:
-    """Recursively replace non-finite floats with None so the payload is valid JSON."""
-    if isinstance(value, dict):
-        return {k: _clean(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_clean(v) for v in value]
-    if isinstance(value, float):
-        return _f(value)
-    if isinstance(value, (np.floating, np.integer)):
-        return _f(value)
-    return value
+    """Strict detached wire representation; never round integer identities."""
+    return normalize(value)
 
 
 def _load_cloud_panel(limit: int, lookback_days: int):
@@ -511,7 +568,7 @@ def _factor_cloud_impl(
 
     return _clean({
         "available": True,
-        "asof": str(asof.date()),
+        "asof": asof.isoformat(),
         "names": n_names,
         "n_side": n_side,
         "adv_floor": adv_floor,
@@ -539,7 +596,7 @@ def _factor_cloud_impl(
                 "ic_mean": _f(stats.get("ic_mean")),
                 "ic_tstat_nw": _f(stats.get("ic_tstat_nw")),
                 "ic_ir": _f(stats.get("ic_ir")),
-                "n_obs": _f(stats.get("n_obs")),
+                "n_obs": _count(stats.get("n_obs")),
             }
             for key, stats in ic_table.items()
         },
@@ -571,14 +628,17 @@ def live_tape(limit: int = 40) -> dict[str, Any]:
     so, because showing a stale close as "live" is the kind of thing that makes a
     research stack untrustworthy.
     """
-    from gig.pipeline import live_quotes
-
     ts = time.time()
     try:
-        quotes = live_quotes(limit=limit)
-    except Exception as exc:
+        if get_settings().broker_connectivity_enabled:
+            from gig.pipeline import live_quotes
+
+            quotes = live_quotes(limit=limit)
+        else:
+            quotes = pd.DataFrame()
+    except Exception:
         quotes = pd.DataFrame()
-        error = f"{type(exc).__name__}: {exc}"
+        error = public_error()["message"]
     else:
         error = None
 
