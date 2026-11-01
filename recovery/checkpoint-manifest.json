@@ -1,0 +1,250 @@
+{
+  "source_commit": "e19d6886c7ce7d04219d905c7bef8c18ff068ee9",
+  "branch": "development/gig-accelerated-2026",
+  "source_tree": "12467d51309f6e687a49cbc76228e4ca7be2bf3a",
+  "artifacts": [
+    {
+      "path": "checkpoint-e19d688.bundle",
+      "bytes": 4615892,
+      "sha256": "1b1f1d8a46dc3cbad3d06cfad42e4a90262f41f8be9ede9b932cbd5ffe9900ab"
+    },
+    {
+      "path": "checkpoint-e19d688-evidence.tar.gz",
+      "bytes": 73452,
+      "sha256": "fec11087e6baaabc307e6f1d28c129eb14b37b7fbcf8be7243722a14addfcfca"
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "docs/checkpoint-continuation.md",
+      "bytes": 5872,
+      "sha256": "f281ad30292c40b857de42f40d824234b51b2c2c2cdde5c038baff8b0ba9424f"
+    },
+    {
+      "path": "docs/evidence/api-boundary-tests.txt",
+      "bytes": 6659,
+      "sha256": "8feeade2cefe224f77d9e3ddb012c477d94c2de11794d33017b6235c5689a9a2"
+    },
+    {
+      "path": "docs/evidence/api-contracts-tests.txt",
+      "bytes": 2392,
+      "sha256": "73dce51585419ff7d084aa3a7f82f368a273a7529be1133332d8a538c248d69c"
+    },
+    {
+      "path": "docs/evidence/baseline-serialization.json",
+      "bytes": 834,
+      "sha256": "fdef64645c9f0bacd815865d09e961520cdb509e1e78ca7eda3ded262cbe671d"
+    },
+    {
+      "path": "docs/evidence/calendar-dependency-verification.json",
+      "bytes": 1361,
+      "sha256": "df398b1b52188b8b0de4ff2d1a9f085f3ba20913601f5db8eeb1b169a5fb709b"
+    },
+    {
+      "path": "docs/evidence/checkpoint-1.json",
+      "bytes": 1123,
+      "sha256": "b82ff1071c65313aad33fd8a55bdad1119b9dbdc39ad619abbb99267c290b8a8"
+    },
+    {
+      "path": "docs/evidence/checkpoint-2.json",
+      "bytes": 1254,
+      "sha256": "1f2654336c3ff830fb37ccd648581e7fa92ee785bbdb9596c54ededc9dde0765"
+    },
+    {
+      "path": "docs/evidence/checkpoint-3.json",
+      "bytes": 916,
+      "sha256": "8ad34ae478cac3160ea6fbfc8e8f6c95a53c0b36ff1aaba1178fe9bf33ce4610"
+    },
+    {
+      "path": "docs/evidence/checkpoint-tests.json",
+      "bytes": 1066,
+      "sha256": "5948fddd56e4b83c99ffa3f1e3a6efe7ab9ab14ede545fc9f2c9f484ed489b9c"
+    },
+    {
+      "path": "docs/evidence/checkpoint-tests.txt",
+      "bytes": 41005,
+      "sha256": "2c59b0c001ecb137ac29893fe5a72fc35707dbd5f98be69d85ee71e0b8e43f5c"
+    },
+    {
+      "path": "docs/evidence/container-804-runtime.json",
+      "bytes": 1290,
+      "sha256": "ad90d484534f3f2d5977fa05b614e181d7a20c039cf2d1e5f3abda5f88f45b32"
+    },
+    {
+      "path": "docs/evidence/container-804-source.json",
+      "bytes": 17333,
+      "sha256": "9250d524c3701d6cb11db09f89269d622bf68648beb9cbfdbf256cde5fc286a0"
+    },
+    {
+      "path": "docs/evidence/corporate-actions-summary.json",
+      "bytes": 546,
+      "sha256": "56a1d1a8fbddb4ef9a1e34fc0bf6b02d7211c1ad9bdf36c2e89b1f3455ec2e82"
+    },
+    {
+      "path": "docs/evidence/duckdb-dependency.json",
+      "bytes": 1090,
+      "sha256": "d468140bbcdfdeac4a56f0e0916ba9dbfec7112ad592b01a09f50674ef722e92"
+    },
+    {
+      "path": "docs/evidence/duckdb-store-repair-summary.json",
+      "bytes": 251,
+      "sha256": "bf914c1f2519d2db43fe3b4c59712a63a981e5c8e4e5aa589bd9db1bd6b7bdb0"
+    },
+    {
+      "path": "docs/evidence/final-frontend.txt",
+      "bytes": 1959,
+      "sha256": "efb769fa3facc1b9f8b96307e74461a16f6623100c9f8718e5ff1ca540bf6b68"
+    },
+    {
+      "path": "docs/evidence/final-mypy.txt",
+      "bytes": 45,
+      "sha256": "ff08737d2dbdc175d8d227bea7c88e0687bf85b2e035433b3ef511b998c4a56c"
+    },
+    {
+      "path": "docs/evidence/final-pyflakes.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/final-regression.txt",
+      "bytes": 662,
+      "sha256": "85fac3426a914a74c12670d8fa56b7f7b273be7063a67cf342a2f85f76612a5d"
+    },
+    {
+      "path": "docs/evidence/final-regression.xml",
+      "bytes": 62734,
+      "sha256": "db280b1a75190e5555f535c729814b248cd57c8e8c9925c2d01b222a7297cda3"
+    },
+    {
+      "path": "docs/evidence/final-ruff.txt",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "docs/evidence/frontend-smoke-tests.txt",
+      "bytes": 1557,
+      "sha256": "0906d7609a3dcb9bade2db956fc76d2ca1f104c311846dce662fb1e562f1e01a"
+    },
+    {
+      "path": "docs/evidence/local-operations-runtime.json",
+      "bytes": 1097,
+      "sha256": "4f20ef29182420d8e6cab115524cb3399e5b4613b3b599494125ddc88b856131"
+    },
+    {
+      "path": "docs/evidence/local-operations-source.json",
+      "bytes": 17506,
+      "sha256": "6e93c9742844f5b5e8c04913b0ec505473ea141b90d21e5b759e4d15185b336b"
+    },
+    {
+      "path": "docs/evidence/market-foundation-frontend.txt",
+      "bytes": 2126,
+      "sha256": "78aa7de0228bb200050381635867488e4757c92b3592be77bf383ead9851d467"
+    },
+    {
+      "path": "docs/evidence/market-foundation-mypy.txt",
+      "bytes": 45,
+      "sha256": "92c3e508c3f44192b3ed08c24db6fda1c9011bc0b04adc58ad6dc43ff2d9fac0"
+    },
+    {
+      "path": "docs/evidence/market-foundation-pyflakes.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/market-foundation-regression.txt",
+      "bytes": 14338,
+      "sha256": "de483b13309e4f60218bc6f18e58e420c0648dfe484e4b4f4febfc9b0da710a9"
+    },
+    {
+      "path": "docs/evidence/market-foundation-regression.xml",
+      "bytes": 69770,
+      "sha256": "2124297a60cf73930a7feb04defb4220835528570cef058e5103be9f293a264e"
+    },
+    {
+      "path": "docs/evidence/market-foundation-ruff.txt",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "docs/evidence/market-wheel-verification.json",
+      "bytes": 204,
+      "sha256": "ac577aed10aeade82aa0fe449cdd9c44c1bcf5ce18f1d22a377d4f994a3e135f"
+    },
+    {
+      "path": "docs/evidence/native-benchmark-resumed.json",
+      "bytes": 2291,
+      "sha256": "d6b190d546659703a041cfaeb7f0fb06e885a4d3ef79960876565b69f977009b"
+    },
+    {
+      "path": "docs/evidence/native-neutralize-before.json",
+      "bytes": 320,
+      "sha256": "c9ff8f59e78d6a7046151b1596d0f7f63ebf14ff4e6cafd2f30cdbe2612a0e99"
+    },
+    {
+      "path": "docs/evidence/native-neutralize-benchmark.json",
+      "bytes": 1971,
+      "sha256": "4258355502787cf66a9850f9dddc92359d4b890881336edfd59ddcfced596766"
+    },
+    {
+      "path": "docs/evidence/native-wheel-verification.json",
+      "bytes": 173,
+      "sha256": "a86416ebcae390d44cf1ec438a3cb4a1b8a617600d3b181e18b2691ac52e6748"
+    },
+    {
+      "path": "docs/evidence/numerical-adversarial-before.json",
+      "bytes": 1059,
+      "sha256": "4b7c102ef9fb3e0d27300c23f453b3902f9d2dff065b0b0fac5e5bdce99e7d88"
+    },
+    {
+      "path": "docs/evidence/optional-dependency-verification.json",
+      "bytes": 9403,
+      "sha256": "df33032209f138f988847871ba0ed29279dd2ae6c46658ca03073da83df7bd9e"
+    },
+    {
+      "path": "docs/evidence/optional-model-adf-before.json",
+      "bytes": 880,
+      "sha256": "4489d9b3f101bd266ca9c04ab2a1a530bed42cd96821bc45cf980c65144c277f"
+    },
+    {
+      "path": "docs/evidence/optional-model-summary.json",
+      "bytes": 1159,
+      "sha256": "c95fc66b396f0a24b293cfd7b2c17ee0b103828fbc9f8e5cd3ac8bc2e81300b8"
+    },
+    {
+      "path": "docs/evidence/pytest-runnable.txt",
+      "bytes": 606,
+      "sha256": "6c8bafbb0df1ebded666ba7020e1cb968ab515a235f9fa6c32abdcaff09966ae"
+    },
+    {
+      "path": "docs/evidence/pytest-runnable.xml",
+      "bytes": 51151,
+      "sha256": "8d25cb8f2ccd1ed56cd67af9ab2f7c5d190dec96e724bb7067178e93c2ea533a"
+    },
+    {
+      "path": "docs/evidence/research-review-defects.json",
+      "bytes": 557,
+      "sha256": "0d7a5061462e6851a15a0708b4918becb2de2bb707b2fd81a2600194aab9a02f"
+    },
+    {
+      "path": "docs/evidence/wheel-build.txt",
+      "bytes": 17294,
+      "sha256": "2e0f953fa464c68447655c3108a63b197f39ba5a53c50a7bca1d0b5c64998554"
+    },
+    {
+      "path": "docs/evidence/workspace-boundary-review-summary.json",
+      "bytes": 702,
+      "sha256": "c09356174482f0d9f8cd4aaf8b424e872f79e71b2b2946886e853c36575455e2"
+    },
+    {
+      "path": "docs/evidence/workspace-serialization-before.json",
+      "bytes": 171,
+      "sha256": "40738a6fbcfaf1027c4a3e9ab4b807e0cb9905fb49345d3550ce2fb6f4e1a00f"
+    }
+  ],
+  "bundle_scope": "Complete Git history and source through source_commit; subsequent artifact-only commit not inside its own bundle",
+  "local_verified": true,
+  "external_verification": "Must be performed after publication; do not infer it from this local manifest",
+  "contains_runtime_credentials": false,
+  "source_environment_state_backup": false,
+  "T4": "T4_NOT_CERTIFIED"
+}
