@@ -1,0 +1,10 @@
+{
+  "baseline_head": "98a3c393508125c3d28e49b6d19b58c754376fe6",
+  "preservation_archive": "interrupted-cycle-20261101T181016Z-source.tar.gz",
+  "files": 311,
+  "sha256": "825f850c714e1d94188851c5ec82a5ae7d0d83501b68074aa0a3c36797f5f34b",
+  "bytes": 9118109,
+  "scope": "Interrupted source preservation only; not an integrated or passing implementation",
+  "restricted_finbert_weights_included": false,
+  "runtime_credentials_included": false
+}
