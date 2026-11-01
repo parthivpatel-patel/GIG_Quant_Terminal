@@ -360,5 +360,19 @@ checked("rejected workspace admission preserves exact raw evidence and cannot re
 replyOverride = { body: fixture({ provenance: { source: "caller-asserted-source", classification: "HISTORICAL", as_of: replayCutoff, evidence_state: "CALLER_SUPPLIED_NOT_VENDOR_VERIFIED" } }) };
 await get("refresh").dispatch("click"); await settle();
 checked("persisted caller source claims never become vendor authenticity", () => assert.match(get("truth-notice").textContent, /Caller-supplied provenance · Vendor authenticity unverified/));
+replyOverride = { body: fixture() };
+for (const kind of ["calendar", "corporate-actions"]) {
+  get("analytics-kind").value = kind;
+  const prior = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, prior);
+  const body = get("analytics-input").value;
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`${kind} research uses explicit calculation without admitting market data`, () => {
+    assert.equal(calls.at(-1).url, `/api/v1/analytics/${kind}`);
+    assert.equal(calls.at(-1).options.body, body);
+    assert(!get("workbench-scope").textContent.includes("writes caller-supplied evidence"));
+  });
+}
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

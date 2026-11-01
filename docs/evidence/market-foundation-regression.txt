@@ -1,0 +1,128 @@
+........................................................................ [ 13%]
+........................................................................ [ 27%]
+........................................................................ [ 40%]
+........................................................................ [ 54%]
+........................................................................ [ 68%]
+........................................................................ [ 81%]
+........................................................................ [ 95%]
+.........................                                                [100%]
+- generated xml file: /workspace/work/evidence/market-foundation-regression.xml -
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.14-final-0 _______________
+
+Name                                         Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------------------
+src/gig/__init__.py                              3      0      0      0   100%
+src/gig/__main__.py                              3      3      2      0     0%   1-4
+src/gig/artifacts.py                            28      1      6      2    91%   19, 33->40
+src/gig/assets/__init__.py                       3      0      0      0   100%
+src/gig/assets/futures.py                       27      8      4      0    61%   24-31
+src/gig/assets/options.py                       44      7     18      8    76%   22, 70, 75, 79, 82, 83->72, 85, 96
+src/gig/backtest/__init__.py                     4      0      0      0   100%
+src/gig/backtest/costs.py                       21      2      2      1    87%   19, 27
+src/gig/backtest/metrics.py                     30      1      4      1    94%   19
+src/gig/backtest/simulator.py                   91      2     24      1    97%   137-138
+src/gig/cli.py                                 329    160     82     12    46%   116-121, 123, 125-132, 134, 136-138, 148, 165->171, 173, 187-188, 192-210, 214-229, 234-236, 240-252, 259-345, 350-374, 389-390, 394, 401-402, 407-408, 413-414, 419-420, 426, 429-430, 436-437, 441, 462-463, 464->471, 469-470, 476
+src/gig/config.py                               84      7     20      4    89%   14-15, 21, 26-27, 30, 112
+src/gig/data/__init__.py                         5      0      0      0   100%
+src/gig/data/actions.py                        288     20    130     19    91%   42, 52-53, 55, 70, 77, 88, 99, 104, 106, 134, 139, 154->150, 179, 207-208, 215, 219, 227, 256->251, 344, 365
+src/gig/data/calendars.py                      153      8     60      6    93%   60, 93-94, 103, 105, 163, 165, 195
+src/gig/data/http.py                            29     17      8      1    35%   14-18, 22->24, 28-39
+src/gig/data/lake.py                            77     20     24      3    69%   46, 75->77, 78-84, 89-93, 143-154
+src/gig/data/listings.py                        70     14     20      3    81%   57, 77, 92, 119, 123-127, 131-135
+src/gig/data/providers/__init__.py               0      0      0      0   100%
+src/gig/data/providers/alpaca_iex.py            32      3      8      3    85%   18, 23, 55
+src/gig/data/providers/base.py                   7      0      0      0   100%
+src/gig/data/providers/cached.py                25     25      6      0     0%   3-37
+src/gig/data/providers/edgar.py                 72     20     28      3    69%   46, 59->56, 76, 101-102, 113-130
+src/gig/data/providers/finnhub.py               38     11      8      1    70%   47, 53-54, 61-65, 69-82
+src/gig/data/providers/fred.py                  32     10     12      2    64%   32->34, 44, 53-61
+src/gig/data/providers/fundamentals_sec.py      77     28     34      8    57%   40->73, 42->46, 43->42, 47, 54, 58-59, 61, 71->40, 103, 123-144
+src/gig/data/providers/synthetic.py             48      5      6      1    89%   50, 97, 101-103
+src/gig/data/providers/yahoo.py                 75     58     16      0    19%   23-24, 32-52, 61-85, 94-100, 104-116
+src/gig/data/universe.py                        17      3     14      2    71%   26->25, 29-31
+src/gig/data/universe_spec.py                   46     29     24      4    30%   65, 71, 76, 81, 85-93, 98-114
+src/gig/data/validated.py                      176      5     72      6    96%   100, 106, 170, 178, 232->234, 235
+src/gig/execution/__init__.py                    8      0      0      0   100%
+src/gig/execution/algo.py                       35      4     12      3    85%   54, 75, 86-87
+src/gig/execution/alpaca.py                    140     56     40      5    61%   30-31, 45-65, 101, 107, 122-125, 128-129, 132-133, 152-153, 156-175, 184-185, 188, 192-207, 233, 238-239, 254->252
+src/gig/execution/base.py                       31      6      4      1    80%   31, 35, 39, 49, 57, 73
+src/gig/execution/oms.py                       233     19     72     15    89%   44, 47-48, 54, 68, 142, 158, 186, 196, 198, 203, 218, 222, 291, 300, 311, 329, 332-333
+src/gig/execution/paper.py                      44      4     12      2    89%   17, 37, 65, 69
+src/gig/execution/pretrade.py                  120      9     52      4    92%   46, 121-122, 140, 156->167, 187-188, 190-191, 225
+src/gig/execution/reconcile.py                 139     17     38      4    86%   62, 107-117, 120, 190-193, 221->227, 230-233, 277
+src/gig/execution/simulator.py                 102     15     42     13    81%   50, 52, 54, 56, 60, 62, 66, 68, 71, 79-80, 96, 103, 115, 123
+src/gig/execution/targets.py                    82     52     14      0    31%   63, 93-176
+src/gig/execution/trader.py                    226     62     58     13    71%   69, 89-90, 97->103, 114, 116, 120, 125-127, 144-145, 150-158, 181-182, 210-213, 229-230, 243-245, 253-258, 281-283, 307, 359, 364-398, 420-442
+src/gig/execution/twap.py                       32      2     10      2    90%   36, 47
+src/gig/factors/__init__.py                      7      0      0      0   100%
+src/gig/factors/base.py                          8      0      0      0   100%
+src/gig/factors/combine.py                      24      1      8      1    94%   33
+src/gig/factors/filings.py                      20      2      6      3    81%   21, 24->27, 28
+src/gig/factors/fundamentals.py                 42      5     12      4    83%   26, 30, 58, 62, 73
+src/gig/factors/macro.py                        15      6      2      0    53%   21-26
+src/gig/factors/momentum.py                     20      0      0      0   100%
+src/gig/factors/neutralize.py                   64     11     20      2    82%   17-18, 60->62, 90-91, 96, 103-108
+src/gig/factors/volatility.py                   33      1      4      1    95%   34
+src/gig/logging.py                              14      0      2      0   100%
+src/gig/microstructure/__init__.py               2      0      0      0   100%
+src/gig/microstructure/analytics.py            249     15     86     11    92%   19, 22-23, 37, 122, 141->145, 220, 253, 281-282, 294, 326, 355-356, 358, 360
+src/gig/ml/__init__.py                           2      0      0      0   100%
+src/gig/ml/ranker.py                           119     14     32      7    86%   32-33, 39-40, 58->62, 84->86, 92-93, 101, 148-149, 152-153, 175, 177, 197, 202->204
+src/gig/ml/regimes.py                          173     14     60     15    88%   59, 61, 63, 82, 84, 92, 122, 166, 168, 170, 181->211, 186->185, 201-202, 229, 236
+src/gig/ml/state_space.py                      108     10     26      6    88%   32, 87, 89, 95, 120-121, 133, 154-155, 160
+src/gig/ml/volatility.py                       104      8     34      9    88%   39, 50, 58, 67, 82, 108, 110, 137->127, 140
+src/gig/native/__init__.py                       2      0      0      0   100%
+src/gig/native/rolling.py                       50      5     20      3    89%   21, 33-34, 58, 63
+src/gig/nlp/__init__.py                          4      0      0      0   100%
+src/gig/nlp/lexicon.py                          15      0      4      0   100%
+src/gig/nlp/news.py                             83     29     34     11    59%   18, 19->21, 22, 24, 39, 46-75, 88, 93, 103, 122, 130, 137->139
+src/gig/nlp/ollama.py                          138     46     42      8    61%   40, 43-44, 55, 59-67, 74-75, 101-133, 137-140, 169->172, 182-191, 193, 198-211, 214-225, 233-239, 294-296
+src/gig/nlp/sentiment.py                        14      2      2      0    88%   18-19
+src/gig/nlp/workflow.py                        263     20    108     17    90%   118, 146, 156, 159, 271, 357, 362, 405->409, 410, 420-421, 454, 468, 473, 476, 480, 483, 494-495, 517, 528
+src/gig/ops/__init__.py                          3      0      0      0   100%
+src/gig/ops/killswitch.py                       41      2      4      1    93%   41-42, 74->76
+src/gig/ops/maintenance.py                     132     36     52     12    71%   50, 52, 62, 64, 68, 94, 97, 101, 104, 107, 112, 139-163, 167
+src/gig/ops/status.py                          100     30     34     11    65%   46, 48, 58-59, 75, 95-105, 124-128, 140, 160-161, 169, 177, 193, 207, 215-216
+src/gig/options/__init__.py                      2      0      0      0   100%
+src/gig/options/analytics.py                   277     28    104     20    87%   72-73, 90-91, 93, 115-116, 118, 153, 156, 171, 173, 188, 220, 244, 251, 277, 279, 312, 316, 329, 344, 351-352, 379, 382, 399, 402
+src/gig/pipeline.py                            216    170     54      4    19%   33, 65-80, 102->110, 111-137, 143-190, 202-218, 230-297, 301-335, 339-344, 348-351, 355-363, 367-369
+src/gig/portfolio/__init__.py                    3      0      0      0   100%
+src/gig/portfolio/allocation.py                 97     12     42     12    83%   26, 42, 55, 58, 63, 85, 88, 91, 100, 104, 111, 144
+src/gig/portfolio/construct.py                  20      0      2      0   100%
+src/gig/portfolio/optimize.py                  154      8     40     10    91%   164->168, 171->173, 177->183, 184, 192-193, 235, 293->296, 304, 323, 336-337, 382->385
+src/gig/portfolio/optimizer.py                  20      1      2      1    91%   29
+src/gig/research/__init__.py                    14     10      6      0    20%   15-27
+src/gig/research/attribution.py                116     58     34      6    47%   29, 35, 53-54, 64->66, 103-129, 146-155, 177-214, 231-261
+src/gig/research/experiment.py                  19      0      0      0   100%
+src/gig/research/ic.py                          38      3     10      4    85%   26, 28->30, 39, 48
+src/gig/research/multiple_testing.py            25      2      6      2    87%   25, 50
+src/gig/research/stat_arb.py                   274     25     78     19    88%   85, 93, 106, 143, 145, 153, 161, 185, 211, 253, 271-272, 325-326, 357, 359, 395-396, 434, 436, 445, 484, 486, 550, 600
+src/gig/research/state_models.py               101     12     32     12    82%   47, 51, 53, 56, 101, 170, 176, 183, 192, 197, 201, 204
+src/gig/research/walkforward.py                 29      1      4      1    94%   49
+src/gig/research/workflow.py                   183     14     74     12    90%   41-42, 77, 111, 114, 124, 126, 152, 155, 184, 186, 189, 222, 252
+src/gig/risk/__init__.py                         5      0      0      0   100%
+src/gig/risk/analytics.py                       80      8     36      8    86%   37, 50, 64, 88, 91, 95, 119, 127
+src/gig/risk/exposures.py                       10      0      0      0   100%
+src/gig/risk/factor_model.py                   112      5     22      5    93%   79, 107, 145, 199->206, 204-205, 216->230
+src/gig/risk/limits.py                          25      0      8      0   100%
+src/gig/risk/var.py                             11      1      2      1    85%   15
+src/gig/service/__init__.py                      2      0      0      0   100%
+src/gig/service/app.py                         272    104     56      6    60%   99, 103, 126->128, 161, 170, 174, 177, 180-181, 194, 201, 211, 215, 219, 223, 227-232, 242, 246-247, 255-267, 272-286, 299-301, 305-308, 315-317, 321-323, 327-334, 338-341, 343->346, 359-385, 390-425
+src/gig/service/contracts.py                   107      5     34      5    93%   78, 80, 82, 84, 125
+src/gig/service/serialization.py               178      5    100      4    97%   102, 109, 112, 157, 210
+src/gig/service/snapshot.py                    325     57     92     26    80%   38, 62, 73, 78, 94-104, 142-143, 153-154, 159-160, 168-170, 183-185, 190, 202->206, 222, 256, 259, 263, 265-266, 271, 275, 278, 283, 340, 427, 432-433, 435, 463-471, 487->491, 611, 636-638, 641-643, 649-659, 695-696, 698, 715
+src/gig/service/terminal.py                    203     24     84     18    84%   61, 193, 195-202, 214, 232, 244, 247, 250-251, 258, 264->266, 270, 274, 283, 287, 289, 301, 304, 312
+src/gig/service/workspace.py                   476     50    214     48    86%   74, 77, 86-87, 100, 106, 112, 128, 143, 156, 234, 243, 272, 337, 344, 359->353, 376, 399, 414, 417, 426, 434, 450, 458, 464, 532, 541, 548, 550, 562, 564, 572, 669, 697, 700, 712, 715, 724, 796, 827->826, 832, 862, 872, 914, 943-944, 976, 987, 999, 1004, 1011, 1032
+src/gig/store/__init__.py                      213     71     58     14    63%   22-23, 33, 37, 83, 96, 111-112, 127, 132, 145-149, 153, 160-170, 174, 180-184, 190, 195, 199, 200->202, 223-224, 234, 239, 253, 260-262, 270-272, 299-315, 318-342, 351-356, 364-369, 410-411, 419-428, 432-433
+src/gig/strategies/__init__.py                   4      0      0      0   100%
+src/gig/strategies/equity_ls.py                 81     17     16      5    73%   65->74, 98-99, 102-105, 108-111, 114-118, 156-161
+src/gig/strategies/futures_tsmom.py             22      0      0      0   100%
+src/gig/strategies/options_vrp.py               18      0      0      0   100%
+src/gig/timestamps.py                           19      1      8      1    93%   21
+src/gig/types.py                                74      1      0      0    99%   51
+----------------------------------------------------------------------------------------
+TOTAL                                         8800   1663   2796    519    78%
+Coverage JSON written to file /workspace/work/evidence/platform-coverage.json
+Required test coverage of 70.0% reached. Total coverage: 78.37%
+529 passed in 50.24s

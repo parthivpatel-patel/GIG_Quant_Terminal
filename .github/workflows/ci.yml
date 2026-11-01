@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[web,research,calendar,dev]"
       - name: Tests
         run: pytest --cov=gig --cov-report=term-missing
       - name: Lint

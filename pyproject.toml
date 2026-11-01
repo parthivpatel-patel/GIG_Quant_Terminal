@@ -33,6 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 data = ["yfinance>=0.2.40"]
+calendar = ["exchange-calendars>=4.5"]
 broker = ["alpaca-py>=0.21"]
 ml = ["lightgbm>=4.3"]
 research = ["lightgbm>=4.3", "statsmodels>=0.14"]
@@ -47,7 +48,7 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.11",
 ]
-all = ["gig[broker,research,nlp,transformers,web,dev]"]
+all = ["gig[broker,research,calendar,nlp,transformers,web,dev]"]
 
 [project.scripts]
 gig = "gig.cli:main"

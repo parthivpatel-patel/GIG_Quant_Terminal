@@ -1,0 +1,36 @@
+{
+  "checkpoint": "market-foundation-integration",
+  "previous_verified_source": "804e96fb34270c905a63b3081370ea2574223b0f",
+  "pytest": {
+    "passed": 529,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0
+  },
+  "coverage": {
+    "percent": 78.37185236288376,
+    "required_percent": 70,
+    "branch_measurement_enabled": true
+  },
+  "frontend_smoke_checks": 29,
+  "ruff": "PASS",
+  "mypy": {
+    "source_files": 109,
+    "errors": 0,
+    "flags": [
+      "--follow-imports=skip",
+      "--ignore-missing-imports",
+      "--disable-error-code=import-untyped"
+    ]
+  },
+  "pyflakes": "PASS",
+  "native_wheel": "PASS",
+  "exact_804_container_restart": "PASS",
+  "new_market_foundation_container_scope": "Not included in the804image; installed wheel and host-tested",
+  "broker_connections": 0,
+  "orders": 0,
+  "paid_services": 0,
+  "public_deployment": false,
+  "T4": "T4_NOT_CERTIFIED"
+}

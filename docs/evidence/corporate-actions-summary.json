@@ -1,0 +1,15 @@
+{
+  "module": "gig.data.actions",
+  "test_count": 23,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "ruff": "PASS",
+  "mypy": "PASS",
+  "compileall": "PASS",
+  "git_diff_check": "PASS",
+  "scope": "caller-evidenced point-in-time research; no broker/provider/economic validation",
+  "cash_convention": "exact ex-event wealth reinvestment with known ex-close",
+  "derived_feature_availability": "per-row adjusted_available_at; historical training rejects backdating",
+  "wire_maximum_case": "500 bars,128 actions through Contract.admit PASS"
+}

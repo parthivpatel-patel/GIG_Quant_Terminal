@@ -219,6 +219,24 @@ def analytics(kind: str, payload: dict[str, Any]) -> Contract:
     """Compute supported numerical research; no imports contact providers."""
     scope = f"analytics.{kind}"
     result: dict[str, Any]
+    if kind == "calendar":
+        from gig.data.calendars import calendar_analytics
+
+        return _response(calendar_analytics(payload), scope=scope,
+                         source="installed-exchange-calendar-rules", as_of=payload.get("as_of"))
+    if kind == "corporate-actions":
+        from gig.data.actions import adjust_bars
+
+        required = {"rows", "actions", "as_of", "mode", "source", "classification", "currency"}
+        if set(payload) != required:
+            raise ValueError("corporate action request fields do not match the contract")
+        result = adjust_bars(payload["rows"], payload["actions"], as_of=payload["as_of"],
+                             mode=payload["mode"], source=payload["source"],
+                             classification=payload["classification"], currency=payload["currency"])
+        if result.get("state") == "UNAVAILABLE":
+            return unavailable(scope)
+        return _response(result, scope=scope, source="caller-evidenced-corporate-action-research",
+                         as_of=payload["as_of"])
     if kind == "options":
         from gig.options import black_scholes, implied_volatility
         allowed = {"spot", "strike", "rate", "div", "vol", "ttm", "call", "market_price"}

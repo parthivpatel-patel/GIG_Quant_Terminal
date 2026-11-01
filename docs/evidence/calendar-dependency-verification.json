@@ -1,0 +1,41 @@
+{
+  "packages": [
+    {
+      "name": "exchange_calendars",
+      "version": "4.13.2",
+      "filename": "exchange_calendars-4.13.2-py3-none-any.whl",
+      "sha256": "fc5a2ad0d61b5c3a6539a3061cd4cbb55c59f4a903455cec7926e4b798919996",
+      "official_pypi_sha256_verified": true
+    },
+    {
+      "name": "pyluach",
+      "version": "2.3.0",
+      "filename": "pyluach-2.3.0-py3-none-any.whl",
+      "sha256": "4497b731aef59508b079dbf5f00bc5bf4329ac45090a6cd37b5a83756f0e69ab",
+      "official_pypi_sha256_verified": true
+    },
+    {
+      "name": "toolz",
+      "version": "1.2.0",
+      "filename": "toolz-1.2.0-py3-none-any.whl",
+      "sha256": "890f820b1cb8152785aaf9386d8707770110809035800985ca65cb24ce1120ef",
+      "official_pypi_sha256_verified": true
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.6",
+      "filename": "tzdata-2026.6-py2.py3-none-any.whl",
+      "sha256": "0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec",
+      "official_pypi_sha256_verified": true
+    },
+    {
+      "name": "korean_lunar_calendar",
+      "version": "0.4.0",
+      "filename": "korean_lunar_calendar-0.4.0-py3-none-any.whl",
+      "sha256": "c042e20de0bb702add6bec8d0f6da1ea8d3b170838e63846f70420cf341fe4e7",
+      "official_pypi_sha256_verified": true
+    }
+  ],
+  "base_dependencies_replaced": false,
+  "proxy_preserved": true
+}
