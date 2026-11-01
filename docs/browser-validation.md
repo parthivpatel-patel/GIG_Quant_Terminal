@@ -1,6 +1,6 @@
 # Browser validation
 
-The recovered terminal was exercised in **real headless Chromium 151.0.7922.34** through Playwright on 2026-11-01. The final integrated run passed **82 checks, zero failures**, with zero browser JavaScript exceptions. The separate Node DOM harness passed **38 smoke checks**; those checks are not browser rendering evidence.
+The recovered terminal was exercised in **real headless Chromium 151.0.7922.34** through Playwright on 2026-11-01. The final integrated run passed **87 checks, zero failures**, with zero browser JavaScript exceptions. The separate Node DOM harness passed **40 smoke checks**; those checks are not browser rendering evidence.
 
 ## Reproducing the browser run
 
@@ -21,6 +21,7 @@ The harness launches an isolated temporary-state HTTP service bound to `127.0.0.
 - Additional controls execute offline IEX protocol ingestion, point-in-time universe persistence and selection, real CPU BiLSTM training, saved-model inference using the returned identity, and preparation of a durable offline execution intent. Preparing an intent does not dispatch it.
 - An unconfigured FinBERT path produces HTTP 503, `ERROR`, `DEPENDENCY_UNAVAILABLE`, and no model output. Actual FinBERT inference with licensed, verified assets is covered separately by backend tests. The UI identifies the selected ProsusAI weights as CC-BY-NC-SA-4.0 noncommercial research only.
 - Local evidence selectors route sequence, sentiment, provider and execution requests to their backend contracts. Synthetic mode disables those selectors. A point-in-time universe identity is explicit and length bounded.
+- Persisted SYNTHETIC Treasury fixtures render as a rotating yield surface with a 2D projection, exact quote table, same-date spreads and explicit units. The public-acquisition control requires submission and never fetches on selection; actual public Treasury acquisition is verified separately in backend evidence.
 - Authored factor-space and options-volatility charts render; keyboard rotation changes actual canvas pixels, and a 2D alternative is available. Synthetic chart evidence remains labeled synthetic.
 - Dark and light themes pass the harness's computed visible-text contrast checks and the pinned axe WCAG A/AA automated rules on the tested pages.
 - 320, 375, 768, 1024 and 1920-pixel viewports have no horizontal document overflow; all workbench controls are geometrically inside the viewport. Focused skip navigation remains visible and preserves the selected section. Loading disables refresh; intercepted request failures clear stale successful metrics and show a safe error.
@@ -29,6 +30,6 @@ Reproducible UI defects repaired during this run included skip-link hash navigat
 
 ## Evidence and limits
 
-The validation command writes `report.json`, `server.txt`, desktop screenshots for both themes and `mobile-320.png` to the requested evidence directory. This session's final evidence is `/workspace/work/evidence/browser-checkpoint/`; earlier failing reports remain preserved in sibling directories. Evidence should be included in the independently verified recovery archive by the checkpoint owner.
+The validation command writes `report.json`, `server.txt`, desktop screenshots for both themes and `mobile-320.png` to the requested evidence directory. This session's final evidence is `/workspace/work/evidence/browser-curve-final/`; earlier failing reports remain preserved in sibling directories. Evidence should be included in the independently verified recovery archive by the checkpoint owner.
 
 This is automated Chromium evidence and limited screenshot inspection, not formal WCAG certification, screen-reader testing, cross-browser certification, ARM64 browser execution, provider connectivity validation, economic validation or production readiness. Axe incomplete findings remain in the report for manual review. T4 remains `T4_NOT_CERTIFIED`.

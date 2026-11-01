@@ -1,0 +1,11 @@
+{
+  "publication_commit": "95682e29c7a17ca8f51808e39132aa73911aa75d",
+  "source_commit": "5b8d38d285e44f2bf68972eac5838b84b559e518",
+  "external_download": "IMMUTABLE_GITHUB_RAW_URLS",
+  "artifact_hashes_verified": true,
+  "fresh_clone_and_fsck": "PASS",
+  "evidence_archive_files": 29,
+  "restricted_weights_included": false,
+  "independent_storage_provider": false,
+  "scope": "Independent download and restore verification; GitHub is the sole verified external storage service."
+}

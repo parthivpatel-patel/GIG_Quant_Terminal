@@ -194,7 +194,54 @@ def main() -> int:
                         if action == "train-sequence" and payload.get("state") == "AVAILABLE":
                             sequence_model = payload["data"]["model_id"]
 
+                    # Explicit local fixture setup for the new persisted rates view.
+                    # These authored quotes are SYNTHETIC, not a public acquisition.
+                    from gig.data.ingestion import ProviderWorkspace
+
+                    xml = b'<feed xmlns:m="urn:metadata" xmlns:d="urn:data">'
+                    for day, delta in (("2025-01-02", 0), ("2025-01-03", .1)):
+                        xml += (f'<entry><m:properties><d:NEW_DATE>{day}T00:00:00</d:NEW_DATE>'
+                                f'<d:BC_10YEAR>{4.25+delta}</d:BC_10YEAR>'
+                                f'<d:BC_2YEAR>{4.5+delta}</d:BC_2YEAR>'
+                                '<d:BC_3MONTH>4.6</d:BC_3MONTH></m:properties></entry>').encode()
+                    xml += b'</feed>'
+                    ProviderWorkspace(directory / "state").ingest_treasury_bytes(
+                        xml, year=2025, observed_at="2026-09-29T20:00:00Z")
                     navigate("markets")
+                    with page.expect_response(lambda response: "engine=provider" in response.url) as exchange:
+                        page.locator("#analysis-engine").select_option("provider")
+                    page.wait_for_function("!document.getElementById('refresh').disabled")
+                    rates = exchange.value.json()
+                    check("persisted rates chart retains synthetic fixture truth",
+                          rates.get("state") == "AVAILABLE" and rates["provenance"]["classification"] == "SYNTHETIC"
+                          and len(rates["data"]["chart"]["points"]) == 6)
+                    check("observed par-yield chart renders with declared units",
+                          page.locator("#chart-empty").is_hidden()
+                          and "percent per year" in page.locator("#chart-legend").inner_text())
+                    canvas = page.locator("#analytics-chart")
+                    first = canvas.screenshot()
+                    canvas.focus()
+                    page.keyboard.press("ArrowLeft")
+                    check("persisted yield surface rotates actual canvas", first != canvas.screenshot())
+                    page.locator("#view-2d").click()
+                    check("persisted yields have a 2D projection and exact table",
+                          "2D projection" in page.locator("#chart-legend").inner_text()
+                          and page.locator("#observations-table tbody tr").count() == 6)
+                    page.locator("#view-3d").click()
+                    submitted = []
+
+                    def track_ingestion(request):
+                        if request.method == "POST" and request.url.endswith("/api/v1/workspace/ingest"):
+                            submitted.append(request.url)
+
+                    page.on("request", track_ingestion)
+                    page.locator("#analytics-kind").select_option("workspace-treasury")
+                    check("public Treasury control declares acquisition and requires explicit submission",
+                          json.loads(page.locator("#analytics-input").input_value()) == {
+                              "provider": "us_treasury", "mode": "PUBLIC_OBSERVED", "year": 2025}
+                          and "fixed official Treasury" in page.locator("#workbench-scope").inner_text()
+                          and not submitted)
+                    page.remove_listener("request", track_ingestion)
                     for theme in ("dark", "light"):
                         page.evaluate("theme=>{localStorage.setItem('gig-theme',theme);document.documentElement.dataset.theme=theme}", arg=theme)
                         page.locator("#refresh").click()

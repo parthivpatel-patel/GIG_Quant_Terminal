@@ -1,0 +1,2084 @@
+{
+  "content_sha256": "fc96874d60ae0cfb8b5b342ae2015bd277ef2815b8a5b07219782b6130f0a7ce",
+  "data": {
+    "chart": {
+      "axes": [
+        {
+          "key": "maturity_years",
+          "label": "Quoted tenor",
+          "unit": "nominal years"
+        },
+        {
+          "key": "observation_day_offset",
+          "label": "Observation date",
+          "unit": "signed calendar days from latest date"
+        },
+        {
+          "key": "yield_percent",
+          "label": "Par yield",
+          "unit": "percent per year"
+        }
+      ],
+      "interpolated": false,
+      "kind": "yield-curve-surface",
+      "points": [
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-19",
+          "maturity_years": 0.5,
+          "observation_day_offset": -12,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.6
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-19",
+          "maturity_years": 7.0,
+          "observation_day_offset": -12,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.91
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 0.08333333333333333,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1MONTH",
+          "yield_percent": 3.72
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 0.125,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1_5MONTH",
+          "yield_percent": 3.71
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 0.16666666666666666,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2MONTH",
+          "yield_percent": 3.71
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 0.25,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3MONTH",
+          "yield_percent": 3.64
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 0.3333333333333333,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_4MONTH",
+          "yield_percent": 3.65
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 0.5,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.6
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 1.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1YEAR",
+          "yield_percent": 3.53
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 2.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2YEAR",
+          "yield_percent": 3.44
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 3.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3YEAR",
+          "yield_percent": 3.56
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 5.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_5YEAR",
+          "yield_percent": 3.71
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 7.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.93
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 10.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_10YEAR",
+          "yield_percent": 4.17
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 20.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_20YEAR",
+          "yield_percent": 4.78
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-22",
+          "maturity_years": 30.0,
+          "observation_day_offset": -9,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_30YEAR",
+          "yield_percent": 4.84
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 0.08333333333333333,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1MONTH",
+          "yield_percent": 3.71
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 0.125,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1_5MONTH",
+          "yield_percent": 3.72
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 0.16666666666666666,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2MONTH",
+          "yield_percent": 3.7
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 0.25,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3MONTH",
+          "yield_percent": 3.65
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 0.3333333333333333,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_4MONTH",
+          "yield_percent": 3.66
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 0.5,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.59
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 1.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1YEAR",
+          "yield_percent": 3.52
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 2.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2YEAR",
+          "yield_percent": 3.48
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 3.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3YEAR",
+          "yield_percent": 3.58
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 5.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_5YEAR",
+          "yield_percent": 3.72
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 7.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.94
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 10.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_10YEAR",
+          "yield_percent": 4.18
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 20.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_20YEAR",
+          "yield_percent": 4.78
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-23",
+          "maturity_years": 30.0,
+          "observation_day_offset": -8,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_30YEAR",
+          "yield_percent": 4.83
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 0.08333333333333333,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1MONTH",
+          "yield_percent": 3.72
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 0.125,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1_5MONTH",
+          "yield_percent": 3.73
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 0.16666666666666666,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2MONTH",
+          "yield_percent": 3.74
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 0.25,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3MONTH",
+          "yield_percent": 3.69
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 0.3333333333333333,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_4MONTH",
+          "yield_percent": 3.67
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 0.5,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.59
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 1.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1YEAR",
+          "yield_percent": 3.5
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 2.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2YEAR",
+          "yield_percent": 3.47
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 3.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3YEAR",
+          "yield_percent": 3.56
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 5.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_5YEAR",
+          "yield_percent": 3.7
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 7.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.91
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 10.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_10YEAR",
+          "yield_percent": 4.15
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 20.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_20YEAR",
+          "yield_percent": 4.75
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-24",
+          "maturity_years": 30.0,
+          "observation_day_offset": -7,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_30YEAR",
+          "yield_percent": 4.79
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 0.08333333333333333,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1MONTH",
+          "yield_percent": 3.7
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 0.125,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1_5MONTH",
+          "yield_percent": 3.69
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 0.16666666666666666,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2MONTH",
+          "yield_percent": 3.72
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 0.25,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3MONTH",
+          "yield_percent": 3.64
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 0.3333333333333333,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_4MONTH",
+          "yield_percent": 3.66
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 0.5,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.58
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 1.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1YEAR",
+          "yield_percent": 3.49
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 2.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2YEAR",
+          "yield_percent": 3.46
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 3.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3YEAR",
+          "yield_percent": 3.54
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 5.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_5YEAR",
+          "yield_percent": 3.68
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 7.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.89
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 10.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_10YEAR",
+          "yield_percent": 4.14
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 20.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_20YEAR",
+          "yield_percent": 4.76
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-26",
+          "maturity_years": 30.0,
+          "observation_day_offset": -5,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_30YEAR",
+          "yield_percent": 4.81
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 0.08333333333333333,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1MONTH",
+          "yield_percent": 3.69
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 0.125,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1_5MONTH",
+          "yield_percent": 3.7
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 0.16666666666666666,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2MONTH",
+          "yield_percent": 3.7
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 0.25,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3MONTH",
+          "yield_percent": 3.68
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 0.3333333333333333,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_4MONTH",
+          "yield_percent": 3.66
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 0.5,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.59
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 1.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1YEAR",
+          "yield_percent": 3.48
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 2.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2YEAR",
+          "yield_percent": 3.45
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 3.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3YEAR",
+          "yield_percent": 3.51
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 5.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_5YEAR",
+          "yield_percent": 3.67
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 7.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.88
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 10.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_10YEAR",
+          "yield_percent": 4.12
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 20.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_20YEAR",
+          "yield_percent": 4.75
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-29",
+          "maturity_years": 30.0,
+          "observation_day_offset": -2,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_30YEAR",
+          "yield_percent": 4.8
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 0.08333333333333333,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1MONTH",
+          "yield_percent": 3.65
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 0.125,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1_5MONTH",
+          "yield_percent": 3.71
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 0.16666666666666666,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2MONTH",
+          "yield_percent": 3.65
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 0.25,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3MONTH",
+          "yield_percent": 3.65
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 0.3333333333333333,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_4MONTH",
+          "yield_percent": 3.63
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 0.5,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.59
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 1.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1YEAR",
+          "yield_percent": 3.47
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 2.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2YEAR",
+          "yield_percent": 3.45
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 3.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3YEAR",
+          "yield_percent": 3.5
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 5.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_5YEAR",
+          "yield_percent": 3.68
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 7.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.89
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 10.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_10YEAR",
+          "yield_percent": 4.14
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 20.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_20YEAR",
+          "yield_percent": 4.76
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-30",
+          "maturity_years": 30.0,
+          "observation_day_offset": -1,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_30YEAR",
+          "yield_percent": 4.81
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 0.08333333333333333,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1MONTH",
+          "yield_percent": 3.74
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 0.125,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1_5MONTH",
+          "yield_percent": 3.75
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 0.16666666666666666,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2MONTH",
+          "yield_percent": 3.67
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 0.25,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3MONTH",
+          "yield_percent": 3.67
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 0.3333333333333333,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_4MONTH",
+          "yield_percent": 3.63
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 0.5,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_6MONTH",
+          "yield_percent": 3.59
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 1.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_1YEAR",
+          "yield_percent": 3.48
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 2.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_2YEAR",
+          "yield_percent": 3.47
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 3.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_3YEAR",
+          "yield_percent": 3.55
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 5.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_5YEAR",
+          "yield_percent": 3.73
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 7.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_7YEAR",
+          "yield_percent": 3.94
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 10.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_10YEAR",
+          "yield_percent": 4.18
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 20.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_20YEAR",
+          "yield_percent": 4.79
+        },
+        {
+          "available_at": "2026-11-01T23:19:48.924134+00:00",
+          "classification": "HISTORICAL",
+          "event_date": "2025-12-31",
+          "maturity_years": 30.0,
+          "observation_day_offset": 0,
+          "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+          "tenor": "BC_30YEAR",
+          "yield_percent": 4.84
+        }
+      ],
+      "source_value_precision": "Exact source strings retained in table; chart coordinates are floats",
+      "title": "Observed Treasury par yields"
+    },
+    "description": "Observed par yields, not bootstrapped spot rates or tradable bond prices. Lines join observed samples without creating quotes. Tenor years are nominal display coordinates; six weeks uses 1.5/12 years.",
+    "event_time_precision": "DATE_ONLY",
+    "freshness_basis": "ACQUISITION_TIME",
+    "historical_publication_time": "UNKNOWN",
+    "metrics": {
+      "latest_observation_date": "2025-12-31",
+      "latest_visible_tenors": 14,
+      "observations": 3455,
+      "spread_10y_2y": {
+        "description": "Same-date par-yield difference on 2025-12-31",
+        "state": "AVAILABLE",
+        "unit": "basis_points",
+        "value": "71.00"
+      },
+      "spread_10y_3m": {
+        "description": "Same-date par-yield difference on 2025-12-31",
+        "state": "AVAILABLE",
+        "unit": "basis_points",
+        "value": "51.00"
+      },
+      "spread_30y_5y": {
+        "description": "Same-date par-yield difference on 2025-12-31",
+        "state": "AVAILABLE",
+        "unit": "basis_points",
+        "value": "111.00"
+      }
+    },
+    "notes": [
+      "Spreads use only the latest visible date; missing tenors remain unavailable.",
+      "Acquisition freshness does not establish current market observation freshness.",
+      "Historical publication times remain unknown; no historical trading availability is inferred."
+    ],
+    "query_as_of": "2026-11-01T23:19:48.924134+00:00",
+    "rows": [
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-19",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.60"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-19",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.91"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_10YEAR",
+        "yield_percent": "4.17"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1MONTH",
+        "yield_percent": "3.72"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1YEAR",
+        "yield_percent": "3.53"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1_5MONTH",
+        "yield_percent": "3.71"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_20YEAR",
+        "yield_percent": "4.78"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2MONTH",
+        "yield_percent": "3.71"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2YEAR",
+        "yield_percent": "3.44"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_30YEAR",
+        "yield_percent": "4.84"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3MONTH",
+        "yield_percent": "3.64"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3YEAR",
+        "yield_percent": "3.56"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_4MONTH",
+        "yield_percent": "3.65"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_5YEAR",
+        "yield_percent": "3.71"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.60"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-22",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.93"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_10YEAR",
+        "yield_percent": "4.18"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1MONTH",
+        "yield_percent": "3.71"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1YEAR",
+        "yield_percent": "3.52"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1_5MONTH",
+        "yield_percent": "3.72"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_20YEAR",
+        "yield_percent": "4.78"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2MONTH",
+        "yield_percent": "3.70"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2YEAR",
+        "yield_percent": "3.48"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_30YEAR",
+        "yield_percent": "4.83"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3MONTH",
+        "yield_percent": "3.65"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3YEAR",
+        "yield_percent": "3.58"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_4MONTH",
+        "yield_percent": "3.66"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_5YEAR",
+        "yield_percent": "3.72"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.59"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-23",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.94"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_10YEAR",
+        "yield_percent": "4.15"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1MONTH",
+        "yield_percent": "3.72"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1YEAR",
+        "yield_percent": "3.50"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1_5MONTH",
+        "yield_percent": "3.73"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_20YEAR",
+        "yield_percent": "4.75"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2MONTH",
+        "yield_percent": "3.74"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2YEAR",
+        "yield_percent": "3.47"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_30YEAR",
+        "yield_percent": "4.79"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3MONTH",
+        "yield_percent": "3.69"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3YEAR",
+        "yield_percent": "3.56"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_4MONTH",
+        "yield_percent": "3.67"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_5YEAR",
+        "yield_percent": "3.70"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.59"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-24",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.91"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_10YEAR",
+        "yield_percent": "4.14"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1MONTH",
+        "yield_percent": "3.70"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1YEAR",
+        "yield_percent": "3.49"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1_5MONTH",
+        "yield_percent": "3.69"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_20YEAR",
+        "yield_percent": "4.76"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2MONTH",
+        "yield_percent": "3.72"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2YEAR",
+        "yield_percent": "3.46"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_30YEAR",
+        "yield_percent": "4.81"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3MONTH",
+        "yield_percent": "3.64"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3YEAR",
+        "yield_percent": "3.54"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_4MONTH",
+        "yield_percent": "3.66"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_5YEAR",
+        "yield_percent": "3.68"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.58"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-26",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.89"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_10YEAR",
+        "yield_percent": "4.12"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1MONTH",
+        "yield_percent": "3.69"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1YEAR",
+        "yield_percent": "3.48"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1_5MONTH",
+        "yield_percent": "3.70"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_20YEAR",
+        "yield_percent": "4.75"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2MONTH",
+        "yield_percent": "3.70"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2YEAR",
+        "yield_percent": "3.45"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_30YEAR",
+        "yield_percent": "4.80"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3MONTH",
+        "yield_percent": "3.68"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3YEAR",
+        "yield_percent": "3.51"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_4MONTH",
+        "yield_percent": "3.66"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_5YEAR",
+        "yield_percent": "3.67"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.59"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-29",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.88"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_10YEAR",
+        "yield_percent": "4.14"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1MONTH",
+        "yield_percent": "3.65"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1YEAR",
+        "yield_percent": "3.47"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1_5MONTH",
+        "yield_percent": "3.71"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_20YEAR",
+        "yield_percent": "4.76"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2MONTH",
+        "yield_percent": "3.65"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2YEAR",
+        "yield_percent": "3.45"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_30YEAR",
+        "yield_percent": "4.81"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3MONTH",
+        "yield_percent": "3.65"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3YEAR",
+        "yield_percent": "3.50"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_4MONTH",
+        "yield_percent": "3.63"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_5YEAR",
+        "yield_percent": "3.68"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.59"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-30",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.89"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_10YEAR",
+        "yield_percent": "4.18"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1MONTH",
+        "yield_percent": "3.74"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1YEAR",
+        "yield_percent": "3.48"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_1_5MONTH",
+        "yield_percent": "3.75"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_20YEAR",
+        "yield_percent": "4.79"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2MONTH",
+        "yield_percent": "3.67"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_2YEAR",
+        "yield_percent": "3.47"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_30YEAR",
+        "yield_percent": "4.84"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3MONTH",
+        "yield_percent": "3.67"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_3YEAR",
+        "yield_percent": "3.55"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_4MONTH",
+        "yield_percent": "3.63"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_5YEAR",
+        "yield_percent": "3.73"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_6MONTH",
+        "yield_percent": "3.59"
+      },
+      {
+        "available_at": "2026-11-01T23:19:48.924134+00:00",
+        "classification": "HISTORICAL",
+        "event_date": "2025-12-31",
+        "publication_time": "UNKNOWN",
+        "source": "US_TREASURY",
+        "source_sha256": "721bff0f53d4fa3c8c9eed0cfee36caf0432ab9e522050c80cf6afc8310bec66",
+        "tenor": "BC_7YEAR",
+        "yield_percent": "3.94"
+      }
+    ],
+    "rows_complete": false,
+    "rows_total": 3455,
+    "title": "Treasury yield observations",
+    "units": "percent_per_year"
+  },
+  "error": null,
+  "provenance": {
+    "as_of": "2026-11-01T23:19:48.924134+00:00",
+    "classification": "HISTORICAL",
+    "evidence_state": "PUBLIC_SOURCE_ACQUISITION",
+    "instrument_identity": null,
+    "model_identity": null,
+    "model_version": null,
+    "readiness": "RESEARCH_ONLY",
+    "source": "US_TREASURY",
+    "source_identity": null
+  },
+  "schema_version": "1",
+  "scope": "workspace.providers",
+  "state": "AVAILABLE"
+}

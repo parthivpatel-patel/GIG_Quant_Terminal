@@ -17,7 +17,7 @@
     { id: "operations", label: "Operations", icon: "M3 12h4l3-7 4 14 3-7h4M4 3h16M4 21h16", description: "Dependency readiness, safe configuration, restart recovery, and operating status." },
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
-  const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
+  const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   const state = { section: sections[0], mode: "local", payload: null, rows: [], columns: [], sort: null, request: null, chart: null, points: [], projected: [], angle: -.55, tilt: .40, zoom: 1, dimension: 3, drag: null };
   const numberFormat = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 7 });
   const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -435,6 +435,7 @@
   const sequenceStamp = hour => new Date(Date.UTC(2026, 10, 1, hour)).toISOString();
   examples["workspace-train-sequence"] = { source: "authored-synthetic-sequence-workbench-v1", classification: "SYNTHETIC", sequence_length: 4, train_size: 24, hidden_size: 4, epochs: 4, learning_rate: .02, seed: 17, rows: Array.from({ length: 32 }, (_, index) => ({ timestamp: sequenceStamp(index), available_at: sequenceStamp(index), label_end: sequenceStamp(index + 1), features: { momentum: Math.sin(index / 3), reversal: Math.cos(index / 4) }, target: .5 * Math.sin(index / 3) - .3 * Math.cos(index / 4) })) };
   examples["workspace-predict-sequence"] = { model_id: "0".repeat(64), rows: examples["workspace-train-sequence"].rows.map(({ timestamp, available_at, features }) => ({ timestamp, available_at, features })) };
+  examples["workspace-treasury"] = { provider: "us_treasury", mode: "PUBLIC_OBSERVED", year: 2025 };
   examples["workspace-finbert"] = examples["workspace-news"];
   examples["workspace-execution-engine"] = { operation: "prepare", now: fixtureTimestamp(28), client_id: "authored-synthetic-offline-intent-1", symbol: "SYN001", side: "buy", quantity: "1", reference_price: "100", price_asof: fixtureTimestamp(28), max_notional: "1000", max_position_quantity: "10" };
   function loadExample() {
@@ -443,9 +444,11 @@
     $("run-analysis").textContent = workspaceActions[kind] ? (kind === "workspace-simulate" ? "Run offline simulation" : kind === "workspace-research" ? "Run and save research" : "Admit and save locally") : "Run local calculation";
     if (kind === "workspace-train-sequence") $("run-analysis").textContent = "Train CPU research model";
     if (kind === "workspace-predict-sequence") $("run-analysis").textContent = "Run saved model inference";
+    if (kind === "workspace-treasury") $("run-analysis").textContent = "Fetch public Treasury data";
     if (kind === "workspace-finbert") $("run-analysis").textContent = "Analyze with local licensed model";
     if (kind === "workspace-execution-engine") $("run-analysis").textContent = "Prepare offline intent";
     const specialScopes = {
+      "workspace-treasury": "Submitting this action fetches historical par yields from the fixed official Treasury public endpoint and persists original XML under CC0-1.0 with attribution. No credentials or broker connection. Select provider evidence in Markets after acquisition. Acquisition freshness does not mean current market quotes.",
       "workspace-ingest": "Offline authored SYNTHETIC IEX protocol fixture only. No Alpaca connection, credentials or provider-observed market data. IEX is not SIP.",
       "workspace-universe": "Persist authored SYNTHETIC universe membership with effective and knowledge timestamps. Caller identity claims are not provider verification.",
       "workspace-train-sequence": "Train and persist a real CPU BiLSTM on authored SYNTHETIC inputs. Model output is research only and is not an approved trading signal.",

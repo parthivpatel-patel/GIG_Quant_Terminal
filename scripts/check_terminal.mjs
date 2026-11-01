@@ -354,6 +354,19 @@ for (const action of ["ingest", "universe", "train-sequence", "predict-sequence"
     assert.match(get("workbench-scope").textContent, /SYNTHETIC|research/);
   });
 }
+get("analytics-kind").value = "workspace-treasury";
+const beforeTreasury = calls.length;
+await get("analytics-kind").dispatch("change"); await settle();
+checked("public Treasury selection declares acquisition without fetching automatically", () => {
+  assert.equal(calls.length, beforeTreasury);
+  assert.equal(JSON.parse(get("analytics-input").value).mode, "PUBLIC_OBSERVED");
+  assert.match(get("workbench-scope").textContent, /fixed official Treasury/);
+});
+await get("run-analysis").dispatch("click"); await settle();
+checked("explicit Treasury submission uses the bounded provider contract", () => {
+  assert.equal(calls.at(-1).url, "/api/v1/workspace/ingest");
+  assert.deepEqual(JSON.parse(calls.at(-1).options.body), { provider: "us_treasury", mode: "PUBLIC_OBSERVED", year: 2025 });
+});
 get("analytics-kind").value = "workspace-bars";
 await get("analytics-kind").dispatch("change");
 checked("all four explicit workspace actions use distinct JSON endpoints without automatic admission", () => {

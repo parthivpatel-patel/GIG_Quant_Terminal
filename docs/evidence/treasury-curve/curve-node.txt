@@ -1,0 +1,41 @@
+PASS initial request uses local mode and renders explicit unavailable
+PASS all twelve sections request typed backend paths
+PASS local queries use the visible explicit freshness policy
+PASS point-in-time input preserves original timezone and nanosecond precision
+PASS synthetic mode requires explicit selection and shows provenance
+PASS all twelve sections retain explicitly selected synthetic mode
+PASS zero, unknown, signed zero and exact scalar tags remain distinct
+PASS provider text is rendered as text without HTML injection
+PASS large identity integers sort without binary64 rounding
+PASS descending sort keeps unknown identities last
+PASS table filter preserves source text and matches observations
+PASS CSV exports visible rows, formula-safe strings and exact identities as text
+PASS 3D chart draws finite observations
+PASS 2D alternative retains axis explanation and access state
+PASS keyboard chart navigation and light theme execute
+PASS mixed exact decimal/integer sorting handles subnormal-scale and huge exponents
+PASS stale snapshots retain timestamp and visible stale disclosure
+PASS unknown is not displayed as empty success or zero
+PASS HTTP error preserves the public typed backend error
+PASS invalid ERROR-with-data envelope cannot render apparent success
+PASS wrong schema, unknown-with-data and stale-without-time are rejected
+PASS network failures expose a generic error and clear prior data
+PASS workbench sends original JSON text including duplicate keys and exact integer lexemes
+PASS invalid workbench JSON is rejected before transport
+PASS explicit ingest fixture uses its backend contract without automatic submission
+PASS explicit universe fixture uses its backend contract without automatic submission
+PASS explicit train-sequence fixture uses its backend contract without automatic submission
+PASS explicit predict-sequence fixture uses its backend contract without automatic submission
+PASS explicit finbert fixture uses its backend contract without automatic submission
+PASS explicit execution-engine fixture uses its backend contract without automatic submission
+PASS public Treasury selection declares acquisition without fetching automatically
+PASS explicit Treasury submission uses the bounded provider contract
+PASS all four explicit workspace actions use distinct JSON endpoints without automatic admission
+PASS rejected workspace admission preserves exact raw evidence and cannot render successful save
+PASS persisted caller source claims never become vendor authenticity
+PASS calendar research uses explicit calculation without admitting market data
+PASS corporate-actions research uses explicit calculation without admitting market data
+PASS explicit local evidence views preserve engine selection in backend requests
+PASS point-in-time universe selection uses explicit saved identity
+PASS synthetic demonstrations cannot impersonate a selected local model engine
+Verified 40 frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.

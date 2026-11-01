@@ -17,7 +17,6 @@ import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, date, datetime
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +25,7 @@ import pandas as pd
 from gig.artifacts import write_immutable
 from gig.data.calendars import ExchangeCalendar
 from gig.data.validated import DataSnapshot, PointInTimeStore, admit_bars
+from gig.research.rates import TENOR_YEARS, curve_analytics, quoted_yield
 from gig.service.contracts import Contract, State
 from gig.service.serialization import dumps, loads, public_error
 from gig.timestamps import aware_timestamp
@@ -40,24 +40,7 @@ _TREASURY_LICENSE_SOURCE = (
     "https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates"
 )
 _SYMBOL = re.compile(r"[A-Z][A-Z0-9.-]{0,14}\Z")
-_TENORS = frozenset(
-    {
-        "BC_1MONTH",
-        "BC_1_5MONTH",
-        "BC_2MONTH",
-        "BC_3MONTH",
-        "BC_4MONTH",
-        "BC_6MONTH",
-        "BC_1YEAR",
-        "BC_2YEAR",
-        "BC_3YEAR",
-        "BC_5YEAR",
-        "BC_7YEAR",
-        "BC_10YEAR",
-        "BC_20YEAR",
-        "BC_30YEAR",
-    }
-)
+_TENORS = frozenset(TENOR_YEARS)
 
 
 def _bytes(value: Any) -> bytes:
@@ -638,12 +621,7 @@ def parse_treasury(body: bytes, observed_at: str) -> list[dict[str, Any]]:
             value = properties.get(tenor)
             if value is None:
                 continue
-            try:
-                rate = Decimal(value)
-            except InvalidOperation:
-                raise ValueError("invalid Treasury yield") from None
-            if not rate.is_finite() or not Decimal("-100") <= rate <= Decimal("100"):
-                raise ValueError("Treasury yield exceeds finite domain")
+            rate = quoted_yield(value)
             identity = (event, tenor)
             if identity in seen:
                 raise ValueError("duplicate Treasury observation identity")
@@ -1074,10 +1052,12 @@ class ProviderWorkspace:
             if (cutoff - observed).total_seconds() > max_age_seconds
             else State.AVAILABLE
         )
+        analytics = curve_analytics(rows)
         return self._contract(
             {
                 "title": "Treasury yield observations",
-                "metrics": {"observations": len(allrows)},
+                **analytics,
+                "metrics": {"observations": len(allrows), **analytics["metrics"]},
                 "rows": rows,
                 "rows_total": len(allrows),
                 "rows_complete": len(rows) == len(allrows),
