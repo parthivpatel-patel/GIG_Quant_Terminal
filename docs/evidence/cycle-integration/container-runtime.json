@@ -1,0 +1,27 @@
+{
+  "result": "PASS",
+  "base_image": "sha256:1931078c61abb38a4ddd2fe68ad671b9828314ee4bea3c27babf5ca14f64a339",
+  "image_id": "sha256:1931078c61abb38a4ddd2fe68ad671b9828314ee4bea3c27babf5ca14f64a339",
+  "wheel_sha256": "45f6626086260e2c71db4f75b9653c7588221cafe6604d0afa13ccd04c21a87d",
+  "architecture": "x86_64",
+  "uid": 10001,
+  "network": "none",
+  "published_ports": [],
+  "read_only_root": true,
+  "persistent_restart_views": [
+    "execution",
+    "portfolio",
+    "risk"
+  ],
+  "content_hashes_before_after": {
+    "execution": "83bb9106230f092accfec8b7763082136e6a539d6da97afb34c668026f985018",
+    "portfolio": "222e514c0d80824f354a3c9633ae14c46df4717d91325224ee6d85869b4a57cd",
+    "risk": "03fd4ba773154ff087139ba6b6410849d9194af33a7bb5fe4a796faccb34e5e8"
+  },
+  "ack_position_count": 0,
+  "partial_fill_quantity": "2",
+  "kill_switch_persisted": true,
+  "nav": null,
+  "broker_connections": 0,
+  "scope": "cached validated base with read-only bind of independently installed native wheel; not a new Docker image or ARM64 build"
+}

@@ -62,6 +62,14 @@
       "sha256": "f28c36d3a47fcc20051b2f36db13f79dcbbc79fbda9fc5ecd9888092b9df3595"
     },
     {
+      "path": "container-reproduction.py",
+      "sha256": "1884bb991a3ebed833e81e38e0b1bfa8664a450adf4098362cf9adf634f44e74"
+    },
+    {
+      "path": "container-runtime.json",
+      "sha256": "2e42fe6842a1e7b2ea73a2b3f46babdab88ed740c18e575b61a7b76c398a3172"
+    },
+    {
       "path": "cycle-coverage.json",
       "sha256": "f61593a59cd835b16d483718e262016170d5fd0f07da4cc2cf6964889ff23d42"
     },
@@ -120,6 +128,16 @@
     {
       "path": "provider-public-final.json",
       "sha256": "6b293a34f991e98b7265eb7b8352add84f62c6a9bfbbae8f40223dfbe4fbd921"
+    },
+    {
+      "path": "remote-source-verification.json",
+      "sha256": "5778180145384e78008669a631a9af725918f90a9280cb63c0e52f682741c8dd"
     }
-  ]
+  ],
+  "source_commit": "5b8d38d285e44f2bf68972eac5838b84b559e518",
+  "container_restart": {
+    "result": "PASS",
+    "scope": "cached base with installed wheel bind; x86_64 only",
+    "fresh_image_build": "HOST_VFS_STORAGE_EXHAUSTED"
+  }
 }

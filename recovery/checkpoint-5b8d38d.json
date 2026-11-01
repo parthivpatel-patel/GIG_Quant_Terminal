@@ -1,0 +1,20 @@
+{
+  "source_commit": "5b8d38d285e44f2bf68972eac5838b84b559e518",
+  "branch": "development/gig-accelerated-2026",
+  "complete_git_history": true,
+  "restricted_model_weights_included": false,
+  "credentials_included": false,
+  "external_recovery_verification": "PENDING_DOWNLOAD_AND_RESTORE",
+  "artifacts": [
+    {
+      "path": "checkpoint-5b8d38d.bundle",
+      "bytes": 19180476,
+      "sha256": "d2743a3e847496b6cc64e051a3769d270c82a220b96981ca8aa0949769bfdce2"
+    },
+    {
+      "path": "evidence-5b8d38d.tar.gz",
+      "bytes": 765422,
+      "sha256": "ac2b61c7d01d30e716af3cf837f85031f17a07102adf0fe5fe688daf390e98e0"
+    }
+  ]
+}
