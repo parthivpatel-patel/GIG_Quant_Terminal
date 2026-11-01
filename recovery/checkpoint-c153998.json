@@ -1,0 +1,22 @@
+{
+  "source_commit": "c153998517213baf76b15d1ebcb7a5f77af0d523",
+  "branch": "development/gig-accelerated-2026",
+  "bundle_kind": "INCREMENTAL",
+  "required_baseline_commit": "5b8d38d285e44f2bf68972eac5838b84b559e518",
+  "required_baseline_bundle": "checkpoint-5b8d38d.bundle",
+  "required_baseline_sha256": "d2743a3e847496b6cc64e051a3769d270c82a220b96981ca8aa0949769bfdce2",
+  "restricted_weights_included": false,
+  "artifacts": [
+    {
+      "path": "checkpoint-c153998-update.bundle",
+      "bytes": 20969367,
+      "sha256": "fd3d1f2d757894878c618388b9a4f3b94284be2761deb043612eec105f151de3"
+    },
+    {
+      "path": "evidence-c153998.tar.gz",
+      "bytes": 1016090,
+      "sha256": "c1d3c4a58044772382b11bfc9e2a4288930a98a89db329d1560aaf0a9db32bf7"
+    }
+  ],
+  "verification": "Local bundle verification passed; independent external download and bare restoration pending"
+}
