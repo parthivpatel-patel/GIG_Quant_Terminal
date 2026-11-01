@@ -17,7 +17,7 @@
     { id: "operations", label: "Operations", icon: "M3 12h4l3-7 4 14 3-7h4M4 3h16M4 21h16", description: "Dependency readiness, safe configuration, restart recovery, and operating status." },
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
-  const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate" };
+  const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   const state = { section: sections[0], mode: "local", payload: null, rows: [], columns: [], sort: null, request: null, chart: null, points: [], projected: [], angle: -.55, tilt: .40, zoom: 1, dimension: 3, drag: null };
   const numberFormat = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 7 });
   const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -80,7 +80,7 @@
   }
   function nav() {
     const fragment = document.createDocumentFragment();
-    sections.forEach((section, index) => {
+    sections.forEach((section) => {
       const link = el("a", "nav-link");
       link.href = `#${section.id}`;
       link.title = section.label;
@@ -94,7 +94,6 @@
       svg.append(path);
       icon.append(svg);
       link.append(icon, el("span", "", section.label));
-      if (index === 0) link.append(el("span", "nav-shortcut", "⌘"));
       fragment.append(link);
     });
     $("section-nav").append(fragment);
@@ -123,6 +122,7 @@
     loadSection();
   }
   async function loadSection() {
+    $("universe-id").disabled = state.mode !== "local" || $("analysis-engine").value !== "provider";
     if (state.request) state.request.abort();
     const controller = new AbortController();
     state.request = controller;
@@ -145,6 +145,14 @@
         const maximumAge = $("freshness-policy").value;
         if (!["3600", "86400", "604800"].includes(maximumAge)) throw new Error("Unsupported freshness policy.");
         query += `&max_age_seconds=${maximumAge}`;
+        const engine = $("analysis-engine").value || "default";
+        if (!["default", "sequence", "finbert", "provider", "execution-engine"].includes(engine)) throw new Error("Unsupported local evidence view.");
+        if (engine !== "default") query += `&engine=${encodeURIComponent(engine)}`;
+        const universe = $("universe-id").value;
+        if (engine === "provider" && universe) {
+          if (universe.length > 128) throw new Error("Universe identity exceeds supported length.");
+          query += `&universe_id=${encodeURIComponent(universe)}`;
+        }
         // The server admits aware timestamps. Keep the original text so
         // browser Date parsing cannot truncate nanosecond point-in-time data.
         const cutoff = $("replay-asof").value;
@@ -421,11 +429,31 @@
   examples["workspace-news"] = { as_of: fixtureTimestamp(28), aliases: { "SYN001": "SYN001" }, articles: [{ source: "authored-synthetic-workbench-v1", article_id: "synthetic-fixture-news-1", url: "", license: "Authored synthetic research fixture", title: "SYN001 reports profit growth", body: "This authored synthetic example mentions SYN001. Profit growth is a lexical research input, not an observed article or validated signal.", published_at: fixtureTimestamp(28), available_at: fixtureTimestamp(28), symbols: ["SYN001"] }] };
   examples["workspace-research"] = { source: "authored-synthetic-workbench-v1", classification: "SYNTHETIC", model: "ridge", min_train: 10, test_size: 5, embargo: 1, rows: Array.from({ length: 28 }, (_, index) => ({ timestamp: fixtureTimestamp(index + 1), available_at: fixtureTimestamp(index + 1), label_end: fixtureTimestamp(index + 2), features: { authored_factor: Math.sin(index / 3), lagged_feature: Math.cos(index / 4) }, target: .01 * Math.sin((index + 1) / 3) })) };
   examples["workspace-simulate"] = { source_id: "authored-synthetic-workbench-v1", classification: "SYNTHETIC", currency: "USD", run_id: "authored-synthetic-rehearsal-1", asof: fixtureTimestamp(28), now: fixtureTimestamp(28), scores: { SYN001: 1, SYN002: -1 }, prices: { SYN001: 113.5, SYN002: 44.6 }, sectors: { SYN001: "Authored sector A", SYN002: "Authored sector B" }, nav: 1000000, n_long: 1, n_short: 1 };
+  const fixtureInstrument = { instrument_id: "SYN001", symbol: "SYN001", calendar: "XNYS", currency: "USD" };
+  examples["workspace-ingest"] = { provider: "alpaca_iex", mode: "OFFLINE_FIXTURE", job_id: "authored-synthetic-iex-protocol-v1", instruments: [fixtureInstrument], start: "2026-09-28T14:30:00Z", end: "2026-09-28T14:31:00Z", timeframe: "1Min", now: "2026-09-28T14:32:00Z", pages: [{ observed_at: "2026-09-28T14:32:00Z", body: { bars: { SYN001: [{ t: "2026-09-28T14:30:00Z", o: 100, h: 101, l: 99, c: 100.5, v: 1000 }] }, next_page_token: null } }] };
+  examples["workspace-universe"] = { universe_id: "authored-synthetic-universe", source: "authored-synthetic-workbench-v1", effective_at: fixtureTimestamp(28), available_at: fixtureTimestamp(28), members: [fixtureInstrument] };
+  const sequenceStamp = hour => new Date(Date.UTC(2026, 10, 1, hour)).toISOString();
+  examples["workspace-train-sequence"] = { source: "authored-synthetic-sequence-workbench-v1", classification: "SYNTHETIC", sequence_length: 4, train_size: 24, hidden_size: 4, epochs: 4, learning_rate: .02, seed: 17, rows: Array.from({ length: 32 }, (_, index) => ({ timestamp: sequenceStamp(index), available_at: sequenceStamp(index), label_end: sequenceStamp(index + 1), features: { momentum: Math.sin(index / 3), reversal: Math.cos(index / 4) }, target: .5 * Math.sin(index / 3) - .3 * Math.cos(index / 4) })) };
+  examples["workspace-predict-sequence"] = { model_id: "0".repeat(64), rows: examples["workspace-train-sequence"].rows.map(({ timestamp, available_at, features }) => ({ timestamp, available_at, features })) };
+  examples["workspace-finbert"] = examples["workspace-news"];
+  examples["workspace-execution-engine"] = { operation: "prepare", now: fixtureTimestamp(28), client_id: "authored-synthetic-offline-intent-1", symbol: "SYN001", side: "buy", quantity: "1", reference_price: "100", price_asof: fixtureTimestamp(28), max_notional: "1000", max_position_quantity: "10" };
   function loadExample() {
     const kind = $("analytics-kind").value;
     $("analytics-input").value = JSON.stringify(examples[kind], null, 2);
     $("run-analysis").textContent = workspaceActions[kind] ? (kind === "workspace-simulate" ? "Run offline simulation" : kind === "workspace-research" ? "Run and save research" : "Admit and save locally") : "Run local calculation";
-    $("workbench-scope").textContent = workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.";
+    if (kind === "workspace-train-sequence") $("run-analysis").textContent = "Train CPU research model";
+    if (kind === "workspace-predict-sequence") $("run-analysis").textContent = "Run saved model inference";
+    if (kind === "workspace-finbert") $("run-analysis").textContent = "Analyze with local licensed model";
+    if (kind === "workspace-execution-engine") $("run-analysis").textContent = "Prepare offline intent";
+    const specialScopes = {
+      "workspace-ingest": "Offline authored SYNTHETIC IEX protocol fixture only. No Alpaca connection, credentials or provider-observed market data. IEX is not SIP.",
+      "workspace-universe": "Persist authored SYNTHETIC universe membership with effective and knowledge timestamps. Caller identity claims are not provider verification.",
+      "workspace-train-sequence": "Train and persist a real CPU BiLSTM on authored SYNTHETIC inputs. Model output is research only and is not an approved trading signal.",
+      "workspace-predict-sequence": "Copy a saved model_id from training into this input. The all-zero placeholder returns UNAVAILABLE; it does not identify a trained model. Authored SYNTHETIC features remain research only.",
+      "workspace-finbert": "Requires an operator-configured, hash-verified local model. Selected ProsusAI FinBERT weights are CC-BY-NC-SA-4.0 noncommercial research only. Missing assets return an explicit dependency error; no download or commercial approval is implied.",
+      "workspace-execution-engine": "Prepare an authored SYNTHETIC offline order intent only. This does not dispatch it. To rehearse dispatch, explicitly edit operation and fields under the offline execution contract. No brokerage connection or real orders."
+    };
+    $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
   }
   async function runAnalysis() {
     const output = $("analytics-output");
@@ -444,7 +472,7 @@
       const endpoint = action ? `/api/v1/workspace/${action}` : `/api/v1/analytics/${encodeURIComponent(kind)}`;
       const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: sourceText, signal: controller.signal, cache: "no-store" });
       const result = await response.json();
-      if (!validContract(result) || (!response.ok && result.state !== "ERROR")) throw new Error("Unsupported response contract.");
+      if (!validContract(result) || (!response.ok && !["ERROR", "UNAVAILABLE"].includes(result.state))) throw new Error("Unsupported response contract.");
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();
     } catch { output.textContent = "Analysis response could not be loaded. Check the local service, supported input contract, and retry."; }
@@ -462,8 +490,11 @@
   setTheme(["light", "dark"].includes(storedTheme) ? storedTheme : "dark");
   const updateClock = () => { const now = new Date(); $("clock").dateTime = now.toISOString(); $("clock").textContent = `${now.toISOString().slice(11, 19)} UTC`; };
   updateClock(); setInterval(updateClock, 1000);
+  $("skip-link").addEventListener("click", (event) => { event.preventDefault(); $("content").focus(); });
   $("theme-toggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
-  $("data-mode").addEventListener("change", () => { state.mode = $("data-mode").value; loadSection(); });
+  $("data-mode").addEventListener("change", () => { state.mode = $("data-mode").value; $("analysis-engine").disabled = state.mode !== "local"; if (state.mode !== "local") $("analysis-engine").value = "default"; loadSection(); });
+  $("analysis-engine").addEventListener("change", loadSection);
+  $("universe-id").addEventListener("change", loadSection);
   $("freshness-policy").addEventListener("change", loadSection);
   $("replay-asof").addEventListener("change", loadSection);
   $("refresh").addEventListener("click", loadSection);

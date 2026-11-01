@@ -1,0 +1,39 @@
+{
+  "revision": "0bc2ac10dda6929bcb1f77ccc43c7ec5c424f031",
+  "model_manifest_hash": "2bb447dda8eb845e6454b35722dd3ccd3ac9098c79d24a1ab0f68e64d764f457",
+  "license": "cc-by-nc-sa-4.0",
+  "scope": "NONCOMMERCIAL_RESEARCH_ONLY",
+  "device": "cpu",
+  "threads": 1,
+  "observations": [
+    {
+      "expected": "positive",
+      "probabilities": {
+        "positive": 0.9528562426567078,
+        "negative": 0.014632388018071651,
+        "neutral": 0.032511454075574875
+      },
+      "elapsed_ms": 60.382834999472834
+    },
+    {
+      "expected": "negative",
+      "probabilities": {
+        "positive": 0.011967885307967663,
+        "negative": 0.9329630136489868,
+        "neutral": 0.05506907403469086
+      },
+      "elapsed_ms": 67.6891569964937
+    },
+    {
+      "expected": "neutral",
+      "probabilities": {
+        "positive": 0.018122762441635132,
+        "negative": 0.04711508750915527,
+        "neutral": 0.934762179851532
+      },
+      "elapsed_ms": 71.53639200259931
+    }
+  ],
+  "commercial_use_permitted": false,
+  "economically_validated": false
+}

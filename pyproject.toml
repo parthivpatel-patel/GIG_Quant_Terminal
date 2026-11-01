@@ -38,7 +38,8 @@ broker = ["alpaca-py>=0.21"]
 ml = ["lightgbm>=4.3"]
 research = ["lightgbm>=4.3", "statsmodels>=0.14"]
 nlp = ["vaderSentiment>=3.3"]
-transformers = ["transformers>=4.40", "torch"]
+sequence = ["torch>=2.2"]
+transformers = ["transformers>=4.40,<5", "torch>=2.2", "safetensors>=0.4"]
 web = ["fastapi>=0.110", "uvicorn>=0.29"]
 dev = [
   "pytest>=8.0",

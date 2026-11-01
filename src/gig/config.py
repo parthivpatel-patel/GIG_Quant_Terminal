@@ -85,6 +85,8 @@ class Settings(BaseSettings):
     # Local research desk (Ollama). Never used for order generation.
     ollama_host: str = "http://127.0.0.1:11434"
     ollama_model: str = "llama3.2"
+    # Explicit operator-selected, hash-verified local assets. Never an HTTP path.
+    finbert_model_dir: Path | None = None
 
     @model_validator(mode="after")
     def unprefixed_secrets(self) -> Settings:

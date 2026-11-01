@@ -1,8 +1,7 @@
 """
 HTTP adapter for the terminal UI.
 
-The app is a thin shell over `gig.service.snapshot`: every route returns a
-payload that module already built. FastAPI is an optional extra, so it is
+Routes expose typed snapshots and fixed-path local research workspaces. FastAPI is an optional extra, so it is
 imported inside `create_app()` and the package stays importable without it.
 
 Workspace writes admit caller evidence and run local research or simulations.
@@ -19,7 +18,8 @@ from typing import Annotated, Any
 STATIC_DIR = Path(__file__).parent / "static"
 
 
-def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Path | None = None) -> Any:
+def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Path | None = None,
+               finbert_dir: Path | None = None) -> Any:
     try:
         from fastapi import Body, FastAPI, Query, Request
         from fastapi.exceptions import RequestValidationError
@@ -37,6 +37,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     from gig.config import get_settings
     from gig.service import snapshot
     from gig.service.contracts import Contract, EnvelopeSchema, State
+    from gig.service.cycle_services import CycleServices
     from gig.service.serialization import (
         DEFAULT_LIMITS,
         SerializationError,
@@ -48,6 +49,8 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     from gig.timestamps import aware_timestamp
 
     workspace = TerminalWorkspace(state_dir if state_dir is not None else get_settings().data_dir / "terminal")
+    integrations = CycleServices(workspace, finbert_dir=(finbert_dir if finbert_dir is not None
+                                                       else get_settings().finbert_model_dir))
     workspace_write_lock = threading.Lock()
 
     class StrictJSONResponse(JSONResponse):
@@ -139,7 +142,9 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     @app.get("/api/v1/terminal/{section}", response_model=EnvelopeSchema)
     def terminal_section(section: str, mode: str = Query("local", pattern="^(local|synthetic)$"),
                          as_of: str | None = Query(None, max_length=100),
-                         max_age_seconds: float | None = Query(None, ge=0, le=366 * 86400)) -> Any:
+                         max_age_seconds: float | None = Query(None, ge=0, le=366 * 86400),
+                         engine: str = Query("default", pattern="^(default|sequence|finbert|provider|execution-engine)$"),
+                         universe_id: str | None = Query(None, min_length=1, max_length=128)) -> Any:
         from gig.service.terminal import SECTIONS, section_snapshot
         if section not in SECTIONS:
             return failure("INVALID_REQUEST", 404)
@@ -148,15 +153,27 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
         except (ValueError, TypeError, OverflowError):
             return failure("INVALID_REQUEST", 422)
         if mode == "local":
+            if engine != "default":
+                try:
+                    return integrations.section(engine, section, cutoff, max_age_seconds,
+                                                universe_id=universe_id)
+                except ImportError:
+                    return failure("DEPENDENCY_UNAVAILABLE", 503)
             result = workspace.section(section, cutoff, max_age_seconds)
             if result is not None:
                 return result
+        if engine != "default":
+            return failure("INVALID_REQUEST", 422)
         return section_snapshot(section, mode)
 
     @app.post("/api/v1/workspace/{action}", response_model=EnvelopeSchema)
     async def workspace_action(action: str, request: Request) -> Any:
         methods = {"bars": workspace.ingest_bars, "news": workspace.ingest_news,
-                   "research": workspace.run_research, "simulate": workspace.simulate}
+                   "research": workspace.run_research, "simulate": workspace.simulate,
+                   "ingest": integrations.ingest, "universe": integrations.universe,
+                   "train-sequence": integrations.train_sequence,
+                   "predict-sequence": integrations.predict_sequence,
+                   "finbert": integrations.analyze_finbert, "execution-engine": integrations.execution}
         if action not in methods:
             return failure("INVALID_REQUEST", 404)
         # Local mutations require JSON and reject cross-origin browser writes.

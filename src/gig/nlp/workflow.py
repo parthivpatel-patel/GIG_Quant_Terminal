@@ -14,6 +14,7 @@ import math
 import re
 import sqlite3
 from collections.abc import Iterable, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -434,6 +435,28 @@ def finbert_capability(directory: str | Path | None = None) -> dict[str, Any]:
     }
 
 
+@contextmanager
+def _finbert_cpu(torch):
+    """Serialize Torch globals with sequence training and restore caller state."""
+    from gig.ml.runtime import TORCH_CPU_LOCK
+
+    with TORCH_CPU_LOCK:
+        threads = torch.get_num_threads()
+        deterministic = torch.are_deterministic_algorithms_enabled()
+        warn_only = torch.is_deterministic_algorithms_warn_only_enabled()
+        mkldnn = torch.backends.mkldnn.enabled
+        try:
+            torch.set_num_threads(1)
+            torch.use_deterministic_algorithms(True)
+            torch.backends.mkldnn.enabled = False
+            with torch.random.fork_rng(devices=[]):
+                yield
+        finally:
+            torch.backends.mkldnn.enabled = mkldnn
+            torch.use_deterministic_algorithms(deterministic, warn_only=warn_only)
+            torch.set_num_threads(threads)
+
+
 class LocalFinBERT:
     """CPU inference from hash-verified, caller-provided local safetensors only.
 
@@ -446,7 +469,10 @@ class LocalFinBERT:
     """
 
     def __init__(self, directory: str | Path):
-        root = Path(directory).resolve()
+        candidate = Path(directory).absolute()
+        if any(item.is_symlink() for item in (candidate, *candidate.parents)):
+            raise ValueError("local model directory cannot use symbolic links")
+        root = candidate.resolve()
         manifest_path = root / "finbert-provenance.json"
         if not root.is_dir() or not manifest_path.is_file() or manifest_path.is_symlink():
             raise ValueError("local FinBERT directory and provenance manifest required")
@@ -496,16 +522,17 @@ class LocalFinBERT:
                 "Local FinBERT requires torch and transformers; no substitution allowed"
             ) from exc
         self._torch = torch
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            str(root), local_files_only=True, trust_remote_code=False
-        )
-        self.model = (
-            AutoModelForSequenceClassification.from_pretrained(
-                str(root), local_files_only=True, use_safetensors=True, trust_remote_code=False
+        with _finbert_cpu(torch):
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                str(root), local_files_only=True, trust_remote_code=False
             )
-            .to("cpu")
-            .eval()
-        )
+            self.model = (
+                AutoModelForSequenceClassification.from_pretrained(
+                    str(root), local_files_only=True, use_safetensors=True, trust_remote_code=False
+                )
+                .to("cpu")
+                .eval()
+            )
         self.labels = {
             int(key): str(value).lower() for key, value in self.model.config.id2label.items()
         }
@@ -517,14 +544,21 @@ class LocalFinBERT:
             raise ValueError("local checkpoint is not a supported three-label FinBERT BERT model")
         self.identity = _hash(manifest)
         self.revision = manifest["revision"]
+        self.license = manifest.get("license", "UNSUPPLIED_LOCAL")
+        self.attribution = manifest.get("attribution", "UNSUPPLIED_LOCAL")
+        self.license_url = manifest.get("license_url")
+        self.source_metadata_url = manifest.get("source_metadata_url")
+        self.commercial_use_permitted = False
 
     def score(self, text: str) -> dict[str, Any]:
         text = _text(text, "model input", _MAX_TEXT + 1, allow_empty=True)
         original_count = len(self.tokenizer.encode(text, add_special_tokens=True, truncation=False))
         encoded = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
-        with self._torch.inference_mode():
+        with _finbert_cpu(self._torch), self._torch.inference_mode():
             probabilities = self._torch.softmax(self.model(**encoded).logits, dim=-1)[0].tolist()
-        if len(probabilities) != 3 or any(not math.isfinite(value) for value in probabilities):
+        if (len(probabilities) != 3
+                or any(not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities)
+                or not math.isclose(sum(probabilities), 1.0, abs_tol=1e-6)):
             raise ValueError("FinBERT produced invalid probabilities")
         by_label = {self.labels[index]: float(value) for index, value in enumerate(probabilities)}
         return {
@@ -533,6 +567,12 @@ class LocalFinBERT:
             "revision": self.revision,
             "model_manifest_hash": self.identity,
             "origin_evidence": "CALLER_DECLARED_LOCAL",
+            "license": self.license,
+            "license_url": self.license_url,
+            "attribution": self.attribution,
+            "source_metadata_url": self.source_metadata_url,
+            "commercial_use_permitted": self.commercial_use_permitted,
+            "trading_approved": False,
             "probabilities": by_label,
             "score": by_label["positive"] - by_label["negative"],
             "model_input_truncated": original_count > 512,

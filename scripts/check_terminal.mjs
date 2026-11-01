@@ -91,6 +91,7 @@ for (const match of html.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)) {
 }
 elements.get("analytics-kind").value = "options";
 elements.get("data-mode").value = "local";
+elements.get("analysis-engine").value = "default";
 elements.get("freshness-policy").value = "86400";
 elements.get("observations-table").append(new Element("thead"), new Element("tbody"));
 const documentRoot = new Element("html");
@@ -339,6 +340,22 @@ for (const action of ["bars", "news", "research", "simulate"]) {
   assert.equal(calls.at(-1).options.headers["Content-Type"], "application/json");
   assert.equal(calls.at(-1).options.body, example);
 }
+for (const action of ["ingest", "universe", "train-sequence", "predict-sequence", "finbert", "execution-engine"]) {
+  get("analytics-kind").value = `workspace-${action}`;
+  const previous = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, previous, "Example selection must not perform actions");
+  const example = get("analytics-input").value;
+  assert.equal(typeof JSON.parse(example), "object");
+  await get("run-analysis").dispatch("click"); await settle();
+  assert.equal(calls.at(-1).url, `/api/v1/workspace/${action}`);
+  assert.equal(calls.at(-1).options.body, example);
+  checked(`explicit ${action} fixture uses its backend contract without automatic submission`, () => {
+    assert.match(get("workbench-scope").textContent, /SYNTHETIC|research/);
+  });
+}
+get("analytics-kind").value = "workspace-bars";
+await get("analytics-kind").dispatch("change");
 checked("all four explicit workspace actions use distinct JSON endpoints without automatic admission", () => {
   assert.match(get("workbench-scope").textContent, /writes caller-supplied evidence/);
   assert.match(get("analytics-output").textContent, /no broker orders/);
@@ -374,5 +391,24 @@ for (const kind of ["calendar", "corporate-actions"]) {
     assert(!get("workbench-scope").textContent.includes("writes caller-supplied evidence"));
   });
 }
+get("data-mode").value = "local";
+await get("data-mode").dispatch("change"); await settle();
+for (const engine of ["sequence", "finbert", "provider", "execution-engine"]) {
+  get("analysis-engine").value = engine;
+  await get("analysis-engine").dispatch("change"); await settle();
+  assert.match(calls.at(-1).url, new RegExp(`engine=${engine}`));
+}
+checked("explicit local evidence views preserve engine selection in backend requests", () => assert.equal(get("analysis-engine").disabled, false));
+get("analysis-engine").value = "provider";
+get("universe-id").value = "authored-synthetic-universe";
+await get("universe-id").dispatch("change"); await settle();
+checked("point-in-time universe selection uses explicit saved identity", () => assert.match(calls.at(-1).url, /engine=provider&universe_id=authored-synthetic-universe/));
+get("data-mode").value = "synthetic";
+await get("data-mode").dispatch("change"); await settle();
+checked("synthetic demonstrations cannot impersonate a selected local model engine", () => {
+  assert.equal(get("analysis-engine").disabled, true);
+  assert.equal(get("analysis-engine").value, "default");
+  assert(!calls.at(-1).url.includes("engine="));
+});
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

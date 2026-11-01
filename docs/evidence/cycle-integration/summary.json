@@ -1,0 +1,125 @@
+{
+  "branch": "development/gig-accelerated-2026",
+  "preservation_commit": "1fd222e31d9d119f98c7c83eb89f9bb7833b08b0",
+  "pytest": {
+    "passed": 625,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0
+  },
+  "coverage_percent": 78.70357193681514,
+  "mypy_source_files": 119,
+  "ruff": "PASS",
+  "pyflakes": "PASS",
+  "compilation": "PASS",
+  "browser": {
+    "chromium": "151.0.7922.34",
+    "passed": 82,
+    "failed": 0,
+    "javascript_exceptions": 0,
+    "axe": "4.10.3",
+    "formal_accessibility_certified": false
+  },
+  "node_smoke": 38,
+  "native_installed_wheel_tests": 18,
+  "arm64": {
+    "cross_compiled": "GCC 14.2.0",
+    "execution": "QEMU 10.0.13",
+    "comparisons": 3966,
+    "physical_hardware_validated": false,
+    "full_arm64_python_or_docker_validated": false
+  },
+  "provider": {
+    "treasury": "PUBLIC_OBSERVED_PERSISTED_REOPEN_VERIFIED",
+    "historical_observations": 3455,
+    "alpaca": "OFFLINE_FIXTURE_ONLY"
+  },
+  "finbert": {
+    "revision": "0bc2ac10dda6929bcb1f77ccc43c7ec5c424f031",
+    "license": "CC-BY-NC-SA-4.0",
+    "readiness": "NONCOMMERCIAL_RESEARCH_ONLY",
+    "weights_distributed": false
+  },
+  "t4": "T4_NOT_CERTIFIED",
+  "section_139": "UNSUPPLIED",
+  "test_counts_overlap_do_not_sum": true,
+  "files": [
+    {
+      "path": "arm64-execution.json",
+      "sha256": "6b1f28df0878bc9e26ca671a33fa63505949814f80b1c1f5f64d16b84360a8dc"
+    },
+    {
+      "path": "arm64-toolchain-provenance.json",
+      "sha256": "36de2de95dd63f1d67fb1c7f3cc99e89f8ebd0573c2fdab4c5c7bdfff8df2847"
+    },
+    {
+      "path": "arm64-wheel-availability.json",
+      "sha256": "82a6fcfcc49530c4dce45cceb7a80fa18f85304c07a1ea36e3a0d1031fd19826"
+    },
+    {
+      "path": "browser-report.json",
+      "sha256": "f28c36d3a47fcc20051b2f36db13f79dcbbc79fbda9fc5ecd9888092b9df3595"
+    },
+    {
+      "path": "cycle-coverage.json",
+      "sha256": "f61593a59cd835b16d483718e262016170d5fd0f07da4cc2cf6964889ff23d42"
+    },
+    {
+      "path": "cycle-full.xml",
+      "sha256": "aa8322a3737dad5547b0613eef17898e42b61fd4714b7da6c6166475dcd02b17"
+    },
+    {
+      "path": "cycle-http.xml",
+      "sha256": "05f7b43d2a4d324c6342d700fc85eefc4a85f78d2384c3553c4e62441c1c3c11"
+    },
+    {
+      "path": "cycle-mypy.txt",
+      "sha256": "d144f4b429956a53bf5c6beb1fc2bbd224cf5a2307ff13c3ca35f06e02685c53"
+    },
+    {
+      "path": "cycle-pyflakes.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "cycle-ruff.txt",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "cycle-wheel-build.txt",
+      "sha256": "a735d26e0ee3b4a761549ab3931dbdf0034e6cba29c0d03539a46b674ae79187"
+    },
+    {
+      "path": "cycle-wheel-tests.xml",
+      "sha256": "4758c20c50bc4eb015d2f55b48e76efd9131a9ad63ad82f0d41f2305ed802bee"
+    },
+    {
+      "path": "desktop-dark.png",
+      "sha256": "64ca26e6a0ab4ded65bc580c8bb6116f49149049e5d8a34444dd48b4533e2b17"
+    },
+    {
+      "path": "desktop-light.png",
+      "sha256": "9720040c08eabea4a5ba4877bdd6d53d4546c0e87b5278fcbbd863c3da441006"
+    },
+    {
+      "path": "finbert-actual-inference.json",
+      "sha256": "7079c4f22862163a7ada930048f25dbc8fba51c96747832d5cb0f6e9c22946ff"
+    },
+    {
+      "path": "finbert-commercial-alternatives.json",
+      "sha256": "1b33cdfb115dfcf0cb24feace9a9b7380a5e3be639d3215e41dc0471d0d40eef"
+    },
+    {
+      "path": "frontend-node.txt",
+      "sha256": "76414ff9bcda588f0f871c6cfcdaa0bf8373afdebc5c1162bde9ba7aee65177a"
+    },
+    {
+      "path": "mobile-320.png",
+      "sha256": "c7681c1913d1a3ae4f2a9d10e7f13156b9c3466b80d1da006a2c4ec5e181ecb6"
+    },
+    {
+      "path": "provider-public-final.json",
+      "sha256": "6b293a34f991e98b7265eb7b8352add84f62c6a9bfbbae8f40223dfbe4fbd921"
+    }
+  ]
+}

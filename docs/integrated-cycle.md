@@ -1,0 +1,17 @@
+# Recovered provider, CPU model and execution integration
+
+The interrupted source above preservation commit `1fd222e31d9d119f98c7c83eb89f9bb7833b08b0` is integrated on `development/gig-accelerated-2026`. Existing intentional worker changes were retained and completed. No protected workspace, main branch or broker account was modified.
+
+Six new workspace actions admit offline provider pages and point-in-time universes, train and reload real CPU BiLSTM models, analyze news with explicitly configured local FinBERT assets, and operate a durable offline execution engine. The twelve-section terminal selects their typed backend contracts explicitly; missing, unknown, stale and error states retain their meaning. Original news text, exact volume, source evidence and knowledge timestamps survive persistence. No action authorizes brokerage activity.
+
+The corrected official Treasury XML path uses `/resource-center/data-chart-center/`, as documented by Treasury; the prior hyphenated path returned 404. Actual permitted acquisition parsed and persisted 3,455 historical yield observations for 2025, then reopened and verified them. Catalog licensing is CC0-1.0 with attribution. Observation dates remain date-only, publication time UNKNOWN, and availability the real acquisition time. Alpaca is fixture-only, SYNTHETIC and explicitly IEX rather than SIP.
+
+CPU BiLSTM training uses purged chronological labels and training-only normalization, immutable JSON tensors and content-addressed provenance. FinBERT inference used actual pinned safetensors and matched direct Transformers execution. Those weights remain outside Git and all recovery archives under CC-BY-NC-SA-4.0, with commercial use and trading approval false. Alternatives examined had no supplied license and were not approved. Neither successful inference nor synthetic holdout results establish economic value.
+
+The durable execution engine records submission intent atomically with reservations, treats acknowledgement separately from fills, reconciles partial fills, persists simulated positions and kill controls, and handles disconnected, delayed, repeated and ambiguous responses. Alpaca-shaped fixtures are validated without SDK, account, credentials or network calls. TWAP currently creates exact offline plans; scheduled dispatch is future work.
+
+The final full regression passed 625 tests with zero failures, errors, skips or deselections; coverage is 78.70% against a 70% gate. Configured Ruff, Pyflakes, compilation and mypy on119 source files passed. A separate isolated native-wheel run passed18 focused HTTP and numerical tests. These counts overlap and are not additive. Evidence and exact coverage are in `docs/evidence/cycle-integration/`.
+
+Real Chromium151.0.7922.34 passed82 checks with no JavaScript exceptions. Five viewport widths, both themes, keyboard chart interaction, persisted workflows, loading/error states and axe4.10.3 automated rules were exercised. No automated axe violations occurred; incomplete findings remain for manual review. Node38 checks are a separate smoke harness, not visual certification.
+
+ARM64 GCC14.2.0 produced AArch64 ELF binaries executed under QEMU10.0.13, passing3,966 independent numerical comparisons. This verifies cross compilation/emulated native execution, not physical Oracle Ampere, Ubuntu24.04 ARM64 Python, a complete dependency installation or an ARM64 Docker runtime. Those operational acceptance items remain open. T4 remains T4_NOT_CERTIFIED and §139 remains UNSUPPLIED.

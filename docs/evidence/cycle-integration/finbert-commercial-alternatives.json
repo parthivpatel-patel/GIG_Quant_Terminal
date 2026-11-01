@@ -1,0 +1,20 @@
+[
+  {
+    "model_id": "yiyanghkust/finbert-tone",
+    "revision": "4921590d3c0c3832c0efea24c8381ce0bda7844b",
+    "model_card_license": null,
+    "source_metadata_url": "https://huggingface.co/api/models/yiyanghkust/finbert-tone",
+    "metadata_sha256": "6fc45bb863541c09f8ed36ca4ffeea4151c4b1462360d83d031dd5b5c3443366",
+    "evaluation": "Metadata investigation only; training-data rights and commercial deployment not approved",
+    "executed": false
+  },
+  {
+    "model_id": "ahmedrachid/FinancialBERT-Sentiment-Analysis",
+    "revision": "656931965473ec085d195680bd62687b140c038f",
+    "model_card_license": null,
+    "source_metadata_url": "https://huggingface.co/api/models/ahmedrachid/FinancialBERT-Sentiment-Analysis",
+    "metadata_sha256": "a7d99fb9a205ccc9ec441c5dabc79026c68fd00d2ae6c03f9454d4476d83de69",
+    "evaluation": "Metadata investigation only; training-data rights and commercial deployment not approved",
+    "executed": false
+  }
+]

@@ -1,0 +1,49 @@
+{
+  "host_architecture": "x86_64",
+  "target_architecture": "aarch64",
+  "hardware_validation": "HARDWARE_NOT_VALIDATED",
+  "ubuntu_24_04_runtime": "NOT_VALIDATED",
+  "oracle_ampere_a1_runtime": "NOT_VALIDATED",
+  "docker_arm64_image_build": "NOT_VALIDATED",
+  "broker_connections": 0,
+  "privileged_or_binfmt_changes": false,
+  "compose": {
+    "level": "STATIC_CONFIGURATION_ONLY",
+    "checks": {
+      "loopback_port_only": true,
+      "broker_disabled": true,
+      "read_only_root": true,
+      "capabilities_dropped": true,
+      "no_new_privileges": true,
+      "persistent_state": true,
+      "memory_limit_declared": true,
+      "restart_declared": true,
+      "graceful_shutdown_declared": true
+    },
+    "passed": true,
+    "arm64_runtime_validated": false
+  },
+  "compiler_version": "aarch64-linux-gnu-g++ (Debian 14.2.0-19) 14.2.0",
+  "emulator_version": "qemu-aarch64 version 10.0.13 (Debian 1:10.0.13+ds-0+deb13u1)",
+  "compiler_flags": [
+    "--sysroot=/tmp/gig-arm64/root"
+  ],
+  "private_tool_library_directory": "/tmp/gig-arm64/root/usr/lib/x86_64-linux-gnu",
+  "sources": {
+    "src/cpp/rolling.cpp": "c18feedc57bfdbf8588ffa12beac0b62f84e521e91de823c2beaa3270a101262",
+    "deploy/arm64/rolling_reference.cpp": "bd9e3863c8bc9ae1df615fa3a6b73bc369956ac8605ab500920b9e5b8f6f6202"
+  },
+  "cross_compilation": "CROSS_COMPILED",
+  "elf_machine": "EM_AARCH64",
+  "binary_sha256": "e7d22ed43c21635e0131b05df25e2001c010c64e9f33bb80fab949144585396f",
+  "execution": "EMULATED_QEMU_USER",
+  "reference": {
+    "architecture": "aarch64",
+    "result": "PASS",
+    "comparisons": 3966,
+    "max_mean_abs_error": 8.881784197001252e-16,
+    "max_std_abs_error": 0,
+    "input_admission_cases": 4
+  },
+  "state": "PASS"
+}

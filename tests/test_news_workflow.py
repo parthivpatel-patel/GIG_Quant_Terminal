@@ -289,7 +289,7 @@ class NewsWorkflowTests(unittest.TestCase):
             )
             with patch.dict(
                 "sys.modules", {"torch": fake_torch, "transformers": fake_transformers}
-            ):
+            ), patch("gig.nlp.workflow._finbert_cpu", side_effect=lambda _: nullcontext()):
                 adapter = LocalFinBERT(root)
                 result = adapter.score("original\n source NaN")
             auto_model.from_pretrained.assert_called_once_with(

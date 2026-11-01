@@ -1,0 +1,10 @@
+WARNING: The directory '/home/agent/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+Processing ./.
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: gig
+  Building wheel for gig (pyproject.toml): started
+  Building wheel for gig (pyproject.toml): finished with status 'done'
+  Created wheel for gig: filename=gig-0.1.0-cp312-cp312-linux_x86_64.whl size=398259 sha256=45f6626086260e2c71db4f75b9653c7588221cafe6604d0afa13ccd04c21a87d
+  Stored in directory: /tmp/pip-ephem-wheel-cache-1n0m0vs2/wheels/11/d2/a0/1ff2e219170e5bf2688e44a27270d31ddaecdcdc0599aa4e14
+Successfully built gig

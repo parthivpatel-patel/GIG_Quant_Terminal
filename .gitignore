@@ -19,6 +19,11 @@ build/
 htmlcov/
 *.so
 *.pyd
+# Local model assets may have redistribution restrictions. Keep them out of Git.
+*.safetensors
+pytorch_model*.bin
+model-assets/
+huggingface-cache/
 *.db-shm
 *.db-wal
 
