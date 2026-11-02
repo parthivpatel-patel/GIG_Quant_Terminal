@@ -20,7 +20,9 @@
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
-  const workflowReferences = { dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
+  workspaceActions["workspace-options-overlay"] = "options-overlay";
+  workspaceActions["workspace-options-overlay-replay"] = "options-overlay-replay";
+  const workflowReferences = { checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
   const comparisonResults = [];
 
   workspaceActions["workspace-depth"] = "depth";
@@ -162,7 +164,7 @@
         if (!["3600", "86400", "604800"].includes(maximumAge)) throw new Error("Unsupported freshness policy.");
         query += `&max_age_seconds=${maximumAge}`;
         const engine = $("analysis-engine").value || "default";
-        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation", "depth", "pairs", "options-research", "signals-research"].includes(engine)) throw new Error("Unsupported local evidence view.");
+        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation", "depth", "pairs", "options-research", "signals-research", "options-overlay"].includes(engine)) throw new Error("Unsupported local evidence view.");
         if (engine !== "default") query += `&engine=${encodeURIComponent(engine)}`;
         const universe = $("universe-id").value;
         if (engine === "provider" && universe) {
@@ -202,6 +204,7 @@
     $("source-label").textContent = `${printable(provenance.source)} · ${classification}`;
     $("asof-label").textContent = `As of ${provenance.as_of === null || provenance.as_of === undefined ? "unknown" : String(provenance.as_of)}`;
     $("truth-notice").textContent = `${payload.state === "STALE" ? "STALE · Historical snapshot; freshness requirement is not satisfied. " : ""}${synthetic ? "SYNTHETIC INPUTS · Demonstration and research only · No broker-observed performance" : provenance.evidence_state === "CALLER_SUPPLIED_NOT_VENDOR_VERIFIED" ? "Caller-supplied provenance · Vendor authenticity unverified · Research only" : "Research output requires review before any trading use."}`;
+    if (isObject(data.overlay_financing) && data.overlay_financing.state === "UNKNOWN") $("truth-notice").textContent += " Hypothetical options financing UNKNOWN · Modeled overlay value is not funded NAV.";
     if (data.title) $("section-title").textContent = String(data.title);
     if (data.description) $("section-description").textContent = String(data.description);
     const errorMessage = payload.error && (payload.error.message || payload.error.code);
@@ -264,6 +267,13 @@
     renderChart();
   }
   function analyticalChart(data) {
+    if (typeof data.overlay_id === "string" && Array.isArray(data.rows)) {
+      const points = data.rows.map(row => ({ ...row, approximate_combined_pnl: typeof row.combined_model_pnl === "string" && row.combined_model_pnl.trim() !== "" ? Number(row.combined_model_pnl) : NaN }));
+      return { kind: "risk-surface", title: "Hypothetical equity and options scenario P&L", axes: [
+        { key: "spot_shock", label: "Spot shock", unit: "arithmetic fraction" },
+        { key: "volatility_shock", label: "Volatility shock", unit: "annualized decimal" },
+        { key: "approximate_combined_pnl", label: "Combined modeled P&L", unit: "USD; approximate plot, exact table" }], points };
+    }
     if (isObject(data.surface) && Array.isArray(data.surface.points) && ["options", "models", "research"].includes(state.section.id)) {
       return { kind: "volatility-surface", title: "Admitted CALL coordinates · modeled midpoint IV", axes: [
         { key: "log_forward_moneyness", label: "Log forward moneyness", unit: "log(K/F)" },
@@ -609,6 +619,8 @@
   delete examples["workspace-allocate-signals"].run_id;
   examples["workspace-allocate-pairs"] = { ...examples["workspace-research-allocate"], pair_run_id: "0".repeat(64) };
   delete examples["workspace-allocate-pairs"].run_id;
+  examples["workspace-options-overlay"] = { checkpoint_id: "0".repeat(64), options_run_id: "0".repeat(64), now: pipelineStamp(79), max_age_seconds: 3600, limits: { max_abs_delta_notional: 100000, max_abs_gamma_dollar: 100000, max_abs_vega_per_point: 100000, max_abs_scenario_loss: 100000 } };
+  examples["workspace-options-overlay-replay"] = { overlay_id: "0".repeat(64) };
   function loadExample() {
     const kind = $("analytics-kind").value;
     const example = JSON.parse(JSON.stringify(examples[kind]));
@@ -621,6 +633,9 @@
     if (kind === "workspace-signals-replay" && workflowReferences.signal_id) example.signal_id = workflowReferences.signal_id;
     if (kind === "workspace-allocate-signals" && workflowReferences.signal_id) example.signal_id = workflowReferences.signal_id;
     if (kind === "workspace-allocate-pairs" && workflowReferences.pair_run_id) example.pair_run_id = workflowReferences.pair_run_id;
+    if (kind === "workspace-options-overlay" && workflowReferences.checkpoint_id) example.checkpoint_id = workflowReferences.checkpoint_id;
+    if (kind === "workspace-options-overlay" && workflowReferences.options_run_id) example.options_run_id = workflowReferences.options_run_id;
+    if (kind === "workspace-options-overlay-replay" && workflowReferences.overlay_id) example.overlay_id = workflowReferences.overlay_id;
     if (kind === "workspace-research-prepare" && workflowReferences.allocation_id) example.allocation_id = workflowReferences.allocation_id;
     if (kind === "workspace-offline-fill" && workflowReferences.prepared_client_ids.length) example.client_id = workflowReferences.prepared_client_ids[0];
     $("analytics-input").value = JSON.stringify(example, null, 2);
@@ -640,9 +655,11 @@
     if (kind === "workspace-offline-fill") $("run-analysis").textContent = "Apply explicit simulated fill";
     if (kind === "workspace-schedule-twap") $("run-analysis").textContent = "Save offline TWAP schedule";
     if (kind === "workspace-advance-clock") $("run-analysis").textContent = "Advance explicit simulation clock";
-    const sprint5Labels = { "workspace-pairs-research": "Run saved-data pair research", "workspace-pairs-replay": "Replay saved pair experiment", "workspace-options-admit": "Admit authored options fixture", "workspace-options-research": "Run historical options research", "workspace-options-replay": "Replay saved options research", "workspace-research-signals": "Score saved OOS model evidence", "workspace-signals-replay": "Replay saved research scores", "workspace-allocate-signals": "Construct targets from research scores", "workspace-allocate-pairs": "Construct targets from eligible pair" };
+    const sprint5Labels = { "workspace-options-overlay": "Evaluate hypothetical options overlay", "workspace-options-overlay-replay": "Replay saved options overlay", "workspace-pairs-research": "Run saved-data pair research", "workspace-pairs-replay": "Replay saved pair experiment", "workspace-options-admit": "Admit authored options fixture", "workspace-options-research": "Run historical options research", "workspace-options-replay": "Replay saved options research", "workspace-research-signals": "Score saved OOS model evidence", "workspace-signals-replay": "Replay saved research scores", "workspace-allocate-signals": "Construct targets from research scores", "workspace-allocate-pairs": "Construct targets from eligible pair" };
     if (sprint5Labels[kind]) $("run-analysis").textContent = sprint5Labels[kind];
     const specialScopes = {
+      "workspace-options-overlay": "Combine a saved reconciled SIMULATED equity checkpoint with hypothetical option positions from a saved options run. Held equity must match the same underlying, exact spot mark and observation clock. Explicit USD risk caps apply. Options financing remains UNKNOWN; this does not fund contracts, change OMS state, approve trading or submit an order.",
+      "workspace-options-overlay-replay": "Verify and replay the saved hypothetical overlay by identity. Replayed modeled exposures do not establish funded portfolio NAV, broker positions or trading approval.",
       "workspace-pairs-research": "Use a saved admitted dataset to test chronological pair eligibility, cointegration, ADF, causal hedge states, and modeled costs. Rejected pairs remain rejected. Diagnostic significance is not economic validation or approval to trade.",
       "workspace-pairs-replay": "Reload and verify the saved pair experiment by its hash. Replay does not obtain new provider data or place orders.",
       "workspace-options-admit": "Explicitly admit an authored SYNTHETIC European BSM chain fixture with quotes, acquisition/knowledge time, spot provenance and contract identities. The fixture is not observed OPRA data and grants no vendor entitlement.",
@@ -701,13 +718,15 @@
         if (action === "research-model" && identity(result.data.run_id)) { workflowReferences.run_id = result.data.run_id; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
         if (action === "pairs-research" && identity(result.data.run_id)) workflowReferences.pair_run_id = result.data.run_id;
         if (action === "options-admit" && identity(result.data.snapshot_id)) workflowReferences.options_snapshot_id = result.data.snapshot_id;
-        if (action === "options-research" && identity(result.data.run_id)) workflowReferences.options_run_id = result.data.run_id;
+        if (action === "options-research" && identity(result.data.run_id)) { workflowReferences.options_run_id = result.data.run_id; workflowReferences.overlay_id = null; }
         if (action === "research-signals" && identity(result.data.signal_id)) workflowReferences.signal_id = result.data.signal_id;
+        if (action === "portfolio-accounting" && identity(result.data.checkpoint_id)) { workflowReferences.checkpoint_id = result.data.checkpoint_id; workflowReferences.overlay_id = null; }
+        if (action === "options-overlay" && identity(result.data.overlay_id)) workflowReferences.overlay_id = result.data.overlay_id;
         rememberExperiment(action, result);
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
         if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
-        $("workflow-identities").textContent = ["dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+        $("workflow-identities").textContent = ["dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();

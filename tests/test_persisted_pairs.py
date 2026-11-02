@@ -60,6 +60,7 @@ class PersistedPairTests(unittest.TestCase):
         self.assertEqual(artifact["input_classification"], "SYNTHETIC")
         self.assertGreater(artifact["metrics"]["selected_pair_folds"], 0)
         self.assertTrue(artifact["model_ids"])
+        self.assertTrue(all(artifact["library_versions"].get(key) for key in ("python", "numpy", "scipy", "statsmodels")))
         first = artifact["folds"][0]
         stamps = fixture_times(120)[:60]
         prices = {(row["instrument_id"], pd.Timestamp(row["timestamp"])): row["raw_close"]
@@ -91,6 +92,10 @@ class PersistedPairTests(unittest.TestCase):
         self.assertEqual(reopened.load(identity)["config"]["entry_z"], 0.)
         section = reopened.section("stat-arb", self.request["as_of"], 60).to_dict()
         self.assertEqual(section["data"]["run_id"], identity)
+        for section_name in ("models", "signals", "portfolio", "risk"):
+            grouped = reopened.section(section_name, self.request["as_of"], 60).to_dict()["data"]
+            self.assertEqual(grouped["rows_total"], len(grouped["rows"]))
+            self.assertTrue(grouped["rows_complete"])
         self.assertEqual(reopened.section("stat-arb", self.request["as_of"], None).to_dict()["state"], "UNKNOWN")
         later = (pd.Timestamp(self.request["as_of"])+pd.Timedelta(seconds=61)).isoformat()
         self.assertEqual(reopened.section("stat-arb", later, 60).to_dict()["state"], "STALE")

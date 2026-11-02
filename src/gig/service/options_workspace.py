@@ -297,11 +297,14 @@ class OptionsWorkspace:
                 selected["implied_volatility"], position["quantity"], selected["multiplier"], selected["right"] == "CALL", document["currency"], document["snapshot_id"]))
         exposure = portfolio_exposure(positions, spot=spot, rate=rate, div=div)
         scenarios = scenario_grid(positions, spot=spot, rate=rate, div=div, spot_shocks=request["spot_shocks"], volatility_shocks=request["volatility_shocks"])
-        surface = {"points": [{"log_forward_moneyness": p.log_forward_moneyness, "ttm": p.ttm, "volatility": p.volatility,
+        surface: dict[str, Any] = {"state": "AVAILABLE" if points else "UNAVAILABLE",
+                   "points": [{"log_forward_moneyness": p.log_forward_moneyness, "ttm": p.ttm, "volatility": p.volatility,
                                "source": p.source, "classification": "MODEL_ESTIMATE"} for p in points],
                    "diagnostics": asdict(validate_surface(points)), "classification": "MODEL_ESTIMATE", "right": "CALL",
                    "method": "Observed CALL coordinates with BSM-inverted midpoint IV; linear total variance query within hull only.",
                    "continuous_arbitrage_certified": False}
+        if not points:
+            surface["diagnostics"]["state"] = "UNAVAILABLE"
         if "surface_query" in request:
             try:
                 surface["query"] = {"state": "AVAILABLE", **interpolate_total_variance(points, **request["surface_query"])}

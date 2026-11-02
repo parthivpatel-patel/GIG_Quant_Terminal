@@ -41,6 +41,8 @@ class PairsResearchWorkspace:
                             for fold in artifact["folds"] for row in fold["screening"]]
         if section in {"signals", "portfolio", "risk"}:
             data["rows"] = artifact["proposals"]
+        data["rows_total"] = len(data["rows"])
+        data["rows_complete"] = True
         return Contract.admit(state, data if state in {State.AVAILABLE, State.STALE} else None,
             source=artifact["source"], classification="MODEL_ESTIMATE", as_of=artifact["as_of"],
             source_identity=artifact["dataset_id"], model_identity=artifact["run_id"],

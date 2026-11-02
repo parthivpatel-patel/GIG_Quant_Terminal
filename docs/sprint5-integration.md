@@ -40,6 +40,16 @@ modeled IV/hedge plots and session-only experiment comparisons expose these
 workflows. Input classifications, provenance, uncertainty and missingness remain
 visible. No browser action runs automatically or sends a broker order.
 
+The next integrated batch adds `options-overlay` and `options-overlay-replay`:
+a published, current reconciled simulated equity checkpoint and a saved options
+experiment form a single-underlying hypothetical scenario report. Exact source
+mark/clock alignment, unchanged current fills/positions, quote revisions and
+explicit delta/gamma/vega/scenario USD caps are checked. Other unmodeled holdings
+are rejected. The original OMS remains unchanged. Financing and outstanding-order
+exposure remain UNKNOWN; combined modeled value is never labeled funded NAV.
+Historical tail risk remains UNAVAILABLE rather than inferred from a scenario
+grid. See [overlay contracts and limits](options-overlay.md).
+
 ## Checkpoint verification
 
 The first integrated source checkpoint passed 40 new focused tests and the
@@ -49,6 +59,15 @@ the repository's import-skipping/untyped-body limitations; it is not a strict
 whole-program proof. Complete coverage and installed-wheel results will be
 recorded at the final validation checkpoint.
 
+The overlay source checkpoint additionally passed 85 tests against the installed
+native wheel, with all 140 packaged source/static/data files verified against
+source. Wheel SHA-256 is
+`de3a1cc57e395e1ae9140aa80d94eb019d0d57efa47dad720a86cd0356391ed5`.
+Twenty-two focused native/operations tests pass. A 20,000-observation C++20 rolling
+comparison has maximum absolute error `3.469446951953614e-18`; this x86 host run
+does not establish ARM64 parity. Timing evidence was collected with concurrent
+test work and is not a controlled performance comparison.
+
 Actual Chromium 151.0.7922.34 passed 87 retained baseline, 32 persisted-flow,
 24 depth/motion and 44 Sprint 5 checks. The suites overlap. No JavaScript errors
 or automated axe 4.10.3 violations occurred in tested dark/light views; viewport
@@ -56,6 +75,11 @@ checks cover 320, 375, 768, 1024 and 1920 px. Node's 78 smoke checks are separat
 Expanded scrollable provenance received keyboard focus/labels; long artifacts
 start collapsed. Manual accessibility, screen-reader and broader browser review
 remain outstanding. Evidence is under `docs/evidence/sprint5`.
+
+The final expanded Chromium workflow passed 60 checks including reconciled
+equity-to-options overlay, deterministic replay, unchanged OMS response, explicit
+unknown financing, dark/light accessibility and responsive layout. It supersedes
+the 44-check Sprint 5 workflow and must not be summed with it.
 
 ## Actual scope and remaining acceptance
 

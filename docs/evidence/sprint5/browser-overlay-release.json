@@ -1,0 +1,846 @@
+{
+  "runner": "real-playwright-chromium",
+  "checks": [
+    {
+      "name": "pipeline-bars explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "pipeline-universe explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "research-dataset explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "research-model explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "pairs-research explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "pairs-replay explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "pair replay retains exact immutable experiment",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "pair diagnostics retain fit evidence without trading approval",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "research-signals explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "signals-replay explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "signal replay retains exact IC evidence",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "IC state does not invent a calibrated confidence",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options-admit explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "options-research explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "options-replay explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "options replay retains exact original quote and model identity",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options inversion uses all authored fixture quotes",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Greek exposure uses explicit simulated positions",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "CSM remains unavailable without authoritative definition",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "execution-engine explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "offline-dispatch explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "overlay fixture acknowledgement remains unfilled",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "offline-fill explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "portfolio-accounting explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "reconciled checkpoint retains exact simulated equity position",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options-overlay explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "options-overlay-replay explicit Chromium submission",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "hypothetical overlay replays exact saved evidence",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options financing remains explicitly unknown",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "overlay evaluation leaves offline OMS evidence unchanged",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "overlay identity uses its own replay field",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "CPU, pairs, options and signal identities remain distinct and visible",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "session comparison retains submitted identities",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "pairs stat-arb serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "pairs models serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "signals-research signals serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "options-research options serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "options surface plots admitted coordinates with model labels",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "analyst can inspect actual saved term structure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "analyst can inspect explicit modeled scenarios",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options-research portfolio serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "options-research risk serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "options-overlay portfolio serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "overlay view retains financing warning in portfolio",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options-overlay risk serves persisted backend evidence",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "overlay view retains financing warning in risk",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dark visible text contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "dark automated accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light visible text contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light automated accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "320px research workflow without document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "375px research workflow without document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "768px research workflow without document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1024px research workflow without document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1920px research workflow without document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "historical research remains explicitly stale",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "transport failure clears previous saved research rows",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "all twelve sections retained",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reduced-motion camera remains paused",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript exceptions",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "javascript_errors": [],
+  "accessibility": [
+    {
+      "theme": "dark",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "tags": [
+            "cat.aria",
+            "wcag2a",
+            "wcag412",
+            "EN-301-549",
+            "EN-9.4.1.2"
+          ],
+          "description": "Ensure ARIA attributes are not prohibited for an element's role",
+          "help": "Elements must only use permitted ARIA attributes",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-prohibited-attr?application=axeAPI",
+          "nodes": [
+            {
+              "any": [],
+              "all": [],
+              "none": [
+                {
+                  "id": "aria-prohibited-attr",
+                  "data": {
+                    "role": null,
+                    "nodeName": "div",
+                    "messageKey": "noRoleSingular",
+                    "prohibited": [
+                      "aria-label"
+                    ]
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "aria-label attribute is not well supported on a div with no valid role attribute."
+                }
+              ],
+              "impact": "serious",
+              "html": "<div class=\"table-scroll\" id=\"table-wrap\" tabindex=\"0\" aria-label=\"Scrollable underlying observations\">",
+              "target": [
+                "#table-wrap"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute."
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "8.3pt (11px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+                      "target": [
+                        "#workflow-identities"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+              "target": [
+                "#workflow-identities"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "tags": [
+            "cat.aria",
+            "wcag2a",
+            "wcag412",
+            "EN-301-549",
+            "EN-9.4.1.2"
+          ],
+          "description": "Ensure ARIA attributes are not prohibited for an element's role",
+          "help": "Elements must only use permitted ARIA attributes",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-prohibited-attr?application=axeAPI",
+          "nodes": [
+            {
+              "any": [],
+              "all": [],
+              "none": [
+                {
+                  "id": "aria-prohibited-attr",
+                  "data": {
+                    "role": null,
+                    "nodeName": "div",
+                    "messageKey": "noRoleSingular",
+                    "prohibited": [
+                      "aria-label"
+                    ]
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "aria-label attribute is not well supported on a div with no valid role attribute."
+                }
+              ],
+              "impact": "serious",
+              "html": "<div class=\"table-scroll\" id=\"table-wrap\" tabindex=\"0\" aria-label=\"Scrollable underlying observations\">",
+              "target": [
+                "#table-wrap"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute."
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "8.3pt (11px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+                      "target": [
+                        "#workflow-identities"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+              "target": [
+                "#workflow-identities"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "broker_connections": 0,
+  "public_deployment": false,
+  "input_classification": "AUTHORED_SYNTHETIC_AND_MODELED_FIXTURES",
+  "formal_accessibility_certification": false,
+  "axe_asset": {
+    "name": "axe-core",
+    "version": "4.10.3",
+    "license": "MPL-2.0",
+    "source": "https://registry.npmjs.org/axe-core/-/axe-core-4.10.3.tgz",
+    "sha512_integrity_verified": true,
+    "script_sha256": "880970c081707360e64f34cea25ff91892f5bc95675b0776925b9709dd8a68bb"
+  },
+  "chromium_version": "151.0.7922.34",
+  "passed": 60,
+  "failed": 0
+}

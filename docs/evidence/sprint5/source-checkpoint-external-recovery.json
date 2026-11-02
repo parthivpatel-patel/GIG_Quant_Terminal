@@ -1,0 +1,9 @@
+{
+  "source_commit": "8f39b2c7e9ca267a6d7a4c8d5a4953d25f69f3e4",
+  "recovery_commit": "ea69fecd5243a76afd9688a35bc8a873f41c51a3",
+  "archive_sha256": "79f92f3d7834104fbeae1ff37a9ad0e3f69143c728b631b45b7c2a506071d9fc",
+  "verified_files": 442,
+  "independent_github_download": true,
+  "external_storage_provider": "GitHub",
+  "separate_external_git_bundle_verified": false
+}

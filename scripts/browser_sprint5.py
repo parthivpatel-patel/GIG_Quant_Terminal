@@ -108,6 +108,34 @@ def main():
                           option["data"]["metrics"]["valid_models"] == 12 and option["data"]["input_classification"] == "SYNTHETIC")
                     check("Greek exposure uses explicit simulated positions", option["data"]["portfolio_exposure"]["state"] == "AVAILABLE")
                     check("CSM remains unavailable without authoritative definition", option["data"]["csm"]["state"] == "UNAVAILABLE")
+                    # A separate explicit single-stock simulated account matches the
+                    # authored options spot and observation clock exactly. The
+                    # hypothetical options positions remain unfinanced.
+                    client_id = "authored-overlay-underlying-1"
+                    action("execution-engine", change={"client_id": client_id, "symbol": "SYN101",
+                        "quantity": "1", "reference_price": "110", "price_asof": "2026-11-02T15:49:00Z",
+                        "now": "2026-11-02T15:49:00Z", "max_notional": "1000", "max_position_quantity": "10"})
+                    ack = action("offline-dispatch", "execution-engine")
+                    check("overlay fixture acknowledgement remains unfilled", ack["data"]["positions"] == {})
+                    action("offline-fill", "execution-engine", change={"client_id": client_id,
+                        "price": "110", "quantity": "1", "fee": "0.10"})
+                    account = action("portfolio-accounting", change={"marks": {"SYN101": {
+                        "price": "110", "as_of": "2026-11-02T15:49:00Z"}},
+                        "source_identity": "authored-overlay-mark-110", "input_classification": "SYNTHETIC"})
+                    check("reconciled checkpoint retains exact simulated equity position",
+                          account["data"]["checkpoint_id"] in page.locator("#workflow-identities").inner_text())
+                    oms_url = url + "/api/v1/terminal/execution?mode=local&engine=execution-engine&as_of=2026-11-02T15%3A49%3A00Z&max_age_seconds=3600"
+                    before_overlay = context.request.get(oms_url).json()
+                    overlay = action("options-overlay")
+                    overlay_replay = action("options-overlay-replay")
+                    check("hypothetical overlay replays exact saved evidence", overlay == overlay_replay)
+                    check("options financing remains explicitly unknown",
+                          overlay["data"]["overlay_financing"]["state"] == "UNKNOWN"
+                          and overlay["data"]["overlay_financing"]["financed_nav"] is None)
+                    check("overlay evaluation leaves offline OMS evidence unchanged",
+                          before_overlay == context.request.get(oms_url).json())
+                    check("overlay identity uses its own replay field",
+                          overlay["data"]["overlay_id"] in page.locator("#workflow-identities").inner_text())
                     ids = page.locator("#workflow-identities").inner_text()
                     check("CPU, pairs, options and signal identities remain distinct and visible",
                           all(value in ids for value in [dataset["data"]["dataset_id"], model["data"]["run_id"],
@@ -119,7 +147,8 @@ def main():
                     page.wait_for_function(ready)
                     for engine, section in [("pairs", "stat-arb"), ("pairs", "models"),
                                             ("signals-research", "signals"), ("options-research", "options"),
-                                            ("options-research", "portfolio"), ("options-research", "risk")]:
+                                            ("options-research", "portfolio"), ("options-research", "risk"),
+                                            ("options-overlay", "portfolio"), ("options-overlay", "risk")]:
                         page.locator("#analysis-engine").select_option(engine)
                         page.wait_for_function(ready)
                         with page.expect_response(lambda r, engine=engine, section=section:
@@ -131,6 +160,9 @@ def main():
                         page.wait_for_function(ready)
                         current_state = page.locator("#state-badge").inner_text()
                         check(engine + " " + section + " serves persisted backend evidence", current_state == "AVAILABLE", current_state)
+                        if engine == "options-overlay":
+                            check("overlay view retains financing warning in " + section,
+                                  "financing UNKNOWN" in page.locator("#truth-notice").inner_text())
                         if section == "options":
                             check("options surface plots admitted coordinates with model labels",
                                   "modeled midpoint IV" in page.locator("#chart-title").inner_text()
@@ -166,11 +198,11 @@ def main():
                     page.locator("#replay-asof").press("Tab")
                     page.locator("#freshness-policy").select_option("3600")
                     page.wait_for_function(ready)
-                    check("historical options remain explicitly stale", page.locator("#state-badge").inner_text() == "STALE")
+                    check("historical research remains explicitly stale", page.locator("#state-badge").inner_text() == "STALE")
                     page.route("**/api/v1/terminal/*", lambda route: route.abort())
                     page.locator("#refresh").click()
                     page.wait_for_function(ready)
-                    check("transport failure clears previous saved option rows",
+                    check("transport failure clears previous saved research rows",
                           page.locator("#state-badge").inner_text() == "ERROR" and page.locator("#observations-table tbody tr").count() == 0)
                     page.unroute("**/api/v1/terminal/*")
                     check("all twelve sections retained", page.locator("#section-nav a").count() == 12)

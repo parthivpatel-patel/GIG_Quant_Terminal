@@ -129,6 +129,16 @@ class CycleServices:
     def signals_replay(self, payload: dict[str, Any]) -> Contract:
         return self._signals().replay(payload)
 
+    def _overlay(self):
+        from gig.service.overlay_workspace import OptionsOverlayWorkspace
+        return OptionsOverlayWorkspace(self.workspace.base_dir)
+
+    def options_overlay(self, payload: dict[str, Any]) -> Contract:
+        return self._overlay().run(payload)
+
+    def overlay_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._overlay().replay(payload)
+
     def section(self, engine: str, section: str, as_of: Any, maximum: float | None,
                 *, universe_id: str | None = None, instrument_id: str | None = None) -> Contract:
         result = None
@@ -165,6 +175,8 @@ class CycleServices:
             result = self._options().section(section, as_of, maximum)
         elif engine == "signals-research":
             result = self._signals().section(section, as_of, maximum)
+        elif engine == "options-overlay":
+            result = self._overlay().section(section, as_of, maximum)
         if result is not None:
             return result
         return Contract.admit(State.UNAVAILABLE, None, source=f"local-{engine}",

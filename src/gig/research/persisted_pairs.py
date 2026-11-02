@@ -6,7 +6,9 @@ backtest. It is neither a cash/share ledger nor an order execution simulator.
 from __future__ import annotations
 
 import math
+import platform
 from dataclasses import asdict
+from importlib.metadata import version
 from itertools import combinations
 from typing import Any
 
@@ -277,6 +279,8 @@ def fit_pairs(dataset: dict[str, Any], config: dict[str, Any]) -> tuple[dict[str
                         or any(value <= -1 for value in known_returns)
                         else float(np.prod([1+value for value in known_returns])-1))
     body = {"schema_version": IMPLEMENTATION, "dataset_id": dataset["dataset_id"], "config": config,
+            "library_versions": {"python": platform.python_version(), "numpy": np.__version__,
+                                 "scipy": version("scipy"), "statsmodels": version("statsmodels")},
             "source": dataset["source"], "as_of": dataset["as_of"],
             "input_classification": dataset["classification"], "folds": folds,
             "model_ids": sorted(models), "rows": rows, "proposals": latest_proposals,

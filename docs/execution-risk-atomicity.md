@@ -25,7 +25,8 @@ because its existing schema initialization uses `executescript`.
 Identical successful retries reload the same checkpoint and do not duplicate a
 kill event. AVAILABLE, STALE, UNKNOWN and UNAVAILABLE responses never release an
 engaged switch. Releasing the switch remains an explicit existing OMS operation;
-a replayed ERROR reengages it if an operator has released it. Allocation's
+a replayed ERROR reengages it if an operator has released it and the request
+still respects the durable clock. Allocation's
 accounting/risk path uses this same coordinator. It cannot bypass the existing
 outbox, clock, approval or kill-switch controls.
 

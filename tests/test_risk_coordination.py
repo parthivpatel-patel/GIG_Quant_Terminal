@@ -66,7 +66,8 @@ class AtomicRiskTests(unittest.TestCase):
 
     def test_exact_microsecond_edges_offsets_and_repeated_restart_are_idempotent(self):
         for stamp in ("2026-11-02T14:00:00.000000000Z", "2026-11-02T14:00:00.999999000Z",
-                      "2026-11-02T09:00:00.999999-05:00"):
+                      "2026-11-02T09:00:00.999999-05:00", "1677-09-21T00:12:43.145225Z",
+                      "2262-04-11T23:47:16.854775Z"):
             self.assertEqual(_stamp(stamp).isoformat(), pd.Timestamp(stamp).tz_convert("UTC").isoformat())
         payload = self.breach()
         payload["now"] = "2026-11-02T09:00:00.999999-05:00"
@@ -78,6 +79,42 @@ class AtomicRiskTests(unittest.TestCase):
             self.assertEqual(sum(row["state"] == "KILL_SWITCH" for row in oms.events()), 1)
             self.assertEqual(oms.connection.execute("SELECT COUNT(*) FROM portfolio_checkpoints").fetchone()[0], 1)
         self.assertEqual(len(PortfolioWorkspace(self.base)._history()), 1)
+
+    def test_explicit_release_does_not_suppress_repeated_error_controls(self):
+        first = reconcile_with_risk_controls(self.base, self.breach()).wire
+        with self.oms() as oms:
+            oms.set_kill_switch(False, now=NOW)
+            self.assertFalse(oms.kill_switch)
+        self.assertEqual(first, reconcile_with_risk_controls(self.base, self.breach()).wire)
+        with self.oms() as oms:
+            self.assertTrue(oms.kill_switch)
+            self.assertEqual(oms.connection.execute("SELECT COUNT(*) FROM portfolio_checkpoints").fetchone()[0], 1)
+        reconcile_with_risk_controls(self.base, request(now=NOW + timedelta(seconds=1)))
+        with self.oms() as oms:
+            self.assertTrue(oms.kill_switch)
+
+    def test_mismatched_positions_nonpositive_nav_and_missing_factor_are_errors(self):
+        for kind in ("mismatch", "nonpositive_nav", "missing_factor", "drawdown"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                base = Path(directory)
+                populate(base)
+                payload = request()
+                if kind == "mismatch":
+                    with sqlite3.connect(base / "execution-engine/oms.sqlite") as connection:
+                        connection.execute("UPDATE positions SET quantity='9'")
+                elif kind == "nonpositive_nav":
+                    populate(base, client="short", symbol="B", side="sell", quantity="100", price="50")
+                    payload["marks"]["B"]["price"] = "1000"
+                elif kind == "missing_factor":
+                    payload.update(metadata={}, limits={"max_factor_exposure": {"market": .5}})
+                else:
+                    reconcile_with_risk_controls(base, request())
+                    payload = request(now=NOW + timedelta(seconds=1), limits={"max_drawdown": .001})
+                    payload["marks"]["A"]["price"] = "10"
+                result = reconcile_with_risk_controls(base, payload).to_dict()
+                self.assertEqual(result["state"], "ERROR")
+                with OfflineOMS(base / "execution-engine/oms.sqlite") as oms:
+                    self.assertTrue(oms.kill_switch)
 
     def test_failure_after_either_sql_step_rolls_back_both_and_retry_recovers(self):
         for phase in ("checkpoint_indexed", "risk_controls_applied"):

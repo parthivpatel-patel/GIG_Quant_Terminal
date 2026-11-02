@@ -193,7 +193,12 @@ class SignalWorkspace:
 
     def replay(self, payload):
         _fields(payload, {"signal_id"}, {"signal_id"})
-        return self._contract(self.load(payload["signal_id"]))
+        try:
+            document = self.load(payload["signal_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-signals", classification="UNAVAILABLE",
+                scope="workspace.research-signals", error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document)
 
     def section(self, section, as_of, maximum):
         if section not in {"signals", "models", "research", "portfolio", "risk"}:

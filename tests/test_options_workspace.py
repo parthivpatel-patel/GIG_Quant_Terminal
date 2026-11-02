@@ -152,6 +152,14 @@ class OptionsWorkspaceTests(unittest.TestCase):
         bad = option_request(positions=[{"contract_id": fixture["quotes"][0]["contract_id"], "quantity": 1}])
         with self.assertRaises(ValueError):
             self.workspace.run(bad)
+        puts_only = OptionsWorkspace(self.base / "put-only")
+        fixture = option_fixture()
+        fixture["quotes"] = [fixture["quotes"][1]]
+        puts_only.ingest(fixture)
+        put_data = puts_only.run(option_request(positions=[])).to_dict()["data"]
+        self.assertEqual(put_data["surface"]["state"], "UNAVAILABLE")
+        self.assertEqual(put_data["surface"]["diagnostics"]["state"], "UNAVAILABLE")
+        self.assertEqual(put_data["metrics"]["valid_models"], 1)
 
     def test_invalid_admission_no_artifact_and_identity_conflicts(self):
         mutations = [lambda d: d.update(spot=float("nan")), lambda d: d.update(currency="EUR"),

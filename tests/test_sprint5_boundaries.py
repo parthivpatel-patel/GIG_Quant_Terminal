@@ -51,7 +51,7 @@ class Sprint5BoundaryTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_new_engines_missing_data_is_explicit_and_read_only(self):
         for engine, section in (("pairs", "stat-arb"), ("options-research", "options"),
-                                ("signals-research", "signals")):
+                                ("signals-research", "signals"), ("options-overlay", "risk")):
             with self.subTest(engine=engine):
                 response = await self.client.get("/api/v1/terminal/" + section,
                     params={"mode": "local", "engine": engine, "as_of": "2026-11-02T14:00:00Z", "max_age_seconds": 60})
@@ -76,3 +76,15 @@ class Sprint5BoundaryTests(unittest.IsolatedAsyncioTestCase):
                     json={}, headers={"Origin": "https://outside.invalid"})
                 self.assertEqual(cross_origin.status_code, 403)
                 operation.assert_not_called()
+
+    async def test_missing_saved_replays_are_unavailable_without_creating_state(self):
+        for action, key in (("pairs-replay", "run_id"), ("options-replay", "run_id"),
+                            ("signals-replay", "signal_id"), ("options-overlay-replay", "overlay_id")):
+            with self.subTest(action=action):
+                response = await self.client.post("/api/v1/workspace/" + action, json={key: "0"*64})
+                self.assertEqual(response.status_code, 200)
+                result = response.json()
+                EnvelopeSchema.model_validate(result)
+                self.assertEqual(result["state"], "UNAVAILABLE")
+                self.assertIsNone(result["data"])
+        self.assertFalse(self.base.exists())
