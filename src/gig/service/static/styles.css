@@ -42,3 +42,15 @@ body{font-size:14px;line-height:1.6;font-weight:400;font-feature-settings:"tnum"
 .metrics-grid.depth-metrics{grid-template-columns:repeat(6,minmax(0,1fr))}.depth-metrics .metric-card{padding:16px;min-height:110px}.depth-metrics .metric-value{font-size:22px}.depth-metrics .metric-label{font-size:11px}@media(max-width:1240px){.metrics-grid.depth-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:640px){.metrics-grid.depth-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .workspace-short{display:none}@media(max-width:640px){.workspace-name{display:none}.workspace-short{display:inline}}
+
+/* Sprint 5 research comparison uses existing panel/table tokens. */
+.comparison-controls { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;padding:1.25rem; }
+.comparison-controls select { width:100%;min-width:0; }
+.comparison-policy { padding:0 1.25rem 1rem;line-height:1.6;color:var(--muted); }
+.comparison-table { min-width:700px;width:100%; }
+.comparison-table th,.comparison-table td { max-width:32rem;overflow-wrap:anywhere;white-space:normal; }
+@media(max-width:600px) { .comparison-controls { grid-template-columns:1fr; } }
+
+.context-value:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
+
+.analysis-grid:not(.context-expanded) .context-entry:nth-child(n+6) { display:none; }

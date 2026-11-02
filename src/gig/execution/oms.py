@@ -66,6 +66,8 @@ def _decimal(value: str | int | Decimal, *, positive: bool = True) -> Decimal:
 def _time(value: datetime) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise OrderError("timezone-aware timestamp required")
+    if getattr(value, "nanosecond", 0):
+        raise OrderError("offline execution timestamps require microsecond precision")
     return value.astimezone(UTC)
 
 

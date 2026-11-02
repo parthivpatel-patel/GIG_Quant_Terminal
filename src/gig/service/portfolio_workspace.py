@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from gig.artifacts import write_immutable
-from gig.execution.oms import _decimal, _text
+from gig.execution.oms import OfflineOMS, _decimal, _text
 from gig.portfolio.ledger import canonical_fills, reconcile_account, risk_report, signed_decimal
 from gig.service.contracts import Contract, State
 from gig.service.serialization import dumps, loads, public_error
@@ -21,8 +21,9 @@ from gig.timestamps import aware_timestamp
 class PortfolioWorkspace:
     """One USD simulated account, initially flat, with an immutable capital base."""
 
-    def __init__(self, base_dir: Path):
+    def __init__(self, base_dir: Path, *, oms: OfflineOMS | None = None):
         self.base_dir = Path(base_dir).absolute()
+        self.oms = oms
 
     def _path(self, name: str) -> Path:
         relative = Path(name)
@@ -102,20 +103,33 @@ class PortfolioWorkspace:
 
     def _history(self) -> list[dict[str, Any]]:
         database = self._path("portfolio-ledger/index.sqlite")
-        if not database.is_file():
-            return []
-        with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as connection:
-            count = connection.execute("SELECT COUNT(*) FROM checkpoints").fetchone()[0]
-            if count > 1000:
-                raise ValueError("portfolio checkpoint read bound exceeded")
-            rows = list(connection.execute("SELECT checkpoint_id,as_of,intent_sha256 FROM checkpoints ORDER BY rowid"))
+        rows = []
+        if database.is_file():
+            with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as connection:
+                rows = list(connection.execute("SELECT checkpoint_id,as_of,intent_sha256 FROM checkpoints ORDER BY rowid LIMIT 1001"))
+        execution = self._path("execution-engine/oms.sqlite")
+        if self.oms is not None:
+            rows += self._execution_history(self.oms.connection)
+        elif execution.is_file():
+            with sqlite3.connect(execution.as_uri() + "?mode=ro", uri=True) as connection:
+                rows += self._execution_history(connection)
+        rows = list(dict.fromkeys(rows))
+        if len(rows) > 1000:
+            raise ValueError("portfolio checkpoint read bound exceeded")
         history = []
         for identity, timestamp, intent in rows:
             data = self.load(identity)
             if data["as_of"] != timestamp or data["intent_sha256"] != intent:
                 raise ValueError("portfolio checkpoint differs from index")
             history.append(data)
-        return history
+        return sorted(history, key=lambda value: aware_timestamp(value["as_of"]))
+
+    @staticmethod
+    def _execution_history(connection):
+        if not connection.execute("SELECT 1 FROM sqlite_master WHERE name='portfolio_checkpoints'").fetchone():
+            return []
+        return [tuple(row) for row in connection.execute(
+            "SELECT checkpoint_id,as_of,intent_sha256 FROM portfolio_checkpoints ORDER BY rowid LIMIT 1001")]
 
     @staticmethod
     def _contract(checkpoint: dict[str, Any], section: str, state: State | None = None) -> Contract:
@@ -228,6 +242,15 @@ class PortfolioWorkspace:
         contract = self._contract(checkpoint, "portfolio")
         self._path("portfolio-ledger/checkpoints")
         write_immutable(self._path(f"portfolio-ledger/checkpoints/{identity}.json"), encoded)
+        if self.oms is not None:
+            if not self.oms.connection.in_transaction:
+                raise ValueError("execution-linked checkpoints require the OMS transaction")
+            self.oms.connection.execute("CREATE TABLE IF NOT EXISTS portfolio_checkpoints(checkpoint_id TEXT PRIMARY KEY,as_of TEXT NOT NULL,intent_sha256 TEXT NOT NULL UNIQUE)")
+            if len(history) >= 1000:
+                raise ValueError("portfolio supports at most 1000 retained checkpoints")
+            self.oms.connection.execute("INSERT OR IGNORE INTO portfolio_checkpoints VALUES(?,?,?)",
+                                        (identity, now.isoformat(), intent))
+            return contract
         with sqlite3.connect(self._path("portfolio-ledger/index.sqlite")) as connection:
             connection.execute("PRAGMA synchronous=FULL")
             connection.execute("BEGIN IMMEDIATE")

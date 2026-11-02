@@ -486,5 +486,57 @@ checked("failed depth request clears previous levels", () => assert.equal(get("d
 await get("context-expand").dispatch("click");
 checked("full provenance has an explicit accessible toggle", () => assert.equal(get("context-expand").getAttribute("aria-expanded"), "true"));
 checked("camera starts paused under reduced-motion fallback", () => assert.equal(get("orbit-toggle").getAttribute("aria-pressed"), "false"));
+const sprint5Actions = { "pairs-research": "pairs-research", "pairs-replay": "pairs-replay", "options-admit": "options-admit", "options-research": "options-research", "options-replay": "options-replay", "research-signals": "research-signals", "signals-replay": "signals-replay", "allocate-signals": "research-allocate", "allocate-pairs": "research-allocate" };
+replyOverride = { body: localUnavailable() };
+for (const [kind, endpoint] of Object.entries(sprint5Actions)) {
+  get("analytics-kind").value = "workspace-" + kind;
+  const previous = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, previous, "Selecting Sprint 5 research must never submit it");
+  const text = get("analytics-input").value;
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`Sprint 5 ${kind} is an explicit backend request`, () => {
+    assert.equal(calls.at(-1).url, "/api/v1/workspace/" + endpoint);
+    assert.equal(calls.at(-1).options.body, text);
+  });
+}
+get("analytics-kind").value = "workspace-options-admit";
+await get("analytics-kind").dispatch("change");
+checked("options fixture declares modeled synthetic quotes without OPRA coverage", () => {
+  const body = JSON.parse(get("analytics-input").value);
+  assert.equal(body.classification, "SYNTHETIC");
+  assert.equal(body.feed, "MODELED_FIXTURE_NOT_OPRA");
+  assert.equal(body.quotes.length, 12);
+  assert.match(get("workbench-scope").textContent, /not observed OPRA/);
+});
+get("data-mode").value = "local";
+await get("data-mode").dispatch("change"); await settle();
+for (const engine of ["pairs", "options-research", "signals-research"]) {
+  get("analysis-engine").value = engine;
+  await get("analysis-engine").dispatch("change"); await settle();
+  checked(`Sprint 5 ${engine} view preserves backend engine identity`, () => assert(calls.at(-1).url.includes("engine=" + engine)));
+}
+await successfulPipeline("pairs-research", { run_id: "e".repeat(64), dataset_id: datasetId });
+await successfulPipeline("research-signals", { signal_id: "f".repeat(64), dataset_id: datasetId });
+get("analytics-kind").value = "workspace-pairs-replay";
+await get("analytics-kind").dispatch("change");
+checked("saved pair identity fills replay independently of CPU model ID", () => assert.equal(JSON.parse(get("analytics-input").value).run_id, "e".repeat(64)));
+get("analytics-kind").value = "workspace-allocate-signals";
+await get("analytics-kind").dispatch("change");
+checked("signal allocation selects exactly one saved origin", () => {
+  const body = JSON.parse(get("analytics-input").value);
+  assert.equal(body.signal_id, "f".repeat(64));
+  assert.equal(body.run_id, undefined);
+  assert.equal(body.pair_run_id, undefined);
+});
+checked("experiment comparison records only actual submitted identities", () => {
+  assert.equal(get("experiment-comparison").classList.contains("hidden"), false);
+  assert.match(get("comparison-policy").textContent, /Session-only comparison/);
+  assert.match(get("comparison-body").textContent, /eeeeeeee/);
+  assert.match(get("comparison-body").textContent, /ffffffff/);
+});
+replyOverride = { body: fixture({ data: { metrics: {}, rows: [], folds: [{ screening: [{ dependent: "SYN101", independent: "SYN102", selected: false, reason: "NO_COINTEGRATION" }] }] } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("rejected pairs remain visible as backend screening evidence", () => assert.match(tbody().textContent, /NO_COINTEGRATION/));
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

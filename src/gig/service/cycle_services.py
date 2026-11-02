@@ -86,15 +86,8 @@ class CycleServices:
         return self._allocation().prepare(payload)
 
     def portfolio_accounting(self, payload: dict[str, Any]) -> Contract:
-        result = self._accounting().run(payload)
-        if result.to_dict()["state"] == "ERROR":
-            from gig.execution.oms import OfflineOMS
-            from gig.service.execution_workspace import _stamp
-            path = self.workspace._path("execution-engine/oms.sqlite")
-            if path.is_file():
-                with OfflineOMS(path) as oms:
-                    oms.set_kill_switch(True, now=_stamp(payload["now"]))
-        return result
+        from gig.service.risk_coordination import reconcile_with_risk_controls
+        return reconcile_with_risk_controls(self.workspace.base_dir, payload)
 
     def _depth(self):
         from gig.service.depth_workspace import DepthWorkspace
@@ -102,6 +95,39 @@ class CycleServices:
 
     def admit_depth(self, payload: dict[str, Any]) -> Contract:
         return self._depth().ingest(payload)
+
+    def _pairs(self):
+        from gig.service.pairs_workspace import PairsResearchWorkspace
+        return PairsResearchWorkspace(self.workspace.base_dir)
+
+    def pairs_research(self, payload: dict[str, Any]) -> Contract:
+        return self._pairs().run(payload)
+
+    def pairs_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._pairs().replay(payload)
+
+    def _options(self):
+        from gig.service.options_workspace import OptionsWorkspace
+        return OptionsWorkspace(self.workspace.base_dir)
+
+    def options_admit(self, payload: dict[str, Any]) -> Contract:
+        return self._options().ingest(payload)
+
+    def options_research(self, payload: dict[str, Any]) -> Contract:
+        return self._options().run(payload)
+
+    def options_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._options().replay(payload)
+
+    def _signals(self):
+        from gig.service.signal_workspace import SignalWorkspace
+        return SignalWorkspace(self.workspace.base_dir)
+
+    def research_signals(self, payload: dict[str, Any]) -> Contract:
+        return self._signals().run(payload)
+
+    def signals_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._signals().replay(payload)
 
     def section(self, engine: str, section: str, as_of: Any, maximum: float | None,
                 *, universe_id: str | None = None, instrument_id: str | None = None) -> Contract:
@@ -133,6 +159,12 @@ class CycleServices:
             result = self._accounting().section(section, as_of, maximum)
         elif engine == "depth":
             result = self._depth().section(section, as_of, maximum, instrument_id=instrument_id)
+        elif engine == "pairs":
+            result = self._pairs().section(section, as_of, maximum)
+        elif engine == "options-research":
+            result = self._options().section(section, as_of, maximum)
+        elif engine == "signals-research":
+            result = self._signals().section(section, as_of, maximum)
         if result is not None:
             return result
         return Contract.admit(State.UNAVAILABLE, None, source=f"local-{engine}",

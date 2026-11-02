@@ -19,7 +19,10 @@
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
-  const workflowReferences = { dataset_id: null, run_id: null, allocation_id: null, prepared_client_ids: [] };
+  Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
+  const workflowReferences = { dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
+  const comparisonResults = [];
+
   workspaceActions["workspace-depth"] = "depth";
   const state = { section: sections[0], mode: "local", payload: null, rows: [], columns: [], sort: null, request: null, chart: null, points: [], projected: [], angle: -.55, tilt: .40, zoom: 1, dimension: 3, drag: null };
   const motionPreference = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : { matches: true };
@@ -145,6 +148,9 @@
     $("context-content").replaceChildren();
     $("error-panel").classList.add("hidden");
     state.rows = [];
+    state.tables = {};
+    $("evidence-table-view").replaceChildren();
+    $("evidence-table-control").classList.add("hidden");
     state.chart = null;
     renderTable();
     renderChart();
@@ -156,7 +162,7 @@
         if (!["3600", "86400", "604800"].includes(maximumAge)) throw new Error("Unsupported freshness policy.");
         query += `&max_age_seconds=${maximumAge}`;
         const engine = $("analysis-engine").value || "default";
-        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation", "depth"].includes(engine)) throw new Error("Unsupported local evidence view.");
+        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation", "depth", "pairs", "options-research", "signals-research"].includes(engine)) throw new Error("Unsupported local evidence view.");
         if (engine !== "default") query += `&engine=${encodeURIComponent(engine)}`;
         const universe = $("universe-id").value;
         if (engine === "provider" && universe) {
@@ -189,7 +195,7 @@
     const provenance = isObject(payload.provenance) ? payload.provenance : {};
     const data = isObject(payload.data) ? payload.data : {};
     const classification = provenance.classification || "UNKNOWN";
-    const synthetic = String(classification).toUpperCase() === "SYNTHETIC";
+    const synthetic = String(classification).toUpperCase() === "SYNTHETIC" || data.input_classification === "SYNTHETIC";
     $("truth-strip").classList.toggle("synthetic", synthetic);
     $("state-badge").textContent = payload.state;
     $("state-badge").dataset.state = payload.state;
@@ -223,15 +229,59 @@
     extra.forEach(([key, value]) => context.push([human(key), value]));
     $("context-content").replaceChildren(...context.map(([label, value]) => {
       const entry = el("div", "context-entry");
-      entry.append(el("div", "context-label", label), el("div", "context-value", printable(value)));
+      const content = el("div", "context-value", printable(value));
+      if (isObject(value) || Array.isArray(value) || printable(value).length > 300) {
+        content.setAttribute("tabindex", "0");
+        content.setAttribute("role", "region");
+        content.setAttribute("aria-label", "Scrollable " + label);
+      }
+      entry.append(el("div", "context-label", label), content);
       return entry;
     }));
-    state.rows = Array.isArray(data.rows) ? data.rows.filter(isObject) : [];
-    state.chart = isObject(data.chart) ? data.chart : researchChart(state.rows);
+    state.tables = { observations: Array.isArray(data.rows) ? data.rows.filter(isObject) : [] };
+    const addTable = (name, rows) => { if (Array.isArray(rows) && rows.length) state.tables[name] = rows.filter(isObject); };
+    if (Array.isArray(data.folds)) addTable("pair_screening", data.folds.flatMap((fold, index) => Array.isArray(fold.screening) ? fold.screening.map(row => ({ fold: index, ...row })) : []));
+    addTable("allocation_proposals", data.proposals);
+    addTable("model_diagnostics", data.diagnostics);
+    addTable("term_structure", data.term_structure);
+    addTable("skew", data.skew);
+    if (isObject(data.vts)) addTable("term_slope", data.vts.rows);
+    if (isObject(data.scenarios)) addTable("modeled_scenarios", data.scenarios.scenarios);
+    if (isObject(data.portfolio_exposure)) addTable("simulated_greek_exposures", data.portfolio_exposure.positions);
+    if (!state.tables.observations.length) {
+      const candidate = Object.keys(state.tables).find(key => key !== "observations" && state.tables[key].length);
+      if (candidate) delete state.tables.observations;
+    }
+    const keys = Object.keys(state.tables), tableView = $("evidence-table-view");
+    tableView.replaceChildren(...keys.map(key => { const option = el("option", "", human(key)); option.value = key; return option; }));
+    tableView.value = keys[0];
+    $("evidence-table-control").classList.toggle("hidden", keys.length <= 1);
+    state.rows = state.tables[keys[0]];
+    state.chart = isObject(data.chart) ? data.chart : analyticalChart(data) || researchChart(state.rows);
     $("analysis-grid").classList.toggle("no-chart", !state.chart && ["AVAILABLE", "STALE"].includes(payload.state));
     renderDepth(data.depth || null, payload.state);
     renderTable();
     renderChart();
+  }
+  function analyticalChart(data) {
+    if (isObject(data.surface) && Array.isArray(data.surface.points) && ["options", "models", "research"].includes(state.section.id)) {
+      return { kind: "volatility-surface", title: "Admitted CALL coordinates · modeled midpoint IV", axes: [
+        { key: "log_forward_moneyness", label: "Log forward moneyness", unit: "log(K/F)" },
+        { key: "ttm", label: "Time to expiry", unit: "ACT/365F years" },
+        { key: "volatility", label: "Modeled IV", unit: "annualized decimal" }], points: data.surface.points };
+    }
+    if (state.section.id === "risk" && isObject(data.scenarios) && Array.isArray(data.scenarios.scenarios)) {
+      return { kind: "risk-surface", title: "Simulated options scenario P&L", axes: [
+        { key: "spot_shock", label: "Spot shock", unit: "arithmetic fraction" },
+        { key: "volatility_shock", label: "Volatility shock", unit: "annualized decimal" },
+        { key: "model_pnl", label: "Modeled scenario P&L", unit: "quote currency" }], points: data.scenarios.scenarios };
+    }
+    const pairs = Array.isArray(data.rows) ? data.rows.filter(row => [row.innovation_zscore, row.kalman_beta, row.fold].every(value => typeof value === "number" && Number.isFinite(value))) : [];
+    if (pairs.length) return { kind: "pair-diagnostics", title: "Causal hedge and standardized innovation", axes: [
+      { key: "fold", label: "Validation fold", unit: "index" },
+      { key: "kalman_beta", label: "Dynamic hedge beta", unit: "level-price hedge units" },
+      { key: "innovation_zscore", label: "Innovation z-score", unit: "predicted standard deviations" }], points: pairs };
+    return null;
   }
   function researchChart(rows) {
     const supported = new Set(["FORWARD_RETURN_ESTIMATE", "CROSS_SECTIONAL_RANK_SCORE", "NEXT_OBSERVATION_RETURN_ESTIMATE", "FILTERED_RETURN_STATE"]);
@@ -548,11 +598,29 @@
   examples["workspace-offline-fill"] = { operation: "fill", now: pipelineStamp(79), client_id: "copy-a-prepared-client-id", quantity: "1", price: pipelineMarks.SYN101.price, fee: "0.10" };
   examples["workspace-schedule-twap"] = { operation: "schedule-twap", now: pipelineStamp(79), client_id: "authored-offline-twap-v1", symbol: "SYN101", side: "buy", quantity: "2", start: pipelineStamp(79), end: pipelineStamp(81), slices: 2, lot_size: "1", max_notional: "1000", max_position_quantity: "1000" };
   examples["workspace-advance-clock"] = { operation: "advance-clock", now: pipelineStamp(79), marks: { SYN101: { reference_price: pipelineMarks.SYN101.price, price_asof: pipelineStamp(79) } } };
+  examples["workspace-pairs-research"] = { dataset_id: "0".repeat(64), training_window: 30, test_size: 10, embargo: 1, alpha: .05, entry_z: 1.5, cost_bps: 10, borrow_bps: 0, max_gross: .2, process_variance: .00001, observation_variance: .01 };
+  examples["workspace-pairs-replay"] = { run_id: "0".repeat(64) };
+  examples["workspace-research-signals"] = { run_ids: ["0".repeat(64)], now: pipelineStamp(79), lookback: 20, min_ic_observations: 5 };
+  examples["workspace-signals-replay"] = { signal_id: "0".repeat(64) };
+  examples["workspace-options-admit"] = {"source":"authored-bsm-chain-workbench-v1","classification":"SYNTHETIC","feed":"MODELED_FIXTURE_NOT_OPRA","underlying_id":"SYN101","currency":"USD","event_at":"2026-11-02T15:49:00+00:00","acquired_at":"2026-11-02T15:49:00+00:00","knowledge_at":"2026-11-02T15:49:00+00:00","spot":110,"spot_source_identity":"authored-synthetic-spot-110","spot_event_at":"2026-11-02T15:49:00+00:00","spot_knowledge_at":"2026-11-02T15:49:00+00:00","quotes":[{"contract_id":"AUTHORED:SYN101:0:100:CALL","expiry":"2026-12-02T15:49:00+00:00","strike":100,"right":"CALL","multiplier":100,"style":"EUROPEAN","bid":10.40472,"ask":10.42472,"volume":120,"open_interest":200},{"contract_id":"AUTHORED:SYN101:0:100:PUT","expiry":"2026-12-02T15:49:00+00:00","strike":100,"right":"PUT","multiplier":100,"style":"EUROPEAN","bid":0.248822,"ask":0.268822,"volume":120,"open_interest":200},{"contract_id":"AUTHORED:SYN101:0:110:CALL","expiry":"2026-12-02T15:49:00+00:00","strike":110,"right":"CALL","multiplier":100,"style":"EUROPEAN","bid":3.095022,"ask":3.115022,"volume":130,"open_interest":210},{"contract_id":"AUTHORED:SYN101:0:110:PUT","expiry":"2026-12-02T15:49:00+00:00","strike":110,"right":"PUT","multiplier":100,"style":"EUROPEAN","bid":2.914497,"ask":2.934497,"volume":130,"open_interest":210},{"contract_id":"AUTHORED:SYN101:0:120:CALL","expiry":"2026-12-02T15:49:00+00:00","strike":120,"right":"CALL","multiplier":100,"style":"EUROPEAN","bid":0.396894,"ask":0.416894,"volume":140,"open_interest":220},{"contract_id":"AUTHORED:SYN101:0:120:PUT","expiry":"2026-12-02T15:49:00+00:00","strike":120,"right":"PUT","multiplier":100,"style":"EUROPEAN","bid":10.191742,"ask":10.211742,"volume":140,"open_interest":220},{"contract_id":"AUTHORED:SYN101:1:100:CALL","expiry":"2027-01-02T15:49:00+00:00","strike":100,"right":"CALL","multiplier":100,"style":"EUROPEAN","bid":11.310087,"ask":11.330087,"volume":120,"open_interest":200},{"contract_id":"AUTHORED:SYN101:1:100:PUT","expiry":"2027-01-02T15:49:00+00:00","strike":100,"right":"PUT","multiplier":100,"style":"EUROPEAN","bid":0.993654,"ask":1.013654,"volume":120,"open_interest":200},{"contract_id":"AUTHORED:SYN101:1:110:CALL","expiry":"2027-01-02T15:49:00+00:00","strike":110,"right":"CALL","multiplier":100,"style":"EUROPEAN","bid":4.732927,"ask":4.752927,"volume":130,"open_interest":210},{"contract_id":"AUTHORED:SYN101:1:110:PUT","expiry":"2027-01-02T15:49:00+00:00","strike":110,"right":"PUT","multiplier":100,"style":"EUROPEAN","bid":4.366483,"ask":4.386483,"volume":130,"open_interest":210},{"contract_id":"AUTHORED:SYN101:1:120:CALL","expiry":"2027-01-02T15:49:00+00:00","strike":120,"right":"CALL","multiplier":100,"style":"EUROPEAN","bid":1.417172,"ask":1.437172,"volume":140,"open_interest":220},{"contract_id":"AUTHORED:SYN101:1:120:PUT","expiry":"2027-01-02T15:49:00+00:00","strike":120,"right":"PUT","multiplier":100,"style":"EUROPEAN","bid":11.000716,"ask":11.020716,"volume":140,"open_interest":220}]};
+  examples["workspace-options-research"] = {"source":"authored-bsm-chain-workbench-v1","classification":"SYNTHETIC","underlying_id":"SYN101","observation_at":"2026-11-02T15:49:00+00:00","as_of":"2026-11-02T15:49:00+00:00","max_age_seconds":3600,"rate":0.03,"dividend_yield":0.01,"positions":[{"contract_id":"AUTHORED:SYN101:0:110:CALL","quantity":2},{"contract_id":"AUTHORED:SYN101:0:110:PUT","quantity":-1}],"spot_shocks":[-0.1,0,0.1],"volatility_shocks":[-0.02,0,0.02]};
+  examples["workspace-options-replay"] = { run_id: "0".repeat(64) };
+  examples["workspace-allocate-signals"] = { ...examples["workspace-research-allocate"], signal_id: "0".repeat(64) };
+  delete examples["workspace-allocate-signals"].run_id;
+  examples["workspace-allocate-pairs"] = { ...examples["workspace-research-allocate"], pair_run_id: "0".repeat(64) };
+  delete examples["workspace-allocate-pairs"].run_id;
   function loadExample() {
     const kind = $("analytics-kind").value;
     const example = JSON.parse(JSON.stringify(examples[kind]));
     if (["workspace-research-model", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (["workspace-research-predict", "workspace-research-allocate"].includes(kind) && workflowReferences.run_id) example.run_id = workflowReferences.run_id;
+    if (kind === "workspace-pairs-research" && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
+    if (kind === "workspace-pairs-replay" && workflowReferences.pair_run_id) example.run_id = workflowReferences.pair_run_id;
+    if (kind === "workspace-options-replay" && workflowReferences.options_run_id) example.run_id = workflowReferences.options_run_id;
+    if (kind === "workspace-research-signals" && workflowReferences.run_id) example.run_ids = [workflowReferences.run_id];
+    if (kind === "workspace-signals-replay" && workflowReferences.signal_id) example.signal_id = workflowReferences.signal_id;
+    if (kind === "workspace-allocate-signals" && workflowReferences.signal_id) example.signal_id = workflowReferences.signal_id;
+    if (kind === "workspace-allocate-pairs" && workflowReferences.pair_run_id) example.pair_run_id = workflowReferences.pair_run_id;
     if (kind === "workspace-research-prepare" && workflowReferences.allocation_id) example.allocation_id = workflowReferences.allocation_id;
     if (kind === "workspace-offline-fill" && workflowReferences.prepared_client_ids.length) example.client_id = workflowReferences.prepared_client_ids[0];
     $("analytics-input").value = JSON.stringify(example, null, 2);
@@ -572,7 +640,18 @@
     if (kind === "workspace-offline-fill") $("run-analysis").textContent = "Apply explicit simulated fill";
     if (kind === "workspace-schedule-twap") $("run-analysis").textContent = "Save offline TWAP schedule";
     if (kind === "workspace-advance-clock") $("run-analysis").textContent = "Advance explicit simulation clock";
+    const sprint5Labels = { "workspace-pairs-research": "Run saved-data pair research", "workspace-pairs-replay": "Replay saved pair experiment", "workspace-options-admit": "Admit authored options fixture", "workspace-options-research": "Run historical options research", "workspace-options-replay": "Replay saved options research", "workspace-research-signals": "Score saved OOS model evidence", "workspace-signals-replay": "Replay saved research scores", "workspace-allocate-signals": "Construct targets from research scores", "workspace-allocate-pairs": "Construct targets from eligible pair" };
+    if (sprint5Labels[kind]) $("run-analysis").textContent = sprint5Labels[kind];
     const specialScopes = {
+      "workspace-pairs-research": "Use a saved admitted dataset to test chronological pair eligibility, cointegration, ADF, causal hedge states, and modeled costs. Rejected pairs remain rejected. Diagnostic significance is not economic validation or approval to trade.",
+      "workspace-pairs-replay": "Reload and verify the saved pair experiment by its hash. Replay does not obtain new provider data or place orders.",
+      "workspace-options-admit": "Explicitly admit an authored SYNTHETIC European BSM chain fixture with quotes, acquisition/knowledge time, spot provenance and contract identities. The fixture is not observed OPRA data and grants no vendor entitlement.",
+      "workspace-options-research": "Select an admitted chain at its historical knowledge cutoff. IV, Greeks, surfaces and scenarios are European ACT/365F model estimates under the supplied rate and dividend assumptions. PCR and VTS carry explicit definitions; unavailable CSM remains unavailable.",
+      "workspace-options-replay": "Verify and reload a saved options experiment. Original quote identities, modeled assumptions and simulated Greek exposures are retained after restart.",
+      "workspace-research-signals": "Combine saved out-of-sample model evidence using only outcomes known at the decision time. IC diagnostics are research estimates; confidence is not a calibrated probability or trading approval.",
+      "workspace-signals-replay": "Reload a hash-verified saved research score. Research scores do not automatically create portfolio targets or approve orders.",
+      "workspace-allocate-signals": "Construct explicit constrained offline targets from a saved research score artifact. Existing exposure, cash, transaction costs and asynchronous fill limits still apply.",
+      "workspace-allocate-pairs": "Construct explicit constrained offline targets from an eligible saved pair proposal. Missing, rejected or inactive proposals return unavailable rather than manufacturing a trade.",
       "workspace-depth": "Persist an explicitly authored SYNTHETIC multi-level book. No depth is inferred from bars or connected to a provider. After submission, choose Admitted market depth and instrument SYN101 with its explicit replay cutoff.",
       "workspace-treasury": "Submitting this action fetches historical par yields from the fixed official Treasury public endpoint and persists original XML under CC0-1.0 with attribution. No credentials or broker connection. Select provider evidence in Markets after acquisition. Acquisition freshness does not mean current market quotes.",
       "workspace-ingest": "Offline authored SYNTHETIC IEX protocol fixture only. No Alpaca connection, credentials or provider-observed market data. IEX is not SIP.",
@@ -618,17 +697,51 @@
       if (!validContract(result) || (!response.ok && !["ERROR", "UNAVAILABLE"].includes(result.state))) throw new Error("Unsupported response contract.");
       if (response.ok && result.state === "AVAILABLE" && isObject(result.data)) {
         const identity = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-        if (action === "research-dataset" && identity(result.data.dataset_id)) { workflowReferences.dataset_id = result.data.dataset_id; workflowReferences.run_id = null; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
+        if (action === "research-dataset" && identity(result.data.dataset_id)) { workflowReferences.dataset_id = result.data.dataset_id; workflowReferences.run_id = null; workflowReferences.pair_run_id = null; workflowReferences.signal_id = null; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
         if (action === "research-model" && identity(result.data.run_id)) { workflowReferences.run_id = result.data.run_id; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
+        if (action === "pairs-research" && identity(result.data.run_id)) workflowReferences.pair_run_id = result.data.run_id;
+        if (action === "options-admit" && identity(result.data.snapshot_id)) workflowReferences.options_snapshot_id = result.data.snapshot_id;
+        if (action === "options-research" && identity(result.data.run_id)) workflowReferences.options_run_id = result.data.run_id;
+        if (action === "research-signals" && identity(result.data.signal_id)) workflowReferences.signal_id = result.data.signal_id;
+        rememberExperiment(action, result);
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
         if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
-        $("workflow-identities").textContent = ["dataset_id", "run_id", "allocation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+        $("workflow-identities").textContent = ["dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();
     } catch { output.textContent = "Analysis response could not be loaded. Check the local service, supported input contract, and retry."; }
     finally { clearTimeout(timer); button.disabled = false; }
+  }
+  function rememberExperiment(action, result) {
+    if (!["research-model", "pairs-research", "options-research", "research-signals"].includes(action)) return;
+    const data = result.data, identity = data.run_id || data.signal_id;
+    if (typeof identity !== "string" || !/^[a-f0-9]{64}$/.test(identity)) return;
+    if (comparisonResults.some(item => item.identity === identity)) return;
+    const entry = { identity, action, dataset: data.dataset_id || null, source: result.provenance.source, classification: data.input_classification || result.provenance.classification, as_of: result.provenance.as_of, metrics: isObject(data.metrics) ? data.metrics : {} };
+    comparisonResults.push(entry);
+    if (comparisonResults.length > 12) comparisonResults.shift();
+    for (const field of ["compare-left", "compare-right"]) {
+      const selection = $(field), old = selection.value;
+      selection.replaceChildren(...comparisonResults.map(item => { const option = el("option", "", `${human(item.action)} · ${item.identity.slice(0, 12)}`); option.value = item.identity; return option; }));
+      selection.value = comparisonResults.some(item => item.identity === old) ? old : entry.identity;
+    }
+    $("compare-right").value = entry.identity;
+    if (comparisonResults.length > 1) $("compare-left").value = comparisonResults[comparisonResults.length - 2].identity;
+    renderComparison();
+  }
+  function renderComparison() {
+    const left = comparisonResults.find(item => item.identity === $("compare-left").value);
+    const right = comparisonResults.find(item => item.identity === $("compare-right").value);
+    $("experiment-comparison").classList.toggle("hidden", !left || !right);
+    if (!left || !right) return;
+    const sameDataset = left.dataset && left.dataset === right.dataset;
+    $("comparison-policy").textContent = (sameDataset ? "Same admitted dataset identity." : "Different or unspecified datasets; results are not directly comparable.") + " Metrics retain each experiment's meaning. Session-only comparison; no economic validation or trading approval.";
+    const rows = [["Experiment", left.action, right.action], ["Immutable identity", left.identity, right.identity], ["Dataset", left.dataset, right.dataset], ["Source", left.source, right.source], ["Input classification", left.classification, right.classification], ["As of", left.as_of, right.as_of]];
+    const keys = [...new Set([...Object.keys(left.metrics), ...Object.keys(right.metrics)])].slice(0, 24);
+    keys.forEach(key => rows.push([human(key), left.metrics[key], right.metrics[key]]));
+    $("comparison-body").replaceChildren(...rows.map(values => { const row = el("tr"); values.forEach((value, index) => row.append(el(index ? "td" : "th", "", printable(value)))); return row; }));
   }
   function setTheme(theme) {
     document.documentElement.dataset.theme = theme;
@@ -655,10 +768,18 @@
   $("replay-asof").addEventListener("change", loadSection);
   $("refresh").addEventListener("click", loadSection);
   $("table-search").addEventListener("input", renderTable);
+  $("evidence-table-view").addEventListener("change", () => {
+    state.rows = state.tables && state.tables[$("evidence-table-view").value] || [];
+    state.sort = null;
+    $("table-search").value = "";
+    renderTable();
+  });
   $("export-csv").addEventListener("click", exportCsv);
   $("analytics-kind").addEventListener("change", loadExample);
   $("load-example").addEventListener("click", loadExample);
   $("run-analysis").addEventListener("click", runAnalysis);
+  $("compare-left").addEventListener("change", renderComparison);
+  $("compare-right").addEventListener("change", renderComparison);
   window.addEventListener("hashchange", selectSection);
   [2, 3].forEach((dimension) => $(`view-${dimension}d`).addEventListener("click", () => { state.dimension = dimension; [2, 3].forEach((d) => $(`view-${d}d`).setAttribute("aria-pressed", String(d === dimension))); renderChart(); }));
   $("chart-reset").addEventListener("click", () => { state.angle = -.55; state.tilt = .40; state.zoom = 1; renderChart(); });
