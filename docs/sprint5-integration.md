@@ -34,13 +34,13 @@ Execution-linked risk admission and kill control now share one OMS transaction.
 Timestamp precision is checked before mutation; the research ledger retains
 nanoseconds. See [failure/recovery semantics](execution-risk-atomicity.md).
 
-All 12 terminal sections and the existing design system remain. Three additional
+All 12 terminal sections and the existing design system remain. Four additional
 evidence engines, explicit workbench actions, actual saved-result table choices,
 modeled IV/hedge plots and session-only experiment comparisons expose these
 workflows. Input classifications, provenance, uncertainty and missingness remain
 visible. No browser action runs automatically or sends a broker order.
 
-The next integrated batch adds `options-overlay` and `options-overlay-replay`:
+`options-overlay` and `options-overlay-replay` connect
 a published, current reconciled simulated equity checkpoint and a saved options
 experiment form a single-underlying hypothetical scenario report. Exact source
 mark/clock alignment, unchanged current fills/positions, quote revisions and
@@ -52,14 +52,16 @@ grid. See [overlay contracts and limits](options-overlay.md).
 
 ## Checkpoint verification
 
-The first integrated source checkpoint passed 40 new focused tests and the
-68-test execution safety/regression selection (overlapping counts). Ruff,
-Pyflakes, compilation and configured mypy on 134 source files pass. Mypy retains
+The final complete backend regression passed **770 tests**, with **zero failures,
+errors, skips or deselections**, and **80.80% coverage** against the configured 70%
+minimum. No dependency-blocked tests remain in this run. Ruff,
+Pyflakes, compilation and configured mypy on 135 source files pass. Mypy retains
 the repository's import-skipping/untyped-body limitations; it is not a strict
-whole-program proof. Complete coverage and installed-wheel results will be
-recorded at the final validation checkpoint.
+whole-program proof. Initial intermediate failures were repaired; a full run
+collected before the last source changes was interrupted and restarted so these
+results describe the frozen final source, not a mixture of source versions.
 
-The overlay source checkpoint additionally passed 85 tests against the installed
+The final source additionally passed 85 tests against the installed
 native wheel, with all 140 packaged source/static/data files verified against
 source. Wheel SHA-256 is
 `de3a1cc57e395e1ae9140aa80d94eb019d0d57efa47dad720a86cd0356391ed5`.
@@ -80,6 +82,16 @@ The final expanded Chromium workflow passed 60 checks including reconciled
 equity-to-options overlay, deterministic replay, unchanged OMS response, explicit
 unknown financing, dark/light accessibility and responsive layout. It supersedes
 the 44-check Sprint 5 workflow and must not be summed with it.
+
+Validated source milestones were published at
+`8f39b2c7e9ca267a6d7a4c8d5a4953d25f69f3e4` and
+`97beb6ffc1f86d6ddbf9dd2c2d93282288c56dcf`; independent GitHub tree comparisons
+matched all 471 and 488 file blob hashes/modes respectively. Recovery commit
+`ea69fecd5243a76afd9688a35bc8a873f41c51a3` preserves the first milestone's
+442-file source/evidence archive; an independent GitHub download verified every
+SHA-256. Final source/reports receive an additional recovery archive and verified
+Git bundle. GitHub is the verified external storage provider. Complete Git bundles
+are verified locally; a second independent storage provider is not claimed.
 
 ## Actual scope and remaining acceptance
 

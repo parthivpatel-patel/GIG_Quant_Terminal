@@ -1,0 +1,24 @@
+{
+  "architecture": "x86_64",
+  "python": "3.12.14",
+  "compiler_available": "g++ (Debian 14.2.0-19) 14.2.0",
+  "parity_report": "sprint5-native-benchmark.json",
+  "pytest_report": "sprint5-native.xml",
+  "arm64_runtime_this_sprint": false,
+  "physical_ampere_validated": false,
+  "controlled_performance_benchmark": false,
+  "artifacts": [
+    {
+      "path": "src/cpp/rolling.cpp",
+      "sha256": "c18feedc57bfdbf8588ffa12beac0b62f84e521e91de823c2beaa3270a101262"
+    },
+    {
+      "path": "src/gig/native/_rolling.so",
+      "sha256": "bb10d6e828dc956ab2ab7cbc8fcaaaf201c0cfc13ce708b49e125e41a0d143ac"
+    },
+    {
+      "path": "src/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+      "sha256": "77a8bcad69f3a248a4784702c24b8b9ab26fdc5c989ee5e521aa07531bbd201d"
+    }
+  ]
+}

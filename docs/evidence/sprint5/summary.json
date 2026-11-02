@@ -1,0 +1,55 @@
+{
+  "branch": "development/gig-ui-redesign",
+  "validated_source_commit": "97beb6ffc1f86d6ddbf9dd2c2d93282288c56dcf",
+  "protected_quantitative_head": "202b1a2c4fb3fe8acc734f29cbaa09f17857fddb",
+  "main_unchanged": "f946b23790e92b048a8cbd0160f876509b43455e",
+  "full_regression": {
+    "tests": 770,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage_percent": 80.79847908745248,
+  "installed_wheel": {
+    "tests": 85,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "native_tests": {
+    "tests": 22,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "native_comparison_samples": 20000,
+  "native_max_abs_error": 3.469446951953614e-18,
+  "chromium_version": "151.0.7922.34",
+  "expanded_chromium_checks": 60,
+  "chromium_failures": 0,
+  "chromium_javascript_errors": [],
+  "retained_browser_checks": {
+    "baseline": 87,
+    "persisted_flow": 32,
+    "depth_motion": 24
+  },
+  "node_smoke_checks": 78,
+  "suite_counts_overlap_do_not_sum": true,
+  "configured_mypy_source_files": 135,
+  "ruff": "PASS",
+  "pyflakes": "PASS",
+  "compilation": "PASS",
+  "dependency_blocked_tests": [],
+  "finbert_license": "CC-BY-NC-SA-4.0 NONCOMMERCIAL_RESEARCH_ONLY",
+  "restricted_weights_in_git_or_archives": false,
+  "broker_connections": 0,
+  "provider_connections_this_sprint": 0,
+  "public_deployment": false,
+  "current_arm64_runtime_verified": false,
+  "physical_ampere_verified": false,
+  "formal_accessibility_certification": false,
+  "t4": "T4_NOT_CERTIFIED",
+  "historical_section_139": "UNSUPPLIED",
+  "external_storage_provider_verified": "GitHub",
+  "second_external_storage_provider_verified": false
+}
