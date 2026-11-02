@@ -1,0 +1,12 @@
+{
+  "source_commit": "c4cce0c4df291a7237930124b4229ac7fdf0c972",
+  "publication_commit": "bf25a275e1eca81fa86b9c952fc472224f3e0697",
+  "result": "PASS",
+  "archive_sha256": "04c3245fa5437856a778846549f5e9a15d8e74bfa18ab50b7f846f17053df35b",
+  "source_files_restored_verified": 420,
+  "external_provider": "GitHub",
+  "second_storage_provider_verified": false,
+  "restricted_weights_included": false,
+  "local_complete_git_bundle_verified": true,
+  "external_git_bundle_storage_claimed": false
+}
