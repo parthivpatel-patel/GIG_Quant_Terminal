@@ -1,0 +1,26 @@
+{
+  "wheel_sha256": "2b0c8bdb8e7bf21c56d5aeed5904bc014d0e70dd902299934e171700e001b67a",
+  "source_files_compared": 134,
+  "packaged_source_matches": true,
+  "native_extension_present": true,
+  "quantitative_parent": "202b1a2c4fb3fe8acc734f29cbaa09f17857fddb",
+  "sprint4_implementation": "eeb8bfdcc62f7f3c5528a045fb2284d41647c20f",
+  "full_regression": {
+    "passed": 719,
+    "failed": 0,
+    "skipped": 0,
+    "coverage_percent": 79.84128864147814
+  },
+  "browser_suites": {
+    "baseline": 87,
+    "analyst_flow": 32,
+    "depth_and_motion": 24,
+    "failed": 0,
+    "javascript_exceptions": 0
+  },
+  "suites_overlap_do_not_sum": true,
+  "node_smoke": 61,
+  "installed_wheel": 40,
+  "physical_arm64_validated": false,
+  "restricted_finbert_weights_distributed": false
+}

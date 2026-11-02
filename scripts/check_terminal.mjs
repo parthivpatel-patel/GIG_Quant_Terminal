@@ -24,7 +24,7 @@ class Element {
     this.listeners = new Map();
     this.attributes = new Map();
     this.dataset = {};
-    this.style = {};
+    this.style = { setProperty(name, value) { this[name] = value; } };
     this.value = "";
     this.disabled = false;
     this._text = "";
@@ -473,5 +473,18 @@ await successfulPipeline("research-dataset", { dataset_id: "c".repeat(64) });
 get("analytics-kind").value = "workspace-research-allocate";
 await get("analytics-kind").dispatch("change");
 checked("a newly selected dataset clears dependent run and allocation identities", () => assert.equal(JSON.parse(get("analytics-input").value).run_id, "0".repeat(64)));
+replyOverride = { body: fixture({ data: { title: "Admitted depth", metrics: {}, rows: [], depth: { instrument_id: "SYN101", source: "authored-depth", classification: "SYNTHETIC", feed: "CALLER_SUPPLIED", currency: "USD", sequence: 1, event_at: replayCutoff, available_at: replayCutoff, bids: [{price:"100",quantity:"9007199254740993"},{price:"99",quantity:"10"}], asks: [{price:"101",quantity:"20"}] } } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("depth ladder preserves exact quantity text and source classification", () => {
+  assert.equal(get("depth-levels").children.length, 2);
+  assert.equal(get("depth-levels").children[0].children[0].textContent, "9007199254740993");
+  assert.match(get("depth-provenance").textContent, /SYNTHETIC/);
+});
+replyOverride = new Error("offline transport fixture");
+await get("refresh").dispatch("click"); await settle();
+checked("failed depth request clears previous levels", () => assert.equal(get("depth-levels").children.length, 0));
+await get("context-expand").dispatch("click");
+checked("full provenance has an explicit accessible toggle", () => assert.equal(get("context-expand").getAttribute("aria-expanded"), "true"));
+checked("camera starts paused under reduced-motion fallback", () => assert.equal(get("orbit-toggle").getAttribute("aria-pressed"), "false"));
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

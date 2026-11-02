@@ -1,0 +1,4036 @@
+{
+  "chromium_version": "151.0.7922.34",
+  "checks": [
+    {
+      "name": "no synthetic depth on initial load",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "depth admission succeeds through explicit browser action",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "large bid ask ladder uses admitted levels",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "cumulative curves use two admitted sides",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "depth provenance remains synthetic and caller supplied",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "depth ladder has a substantial scrollable viewport",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dark depth visible contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "dark depth automated accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light depth visible contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light depth automated accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "depth 320px no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "depth 375px no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "depth 768px no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "depth 1024px no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "depth 1920px no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "transport error clears previous successful depth",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "stale depth stays explicitly stale",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "missing book never falls back to another instrument",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reduced motion starts orbit paused",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "slow orbit moves actual analytical canvas",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "pause control freezes camera",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reduced motion preference immediately pauses camera",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "all twelve navigation sections retained",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript exceptions",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "accessibility": [
+    {
+      "theme": "dark",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "tags": [
+            "cat.aria",
+            "wcag2a",
+            "wcag412",
+            "EN-301-549",
+            "EN-9.4.1.2"
+          ],
+          "description": "Ensure ARIA attributes are not prohibited for an element's role",
+          "help": "Elements must only use permitted ARIA attributes",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-prohibited-attr?application=axeAPI",
+          "nodes": [
+            {
+              "any": [],
+              "all": [],
+              "none": [
+                {
+                  "id": "aria-prohibited-attr",
+                  "data": {
+                    "role": null,
+                    "nodeName": "div",
+                    "messageKey": "noRoleSingular",
+                    "prohibited": [
+                      "aria-label"
+                    ]
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "aria-label attribute is not well supported on a div with no valid role attribute."
+                }
+              ],
+              "impact": "serious",
+              "html": "<div class=\"table-scroll\" id=\"table-wrap\" tabindex=\"0\" aria-label=\"Scrollable underlying observations\">",
+              "target": [
+                "#table-wrap"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute."
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">120</td>",
+                      "target": [
+                        ".depth-bid[title=\"120\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">120</td>",
+              "target": [
+                ".depth-bid[title=\"120\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"110.00\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">110.00</td>",
+                      "target": [
+                        ".depth-bid[title=\"110.00\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"110.00\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">110.00</td>",
+              "target": [
+                ".depth-bid[title=\"110.00\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.04\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.04</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.04\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.04\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.04</td>",
+              "target": [
+                ".depth-ask[title=\"110.04\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"90\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">90</td>",
+                      "target": [
+                        ".depth-ask[title=\"90\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"90\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">90</td>",
+              "target": [
+                ".depth-ask[title=\"90\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"145\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">145</td>",
+                      "target": [
+                        ".depth-bid[title=\"145\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"145\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">145</td>",
+              "target": [
+                ".depth-bid[title=\"145\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.98\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.98</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.98\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.98\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.98</td>",
+              "target": [
+                ".depth-bid[title=\"109.98\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.06\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.06</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.06\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.06\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.06</td>",
+              "target": [
+                ".depth-ask[title=\"110.06\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">120</td>",
+                      "target": [
+                        ".depth-ask[title=\"120\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">120</td>",
+              "target": [
+                ".depth-ask[title=\"120\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"170\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">170</td>",
+                      "target": [
+                        ".depth-bid[title=\"170\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"170\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">170</td>",
+              "target": [
+                ".depth-bid[title=\"170\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.96\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.96</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.96\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.96\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.96</td>",
+              "target": [
+                ".depth-bid[title=\"109.96\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.08\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.08</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.08\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.08\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.08</td>",
+              "target": [
+                ".depth-ask[title=\"110.08\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"150\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">150</td>",
+                      "target": [
+                        ".depth-ask[title=\"150\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"150\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">150</td>",
+              "target": [
+                ".depth-ask[title=\"150\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"195\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">195</td>",
+                      "target": [
+                        ".depth-bid[title=\"195\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"195\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">195</td>",
+              "target": [
+                ".depth-bid[title=\"195\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.94\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.94</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.94\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.94\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.94</td>",
+              "target": [
+                ".depth-bid[title=\"109.94\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.10\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.10</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.10\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.10\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.10</td>",
+              "target": [
+                ".depth-ask[title=\"110.10\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"180\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">180</td>",
+                      "target": [
+                        ".depth-ask[title=\"180\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"180\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">180</td>",
+              "target": [
+                ".depth-ask[title=\"180\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"220\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">220</td>",
+                      "target": [
+                        ".depth-bid[title=\"220\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"220\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">220</td>",
+              "target": [
+                ".depth-bid[title=\"220\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.92\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.92</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.92\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.92\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.92</td>",
+              "target": [
+                ".depth-bid[title=\"109.92\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.12\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.12</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.12\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.12\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.12</td>",
+              "target": [
+                ".depth-ask[title=\"110.12\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"210\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">210</td>",
+                      "target": [
+                        ".depth-ask[title=\"210\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"210\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">210</td>",
+              "target": [
+                ".depth-ask[title=\"210\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"245\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">245</td>",
+                      "target": [
+                        ".depth-bid[title=\"245\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"245\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">245</td>",
+              "target": [
+                ".depth-bid[title=\"245\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.90\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.90</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.90\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.90\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.90</td>",
+              "target": [
+                ".depth-bid[title=\"109.90\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.14\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.14</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.14\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.14\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.14</td>",
+              "target": [
+                ".depth-ask[title=\"110.14\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"240\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">240</td>",
+                      "target": [
+                        ".depth-ask[title=\"240\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"240\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">240</td>",
+              "target": [
+                ".depth-ask[title=\"240\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">270</td>",
+                      "target": [
+                        ".depth-bid[title=\"270\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">270</td>",
+              "target": [
+                ".depth-bid[title=\"270\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.88\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.88</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.88\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.88\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.88</td>",
+              "target": [
+                ".depth-bid[title=\"109.88\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.16\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.16</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.16\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.16\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.16</td>",
+              "target": [
+                ".depth-ask[title=\"110.16\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">270</td>",
+                      "target": [
+                        ".depth-ask[title=\"270\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">270</td>",
+              "target": [
+                ".depth-ask[title=\"270\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"295\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">295</td>",
+                      "target": [
+                        ".depth-bid[title=\"295\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"295\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">295</td>",
+              "target": [
+                ".depth-bid[title=\"295\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.86\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.86</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.86\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.86\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.86</td>",
+              "target": [
+                ".depth-bid[title=\"109.86\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.18\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.18</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.18\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.18\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.18</td>",
+              "target": [
+                ".depth-ask[title=\"110.18\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"300\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">300</td>",
+                      "target": [
+                        ".depth-ask[title=\"300\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"300\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">300</td>",
+              "target": [
+                ".depth-ask[title=\"300\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"320\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">320</td>",
+                      "target": [
+                        ".depth-bid[title=\"320\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"320\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">320</td>",
+              "target": [
+                ".depth-bid[title=\"320\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.84\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.84</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.84\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.84\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.84</td>",
+              "target": [
+                ".depth-bid[title=\"109.84\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.20\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.20</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.20\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.20\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.20</td>",
+              "target": [
+                ".depth-ask[title=\"110.20\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"330\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">330</td>",
+                      "target": [
+                        ".depth-ask[title=\"330\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"330\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">330</td>",
+              "target": [
+                ".depth-ask[title=\"330\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"345\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">345</td>",
+                      "target": [
+                        ".depth-bid[title=\"345\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"345\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">345</td>",
+              "target": [
+                ".depth-bid[title=\"345\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.82\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.82</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.82\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.82\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.82</td>",
+              "target": [
+                ".depth-bid[title=\"109.82\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.22\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.22</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.22\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.22\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.22</td>",
+              "target": [
+                ".depth-ask[title=\"110.22\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"360\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">360</td>",
+                      "target": [
+                        ".depth-ask[title=\"360\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"360\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">360</td>",
+              "target": [
+                ".depth-ask[title=\"360\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"370\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">370</td>",
+                      "target": [
+                        ".depth-bid[title=\"370\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"370\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">370</td>",
+              "target": [
+                ".depth-bid[title=\"370\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.80\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.80</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.80\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.80\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.80</td>",
+              "target": [
+                ".depth-bid[title=\"109.80\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.24\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.24</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.24\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.24\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.24</td>",
+              "target": [
+                ".depth-ask[title=\"110.24\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"390\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">390</td>",
+                      "target": [
+                        ".depth-ask[title=\"390\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"390\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">390</td>",
+              "target": [
+                ".depth-ask[title=\"390\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"395\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">395</td>",
+                      "target": [
+                        ".depth-bid[title=\"395\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"395\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">395</td>",
+              "target": [
+                ".depth-bid[title=\"395\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.78\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.78</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.78\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.78\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.78</td>",
+              "target": [
+                ".depth-bid[title=\"109.78\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.26\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.26</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.26\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.26\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.26</td>",
+              "target": [
+                ".depth-ask[title=\"110.26\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"420\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">420</td>",
+                      "target": [
+                        ".depth-ask[title=\"420\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"420\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">420</td>",
+              "target": [
+                ".depth-ask[title=\"420\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "10.5pt (14px)",
+                    "fontWeight": "normal",
+                    "messageKey": "imgNode",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<svg id=\"depth-chart\" viewBox=\"0 0 600 260\" role=\"img\" aria-label=\"Admitted cumulative bid and ask quantities. Exact levels are in the adjacent table.\">",
+                      "target": [
+                        "#depth-chart"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because element contains an image node"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<text x=\"35\" y=\"249\" class=\"depth-chart-label\">109.70</text>",
+              "target": [
+                "text[x=\"35\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "10.5pt (14px)",
+                    "fontWeight": "normal",
+                    "messageKey": "imgNode",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<svg id=\"depth-chart\" viewBox=\"0 0 600 260\" role=\"img\" aria-label=\"Admitted cumulative bid and ask quantities. Exact levels are in the adjacent table.\">",
+                      "target": [
+                        "#depth-chart"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because element contains an image node"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<text x=\"480\" y=\"249\" class=\"depth-chart-label\">110.34</text>",
+              "target": [
+                "text[x=\"480\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "aria-prohibited-attr",
+          "impact": "serious",
+          "tags": [
+            "cat.aria",
+            "wcag2a",
+            "wcag412",
+            "EN-301-549",
+            "EN-9.4.1.2"
+          ],
+          "description": "Ensure ARIA attributes are not prohibited for an element's role",
+          "help": "Elements must only use permitted ARIA attributes",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-prohibited-attr?application=axeAPI",
+          "nodes": [
+            {
+              "any": [],
+              "all": [],
+              "none": [
+                {
+                  "id": "aria-prohibited-attr",
+                  "data": {
+                    "role": null,
+                    "nodeName": "div",
+                    "messageKey": "noRoleSingular",
+                    "prohibited": [
+                      "aria-label"
+                    ]
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "aria-label attribute is not well supported on a div with no valid role attribute."
+                }
+              ],
+              "impact": "serious",
+              "html": "<div class=\"table-scroll\" id=\"table-wrap\" tabindex=\"0\" aria-label=\"Scrollable underlying observations\">",
+              "target": [
+                "#table-wrap"
+              ],
+              "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute."
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">120</td>",
+                      "target": [
+                        ".depth-bid[title=\"120\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">120</td>",
+              "target": [
+                ".depth-bid[title=\"120\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"110.00\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">110.00</td>",
+                      "target": [
+                        ".depth-bid[title=\"110.00\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"110.00\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">110.00</td>",
+              "target": [
+                ".depth-bid[title=\"110.00\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.04\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.04</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.04\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.04\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.04</td>",
+              "target": [
+                ".depth-ask[title=\"110.04\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"90\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">90</td>",
+                      "target": [
+                        ".depth-ask[title=\"90\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"90\" style=\"--depth-width: 16.666666666666664%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">90</td>",
+              "target": [
+                ".depth-ask[title=\"90\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"145\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">145</td>",
+                      "target": [
+                        ".depth-bid[title=\"145\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"145\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">145</td>",
+              "target": [
+                ".depth-bid[title=\"145\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.98\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.98</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.98\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.98\" style=\"--depth-width: 26.851851851851855%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.98</td>",
+              "target": [
+                ".depth-bid[title=\"109.98\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.06\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.06</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.06\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.06\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.06</td>",
+              "target": [
+                ".depth-ask[title=\"110.06\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">120</td>",
+                      "target": [
+                        ".depth-ask[title=\"120\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"120\" style=\"--depth-width: 22.22222222222222%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">120</td>",
+              "target": [
+                ".depth-ask[title=\"120\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"170\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">170</td>",
+                      "target": [
+                        ".depth-bid[title=\"170\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"170\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">170</td>",
+              "target": [
+                ".depth-bid[title=\"170\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.96\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.96</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.96\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.96\" style=\"--depth-width: 31.48148148148148%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.96</td>",
+              "target": [
+                ".depth-bid[title=\"109.96\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.08\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.08</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.08\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.08\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.08</td>",
+              "target": [
+                ".depth-ask[title=\"110.08\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"150\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">150</td>",
+                      "target": [
+                        ".depth-ask[title=\"150\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"150\" style=\"--depth-width: 27.77777777777778%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">150</td>",
+              "target": [
+                ".depth-ask[title=\"150\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"195\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">195</td>",
+                      "target": [
+                        ".depth-bid[title=\"195\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"195\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">195</td>",
+              "target": [
+                ".depth-bid[title=\"195\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.94\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.94</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.94\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.94\" style=\"--depth-width: 36.11111111111111%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.94</td>",
+              "target": [
+                ".depth-bid[title=\"109.94\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.10\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.10</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.10\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.10\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.10</td>",
+              "target": [
+                ".depth-ask[title=\"110.10\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"180\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">180</td>",
+                      "target": [
+                        ".depth-ask[title=\"180\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"180\" style=\"--depth-width: 33.33333333333333%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">180</td>",
+              "target": [
+                ".depth-ask[title=\"180\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"220\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">220</td>",
+                      "target": [
+                        ".depth-bid[title=\"220\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"220\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">220</td>",
+              "target": [
+                ".depth-bid[title=\"220\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.92\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.92</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.92\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.92\" style=\"--depth-width: 40.74074074074074%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.92</td>",
+              "target": [
+                ".depth-bid[title=\"109.92\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.12\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.12</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.12\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.12\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.12</td>",
+              "target": [
+                ".depth-ask[title=\"110.12\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"210\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">210</td>",
+                      "target": [
+                        ".depth-ask[title=\"210\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"210\" style=\"--depth-width: 38.88888888888889%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">210</td>",
+              "target": [
+                ".depth-ask[title=\"210\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"245\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">245</td>",
+                      "target": [
+                        ".depth-bid[title=\"245\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"245\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">245</td>",
+              "target": [
+                ".depth-bid[title=\"245\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.90\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.90</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.90\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.90\" style=\"--depth-width: 45.370370370370374%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.90</td>",
+              "target": [
+                ".depth-bid[title=\"109.90\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.14\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.14</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.14\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.14\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.14</td>",
+              "target": [
+                ".depth-ask[title=\"110.14\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"240\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">240</td>",
+                      "target": [
+                        ".depth-ask[title=\"240\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"240\" style=\"--depth-width: 44.44444444444444%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">240</td>",
+              "target": [
+                ".depth-ask[title=\"240\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">270</td>",
+                      "target": [
+                        ".depth-bid[title=\"270\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">270</td>",
+              "target": [
+                ".depth-bid[title=\"270\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.88\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.88</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.88\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.88\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.88</td>",
+              "target": [
+                ".depth-bid[title=\"109.88\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.16\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.16</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.16\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.16\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.16</td>",
+              "target": [
+                ".depth-ask[title=\"110.16\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">270</td>",
+                      "target": [
+                        ".depth-ask[title=\"270\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"270\" style=\"--depth-width: 50%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">270</td>",
+              "target": [
+                ".depth-ask[title=\"270\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"295\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">295</td>",
+                      "target": [
+                        ".depth-bid[title=\"295\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"295\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">295</td>",
+              "target": [
+                ".depth-bid[title=\"295\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.86\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.86</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.86\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.86\" style=\"--depth-width: 54.629629629629626%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.86</td>",
+              "target": [
+                ".depth-bid[title=\"109.86\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.18\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.18</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.18\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.18\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.18</td>",
+              "target": [
+                ".depth-ask[title=\"110.18\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"300\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">300</td>",
+                      "target": [
+                        ".depth-ask[title=\"300\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"300\" style=\"--depth-width: 55.55555555555556%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">300</td>",
+              "target": [
+                ".depth-ask[title=\"300\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"320\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">320</td>",
+                      "target": [
+                        ".depth-bid[title=\"320\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"320\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">320</td>",
+              "target": [
+                ".depth-bid[title=\"320\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.84\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.84</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.84\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.84\" style=\"--depth-width: 59.25925925925925%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.84</td>",
+              "target": [
+                ".depth-bid[title=\"109.84\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.20\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.20</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.20\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.20\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.20</td>",
+              "target": [
+                ".depth-ask[title=\"110.20\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"330\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">330</td>",
+                      "target": [
+                        ".depth-ask[title=\"330\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"330\" style=\"--depth-width: 61.111111111111114%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">330</td>",
+              "target": [
+                ".depth-ask[title=\"330\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"345\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">345</td>",
+                      "target": [
+                        ".depth-bid[title=\"345\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"345\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">345</td>",
+              "target": [
+                ".depth-bid[title=\"345\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.82\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.82</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.82\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.82\" style=\"--depth-width: 63.888888888888886%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.82</td>",
+              "target": [
+                ".depth-bid[title=\"109.82\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.22\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.22</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.22\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.22\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.22</td>",
+              "target": [
+                ".depth-ask[title=\"110.22\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"360\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">360</td>",
+                      "target": [
+                        ".depth-ask[title=\"360\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"360\" style=\"--depth-width: 66.66666666666666%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">360</td>",
+              "target": [
+                ".depth-ask[title=\"360\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"370\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">370</td>",
+                      "target": [
+                        ".depth-bid[title=\"370\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"370\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">370</td>",
+              "target": [
+                ".depth-bid[title=\"370\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.80\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.80</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.80\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.80\" style=\"--depth-width: 68.51851851851852%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.80</td>",
+              "target": [
+                ".depth-bid[title=\"109.80\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.24\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.24</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.24\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.24\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.24</td>",
+              "target": [
+                ".depth-ask[title=\"110.24\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"390\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">390</td>",
+                      "target": [
+                        ".depth-ask[title=\"390\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"390\" style=\"--depth-width: 72.22222222222221%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">390</td>",
+              "target": [
+                ".depth-ask[title=\"390\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"395\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">395</td>",
+                      "target": [
+                        ".depth-bid[title=\"395\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"395\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">395</td>",
+              "target": [
+                ".depth-bid[title=\"395\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-bid\" title=\"109.78\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.78</td>",
+                      "target": [
+                        ".depth-bid[title=\"109.78\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-bid\" title=\"109.78\" style=\"--depth-width: 73.14814814814815%; --depth-fill: color-mix(in srgb,var(--green) 10%,transparent);\">109.78</td>",
+              "target": [
+                ".depth-bid[title=\"109.78\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"110.26\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.26</td>",
+                      "target": [
+                        ".depth-ask[title=\"110.26\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"110.26\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">110.26</td>",
+              "target": [
+                ".depth-ask[title=\"110.26\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "bgGradient",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<td class=\"depth-ask\" title=\"420\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">420</td>",
+                      "target": [
+                        ".depth-ask[title=\"420\"]"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined due to a background gradient"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<td class=\"depth-ask\" title=\"420\" style=\"--depth-width: 77.77777777777779%; --depth-fill: color-mix(in srgb,var(--red) 10%,transparent);\">420</td>",
+              "target": [
+                ".depth-ask[title=\"420\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "10.5pt (14px)",
+                    "fontWeight": "normal",
+                    "messageKey": "imgNode",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<svg id=\"depth-chart\" viewBox=\"0 0 600 260\" role=\"img\" aria-label=\"Admitted cumulative bid and ask quantities. Exact levels are in the adjacent table.\">",
+                      "target": [
+                        "#depth-chart"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because element contains an image node"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<text x=\"35\" y=\"249\" class=\"depth-chart-label\">109.70</text>",
+              "target": [
+                "text[x=\"35\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "10.5pt (14px)",
+                    "fontWeight": "normal",
+                    "messageKey": "imgNode",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<svg id=\"depth-chart\" viewBox=\"0 0 600 260\" role=\"img\" aria-label=\"Admitted cumulative bid and ask quantities. Exact levels are in the adjacent table.\">",
+                      "target": [
+                        "#depth-chart"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because element contains an image node"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<text x=\"480\" y=\"249\" class=\"depth-chart-label\">110.34</text>",
+              "target": [
+                "text[x=\"480\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "javascript_errors": [],
+  "passed": 24,
+  "failed": 0,
+  "source_classification": "AUTHORED_SYNTHETIC_DEPTH_FIXTURE",
+  "broker_connections": 0,
+  "public_deployment": false,
+  "formal_accessibility_certification": false
+}

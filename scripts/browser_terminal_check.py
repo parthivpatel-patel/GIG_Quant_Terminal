@@ -255,6 +255,7 @@ def main() -> int:
                             scan = page.evaluate("async()=>await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa']}})")
                             accessibility[-1]["axe"] = {"version": scan["testEngine"]["version"], "violations": scan["violations"], "incomplete": scan["incomplete"], "passes": len(scan["passes"])}
                             check(theme + " axe WCAG A/AA automated rules", not scan["violations"], [v["id"] for v in scan["violations"]])
+                        page.evaluate("window.scrollTo(0,0)")
                         page.screenshot(path=str(evidence / f"desktop-{theme}.png"), full_page=True)
 
                     page.set_viewport_size({"width": 320, "height": 800})

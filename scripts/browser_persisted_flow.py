@@ -102,6 +102,7 @@ def main():
                             result = page.evaluate("async()=>await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa']}})")
                             report["accessibility"].append({"theme": theme, "version": result["testEngine"]["version"], "violations": result["violations"], "incomplete": result["incomplete"]})
                             check(theme + " analyst automated accessibility", not result["violations"])
+                        page.evaluate("window.scrollTo(0,0)")
                         page.screenshot(path=str(evidence / f"analyst-{theme}.png"), full_page=True)
                     for width in (320, 375, 768, 1024, 1920):
                         page.set_viewport_size({"width": width, "height": 900})

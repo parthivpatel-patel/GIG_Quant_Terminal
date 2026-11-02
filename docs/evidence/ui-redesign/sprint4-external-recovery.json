@@ -1,0 +1,9 @@
+{
+  "source_commit": "eeb8bfdcc62f7f3c5528a045fb2284d41647c20f",
+  "publication_commit": "202b1a2c4fb3fe8acc734f29cbaa09f17857fddb",
+  "downloaded_archive_sha256": "3401df1abb816d97a61539bf9238a1ef57585372bd6b5c1e2802bb302c531867",
+  "source_files_verified": 399,
+  "result": "PASS",
+  "external_storage_provider": "GitHub",
+  "second_storage_provider_verified": false
+}

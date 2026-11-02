@@ -20,7 +20,11 @@
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
   const workflowReferences = { dataset_id: null, run_id: null, allocation_id: null, prepared_client_ids: [] };
+  workspaceActions["workspace-depth"] = "depth";
   const state = { section: sections[0], mode: "local", payload: null, rows: [], columns: [], sort: null, request: null, chart: null, points: [], projected: [], angle: -.55, tilt: .40, zoom: 1, dimension: 3, drag: null };
+  const motionPreference = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : { matches: true };
+  state.orbit = !motionPreference.matches;
+  let orbitFrame = null, orbitLast = null;
   const numberFormat = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 7 });
   const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -125,6 +129,10 @@
   }
   async function loadSection() {
     $("universe-id").disabled = state.mode !== "local" || $("analysis-engine").value !== "provider";
+    $("universe-control").classList.toggle("hidden", state.mode !== "local" || $("analysis-engine").value !== "provider");
+    $("depth-control").classList.toggle("hidden", state.mode !== "local" || $("analysis-engine").value !== "depth");
+    $("depth-panel").classList.toggle("hidden", !["markets", "execution", "command-center"].includes(state.section.id));
+    renderDepth(null);
     if (state.request) state.request.abort();
     const controller = new AbortController();
     state.request = controller;
@@ -148,13 +156,15 @@
         if (!["3600", "86400", "604800"].includes(maximumAge)) throw new Error("Unsupported freshness policy.");
         query += `&max_age_seconds=${maximumAge}`;
         const engine = $("analysis-engine").value || "default";
-        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation"].includes(engine)) throw new Error("Unsupported local evidence view.");
+        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation", "depth"].includes(engine)) throw new Error("Unsupported local evidence view.");
         if (engine !== "default") query += `&engine=${encodeURIComponent(engine)}`;
         const universe = $("universe-id").value;
         if (engine === "provider" && universe) {
           if (universe.length > 128) throw new Error("Universe identity exceeds supported length.");
           query += `&universe_id=${encodeURIComponent(universe)}`;
         }
+        const depthInstrument = $("depth-instrument").value;
+        if (engine === "depth" && depthInstrument) query += `&instrument_id=${encodeURIComponent(depthInstrument)}`;
         // The server admits aware timestamps. Keep the original text so
         // browser Date parsing cannot truncate nanosecond point-in-time data.
         const cutoff = $("replay-asof").value;
@@ -197,6 +207,7 @@
       $("error-panel").classList.remove("hidden");
     }
     renderMetrics(data.metrics);
+    $("metrics").classList.toggle("depth-metrics", isObject(data.depth));
     const context = [
       ["Source identity", provenance.source],
       ["Data classification", classification],
@@ -216,8 +227,85 @@
       return entry;
     }));
     state.rows = Array.isArray(data.rows) ? data.rows.filter(isObject) : [];
-    state.chart = isObject(data.chart) ? data.chart : null;
+    state.chart = isObject(data.chart) ? data.chart : researchChart(state.rows);
+    $("analysis-grid").classList.toggle("no-chart", !state.chart && ["AVAILABLE", "STALE"].includes(payload.state));
+    renderDepth(data.depth || null, payload.state);
     renderTable();
+    renderChart();
+  }
+  function researchChart(rows) {
+    const supported = new Set(["FORWARD_RETURN_ESTIMATE", "CROSS_SECTIONAL_RANK_SCORE", "NEXT_OBSERVATION_RETURN_ESTIMATE", "FILTERED_RETURN_STATE"]);
+    const points = rows.filter(row => supported.has(row.prediction_kind) && [row.prediction, row.target, row.fold].every(value => typeof value === "number" && Number.isFinite(value)));
+    if (!points.length) return null;
+    return { kind: "model-validation", title: "Walk-forward predictions & outcomes", axes: [
+      { key: "prediction", label: "Model output", unit: points[0].prediction_kind === "CROSS_SECTIONAL_RANK_SCORE" ? "ranking score" : "arithmetic return" },
+      { key: "fold", label: "Validation fold", unit: "index" },
+      { key: "target", label: "Realized forward return", unit: "arithmetic return" }], points };
+  }
+  function renderDepth(depth, availability = "UNAVAILABLE") {
+    const usable = isObject(depth) && ["AVAILABLE", "STALE"].includes(availability) && Array.isArray(depth.bids) && Array.isArray(depth.asks);
+    $("depth-state").textContent = usable ? `${availability} · ${depth.instrument_id}` : availability;
+    $("depth-empty").classList.toggle("hidden", usable);
+    $("depth-content").classList.toggle("hidden", !usable);
+    $("depth-levels").replaceChildren();
+    $("depth-summary").replaceChildren();
+    $("depth-chart").replaceChildren();
+    $("depth-provenance").textContent = usable ? `${depth.source} · ${depth.classification} · ${depth.feed} · Known ${depth.available_at}` : "No admitted depth snapshot selected. No order book is inferred from bars.";
+    if (!usable) return;
+    $("depth-summary").append(el("span", "", `Observation ${depth.event_at}`), el("span", "", `Sequence ${depth.sequence} · ${depth.bids.length} bid / ${depth.asks.length} ask levels`));
+    const quantity = row => row && typeof row.quantity === "string" && Number.isFinite(Number(row.quantity)) ? Number(row.quantity) : 0;
+    const maximum = Math.max(...depth.bids.map(quantity), ...depth.asks.map(quantity), 1);
+    for (let index = 0; index < Math.max(depth.bids.length, depth.asks.length); index++) {
+      const bid = depth.bids[index], ask = depth.asks[index];
+      const tr = el("tr");
+      for (const [value, side, row] of [[bid?.quantity, "bid", bid], [bid?.price, "bid", bid], [ask?.price, "ask", ask], [ask?.quantity, "ask", ask]]) {
+        const cell = el("td", "depth-" + side, value === undefined ? "Unknown" : String(value));
+        cell.title = value === undefined ? "Unknown" : String(value);
+        cell.style.setProperty("--depth-width", `${Math.min(100, quantity(row) / maximum * 100)}%`);
+        cell.style.setProperty("--depth-fill", `color-mix(in srgb,var(--${side === "bid" ? "green" : "red"}) 10%,transparent)`);
+        tr.append(cell);
+      }
+      $("depth-levels").append(tr);
+    }
+    const cumulative = levels => { let total = 0; return levels.map(row => ({ price: Number(row.price), cumulative: total += quantity(row) })); };
+    const bids = cumulative(depth.bids), asks = cumulative(depth.asks);
+    const lo = Math.min(...bids.map(row => row.price)), hi = Math.max(...asks.map(row => row.price));
+    const top = Math.max(bids[bids.length-1].cumulative, asks[asks.length-1].cumulative, 1);
+    const x = price => 35 + (hi === lo ? .5 : (price-lo)/(hi-lo)) * 530;
+    const y = volume => 218 - volume/top*175;
+    for (const [levels, name] of [[bids, "buy"], [asks, "sell"]]) {
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      const steps = [[x(levels[0].price), 218]];
+      levels.forEach((row, index) => { if (index) steps.push([x(row.price), y(levels[index-1].cumulative)]); steps.push([x(row.price), y(row.cumulative)]); });
+      steps.push([x(levels[levels.length-1].price), 218]);
+      line.setAttribute("points", steps.map(row => row.join(",")).join(" "));
+      line.setAttribute("class", "depth-" + name + "-area");
+      $("depth-chart").append(line);
+    }
+    for (const [value, position] of [[depth.bids[depth.bids.length-1].price, 35], [depth.asks[depth.asks.length-1].price, 480]]) {
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("x", String(position)); label.setAttribute("y", "249"); label.setAttribute("class", "depth-chart-label"); label.textContent = value;
+      $("depth-chart").append(label);
+    }
+    $("depth-legend").textContent = `${depth.currency} price · Displayed quantity · Observed levels only; no interpolated quotes. Exact source values remain in the table.`;
+  }
+  function orbitControls() {
+    $("orbit-toggle").textContent = state.orbit ? "Pause orbit" : "Resume orbit";
+    $("orbit-toggle").setAttribute("aria-pressed", String(state.orbit));
+    $("orbit-toggle").disabled = !state.points.length || state.dimension !== 3;
+    $("motion-state").textContent = state.dimension === 2 ? "2D projection · orbit paused" : state.orbit ? "Slow orbit · 0.045 rad/s" : motionPreference.matches ? "Reduced motion · camera paused" : "Camera paused";
+  }
+  function setOrbit(enabled) {
+    state.orbit = enabled; orbitLast = null;
+    if (orbitFrame !== null && typeof window.cancelAnimationFrame === "function") window.cancelAnimationFrame(orbitFrame);
+    orbitFrame = null;
+    renderChart();
+  }
+  function orbitTick(stamp) {
+    orbitFrame = null;
+    if (!state.orbit || !state.points.length || state.dimension !== 3) return;
+    if (orbitLast !== null) state.angle += Math.min((stamp-orbitLast)/1000, .05) * .045;
+    orbitLast = stamp;
     renderChart();
   }
   function renderMetrics(metrics) {
@@ -338,6 +426,7 @@
     const rawPoints = chart && Array.isArray(chart.points) ? chart.points : [];
     const points = rawPoints.filter((point) => isObject(point) && axes.every((axis) => typeof point[axis.key] === "number" && Number.isFinite(point[axis.key]))).slice(0, 1600);
     state.points = points;
+    orbitControls();
     $("chart-empty").classList.toggle("hidden", points.length !== 0);
     $("chart-title").textContent = chart && chart.title ? String(chart.title) : chart && chart.kind ? human(chart.kind) : `${state.section.label} analytical view`;
     if (!points.length) { $("chart-legend").textContent = "Only finite backend observations are plotted."; return; }
@@ -360,15 +449,15 @@
     }
     const origin = [-1, -1, -1];
     const endpoints = [[1.12, -1, -1], [-1, 1.12, -1], [-1, -1, 1.12]];
-    const axisColors = [accent, "#cf9e69", "#64bba5"];
-    context.font = "9px 'SFMono-Regular', Consolas, monospace";
+    const axisColors = [accent, style.getPropertyValue("--amber").trim(), style.getPropertyValue("--green").trim()];
+    context.font = "12px 'SFMono-Regular', Consolas, monospace";
     endpoints.forEach((endpoint, index) => {
       if (state.dimension === 2 && index === 1) return;
       line(origin, endpoint, axisColors[index], 1.2);
       const labelPoint = project(...endpoint, width, height);
       context.fillStyle = axisColors[index];
       const label = axes[index].label;
-      context.fillText(label.length > 24 ? `${label.slice(0, 22)}…` : label, Math.max(8, Math.min(labelPoint.x + 7, width - 115)), Math.max(14, Math.min(labelPoint.y - 5, height - 10)));
+      context.fillText(label.length > 24 ? `${label.slice(0, 22)}…` : label, Math.max(8, Math.min(labelPoint.x + 7, width - 175)), Math.max(14, Math.min(labelPoint.y - 5, height - 10)));
       context.fillStyle = muted;
       [0, 1].forEach((end) => {
         const tickWorld = [...origin]; tickWorld[index] = end ? 1 : -1;
@@ -398,10 +487,11 @@
       context.beginPath();
       context.arc(point.x, point.y, String(chart.kind).includes("surface") ? 2.7 : 3.7, 0, Math.PI * 2);
       context.fill();
-      if (point.point.symbol && points.length <= 25) { context.fillStyle = muted; context.font = "8px 'SFMono-Regular', Consolas, monospace"; context.fillText(String(point.point.symbol), point.x + 6, point.y - 5); }
+      if (point.point.symbol && points.length <= 25) { context.fillStyle = muted; context.font = "10px 'SFMono-Regular', Consolas, monospace"; context.fillText(String(point.point.symbol), point.x + 6, point.y - 5); }
     });
     state.projected = projected;
     canvas.setAttribute("aria-label", `${$("chart-title").textContent}. ${points.length} backend observations. ${axes.map((axis) => `${axis.label}, ${axis.unit || "units unspecified"}`).join("; ")}. ${state.dimension}D view. Underlying observations also available in the table. Drag or use arrow keys to rotate; plus and minus zoom.`);
+    if (state.orbit && state.dimension === 3 && orbitFrame === null && typeof window.requestAnimationFrame === "function") orbitFrame = window.requestAnimationFrame(orbitTick);
   }
   function chartPointer(event) {
     const bounds = $("analytics-chart").getBoundingClientRect();
@@ -438,6 +528,7 @@
   examples["workspace-train-sequence"] = { source: "authored-synthetic-sequence-workbench-v1", classification: "SYNTHETIC", sequence_length: 4, train_size: 24, hidden_size: 4, epochs: 4, learning_rate: .02, seed: 17, rows: Array.from({ length: 32 }, (_, index) => ({ timestamp: sequenceStamp(index), available_at: sequenceStamp(index), label_end: sequenceStamp(index + 1), features: { momentum: Math.sin(index / 3), reversal: Math.cos(index / 4) }, target: .5 * Math.sin(index / 3) - .3 * Math.cos(index / 4) })) };
   examples["workspace-predict-sequence"] = { model_id: "0".repeat(64), rows: examples["workspace-train-sequence"].rows.map(({ timestamp, available_at, features }) => ({ timestamp, available_at, features })) };
   examples["workspace-treasury"] = { provider: "us_treasury", mode: "PUBLIC_OBSERVED", year: 2025 };
+  examples["workspace-depth"] = { instrument_id: "SYN101", source: "authored-depth-workbench-v1", classification: "SYNTHETIC", feed: "CALLER_SUPPLIED", currency: "USD", sequence: 1, event_at: "2026-11-02T15:49:00Z", available_at: "2026-11-02T15:49:00Z", bids: Array.from({ length: 16 }, (_, index) => ({ price: (110-index*.02).toFixed(2), quantity: String(120+index*25) })), asks: Array.from({ length: 16 }, (_, index) => ({ price: (110.04+index*.02).toFixed(2), quantity: String(90+index*30) })) };
   examples["workspace-finbert"] = examples["workspace-news"];
   examples["workspace-execution-engine"] = { operation: "prepare", now: fixtureTimestamp(28), client_id: "authored-synthetic-offline-intent-1", symbol: "SYN001", side: "buy", quantity: "1", reference_price: "100", price_asof: fixtureTimestamp(28), max_notional: "1000", max_position_quantity: "10" };
   const pipelineStamp = index => new Date(Date.UTC(2026, 10, 2, 14, 30 + index)).toISOString();
@@ -482,6 +573,7 @@
     if (kind === "workspace-schedule-twap") $("run-analysis").textContent = "Save offline TWAP schedule";
     if (kind === "workspace-advance-clock") $("run-analysis").textContent = "Advance explicit simulation clock";
     const specialScopes = {
+      "workspace-depth": "Persist an explicitly authored SYNTHETIC multi-level book. No depth is inferred from bars or connected to a provider. After submission, choose Admitted market depth and instrument SYN101 with its explicit replay cutoff.",
       "workspace-treasury": "Submitting this action fetches historical par yields from the fixed official Treasury public endpoint and persists original XML under CC0-1.0 with attribution. No credentials or broker connection. Select provider evidence in Markets after acquisition. Acquisition freshness does not mean current market quotes.",
       "workspace-ingest": "Offline authored SYNTHETIC IEX protocol fixture only. No Alpaca connection, credentials or provider-observed market data. IEX is not SIP.",
       "workspace-universe": "Persist authored SYNTHETIC universe membership with effective and knowledge timestamps. Caller identity claims are not provider verification.",
@@ -530,6 +622,7 @@
         if (action === "research-model" && identity(result.data.run_id)) { workflowReferences.run_id = result.data.run_id; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
+        if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
         $("workflow-identities").textContent = ["dataset_id", "run_id", "allocation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
@@ -554,6 +647,10 @@
   $("data-mode").addEventListener("change", () => { state.mode = $("data-mode").value; $("analysis-engine").disabled = state.mode !== "local"; if (state.mode !== "local") $("analysis-engine").value = "default"; loadSection(); });
   $("analysis-engine").addEventListener("change", loadSection);
   $("universe-id").addEventListener("change", loadSection);
+  $("depth-instrument").addEventListener("change", loadSection);
+  $("context-expand").addEventListener("click", () => { const expanded = $("context-expand").getAttribute("aria-expanded") !== "true"; $("context-expand").setAttribute("aria-expanded", String(expanded)); $("context-expand").textContent = expanded ? "Show less" : "Show full provenance"; $("analysis-grid").classList.toggle("context-expanded", expanded); });
+  $("orbit-toggle").addEventListener("click", () => setOrbit(!state.orbit));
+  if (typeof motionPreference.addEventListener === "function") motionPreference.addEventListener("change", () => { if (motionPreference.matches) setOrbit(false); });
   $("freshness-policy").addEventListener("change", loadSection);
   $("replay-asof").addEventListener("change", loadSection);
   $("refresh").addEventListener("click", loadSection);
@@ -566,7 +663,8 @@
   [2, 3].forEach((dimension) => $(`view-${dimension}d`).addEventListener("click", () => { state.dimension = dimension; [2, 3].forEach((d) => $(`view-${d}d`).setAttribute("aria-pressed", String(d === dimension))); renderChart(); }));
   $("chart-reset").addEventListener("click", () => { state.angle = -.55; state.tilt = .40; state.zoom = 1; renderChart(); });
   const canvas = $("analytics-chart");
-  canvas.addEventListener("pointerdown", (event) => { if (event.button !== 0) return; state.drag = { x: event.clientX, y: event.clientY }; canvas.setPointerCapture(event.pointerId); });
+  canvas.addEventListener("pointerenter", () => setOrbit(false));
+  canvas.addEventListener("pointerdown", (event) => { if (event.button !== 0) return; setOrbit(false); state.drag = { x: event.clientX, y: event.clientY }; canvas.setPointerCapture(event.pointerId); });
   canvas.addEventListener("pointermove", chartPointer);
   canvas.addEventListener("pointerup", () => { state.drag = null; });
   canvas.addEventListener("pointercancel", () => { state.drag = null; });
@@ -575,6 +673,7 @@
   canvas.addEventListener("keydown", (event) => {
     if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "0"].includes(event.key)) return;
     event.preventDefault();
+    setOrbit(false);
     if (event.key === "ArrowLeft") state.angle -= .1;
     if (event.key === "ArrowRight") state.angle += .1;
     if (event.key === "ArrowUp") state.tilt = Math.min(1.2, state.tilt + .1);

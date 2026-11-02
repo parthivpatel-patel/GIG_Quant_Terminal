@@ -96,8 +96,15 @@ class CycleServices:
                     oms.set_kill_switch(True, now=_stamp(payload["now"]))
         return result
 
+    def _depth(self):
+        from gig.service.depth_workspace import DepthWorkspace
+        return DepthWorkspace(self.workspace.base_dir)
+
+    def admit_depth(self, payload: dict[str, Any]) -> Contract:
+        return self._depth().ingest(payload)
+
     def section(self, engine: str, section: str, as_of: Any, maximum: float | None,
-                *, universe_id: str | None = None) -> Contract:
+                *, universe_id: str | None = None, instrument_id: str | None = None) -> Contract:
         result = None
         if engine == "sequence":
             result = self._sequence().section(section, as_of, maximum)
@@ -124,6 +131,8 @@ class CycleServices:
             result = self._allocation().section(section, as_of, maximum)
         elif engine == "accounting":
             result = self._accounting().section(section, as_of, maximum)
+        elif engine == "depth":
+            result = self._depth().section(section, as_of, maximum, instrument_id=instrument_id)
         if result is not None:
             return result
         return Contract.admit(State.UNAVAILABLE, None, source=f"local-{engine}",
