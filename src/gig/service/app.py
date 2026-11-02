@@ -143,7 +143,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     def terminal_section(section: str, mode: str = Query("local", pattern="^(local|synthetic)$"),
                          as_of: str | None = Query(None, max_length=100),
                          max_age_seconds: float | None = Query(None, ge=0, le=366 * 86400),
-                         engine: str = Query("default", pattern="^(default|sequence|finbert|provider|execution-engine)$"),
+                         engine: str = Query("default", pattern="^(default|sequence|finbert|provider|execution-engine|persisted|allocation|accounting)$"),
                          universe_id: str | None = Query(None, min_length=1, max_length=128)) -> Any:
         from gig.service.terminal import SECTIONS, section_snapshot
         if section not in SECTIONS:
@@ -173,7 +173,10 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
                    "ingest": integrations.ingest, "universe": integrations.universe,
                    "train-sequence": integrations.train_sequence,
                    "predict-sequence": integrations.predict_sequence,
-                   "finbert": integrations.analyze_finbert, "execution-engine": integrations.execution}
+                   "finbert": integrations.analyze_finbert, "execution-engine": integrations.execution,
+                   "research-dataset": integrations.research_dataset, "research-model": integrations.research_model,
+                   "research-predict": integrations.research_predict, "research-allocate": integrations.research_allocate,
+                   "research-prepare": integrations.research_prepare, "portfolio-accounting": integrations.portfolio_accounting}
         if action not in methods:
             return failure("INVALID_REQUEST", 404)
         # Local mutations require JSON and reject cross-origin browser writes.

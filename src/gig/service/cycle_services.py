@@ -54,6 +54,48 @@ class CycleServices:
     def execution(self, payload: dict[str, Any]) -> Contract:
         return self._execution().run(payload)
 
+    def _datasets(self):
+        from gig.service.dataset_workspace import PersistedDatasetWorkspace
+        return PersistedDatasetWorkspace(self.workspace.base_dir)
+
+    def _research(self):
+        from gig.service.persisted_research import PersistedResearchWorkspace
+        return PersistedResearchWorkspace(self.workspace.base_dir)
+
+    def _allocation(self):
+        from gig.service.allocation_workspace import ResearchAllocationWorkspace
+        return ResearchAllocationWorkspace(self.workspace.base_dir)
+
+    def _accounting(self):
+        from gig.service.portfolio_workspace import PortfolioWorkspace
+        return PortfolioWorkspace(self.workspace.base_dir)
+
+    def research_dataset(self, payload: dict[str, Any]) -> Contract:
+        return self._datasets().build(payload)
+
+    def research_model(self, payload: dict[str, Any]) -> Contract:
+        return self._research().run(payload)
+
+    def research_predict(self, payload: dict[str, Any]) -> Contract:
+        return self._research().predict(payload)
+
+    def research_allocate(self, payload: dict[str, Any]) -> Contract:
+        return self._allocation().build(payload)
+
+    def research_prepare(self, payload: dict[str, Any]) -> Contract:
+        return self._allocation().prepare(payload)
+
+    def portfolio_accounting(self, payload: dict[str, Any]) -> Contract:
+        result = self._accounting().run(payload)
+        if result.to_dict()["state"] == "ERROR":
+            from gig.execution.oms import OfflineOMS
+            from gig.service.execution_workspace import _stamp
+            path = self.workspace._path("execution-engine/oms.sqlite")
+            if path.is_file():
+                with OfflineOMS(path) as oms:
+                    oms.set_kill_switch(True, now=_stamp(payload["now"]))
+        return result
+
     def section(self, engine: str, section: str, as_of: Any, maximum: float | None,
                 *, universe_id: str | None = None) -> Contract:
         result = None
@@ -71,6 +113,17 @@ class CycleServices:
                 result = self._provider().universe_snapshot(universe_id, as_of)
         elif engine == "execution-engine":
             result = self._execution().section(section, as_of, maximum)
+        elif engine == "persisted":
+            if section in {"markets", "operations"}:
+                result = self._datasets().section(section, as_of, maximum)
+            else:
+                result = self._research().section(section, as_of, maximum)
+                if result is None and section == "research":
+                    result = self._datasets().section(section, as_of, maximum)
+        elif engine == "allocation":
+            result = self._allocation().section(section, as_of, maximum)
+        elif engine == "accounting":
+            result = self._accounting().section(section, as_of, maximum)
         if result is not None:
             return result
         return Contract.admit(State.UNAVAILABLE, None, source=f"local-{engine}",

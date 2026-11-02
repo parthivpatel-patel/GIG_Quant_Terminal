@@ -406,7 +406,7 @@ for (const kind of ["calendar", "corporate-actions"]) {
 }
 get("data-mode").value = "local";
 await get("data-mode").dispatch("change"); await settle();
-for (const engine of ["sequence", "finbert", "provider", "execution-engine"]) {
+for (const engine of ["sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation"]) {
   get("analysis-engine").value = engine;
   await get("analysis-engine").dispatch("change"); await settle();
   assert.match(calls.at(-1).url, new RegExp(`engine=${engine}`));
@@ -423,5 +423,55 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
+const pipelineActions = {
+  "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
+  "research-model": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
+  "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
+  "schedule-twap": "execution-engine", "advance-clock": "execution-engine",
+};
+for (const [kind, action] of Object.entries(pipelineActions)) {
+  get("analytics-kind").value = "workspace-" + kind;
+  const previous = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, previous, "Selecting a pipeline action cannot submit it");
+  const body = get("analytics-input").value;
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`explicit ${kind} workflow uses its backend contract`, () => {
+    assert.equal(calls.at(-1).url, "/api/v1/workspace/" + action);
+    assert.equal(calls.at(-1).options.body, body);
+    assert.match(get("workbench-scope").textContent, /SYNTHETIC|research|offline|SIMULATED|simulation/);
+  });
+}
+const datasetId = "d".repeat(64), runId = "a".repeat(64), allocationId = "b".repeat(64);
+async function successfulPipeline(kind, data) {
+  get("analytics-kind").value = "workspace-" + kind;
+  await get("analytics-kind").dispatch("change");
+  replyOverride = { body: fixture({ data: { title: "Authored result", metrics: {}, rows: [], ...data } }) };
+  await get("run-analysis").dispatch("click"); await settle();
+}
+await successfulPipeline("research-dataset", { dataset_id: datasetId });
+get("analytics-kind").value = "workspace-research-model";
+await get("analytics-kind").dispatch("change");
+checked("successful persisted dataset identity fills the next explicit model request", () => {
+  assert.equal(JSON.parse(get("analytics-input").value).dataset_id, datasetId);
+  assert.match(get("workflow-identities").textContent, new RegExp(datasetId));
+});
+await successfulPipeline("research-model", { run_id: runId });
+get("analytics-kind").value = "workspace-research-allocate";
+await get("analytics-kind").dispatch("change");
+checked("successful research identity fills allocation without automatically preparing an order", () => assert.equal(JSON.parse(get("analytics-input").value).run_id, runId));
+await successfulPipeline("research-allocate", { allocation_id: allocationId });
+get("analytics-kind").value = "workspace-research-prepare";
+await get("analytics-kind").dispatch("change");
+checked("successful allocation identity fills explicit durable preparation", () => assert.equal(JSON.parse(get("analytics-input").value).allocation_id, allocationId));
+await successfulPipeline("research-prepare", { prepared_client_ids: ["allocation:" + allocationId + ":0"] });
+get("analytics-kind").value = "workspace-offline-fill";
+await get("analytics-kind").dispatch("change");
+checked("offline fill example uses a prepared client identity and remains explicitly simulated", () => assert.equal(JSON.parse(get("analytics-input").value).client_id, "allocation:" + allocationId + ":0"));
+await successfulPipeline("research-dataset", { dataset_id: "c".repeat(64) });
+get("analytics-kind").value = "workspace-research-allocate";
+await get("analytics-kind").dispatch("change");
+checked("a newly selected dataset clears dependent run and allocation identities", () => assert.equal(JSON.parse(get("analytics-input").value).run_id, "0".repeat(64)));
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

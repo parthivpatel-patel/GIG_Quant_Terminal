@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "models": [
+    "ridge",
+    "lightgbm"
+  ],
+  "dataset_rows": 148,
+  "orders": 2,
+  "account_nav": "99999.80",
+  "broker_connections": 0,
+  "source_binds": [],
+  "image_id": "sha256:c5446b87672bb72ee3fcf6809357c43dee2d9098d969a77c9c119ae1ab82325f"
+}

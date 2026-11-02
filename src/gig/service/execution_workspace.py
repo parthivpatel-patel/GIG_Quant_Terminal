@@ -12,6 +12,7 @@ from typing import Any
 from gig.execution.offline_adapter import OfflinePaperAdapter
 from gig.execution.oms import OfflineOMS, OrderError, _decimal, _text
 from gig.execution.outbox import ExecutionOutbox, event_value
+from gig.execution.scheduler import DurableTWAPScheduler
 from gig.execution.twap import plan_twap
 from gig.service.contracts import Contract, State
 from gig.service.serialization import dumps, public_error
@@ -60,6 +61,7 @@ class ExecutionWorkspace:
         )
 
     def _snapshot(self, oms: OfflineOMS, outbox: ExecutionOutbox) -> dict[str, Any]:
+        scheduler = DurableTWAPScheduler(oms, outbox, create=False)
         total = oms.connection.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
         ids = [
             row[0]
@@ -76,11 +78,13 @@ class ExecutionWorkspace:
                 "broker_connected": False,
                 "nav": None,
                 "pnl": None,
+                "simulation_clock": scheduler.clock,
             },
             "rows": [oms.order(client) for client in ids],
             "positions": oms.positions(),
             "outbox": outbox.intents()[:100],
             "recovery": outbox.recover(),
+            "schedules": scheduler.schedules(),
             "rows_complete": total <= 100,
             "trading_approved": False,
             "classification": "SIMULATED",
@@ -92,6 +96,8 @@ class ExecutionWorkspace:
         if not isinstance(request, dict) or not {"operation", "now"} <= request.keys():
             raise OrderError("execution request requires operation and explicit now")
         op, at = request["operation"], _stamp(request["now"])
+        if not isinstance(op, str):
+            raise OrderError("execution operation must be a supported string")
         order_fields = {
             "client_id",
             "symbol",
@@ -120,6 +126,14 @@ class ExecutionWorkspace:
                 {"client_id", "quantity", "start", "end", "slices", "lot_size"},
                 {"client_id", "quantity", "start", "end", "slices"},
             ),
+            "schedule-twap": (
+                {"client_id", "symbol", "side", "quantity", "start", "end", "slices",
+                 "lot_size", "max_notional", "max_position_quantity", "limit_price"},
+                {"client_id", "symbol", "side", "quantity", "start", "end", "slices",
+                 "max_notional", "max_position_quantity"},
+            ),
+            "advance-clock": ({"marks"}, {"marks"}),
+            "cancel-schedule": ({"client_id"}, {"client_id"}),
         }
         if op not in shapes:
             raise OrderError("unsupported offline execution operation")
@@ -131,7 +145,7 @@ class ExecutionWorkspace:
             _text(values["client_id"], "client_id")
         if op == "prepare":
             _text(values["symbol"], "symbol")
-            if values["side"] not in {"buy", "sell"}:
+            if not isinstance(values["side"], str) or values["side"] not in {"buy", "sell"}:
                 raise OrderError("unsupported order side")
             for key in ("quantity", "reference_price", "max_notional", "max_position_quantity"):
                 _decimal(values[key])
@@ -146,6 +160,10 @@ class ExecutionWorkspace:
             _decimal(values.get("fee", "0"), positive=False)
         elif op == "kill-switch" and not isinstance(values["engaged"], bool):
             raise OrderError("kill switch requires an explicit boolean")
+        elif op == "schedule-twap":
+            DurableTWAPScheduler._intent(values)
+        elif op == "advance-clock":
+            DurableTWAPScheduler._marks(values["marks"])
         elif op == "twap":
             values["start"], values["end"] = _stamp(values["start"]), _stamp(values["end"])
             if (
@@ -169,11 +187,17 @@ class ExecutionWorkspace:
         if values.get("fault") not in (None, "before_accept", "after_accept"):
             raise OrderError("unsupported offline fault")
         path = self._path("oms.sqlite")
-        if op != "prepare" and not path.is_file():
+        if op not in {"prepare", "schedule-twap"} and not path.is_file():
             return self._contract(None, at, state=State.UNAVAILABLE)
+        if op == "schedule-twap" and not path.is_file() and _stamp(values["start"]) < at:
+            raise OrderError("schedule start precedes admission clock")
         self._path("counterparty.sqlite")
         with OfflineOMS(path) as oms:
             outbox = ExecutionOutbox(oms)
+            scheduler = DurableTWAPScheduler(
+                oms, outbox, create=op in {"schedule-twap", "advance-clock", "cancel-schedule"}
+            )
+            scheduler.ensure_not_before(at)
             adapter = OfflinePaperAdapter(self._path("counterparty.sqlite"))
             try:
                 adapter.disconnected = values.pop("disconnected", False)
@@ -204,6 +228,12 @@ class ExecutionWorkspace:
                 elif op == "kill-switch":
                     oms.set_kill_switch(values["engaged"], now=at)
                     result = {"engaged": oms.kill_switch}
+                elif op == "schedule-twap":
+                    result = scheduler.schedule(values, now=at)
+                elif op == "advance-clock":
+                    result = scheduler.advance(values["marks"], now=at)
+                elif op == "cancel-schedule":
+                    result = scheduler.cancel(values["client_id"], now=at)
                 elif op == "replay":
                     result = {"events": outbox.replay_events()}
                 else:

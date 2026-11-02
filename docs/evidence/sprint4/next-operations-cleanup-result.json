@@ -1,0 +1,118 @@
+{
+  "container": {
+    "Id": "e548daca8aafdffa20fdc41f1edba30332b9a0a73df7da1a2239d203ddbe814b",
+    "Name": "/gig-cycle-wheel-read",
+    "Created": "2026-11-01T23:23:42.579033125Z",
+    "State": {
+      "Status": "exited",
+      "Running": false,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 0,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-11-01T23:23:47.022261538Z",
+      "FinishedAt": "2026-11-01T23:23:51.152759068Z",
+      "Health": {
+        "Status": "unhealthy",
+        "FailingStreak": 0,
+        "Log": []
+      }
+    },
+    "Mounts": [
+      {
+        "Type": "bind",
+        "Source": "/workspace/work/cycle-wheel-installed/gig",
+        "Destination": "/usr/local/lib/python3.12/site-packages/gig",
+        "Mode": "",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "volume",
+        "Name": "gig-cycle-restart-wheel-20261101",
+        "Source": "/var/lib/docker/volumes/gig-cycle-restart-wheel-20261101/_data",
+        "Destination": "/app/data",
+        "Driver": "local",
+        "Mode": "z",
+        "RW": true,
+        "Propagation": ""
+      }
+    ],
+    "Image": "sha256:1931078c61abb38a4ddd2fe68ad671b9828314ee4bea3c27babf5ca14f64a339"
+  },
+  "builder_caches": [
+    {
+      "CreatedAt": "2026-11-01 12:29:31.587088542 +0000 UTC",
+      "Description": "[build 5/7] COPY src ./src",
+      "ID": "zi4kyw3owev66bezll2gemlzo",
+      "LastUsedAt": "12 hours ago",
+      "Mutable": false,
+      "Parents": [
+        "p6gij1yybwitrw30jx00gseb3"
+      ],
+      "Reclaimable": true,
+      "Shared": false,
+      "Size": "697.3kB",
+      "Type": "regular",
+      "UsageCount": 1
+    },
+    {
+      "CreatedAt": "2026-11-01 03:04:42.716716929 +0000 UTC",
+      "Description": "[build 5/7] COPY src ./src",
+      "ID": "mt5rw821w4yk8u9sy4axmpbhb",
+      "LastUsedAt": "12 hours ago",
+      "Mutable": false,
+      "Parents": [
+        "p6gij1yybwitrw30jx00gseb3"
+      ],
+      "Reclaimable": true,
+      "Shared": false,
+      "Size": "696.2kB",
+      "Type": "regular",
+      "UsageCount": 2
+    },
+    {
+      "CreatedAt": "2026-11-01 03:04:42.282438804 +0000 UTC",
+      "Description": "[build 4/7] COPY pyproject.toml setup.py README.md ./",
+      "ID": "p6gij1yybwitrw30jx00gseb3",
+      "LastUsedAt": "22 hours ago",
+      "Mutable": false,
+      "Parents": [
+        "sbidm3hsleqgwruzc3s0y2it7"
+      ],
+      "Reclaimable": true,
+      "Shared": false,
+      "Size": "13.41kB",
+      "Type": "regular",
+      "UsageCount": 1
+    },
+    {
+      "CreatedAt": "2026-11-01 03:04:41.901858161 +0000 UTC",
+      "Description": "mount / from exec /bin/sh -c apt-get update && apt-get install -y --no-install-recommends g++ && rm -rf /var/lib/apt/lists/*",
+      "ID": "sbidm3hsleqgwruzc3s0y2it7",
+      "LastUsedAt": "22 hours ago",
+      "Mutable": false,
+      "Parents": [
+        "s48e1l7k188d0yf2ab9z9rj96"
+      ],
+      "Reclaimable": true,
+      "Shared": false,
+      "Size": "254.7MB",
+      "Type": "regular",
+      "UsageCount": 1
+    }
+  ],
+  "workspace_free_before": 824754176,
+  "protected_images_retained": [
+    "sha256:1931078c61abb38a4ddd2fe68ad671b9828314ee4bea3c27babf5ca14f64a339",
+    "sha256:a077b0ec4111e00c1bbefcc1eb39f848a9bf0651feaee042f4c40833ddf9dc66",
+    "sha256:7651e0b3facfeec432cba454315d757d1a1a8c5313d5314787b3470d06bcb576"
+  ],
+  "volumes_removed": false,
+  "host_files_removed": false,
+  "workspace_free_after": 3732267008,
+  "reclaimed_bytes": 2907512832
+}

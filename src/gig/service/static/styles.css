@@ -16,3 +16,5 @@
 .state-badge[data-state="UNKNOWN"],.state-badge[data-state="UNAVAILABLE"]{color:var(--subtle)}button:disabled{opacity:1;color:var(--subtle);cursor:not-allowed;border-style:dashed}
 
 .engine-control input{width:100%}.engine-control label:not(:first-child){margin-top:10px}
+
+.workflow-identities { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 9rem; overflow: auto; color: var(--muted); }

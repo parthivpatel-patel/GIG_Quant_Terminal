@@ -1,4 +1,5 @@
 .git
+.github
 .env
 .env.*
 !.env.example
@@ -19,4 +20,17 @@ results
 *.db-wal
 *.db-shm
 *.pt
+*.safetensors
+**/*.safetensors
+pytorch_model*.bin
+**/pytorch_model*.bin
+model-assets
+huggingface-cache
+recovery
+docs
+tests
+scripts
+deploy
+.coverage*
+htmlcov
 *.log

@@ -18,6 +18,8 @@
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
+  Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
+  const workflowReferences = { dataset_id: null, run_id: null, allocation_id: null, prepared_client_ids: [] };
   const state = { section: sections[0], mode: "local", payload: null, rows: [], columns: [], sort: null, request: null, chart: null, points: [], projected: [], angle: -.55, tilt: .40, zoom: 1, dimension: 3, drag: null };
   const numberFormat = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 7 });
   const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -146,7 +148,7 @@
         if (!["3600", "86400", "604800"].includes(maximumAge)) throw new Error("Unsupported freshness policy.");
         query += `&max_age_seconds=${maximumAge}`;
         const engine = $("analysis-engine").value || "default";
-        if (!["default", "sequence", "finbert", "provider", "execution-engine"].includes(engine)) throw new Error("Unsupported local evidence view.");
+        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation"].includes(engine)) throw new Error("Unsupported local evidence view.");
         if (engine !== "default") query += `&engine=${encodeURIComponent(engine)}`;
         const universe = $("universe-id").value;
         if (engine === "provider" && universe) {
@@ -438,15 +440,47 @@
   examples["workspace-treasury"] = { provider: "us_treasury", mode: "PUBLIC_OBSERVED", year: 2025 };
   examples["workspace-finbert"] = examples["workspace-news"];
   examples["workspace-execution-engine"] = { operation: "prepare", now: fixtureTimestamp(28), client_id: "authored-synthetic-offline-intent-1", symbol: "SYN001", side: "buy", quantity: "1", reference_price: "100", price_asof: fixtureTimestamp(28), max_notional: "1000", max_position_quantity: "10" };
+  const pipelineStamp = index => new Date(Date.UTC(2026, 10, 2, 14, 30 + index)).toISOString();
+  const pipelineSymbols = ["SYN101", "SYN102"];
+  const pipelineMetadata = Object.fromEntries(pipelineSymbols.map(symbol => [symbol, { sector: "Authored sector", factors: { market: 1 } }]));
+  const pipelineLimits = { max_gross: 1, max_abs_net: .5, max_name_weight: .3, max_sector_gross: 1, max_factor_exposure: { market: .5 }, min_cash: "0" };
+  examples["workspace-pipeline-bars"] = { source: "authored-pipeline-workbench-v1", classification: "SYNTHETIC", corporate_action_policy: "RAW", currency: "USD", rows: Array.from({ length: 80 }, (_, index) => pipelineSymbols.map((instrument_id, instrument) => { const close = (100 + instrument * 30) * Math.exp(.001 * index + .018 * Math.sin(index / (3 + instrument)) + .007 * Math.cos(index * 1.73 + instrument)); return { instrument_id, timestamp: pipelineStamp(index), available_at: pipelineStamp(index), open: close, high: close, low: close, close, volume: 1000 + 7 * index + instrument }; })).flat() };
+  examples["workspace-pipeline-universe"] = { universe_id: "authored-pipeline-universe-v1", source: "authored-universe-workbench-v1", effective_at: "2026-11-01T00:00:00Z", available_at: "2026-11-01T00:00:00Z", members: pipelineSymbols.map(instrument_id => ({ instrument_id, symbol: instrument_id, calendar: "XNYS", currency: "USD" })) };
+  examples["workspace-research-dataset"] = { source: "authored-pipeline-workbench-v1", classification: "SYNTHETIC", currency: "USD", universe_id: "authored-pipeline-universe-v1", start: pipelineStamp(0), end: pipelineStamp(79), as_of: pipelineStamp(79), decision_delay_seconds: 0, horizon: 1, lookback: 5, adjustment: "RAW" };
+  examples["workspace-research-model"] = { dataset_id: "0".repeat(64), model: "ridge", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
+  examples["workspace-research-predict"] = { run_id: "0".repeat(64), dataset_id: "0".repeat(64) };
+  examples["workspace-research-allocate"] = { run_id: "0".repeat(64), now: pipelineStamp(79), initial_cash: "100000", n_long: 1, n_short: 1, gross_leverage: .2, max_name_weight: .1, lot_size: "1", price_tick: "0.01", max_age_seconds: 3600, annualization: 98280, metadata: pipelineMetadata, limits: pipelineLimits, commission_bps: 5, slippage_bps: 5 };
+  examples["workspace-research-prepare"] = { allocation_id: "0".repeat(64), now: pipelineStamp(79) };
+  const pipelineMarks = Object.fromEntries(examples["workspace-pipeline-bars"].rows.slice(-2).map(row => [row.instrument_id, { price: row.close.toFixed(2), as_of: row.timestamp }]));
+  examples["workspace-portfolio-accounting"] = { operation: "reconcile", initial_cash: "100000", now: pipelineStamp(79), marks: pipelineMarks, max_age_seconds: 60, metadata: pipelineMetadata, limits: pipelineLimits };
+  examples["workspace-offline-dispatch"] = { operation: "dispatch", now: pipelineStamp(79) };
+  examples["workspace-offline-fill"] = { operation: "fill", now: pipelineStamp(79), client_id: "copy-a-prepared-client-id", quantity: "1", price: pipelineMarks.SYN101.price, fee: "0.10" };
+  examples["workspace-schedule-twap"] = { operation: "schedule-twap", now: pipelineStamp(79), client_id: "authored-offline-twap-v1", symbol: "SYN101", side: "buy", quantity: "2", start: pipelineStamp(79), end: pipelineStamp(81), slices: 2, lot_size: "1", max_notional: "1000", max_position_quantity: "1000" };
+  examples["workspace-advance-clock"] = { operation: "advance-clock", now: pipelineStamp(79), marks: { SYN101: { reference_price: pipelineMarks.SYN101.price, price_asof: pipelineStamp(79) } } };
   function loadExample() {
     const kind = $("analytics-kind").value;
-    $("analytics-input").value = JSON.stringify(examples[kind], null, 2);
+    const example = JSON.parse(JSON.stringify(examples[kind]));
+    if (["workspace-research-model", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
+    if (["workspace-research-predict", "workspace-research-allocate"].includes(kind) && workflowReferences.run_id) example.run_id = workflowReferences.run_id;
+    if (kind === "workspace-research-prepare" && workflowReferences.allocation_id) example.allocation_id = workflowReferences.allocation_id;
+    if (kind === "workspace-offline-fill" && workflowReferences.prepared_client_ids.length) example.client_id = workflowReferences.prepared_client_ids[0];
+    $("analytics-input").value = JSON.stringify(example, null, 2);
     $("run-analysis").textContent = workspaceActions[kind] ? (kind === "workspace-simulate" ? "Run offline simulation" : kind === "workspace-research" ? "Run and save research" : "Admit and save locally") : "Run local calculation";
     if (kind === "workspace-train-sequence") $("run-analysis").textContent = "Train CPU research model";
     if (kind === "workspace-predict-sequence") $("run-analysis").textContent = "Run saved model inference";
     if (kind === "workspace-treasury") $("run-analysis").textContent = "Fetch public Treasury data";
     if (kind === "workspace-finbert") $("run-analysis").textContent = "Analyze with local licensed model";
     if (kind === "workspace-execution-engine") $("run-analysis").textContent = "Prepare offline intent";
+    if (kind === "workspace-research-dataset") $("run-analysis").textContent = "Build persisted dataset";
+    if (kind === "workspace-research-model") $("run-analysis").textContent = "Run saved-data research";
+    if (kind === "workspace-research-predict") $("run-analysis").textContent = "Replay saved model";
+    if (kind === "workspace-research-allocate") $("run-analysis").textContent = "Construct offline targets";
+    if (kind === "workspace-research-prepare") $("run-analysis").textContent = "Prepare offline target intents";
+    if (kind === "workspace-portfolio-accounting") $("run-analysis").textContent = "Reconcile simulated account";
+    if (kind === "workspace-offline-dispatch") $("run-analysis").textContent = "Acknowledge in offline counterparty";
+    if (kind === "workspace-offline-fill") $("run-analysis").textContent = "Apply explicit simulated fill";
+    if (kind === "workspace-schedule-twap") $("run-analysis").textContent = "Save offline TWAP schedule";
+    if (kind === "workspace-advance-clock") $("run-analysis").textContent = "Advance explicit simulation clock";
     const specialScopes = {
       "workspace-treasury": "Submitting this action fetches historical par yields from the fixed official Treasury public endpoint and persists original XML under CC0-1.0 with attribution. No credentials or broker connection. Select provider evidence in Markets after acquisition. Acquisition freshness does not mean current market quotes.",
       "workspace-ingest": "Offline authored SYNTHETIC IEX protocol fixture only. No Alpaca connection, credentials or provider-observed market data. IEX is not SIP.",
@@ -456,6 +490,20 @@
       "workspace-finbert": "Requires an operator-configured, hash-verified local model. Selected ProsusAI FinBERT weights are CC-BY-NC-SA-4.0 noncommercial research only. Missing assets return an explicit dependency error; no download or commercial approval is implied.",
       "workspace-execution-engine": "Prepare an authored SYNTHETIC offline order intent only. This does not dispatch it. To rehearse dispatch, explicitly edit operation and fields under the offline execution contract. No brokerage connection or real orders."
     };
+    Object.assign(specialScopes, {
+      "workspace-pipeline-bars": "Explicitly admit 160 authored SYNTHETIC minute bars for two instruments. The example is not provider-observed data. This setup action does not run a model or prepare an order.",
+      "workspace-pipeline-universe": "Save the authored SYNTHETIC universe known before all fixture decisions. Use this with the pipeline bars setup, then build a persisted dataset.",
+      "workspace-research-dataset": "Build a research dataset from persisted source observations and decision-time universe/revisions. No rows are generated by this action. Missing or unavailable knowledge fails explicitly; a later correction cannot rewrite an earlier feature decision.",
+      "workspace-research-model": "Train real CPU research on a saved admitted dataset with purged chronological folds. Available choices include ridge, LightGBM ranking, BiLSTM, HMM, GARCH and Kalman. Source classification and uncertainty remain explicit; research results are not approved signals.",
+      "workspace-research-predict": "Reload a saved model/run and admitted dataset by hash. IDs come from this session's last successful research actions, or can be edited explicitly. Zero placeholders are unavailable, not trained models.",
+      "workspace-research-allocate": "Construct modeled offline targets from saved research scores, admitted marks and explicit limits. Worst-case asynchronous fills must fit the policy. This does not prepare, dispatch or fill an order.",
+      "workspace-research-prepare": "Prepare durable intents for the selected allocation in the offline OMS. Preparation does not acknowledge or fill them. No broker connection, paper order or live order is available.",
+      "workspace-portfolio-accounting": "Reconcile actual stored SIMULATED fills, exact cash and positions against explicitly supplied marks. Missing/stale values remain explicit. Risk estimates and simulated NAV are not broker-observed account values.",
+      "workspace-offline-dispatch": "Send durable intents only to the local SYNTHETIC counterparty. An acknowledgement is not a fill. No network, account or broker order is involved.",
+      "workspace-offline-fill": "Record one explicitly requested SIMULATED partial fill. Check the selected client ID, price, quantity and fee before submission. No broker activity occurs.",
+      "workspace-schedule-twap": "Persist an exact offline TWAP plan under an explicit simulation clock. Scheduling never dispatches or fills a child order.",
+      "workspace-advance-clock": "Advance the durable offline clock with explicitly fresh reference marks. Due children become idempotent intents; this does not dispatch or fill them. Backward time and stale marks are rejected."
+    });
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
   }
   async function runAnalysis() {
@@ -476,6 +524,14 @@
       const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: sourceText, signal: controller.signal, cache: "no-store" });
       const result = await response.json();
       if (!validContract(result) || (!response.ok && !["ERROR", "UNAVAILABLE"].includes(result.state))) throw new Error("Unsupported response contract.");
+      if (response.ok && result.state === "AVAILABLE" && isObject(result.data)) {
+        const identity = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+        if (action === "research-dataset" && identity(result.data.dataset_id)) { workflowReferences.dataset_id = result.data.dataset_id; workflowReferences.run_id = null; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
+        if (action === "research-model" && identity(result.data.run_id)) { workflowReferences.run_id = result.data.run_id; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
+        if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
+        if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
+        $("workflow-identities").textContent = ["dataset_id", "run_id", "allocation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+      }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();
     } catch { output.textContent = "Analysis response could not be loaded. Check the local service, supported input contract, and retry."; }

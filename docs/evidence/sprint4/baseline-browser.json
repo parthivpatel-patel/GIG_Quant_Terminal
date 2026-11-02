@@ -1,0 +1,3584 @@
+{
+  "runner": "real-playwright-chromium",
+  "checks": [
+    {
+      "name": "initial environment is admitted local data",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "local section command-center responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section markets responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section signals responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section portfolio responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section risk responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section models responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "local section news responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section stat-arb responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section options responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section execution responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section research responds",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "local section operations responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "synthetic section command-center responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "command-center synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section markets responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "markets synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section signals responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "signals synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section portfolio responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "portfolio synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section risk responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "risk synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section models responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "models synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section news responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "news synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section stat-arb responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "stat-arb synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section options responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "options synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section execution responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "execution synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section research responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "research synthetic source disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic section operations responds",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "factor view has finite backend observations",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "keyboard rotates real canvas",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "2D analytical alternative",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "volatility surface is actual rendered chart",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "real browser workspace bars",
+      "passed": true,
+      "detail": "AVAILABLE \u00b7 Local workspace action; no broker orders\n{\n  \"content_sha256\": \"c8b5f33923bd2a28a6ba2add206a45ad0fcc7bccd682"
+    },
+    {
+      "name": "real browser workspace news",
+      "passed": true,
+      "detail": "AVAILABLE \u00b7 Local workspace action; no broker orders\n{\n  \"content_sha256\": \"03b2adadd72318b1eb9af1cb19a460d39145573dd73d"
+    },
+    {
+      "name": "real browser workspace research",
+      "passed": true,
+      "detail": "AVAILABLE \u00b7 Local workspace action; no broker orders\n{\n  \"content_sha256\": \"f8f1f86963b7a6d80f4e4b2c792fa0458ddb6e8f61b3"
+    },
+    {
+      "name": "real browser workspace simulate",
+      "passed": true,
+      "detail": "AVAILABLE \u00b7 Local workspace action; no broker orders\n{\n  \"content_sha256\": \"5a9d59855ba23519c11e073bea68d258e1c06af75ff3"
+    },
+    {
+      "name": "persisted local markets",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local signals",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local portfolio",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local risk",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local models",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local news",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local stat-arb",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local research",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted local execution",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "real browser calendar calculation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "real browser corporate-actions calculation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "real browser integrated workspace ingest",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE",
+        "expected": [
+          "AVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": "real browser integrated workspace universe",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE",
+        "expected": [
+          "AVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": "real browser integrated workspace train-sequence",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE",
+        "expected": [
+          "AVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": "real browser integrated workspace predict-sequence",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE",
+        "expected": [
+          "AVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": "real browser integrated workspace finbert",
+      "passed": true,
+      "detail": {
+        "status": 503,
+        "state": "ERROR",
+        "expected": [
+          "ERROR"
+        ]
+      }
+    },
+    {
+      "name": "real browser integrated workspace execution-engine",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE",
+        "expected": [
+          "AVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": "persisted rates chart retains synthetic fixture truth",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observed par-yield chart renders with declared units",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted yield surface rotates actual canvas",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted yields have a 2D projection and exact table",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "public Treasury control declares acquisition and requires explicit submission",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dark visible text contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "dark axe WCAG A/AA automated rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light visible text contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light axe WCAG A/AA automated rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "320px page has no horizontal overflow",
+      "passed": true,
+      "detail": {
+        "width": 320,
+        "scrollWidth": 320
+      }
+    },
+    {
+      "name": "320px workbench controls stay visible without panel clipping",
+      "passed": true,
+      "detail": [
+        {
+          "id": "analytics-kind",
+          "left": 80,
+          "right": 291,
+          "width": 211
+        },
+        {
+          "id": "analytics-input",
+          "left": 80,
+          "right": 291,
+          "width": 211
+        },
+        {
+          "id": "load-example",
+          "left": 202.171875,
+          "right": 291,
+          "width": 88.828125
+        },
+        {
+          "id": "run-analysis",
+          "left": 155.5,
+          "right": 291,
+          "width": 135.5
+        }
+      ]
+    },
+    {
+      "name": "mobile skip link stays within viewport",
+      "passed": true,
+      "detail": {
+        "x": 8,
+        "y": 8,
+        "width": 114.328125,
+        "height": 43.5
+      }
+    },
+    {
+      "name": "skip navigation preserves selected section",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "375px responsive page has no horizontal overflow",
+      "passed": true,
+      "detail": {
+        "width": 375,
+        "scrollWidth": 375
+      }
+    },
+    {
+      "name": "768px responsive page has no horizontal overflow",
+      "passed": true,
+      "detail": {
+        "width": 768,
+        "scrollWidth": 768
+      }
+    },
+    {
+      "name": "1024px responsive page has no horizontal overflow",
+      "passed": true,
+      "detail": {
+        "width": 1024,
+        "scrollWidth": 1024
+      }
+    },
+    {
+      "name": "1920px responsive page has no horizontal overflow",
+      "passed": true,
+      "detail": {
+        "width": 1920,
+        "scrollWidth": 1920
+      }
+    },
+    {
+      "name": "network failure clears old success data",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "real loading disables refresh",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "local evidence selection routes sequence",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "UNAVAILABLE",
+        "scope": "request routing and displayed availability, not trained-model certification"
+      }
+    },
+    {
+      "name": "local evidence selection routes finbert",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "UNAVAILABLE",
+        "scope": "request routing and displayed availability, not trained-model certification"
+      }
+    },
+    {
+      "name": "local evidence selection routes provider",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE",
+        "scope": "request routing and displayed availability, not trained-model certification"
+      }
+    },
+    {
+      "name": "local evidence selection routes execution-engine",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "UNAVAILABLE",
+        "scope": "request routing and displayed availability, not trained-model certification"
+      }
+    },
+    {
+      "name": "browser replays explicitly selected point-in-time universe",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic mode disables local model selection",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no browser JavaScript exceptions",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "browser_errors": [],
+  "accessibility": [
+    {
+      "theme": "dark",
+      "computed_contrast": [
+        {
+          "selector": "#skip-link",
+          "text": "Skip to analysis",
+          "ratio": 9.088,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.brand-mark",
+          "text": "G",
+          "ratio": 8.882,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "GIG",
+          "ratio": 18.623,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "span.brand-sub",
+          "text": "QUANT TERMINAL",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.nav-caption",
+          "text": "WORKSPACE",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "01",
+          "ratio": 8.882,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Command Center",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Markets",
+          "ratio": 11.408,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Signals",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Portfolio",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Risk",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Models",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "NLP / News",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Statistical Arbitrage",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Options",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Execution",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Research",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Operations",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.sidebar-footer",
+          "text": "LOCAL RESEARCH ENVIRONMENT",
+          "ratio": 10.332,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.",
+          "text": "Broker orders disabled \u00b7 Local research",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.workspace-label",
+          "text": "Research workspace",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#breadcrumb",
+          "text": "Markets",
+          "ratio": 10.332,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#clock",
+          "text": "18:26:19 UTC",
+          "ratio": 7.782,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#theme-toggle",
+          "text": "\u25d0",
+          "ratio": 10.332,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.user-mark",
+          "text": "GQ",
+          "ratio": 10.332,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.eyebrow",
+          "text": "GIG / INSTITUTIONAL RESEARCH",
+          "ratio": 9.088,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#section-title",
+          "text": "Treasury yield observations",
+          "ratio": 19.054,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "#section-description",
+          "text": "Observed par yields, not bootstrapped spot rates or tradable bond prices. Lines ",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Data environment",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#refresh",
+          "text": "Refresh",
+          "ratio": 8.34,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Local evidence view",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Point-in-time universe ID (provider Research)",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Maximum data age",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Point-in-time cutoff (optional)",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#replay-help",
+          "text": "Local data uses this freshness limit. Leave cutoff empty for now; explicit times",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#state-badge",
+          "text": "AVAILABLE",
+          "ratio": 8.385,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#source-label",
+          "text": "US_TREASURY:offline-fixture \u00b7 SYNTHETIC",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#asof-label",
+          "text": "As of 2026-09-29T20:00:00+00:00",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#truth-notice",
+          "text": "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performa",
+          "ratio": 10.248,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Latest Observation Date",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "2025-01-03",
+          "ratio": 17.487,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "Backend research metric",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Latest Visible Tenors",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "3",
+          "ratio": 17.487,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "Backend research metric",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Observations",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "6",
+          "ratio": 17.487,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "Backend research metric",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Spread 10y 2y",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "-25.00",
+          "ratio": 17.487,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "basis_points \u00b7 AVAILABLE \u00b7 Same-date par-yield difference on 2025-01-03",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Spread 10y 3m",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "-25.00",
+          "ratio": 17.487,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "basis_points \u00b7 AVAILABLE \u00b7 Same-date par-yield difference on 2025-01-03",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Spread 30y 5y",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "Unknown",
+          "ratio": 17.487,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "basis_points \u00b7 UNAVAILABLE \u00b7 Both tenors must be observed on the latest visible ",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "ANALYTICAL VIEW",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#chart-title",
+          "text": "Observed Treasury par yields",
+          "ratio": 17.487,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#view-3d",
+          "text": "3D",
+          "ratio": 6.408,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#view-2d",
+          "text": "2D",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#chart-legend",
+          "text": "Quoted tenor (nominal years) \u00b7 Observation date (signed calendar days from lates",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#chart-reset",
+          "text": "Reset view",
+          "ratio": 8.34,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.chart-instructions",
+          "text": "Drag to rotate \u00b7 Scroll to zoom \u00b7 Arrow keys to navigate \u00b7 2D alternative availa",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "EVIDENCE & SCOPE",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#context-title",
+          "text": "Research context",
+          "ratio": 17.487,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.tiny-label",
+          "text": "RESEARCH EVIDENCE",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Source identity",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "US_TREASURY:offline-fixture",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Data classification",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "SYNTHETIC",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Evidence state",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "AVAILABLE",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Source timestamp",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Trading authority",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Research only. No trading approval is implied.",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Method & scope",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Observed par yields, not bootstrapped spot rates or tradable bond prices. Lines ",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Research notes",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Spreads use only the latest visible date; missing tenors remain unavailable.\nAcq",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Evidence State",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "PROVIDER_PROTOCOL_FIXTURE",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Instrument Identity",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Model Identity",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Model Version",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Readiness",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "RESEARCH_ONLY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Source Identity",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Event Time Precision",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "DATE_ONLY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Freshness Basis",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "ACQUISITION_TIME",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Historical Publication Time",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "UNKNOWN",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Query As Of",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Rows Complete",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Yes",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Rows Total",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "6",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Units",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "percent_per_year",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "DETAIL EXPLORER",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#table-title",
+          "text": "Underlying observations",
+          "ratio": 17.487,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#row-count",
+          "text": "6",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#export-csv",
+          "text": "Export CSV",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "caption.sr-only",
+          "text": "Underlying section observations. Null values are displayed as unknown.",
+          "ratio": 17.487,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Available At",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Classification",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Event Date",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Publication Time",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Source",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Source Sha256",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Tenor",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Yield Percent",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.847,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-02",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_10YEAR",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.25",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.847,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-02",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_2YEAR",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.5",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.847,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-02",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_3MONTH",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.6",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.847,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-03",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_10YEAR",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.35",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.847,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-03",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_2YEAR",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.6",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.847,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-03",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_3MONTH",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.6",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#table-summary",
+          "text": "Showing 6 of 6 matching observations \u00b7 6 total",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Null \u2260 zero \u00b7 Synthetic \u2260 observed",
+          "ratio": 7.53,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "LOCAL COMPUTATION",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workbench-title",
+          "text": "Analytics workbench",
+          "ratio": 17.487,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.tiny-label",
+          "text": "NO BROKER ORDERS",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Analysis",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.control-help",
+          "text": "Persisted workflow: admit bars and universe, build a dataset, run a model, const",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "JSON research inputs",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#load-example",
+          "text": "Load example",
+          "ratio": 9.702,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#run-analysis",
+          "text": "Fetch public Treasury data",
+          "ratio": 9.088,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workbench-scope",
+          "text": "Submitting this action fetches historical par yields from the fixed official Tre",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.muted",
+          "text": "Fixture examples are authored SYNTHETIC inputs and are never submitted automatic",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workflow-identities-label",
+          "text": "Selected successful workflow IDs \u00b7 this session",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workflow-identities",
+          "text": "Dataset Id: No successful result selected\nRun Id: No successful result selected\n",
+          "ratio": 10.257,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#analytics-output-label",
+          "text": "Backend result",
+          "ratio": 7.307,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#analytics-output",
+          "text": "AVAILABLE \u00b7 Local workspace action; no broker orders\n{\n  \"content_sha256\": \"1b25",
+          "ratio": 10.257,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Quant Terminal  Research environment",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "strong.",
+          "text": "GIG",
+          "ratio": 10.571,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Broker connectivity disabled by default \u00b7 T4_NOT_CERTIFIED",
+          "ratio": 7.962,
+          "threshold": 4.5,
+          "passed": true
+        }
+      ],
+      "axe": {
+        "version": "4.10.3",
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "impact": "serious",
+            "tags": [
+              "cat.aria",
+              "wcag2a",
+              "wcag412",
+              "EN-301-549",
+              "EN-9.4.1.2"
+            ],
+            "description": "Ensure ARIA attributes are not prohibited for an element's role",
+            "help": "Elements must only use permitted ARIA attributes",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-prohibited-attr?application=axeAPI",
+            "nodes": [
+              {
+                "any": [],
+                "all": [],
+                "none": [
+                  {
+                    "id": "aria-prohibited-attr",
+                    "data": {
+                      "role": null,
+                      "nodeName": "div",
+                      "messageKey": "noRoleSingular",
+                      "prohibited": [
+                        "aria-label"
+                      ]
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "aria-label attribute is not well supported on a div with no valid role attribute."
+                  }
+                ],
+                "impact": "serious",
+                "html": "<div class=\"table-scroll\" id=\"table-wrap\" tabindex=\"0\" aria-label=\"Scrollable underlying observations\">",
+                "target": [
+                  "#table-wrap"
+                ],
+                "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute."
+              }
+            ]
+          },
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT"
+            ],
+            "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+            "nodes": [
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "messageKey": "nonBmp"
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "Element content contains only non-text characters"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+                "target": [
+                  ".workspace-icon"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "messageKey": "nonBmp"
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "Element content contains only non-text characters"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+                "target": [
+                  "#theme-toggle"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "messageKey": "nonBmp"
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "Element content contains only non-text characters"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<span aria-hidden=\"true\">\u21bb</span>",
+                "target": [
+                  "#refresh > span[aria-hidden=\"true\"]"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "fgColor": null,
+                      "bgColor": null,
+                      "contrastRatio": 0,
+                      "fontSize": "8.3pt (11px)",
+                      "fontWeight": "normal",
+                      "messageKey": "elmPartiallyObscured",
+                      "expectedContrastRatio": "4.5:1",
+                      "shadowColor": null
+                    },
+                    "relatedNodes": [
+                      {
+                        "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                        "target": [
+                          "#analytics-input"
+                        ]
+                      }
+                    ],
+                    "impact": "serious",
+                    "message": "Element's background color could not be determined because it's partially obscured by another element"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                "target": [
+                  "#analytics-input"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "fgColor": null,
+                      "bgColor": null,
+                      "contrastRatio": 0,
+                      "fontSize": "7.5pt (10px)",
+                      "fontWeight": "normal",
+                      "messageKey": "elmPartiallyObscured",
+                      "expectedContrastRatio": "4.5:1",
+                      "shadowColor": null
+                    },
+                    "relatedNodes": [
+                      {
+                        "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                        "target": [
+                          "#analytics-output"
+                        ]
+                      }
+                    ],
+                    "impact": "serious",
+                    "message": "Element's background color could not be determined because it's partially obscured by another element"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                "target": [
+                  "#analytics-output"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              }
+            ]
+          }
+        ],
+        "passes": 28
+      }
+    },
+    {
+      "theme": "light",
+      "computed_contrast": [
+        {
+          "selector": "#skip-link",
+          "text": "Skip to analysis",
+          "ratio": 5.672,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.brand-mark",
+          "text": "G",
+          "ratio": 6.044,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "GIG",
+          "ratio": 20.108,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "span.brand-sub",
+          "text": "QUANT TERMINAL",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.nav-caption",
+          "text": "WORKSPACE",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "01",
+          "ratio": 6.044,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Command Center",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Markets",
+          "ratio": 12.867,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Signals",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Portfolio",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Risk",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Models",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "NLP / News",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Statistical Arbitrage",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Options",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Execution",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Research",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Operations",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.sidebar-footer",
+          "text": "LOCAL RESEARCH ENVIRONMENT",
+          "ratio": 7.217,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.",
+          "text": "Broker orders disabled \u00b7 Local research",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.workspace-label",
+          "text": "Research workspace",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#breadcrumb",
+          "text": "Markets",
+          "ratio": 7.217,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#clock",
+          "text": "18:26:20 UTC",
+          "ratio": 5.21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#theme-toggle",
+          "text": "\u25d0",
+          "ratio": 7.217,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.user-mark",
+          "text": "GQ",
+          "ratio": 7.217,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.eyebrow",
+          "text": "GIG / INSTITUTIONAL RESEARCH",
+          "ratio": 5.672,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#section-title",
+          "text": "Treasury yield observations",
+          "ratio": 18.868,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "#section-description",
+          "text": "Observed par yields, not bootstrapped spot rates or tradable bond prices. Lines ",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Data environment",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#refresh",
+          "text": "Refresh",
+          "ratio": 6.312,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Local evidence view",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Point-in-time universe ID (provider Research)",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Maximum data age",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Point-in-time cutoff (optional)",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#replay-help",
+          "text": "Local data uses this freshness limit. Leave cutoff empty for now; explicit times",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#state-badge",
+          "text": "AVAILABLE",
+          "ratio": 4.613,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#source-label",
+          "text": "US_TREASURY:offline-fixture \u00b7 SYNTHETIC",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#asof-label",
+          "text": "As of 2026-09-29T20:00:00+00:00",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#truth-notice",
+          "text": "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performa",
+          "ratio": 5.45,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Latest Observation Date",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "2025-01-03",
+          "ratio": 21,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "Backend research metric",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Latest Visible Tenors",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "3",
+          "ratio": 21,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "Backend research metric",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Observations",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "6",
+          "ratio": 21,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "Backend research metric",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Spread 10y 2y",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "-25.00",
+          "ratio": 21,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "basis_points \u00b7 AVAILABLE \u00b7 Same-date par-yield difference on 2025-01-03",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Spread 10y 3m",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "-25.00",
+          "ratio": 21,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "basis_points \u00b7 AVAILABLE \u00b7 Same-date par-yield difference on 2025-01-03",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Spread 30y 5y",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-value",
+          "text": "Unknown",
+          "ratio": 21,
+          "threshold": 3,
+          "passed": true
+        },
+        {
+          "selector": "div.metric-detail",
+          "text": "basis_points \u00b7 UNAVAILABLE \u00b7 Both tenors must be observed on the latest visible ",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "ANALYTICAL VIEW",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#chart-title",
+          "text": "Observed Treasury par yields",
+          "ratio": 21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#view-3d",
+          "text": "3D",
+          "ratio": 5.428,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#view-2d",
+          "text": "2D",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#chart-legend",
+          "text": "Quoted tenor (nominal years) \u00b7 Observation date (signed calendar days from lates",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#chart-reset",
+          "text": "Reset view",
+          "ratio": 6.312,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.chart-instructions",
+          "text": "Drag to rotate \u00b7 Scroll to zoom \u00b7 Arrow keys to navigate \u00b7 2D alternative availa",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "EVIDENCE & SCOPE",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#context-title",
+          "text": "Research context",
+          "ratio": 21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.tiny-label",
+          "text": "RESEARCH EVIDENCE",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Source identity",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "US_TREASURY:offline-fixture",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Data classification",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "SYNTHETIC",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Evidence state",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "AVAILABLE",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Source timestamp",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Trading authority",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Research only. No trading approval is implied.",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Method & scope",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Observed par yields, not bootstrapped spot rates or tradable bond prices. Lines ",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Research notes",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Spreads use only the latest visible date; missing tenors remain unavailable.\nAcq",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Evidence State",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "PROVIDER_PROTOCOL_FIXTURE",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Instrument Identity",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Model Identity",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Model Version",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Readiness",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "RESEARCH_ONLY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Source Identity",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Unknown",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Event Time Precision",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "DATE_ONLY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Freshness Basis",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "ACQUISITION_TIME",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Historical Publication Time",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "UNKNOWN",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Query As Of",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Rows Complete",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "Yes",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Rows Total",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "6",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-label",
+          "text": "Units",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "div.context-value",
+          "text": "percent_per_year",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "DETAIL EXPLORER",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#table-title",
+          "text": "Underlying observations",
+          "ratio": 21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#row-count",
+          "text": "6",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#export-csv",
+          "text": "Export CSV",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "caption.sr-only",
+          "text": "Underlying section observations. Null values are displayed as unknown.",
+          "ratio": 21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Available At",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Classification",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Event Date",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Publication Time",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Source",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Source Sha256",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Tenor",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "button.table-sort",
+          "text": "Yield Percent",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.963,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-02",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_10YEAR",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.25",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.963,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-02",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_2YEAR",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.5",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.963,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-02",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_3MONTH",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.6",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.963,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-03",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_10YEAR",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.35",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.963,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-03",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_2YEAR",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.6",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2026-09-29T20:00:00+00:00",
+          "ratio": 14.963,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "SYNTHETIC",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "2025-01-03",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "UNKNOWN",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "US_TREASURY",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "99b62f1c0044c8cc4d5f0becaf4b481aafbaa4cae6621bd666e1f7dac22787ad",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "BC_3MONTH",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "td.",
+          "text": "4.6",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#table-summary",
+          "text": "Showing 6 of 6 matching observations \u00b7 6 total",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Null \u2260 zero \u00b7 Synthetic \u2260 observed",
+          "ratio": 5.159,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.panel-kicker",
+          "text": "LOCAL COMPUTATION",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workbench-title",
+          "text": "Analytics workbench",
+          "ratio": 21,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.tiny-label",
+          "text": "NO BROKER ORDERS",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "Analysis",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.control-help",
+          "text": "Persisted workflow: admit bars and universe, build a dataset, run a model, const",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "label.",
+          "text": "JSON research inputs",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#load-example",
+          "text": "Load example",
+          "ratio": 7.537,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#run-analysis",
+          "text": "Fetch public Treasury data",
+          "ratio": 5.672,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workbench-scope",
+          "text": "Submitting this action fetches historical par yields from the fixed official Tre",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "p.muted",
+          "text": "Fixture examples are authored SYNTHETIC inputs and are never submitted automatic",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workflow-identities-label",
+          "text": "Selected successful workflow IDs \u00b7 this session",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#workflow-identities",
+          "text": "Dataset Id: No successful result selected\nRun Id: No successful result selected\n",
+          "ratio": 7.203,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#analytics-output-label",
+          "text": "Backend result",
+          "ratio": 5.441,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "#analytics-output",
+          "text": "AVAILABLE \u00b7 Local workspace action; no broker orders\n{\n  \"content_sha256\": \"1b25",
+          "ratio": 7.203,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Quant Terminal  Research environment",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "strong.",
+          "text": "GIG",
+          "ratio": 6.772,
+          "threshold": 4.5,
+          "passed": true
+        },
+        {
+          "selector": "span.",
+          "text": "Broker connectivity disabled by default \u00b7 T4_NOT_CERTIFIED",
+          "ratio": 4.889,
+          "threshold": 4.5,
+          "passed": true
+        }
+      ],
+      "axe": {
+        "version": "4.10.3",
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "impact": "serious",
+            "tags": [
+              "cat.aria",
+              "wcag2a",
+              "wcag412",
+              "EN-301-549",
+              "EN-9.4.1.2"
+            ],
+            "description": "Ensure ARIA attributes are not prohibited for an element's role",
+            "help": "Elements must only use permitted ARIA attributes",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-prohibited-attr?application=axeAPI",
+            "nodes": [
+              {
+                "any": [],
+                "all": [],
+                "none": [
+                  {
+                    "id": "aria-prohibited-attr",
+                    "data": {
+                      "role": null,
+                      "nodeName": "div",
+                      "messageKey": "noRoleSingular",
+                      "prohibited": [
+                        "aria-label"
+                      ]
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "aria-label attribute is not well supported on a div with no valid role attribute."
+                  }
+                ],
+                "impact": "serious",
+                "html": "<div class=\"table-scroll\" id=\"table-wrap\" tabindex=\"0\" aria-label=\"Scrollable underlying observations\">",
+                "target": [
+                  "#table-wrap"
+                ],
+                "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute."
+              }
+            ]
+          },
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT"
+            ],
+            "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+            "nodes": [
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "messageKey": "nonBmp"
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "Element content contains only non-text characters"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+                "target": [
+                  ".workspace-icon"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "messageKey": "nonBmp"
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "Element content contains only non-text characters"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+                "target": [
+                  "#theme-toggle"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "messageKey": "nonBmp"
+                    },
+                    "relatedNodes": [],
+                    "impact": "serious",
+                    "message": "Element content contains only non-text characters"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<span aria-hidden=\"true\">\u21bb</span>",
+                "target": [
+                  "#refresh > span[aria-hidden=\"true\"]"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "fgColor": null,
+                      "bgColor": null,
+                      "contrastRatio": 0,
+                      "fontSize": "8.3pt (11px)",
+                      "fontWeight": "normal",
+                      "messageKey": "elmPartiallyObscured",
+                      "expectedContrastRatio": "4.5:1",
+                      "shadowColor": null
+                    },
+                    "relatedNodes": [
+                      {
+                        "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                        "target": [
+                          "#analytics-input"
+                        ]
+                      }
+                    ],
+                    "impact": "serious",
+                    "message": "Element's background color could not be determined because it's partially obscured by another element"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                "target": [
+                  "#analytics-input"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              },
+              {
+                "any": [
+                  {
+                    "id": "color-contrast",
+                    "data": {
+                      "fgColor": null,
+                      "bgColor": null,
+                      "contrastRatio": 0,
+                      "fontSize": "7.5pt (10px)",
+                      "fontWeight": "normal",
+                      "messageKey": "elmPartiallyObscured",
+                      "expectedContrastRatio": "4.5:1",
+                      "shadowColor": null
+                    },
+                    "relatedNodes": [
+                      {
+                        "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                        "target": [
+                          "#analytics-output"
+                        ]
+                      }
+                    ],
+                    "impact": "serious",
+                    "message": "Element's background color could not be determined because it's partially obscured by another element"
+                  }
+                ],
+                "all": [],
+                "none": [],
+                "impact": "serious",
+                "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                "target": [
+                  "#analytics-output"
+                ],
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              }
+            ]
+          }
+        ],
+        "passes": 28
+      }
+    }
+  ],
+  "broker_connections": 0,
+  "public_deployment": false,
+  "formal_accessibility_certification": false,
+  "axe_asset": {
+    "name": "axe-core",
+    "version": "4.10.3",
+    "license": "MPL-2.0",
+    "source": "https://registry.npmjs.org/axe-core/-/axe-core-4.10.3.tgz",
+    "sha512_integrity_verified": true,
+    "script_sha256": "880970c081707360e64f34cea25ff91892f5bc95675b0776925b9709dd8a68bb"
+  },
+  "browser_version": "151.0.7922.34",
+  "passed": 87,
+  "failed": 0
+}

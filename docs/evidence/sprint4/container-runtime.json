@@ -1,0 +1,59 @@
+{
+  "driver": "vfs",
+  "free_bytes": 3704631296,
+  "minimum_free_bytes": 3221225472,
+  "abort_reserve_bytes": 536870912,
+  "state": "PASS",
+  "estimate": "Reduced VFS layers: ~0.7 GiB builder, ~0.7 GiB runtime, ~0.7 GiB test container, plus transient work and >=0.5 GiB reserve",
+  "host_architecture": "x86_64",
+  "validation_level": "FRESH_DOCKERFILE_BUILD_AND_X86_RESTART",
+  "physical_ampere_validated": false,
+  "arm64_runtime_validated": false,
+  "docker_version": "28.4.0",
+  "build": {
+    "state": "BUILT",
+    "returncode": 0,
+    "free_bytes_minimum_observed": 1627885568,
+    "source_bind_to_runtime": false
+  },
+  "image_id": "sha256:c5446b87672bb72ee3fcf6809357c43dee2d9098d969a77c9c119ae1ab82325f",
+  "image_tag": "gig-bounded-source-11dcdc87a8c5",
+  "runtime": {
+    "state": "PASS",
+    "native": {
+      "native_parity": "PASS",
+      "comparisons": 480,
+      "max_abs_error": 4.440892098500626e-16,
+      "libraries": {
+        "duckdb": true,
+        "lightgbm": true,
+        "statsmodels": true,
+        "exchange_calendars": true,
+        "torch": false,
+        "transformers": false
+      },
+      "imported_library_versions": {
+        "duckdb": "2.0.0",
+        "lightgbm": "4.7.0",
+        "statsmodels": "0.15.0",
+        "exchange_calendars": "4.13.2"
+      }
+    },
+    "uid": 10001,
+    "network": "none",
+    "read_only_root": true,
+    "host_ports": [],
+    "source_binds": [],
+    "persistent_volume": "gig-bounded-state-d03899d34306",
+    "volume_retained": true,
+    "content_hashes_before_after": {
+      "execution": "bc5f7913027217a83778be6d570b7bc43bc360a8ffd69844ca39aaf0bfe174af",
+      "portfolio": "09573e0bd3c8536fd08fdd1476f5d1d249e742a185270e937160ec3fc9fc28d6",
+      "risk": "bdc4a722377fcdf37836e7c609ef7229953b4921f87a7788f5d17a61cc6e267e"
+    },
+    "twap_pending_and_admitted_children_persisted": true,
+    "clock_advance_dispatched_or_filled": false,
+    "broker_connections": 0,
+    "public_deployment": false
+  }
+}

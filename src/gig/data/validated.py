@@ -143,8 +143,15 @@ class PointInTimeStore:
     a later knowledge timestamp. Source and adjustment policy remain separate.
     """
 
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, path: str | Path, *, read_only: bool = False) -> None:
         self.path = Path(path)
+        if not isinstance(read_only, bool):
+            raise ValueError("read_only must be an explicit boolean")
+        self.read_only = read_only
+        if read_only:
+            if not self.path.is_file():
+                raise FileNotFoundError("admitted bar archive does not exist")
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
             connection.execute("""CREATE TABLE IF NOT EXISTS bar_revisions (
@@ -156,11 +163,15 @@ class PointInTimeStore:
                 snapshot_hash TEXT PRIMARY KEY, payload BLOB NOT NULL)""")
 
     def _connect(self) -> sqlite3.Connection:
+        if self.read_only:
+            return sqlite3.connect(self.path.absolute().as_uri() + "?mode=ro", uri=True, timeout=10)
         connection = sqlite3.connect(str(self.path), timeout=10)
         connection.execute("PRAGMA synchronous=FULL")
         return connection
 
     def ingest(self, snapshot: DataSnapshot) -> dict[str, int]:
+        if self.read_only:
+            raise ValueError("read-only archive cannot admit revisions")
         data = snapshot.as_dict()
         # Re-admit canonical rows rather than trusting a hash alone as validation.
         raw = [{**row, "volume": int(row["volume"])} for row in data["rows"]]
