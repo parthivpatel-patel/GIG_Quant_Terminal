@@ -1,0 +1,12 @@
+{
+  "source_commit": "96c0092f28a25c55b33c2397b8b7e69cca742e82",
+  "frozen_implementation_commit": "50f7443e10352e8a935e591545e13a4b2182ce49",
+  "restricted_weights_included": false,
+  "runtime_databases_included": false,
+  "authored_fixture_validation_responses_included": true,
+  "archive": "sprint8-integrated-source.tar.gz",
+  "archive_sha256": "e81bc3a567d02da57b51c8a1c24d650b821686f242318da2b16e4325e16cd8bf",
+  "file_count": 637,
+  "all_local_hashes_and_modes_verified": true,
+  "independent_external_restore": "PENDING"
+}
