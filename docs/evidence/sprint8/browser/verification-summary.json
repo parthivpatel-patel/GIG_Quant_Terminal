@@ -1,0 +1,57 @@
+{
+  "source_commit": "50f7443e10352e8a935e591545e13a4b2182ce49",
+  "browser": "Chromium 151.0.7922.34",
+  "passed": 194,
+  "failed": 0,
+  "javascript_exceptions": 0,
+  "node_smoke_passed": 147,
+  "provider_connections": 0,
+  "broker_connections": 0,
+  "input_classification": "AUTHORED_SYNTHETIC_FIXTURES",
+  "frozen_source_files": {
+    "src/gig/service/static/app.js": "f8934d356367922d3c97033a4ca705d73fe000139552e6581f877074a85293c9",
+    "src/gig/service/static/index.html": "d993b91b7559ec2f25641b2e29f1765379420c08eaa75d99876afa75c823aaba",
+    "src/gig/service/static/styles.css": "37a214521c81fdf61628a15761028ea6f796192d4d4dc43fcc56b1b2a99b8818",
+    "scripts/check_terminal.mjs": "fbc976b0e78d784a1a4dac3d92c8e76f488e4e126c27ed8f82e87b7176563428",
+    "scripts/browser_sprint8.py": "27e4119b7ba651f1ae95bc2d9073eb15a731b67bc48d00487eec5ef6a7d4942e"
+  },
+  "evidence_files": {
+    "workflow-responses.json": "10256210b95c647d1f129ee781da2f26b5c773c6f21afa7b00abd4a1e7ba6746",
+    "report.json": "6fcb43b3cb7a8eb3c9e5a2bdb88798f7589dc4a49c98346f79775964c9e7fcc6",
+    "sprint8-mobile-320.png": "a30a9d88fd5974be4cd13c3a1161c14236bfeb03e22c0a75a58734f9c0556356",
+    "sprint8-light.png": "4be092a9526c473f64b76d364b208302d2deb1fd21af1f78de202bff8cd9246a",
+    "sprint8-dark.png": "c575c515d6fb29e8a987fc4dc1298c99b1c9f2cf450759a3d75867d4ed47c730",
+    "weekly-equity-desktop.png": "67d08b636c3e1170d19f7a2a10abc844f2acd79115d18802924760c9a4273b18",
+    "garch-scoring-desktop.png": "c2c8b1d960885583562a03e4bfc421f05b46d78d19e85a16a7421fe5c6d512de",
+    "lightgbm-scoring-desktop.png": "837ccb385d5be3de58eeba30f5e2f032fbd8f2f2c7f2a68bebffe02ba29a30b6",
+    "accrued-dividend-desktop.png": "f1a2b41e8f91367764023a0b68ada73aba50ea828853edae2f96a49af28943cd",
+    "server.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "accessibility": [
+    {
+      "theme": "dark",
+      "axe": "4.10.3",
+      "violations": 0,
+      "incomplete_rule_ids": [
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "light",
+      "axe": "4.10.3",
+      "violations": 0,
+      "incomplete_rule_ids": [
+        "color-contrast"
+      ]
+    }
+  ],
+  "manual_inspection": [
+    "Dark desktop portfolio and 320px light layout: no overlapping controls or page overflow; tables have internal horizontal scrolling.",
+    "Ranking/variance saved scoring desktop charts and tables retain output units and synthetic labels; unknowns are not zero-filled."
+  ],
+  "limitations": [
+    "Chromium only; automated axe is not formal accessibility certification.",
+    "Axe color-contrast incomplete items require human interpretation; computed visible text contrast checks passed.",
+    "All browser source data and counterparties are authored fixtures. No provider or brokerage connection was made."
+  ]
+}

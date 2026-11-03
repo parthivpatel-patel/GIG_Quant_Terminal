@@ -1,0 +1,22 @@
+{
+  "publication_commit": "50f7443e10352e8a935e591545e13a4b2182ce49",
+  "recovery_origin": "INDEPENDENT_PINNED_GITHUB_DOWNLOAD",
+  "original_official_source": "https://archive.ics.uci.edu/static/public/312/dow+jones+index.zip",
+  "original_acquired_at": "2026-11-03T23:20:41.767512+00:00",
+  "raw_sha256": "08ad8e30915f071b46f6f5bef2b1ccdfe70aacfa31aee116117048ad2adec0bf",
+  "csv_sha256": "24b8f83168153d9cd0bc6121d3979bd8c70fb7b58a94b920194135cbe003090b",
+  "selected_rows_verified": 75,
+  "all_normalized_fields_match_original": true,
+  "future_columns_quarantined": [
+    "next_weeks_open",
+    "next_weeks_close",
+    "percent_change_next_weeks_price",
+    "days_to_next_dividend",
+    "percent_return_next_dividend"
+  ],
+  "performed_with_independently_installed_wheel": true,
+  "new_official_provider_acquisition_claimed": false,
+  "point_in_time_backtest_eligible": false,
+  "funded_allocation_eligible": false,
+  "broker_connections": 0
+}

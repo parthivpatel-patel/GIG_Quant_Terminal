@@ -1,0 +1,52 @@
+{
+  "frozen_source_commit": "50f7443e10352e8a935e591545e13a4b2182ce49",
+  "backend": {
+    "passed": 945,
+    "failed": 0,
+    "skipped": 0,
+    "branch_aware_package_coverage_percent": 81.98640158361304
+  },
+  "installed_wheel": {
+    "passed": 163,
+    "failed": 0,
+    "skipped": 1,
+    "skip_reason": "Separately built optional rolling C-ABI library absent from wheel; source native parity passed.",
+    "packaged_file_hashes_verified": 156
+  },
+  "native_source": {
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "architecture": "x86_64"
+  },
+  "browser": {
+    "chromium": "151.0.7922.34",
+    "passed": 194,
+    "failed": 0,
+    "javascript_exceptions": 0,
+    "axe_version": "4.10.3",
+    "axe_violations": 0,
+    "formal_accessibility_certification": false,
+    "cross_browser_certification": false
+  },
+  "node_smoke": {
+    "passed": 147,
+    "browser_certification": false
+  },
+  "static_analysis": {
+    "ruff": "PASS",
+    "pyflakes": "PASS",
+    "compilation": "PASS",
+    "configured_mypy": "PASS: 150 source files"
+  },
+  "test_suites_overlap": true,
+  "container_runtime": "BLOCKED: Docker VFS store has 0 available bytes; no creation attempted",
+  "physical_arm64_verified": false,
+  "source_equity": "UCI CC-BY-4.0 weekly source archive;75 selected observations independently recovered; no PIT/funded eligibility",
+  "original_v1_model_evaluations_preserved": 6,
+  "fully_funded_certified": false,
+  "t4": "T4_NOT_CERTIFIED",
+  "historical_section_139": "UNSUPPLIED",
+  "paid_services": false,
+  "broker_connections": 0
+}
