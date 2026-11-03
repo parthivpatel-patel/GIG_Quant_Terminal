@@ -1,0 +1,8 @@
+{
+  "preservation_commit": "69be154f5ac13b965433f1f7db3cd44112373aed",
+  "archive_sha256": "143eba0d8389437e2768e998f152024985d28c6c8f9ba1c8f71d0012726cbb2b",
+  "verified_files": 473,
+  "independent_github_download": true,
+  "external_storage_provider": "GitHub",
+  "second_external_storage_provider_verified": false
+}

@@ -49,17 +49,55 @@ reservations, OFI/period/liquidity tables and cost/stress plots use actual resul
 The new Chromium workflow exercises premium cash, duplicate fills, expiry,
 research/microstructure/risk replay and an actual service restart.
 
-## Verification checkpoint
+## Verified release
 
-The first integrated selection passes 48 focused tests. Ruff and configured mypy
-pass. Actual Chromium 151.0.7922.34 passes 78 Sprint 6, 87 retained baseline,
+The complete final regression passes **821 tests**, with **zero failures, errors,
+skips or deselections**, at **81.43% coverage** against the configured 70% minimum.
+No dependency-blocked tests remain. Ruff, Pyflakes, compilation and configured
+mypy on 141 source files pass; mypy retains its import-skipping and untyped-body
+limitations and is not a strict whole-program proof. The installed native wheel
+passes **110 selected tests**, and all **146 packaged source/static/data files**
+match the checkout. Its SHA-256 is
+`50a86eb692043d7bb934472d8c9ea4d5f41bbdcb240a46ac8a92c28a504e044e`.
+The 22 focused native/operations tests pass; a 20,000-observation x86 C++20 rolling
+comparison matches the reference within `3.469446951953614e-18` absolute error.
+Concurrent test load makes the timing evidence unsuitable for controlled
+performance claims.
+
+Actual Chromium 151.0.7922.34 passes 78 Sprint 6, 87 retained baseline,
 24 depth/motion and 32 legacy persisted-flow checks, with no JavaScript errors or
 tested axe 4.10.3 violations. Node passes 106 smoke checks. Counts overlap; Node
 is not browser certification. Responsive checks cover 320, 375, 768, 1024 and
 1920 px; manual screen-reader/cross-browser review remains outstanding.
 
-Complete regression, installed wheel, numerical and final recovery evidence are
-recorded at the final release checkpoint. FinBERT remains noncommercial research
+Further adversarial verification reproduced a concurrent duplicate-intent race:
+one of two simultaneous callers received a uniqueness error despite a single
+safe order. Receipt and clock checks now repeat under the OMS writer lock, and
+both callers receive the same immutable receipt. Force-exit, duplicate fill,
+unfunded liability, price/fee, expiry, precision and risk/kill rollback tests also
+pass. Intermediate failures were repaired; the final complete suite ran after
+the final source change.
+
+Comparable funded NAV history now supports empirical 99% VaR and fractional-tail
+ES only with 21 complete marks on a regular daily UTC grid, fixed initial capital
+and current mark clocks. Insufficient/irregular inputs stay UNAVAILABLE. The
+historical source snapshot IDs are frozen and hash-verified on replay.
+
+The recorded synthetic CPU economics example produced -4.616% compounded return
+at zero costs and -6.314% at 10 bps, with adjusted positive-mean p-value 1.0 in both
+cases. This verifies cost sensitivity and a negative research finding, not
+observed-market alpha or profitability. Exact report identity/values are in
+`docs/evidence/sprint6/sprint6-economic-fixture-result.json`.
+
+Validated implementation milestones were published at `0edb250` and
+`3599e3b7f5cb719199c42bbf8ed947c73dd53fc8`. The latter's complete 529-file GitHub
+tree matches local blob hashes/modes. The interrupted archive was independently
+downloaded from GitHub and all 473 member hashes checked. A complete Git bundle
+is verified locally; final source/evidence receives an additional externally
+verified recovery archive. GitHub is the verified external provider, not a claim
+of a second independent storage service.
+
+FinBERT remains noncommercial research
 only, with restricted weights excluded from Git and recovery archives. There were
 no broker/provider connections, paid services, paper/live orders or public
 deployment. Physical ARM64/Ampere acceptance is unverified. T4 remains

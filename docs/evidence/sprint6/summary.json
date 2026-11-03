@@ -1,0 +1,59 @@
+{
+  "branch": "development/gig-ui-redesign",
+  "validated_source_commit": "3599e3b7f5cb719199c42bbf8ed947c73dd53fc8",
+  "quantitative_branch_unchanged": "202b1a2c4fb3fe8acc734f29cbaa09f17857fddb",
+  "main_unchanged": "f946b23790e92b048a8cbd0160f876509b43455e",
+  "full_regression": {
+    "tests": 821,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage_percent": 81.4257907542579,
+  "installed_wheel": {
+    "tests": 110,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "native_tests": {
+    "tests": 22,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "native_rolling_samples": 20000,
+  "native_max_abs_error": 3.469446951953614e-18,
+  "chromium_version": "151.0.7922.34",
+  "chromium_full_workflow_passed": 78,
+  "chromium_full_workflow_failed": 0,
+  "retained_browser_passed": {
+    "baseline": 87,
+    "depth_motion": 24,
+    "persisted_legacy": 32
+  },
+  "node_smoke_checks": 106,
+  "suite_counts_overlap_do_not_sum": true,
+  "configured_mypy_source_files": 141,
+  "ruff": "PASS",
+  "pyflakes": "PASS",
+  "compilation": "PASS",
+  "dependency_blocked_tests": [],
+  "accounting_scope": "USD_FULLY_PAID_LONG_EQUITIES_AND_LONG_EUROPEAN_CASH_SETTLED_OPTIONS",
+  "fully_funded_certified": false,
+  "economic_validation_established": false,
+  "funded_historical_var_es": "SUPPORTED_ONLY_FOR_21_COMPARABLE_REGULAR_DAILY_MARKS",
+  "physical_arm64_ampere_validated": false,
+  "new_arm64_runtime_validation": false,
+  "formal_accessibility_certification": false,
+  "broker_connections": 0,
+  "provider_connections_this_sprint": 0,
+  "paid_services": false,
+  "public_deployment": false,
+  "finbert": "CC-BY-NC-SA-4.0_NONCOMMERCIAL_RESEARCH_ONLY",
+  "restricted_weights_distributed": false,
+  "t4": "T4_NOT_CERTIFIED",
+  "historical_section_139": "UNSUPPLIED",
+  "verified_external_storage_provider": "GitHub",
+  "second_external_storage_provider_verified": false
+}
