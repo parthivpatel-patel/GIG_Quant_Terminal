@@ -143,7 +143,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     def terminal_section(section: str, mode: str = Query("local", pattern="^(local|synthetic)$"),
                          as_of: str | None = Query(None, max_length=100),
                          max_age_seconds: float | None = Query(None, ge=0, le=366 * 86400),
-                         engine: str = Query("default", pattern="^(default|sequence|finbert|provider|execution-engine|persisted|allocation|accounting|depth|pairs|options-research|signals-research|options-overlay)$"),
+                         engine: str = Query("default", pattern="^(default|sequence|finbert|provider|execution-engine|persisted|allocation|accounting|depth|pairs|options-research|signals-research|options-overlay|funded-account|economic-research|microstructure-research|funded-risk)$"),
                          universe_id: str | None = Query(None, min_length=1, max_length=128),
                          instrument_id: str | None = Query(None, min_length=1, max_length=128)) -> Any:
         from gig.service.terminal import SECTIONS, section_snapshot
@@ -183,7 +183,13 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
                    "options-admit": integrations.options_admit, "options-research": integrations.options_research,
                    "options-replay": integrations.options_replay, "research-signals": integrations.research_signals,
                    "signals-replay": integrations.signals_replay,
-                   "options-overlay": integrations.options_overlay, "options-overlay-replay": integrations.overlay_replay}
+                   "options-overlay": integrations.options_overlay, "options-overlay-replay": integrations.overlay_replay,
+                   "funded-account": integrations.funded_account,
+                   "economic-research": integrations.economic_research, "economic-replay": integrations.economic_replay,
+                   "microstructure-admit": integrations.microstructure_admit,
+                   "microstructure-research": integrations.microstructure_research,
+                   "microstructure-replay": integrations.microstructure_replay,
+                   "funded-risk": integrations.funded_risk, "funded-risk-replay": integrations.funded_risk_replay}
         if action not in methods:
             return failure("INVALID_REQUEST", 404)
         # Local mutations require JSON and reject cross-origin browser writes.

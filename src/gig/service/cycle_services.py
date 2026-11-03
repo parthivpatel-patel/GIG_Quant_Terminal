@@ -139,6 +139,46 @@ class CycleServices:
     def overlay_replay(self, payload: dict[str, Any]) -> Contract:
         return self._overlay().replay(payload)
 
+    def _funded(self):
+        from gig.service.funded_workspace import FundedWorkspace
+        return FundedWorkspace(self.workspace.base_dir)
+
+    def funded_account(self, payload: dict[str, Any]) -> Contract:
+        return self._funded().run(payload)
+
+    def _economics(self):
+        from gig.service.economic_workspace import EconomicResearchWorkspace
+        return EconomicResearchWorkspace(self.workspace.base_dir)
+
+    def economic_research(self, payload: dict[str, Any]) -> Contract:
+        return self._economics().run(payload)
+
+    def economic_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._economics().replay(payload)
+
+    def _microstructure(self):
+        from gig.service.microstructure_workspace import MicrostructureWorkspace
+        return MicrostructureWorkspace(self.workspace.base_dir)
+
+    def microstructure_admit(self, payload: dict[str, Any]) -> Contract:
+        return self._microstructure().ingest(payload)
+
+    def microstructure_research(self, payload: dict[str, Any]) -> Contract:
+        return self._microstructure().run(payload)
+
+    def microstructure_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._microstructure().replay(payload)
+
+    def _funded_risk(self):
+        from gig.service.funded_risk_workspace import FundedRiskWorkspace
+        return FundedRiskWorkspace(self.workspace.base_dir)
+
+    def funded_risk(self, payload: dict[str, Any]) -> Contract:
+        return self._funded_risk().run(payload)
+
+    def funded_risk_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._funded_risk().replay(payload)
+
     def section(self, engine: str, section: str, as_of: Any, maximum: float | None,
                 *, universe_id: str | None = None, instrument_id: str | None = None) -> Contract:
         result = None
@@ -177,6 +217,14 @@ class CycleServices:
             result = self._signals().section(section, as_of, maximum)
         elif engine == "options-overlay":
             result = self._overlay().section(section, as_of, maximum)
+        elif engine == "funded-account":
+            result = self._funded().section(section, as_of, maximum)
+        elif engine == "economic-research":
+            result = self._economics().section(section, as_of, maximum)
+        elif engine == "microstructure-research":
+            result = self._microstructure().section(section, as_of, maximum)
+        elif engine == "funded-risk":
+            result = self._funded_risk().section(section, as_of, maximum)
         if result is not None:
             return result
         return Contract.admit(State.UNAVAILABLE, None, source=f"local-{engine}",

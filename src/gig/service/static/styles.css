@@ -50,6 +50,7 @@ body{font-size:14px;line-height:1.6;font-weight:400;font-feature-settings:"tnum"
 .comparison-table { min-width:700px;width:100%; }
 .comparison-table th,.comparison-table td { max-width:32rem;overflow-wrap:anywhere;white-space:normal; }
 @media(max-width:600px) { .comparison-controls { grid-template-columns:1fr; } }
+@media(max-width:420px){.metrics-grid,.metrics-grid.depth-metrics{grid-template-columns:minmax(0,1fr)}.metric-value{overflow-wrap:normal;word-break:normal}.table-actions{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch}.table-actions input,.table-actions select{width:100%;min-width:0}}
 
 .context-value:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
 

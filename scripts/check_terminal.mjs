@@ -538,5 +538,67 @@ checked("experiment comparison records only actual submitted identities", () => 
 replyOverride = { body: fixture({ data: { metrics: {}, rows: [], folds: [{ screening: [{ dependent: "SYN101", independent: "SYN102", selected: false, reason: "NO_COINTEGRATION" }] }] } }) };
 await get("refresh").dispatch("click"); await settle();
 checked("rejected pairs remain visible as backend screening evidence", () => assert.match(tbody().textContent, /NO_COINTEGRATION/));
+const sprint6Actions = {
+  "funded-initialize": "funded-account", "funded-register": "funded-account", "funded-reserve": "funded-account",
+  "funded-dispatch": "funded-account", "funded-fill": "funded-account", "funded-cancel": "funded-account",
+  "funded-mark": "funded-account", "funded-settle": "funded-account", "funded-state": "funded-account", "funded-replay": "funded-account",
+  "economic-research": "economic-research", "economic-replay": "economic-replay", "funded-risk": "funded-risk", "funded-risk-replay": "funded-risk-replay",
+  "microstructure-admit": "microstructure-admit", "microstructure-research": "microstructure-research", "microstructure-replay": "microstructure-replay",
+};
+replyOverride = { body: localUnavailable() };
+for (const [kind, endpoint] of Object.entries(sprint6Actions)) {
+  get("analytics-kind").value = "workspace-" + kind;
+  const previous = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, previous, "Selecting Sprint 6 actions cannot submit them");
+  const text = get("analytics-input").value;
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`Sprint 6 ${kind} submits the original explicit JSON`, () => {
+    assert.equal(calls.at(-1).url, "/api/v1/workspace/" + endpoint);
+    assert.equal(calls.at(-1).options.body, text);
+  });
+}
+for (const engine of ["funded-account", "funded-risk", "economic-research", "microstructure-research"]) {
+  get("analysis-engine").value = engine;
+  await get("analysis-engine").dispatch("change"); await settle();
+  checked(`Sprint 6 ${engine} keeps its evidence identity`, () => assert(calls.at(-1).url.includes("engine=" + engine)));
+}
+await successfulPipeline("economic-research", { report_id: "1".repeat(64), economically_validated: false });
+get("analytics-kind").value = "workspace-economic-replay";
+await get("analytics-kind").dispatch("change");
+checked("economic report identity is separate from model and pair experiments", () => assert.equal(JSON.parse(get("analytics-input").value).report_id, "1".repeat(64)));
+await successfulPipeline("microstructure-research", { report_id: "2".repeat(64) });
+get("analytics-kind").value = "workspace-microstructure-replay";
+await get("analytics-kind").dispatch("change");
+checked("microstructure replay selects only its saved report identity", () => assert.equal(JSON.parse(get("analytics-input").value).report_id, "2".repeat(64)));
+await successfulPipeline("funded-mark", { snapshot_id: "3".repeat(64) });
+get("analytics-kind").value = "workspace-funded-replay";
+await get("analytics-kind").dispatch("change");
+checked("simulated funded snapshot uses the account replay operation", () => {
+  const body = JSON.parse(get("analytics-input").value);
+  assert.equal(body.snapshot_id, "3".repeat(64));
+  assert.equal(body.operation, "replay");
+});
+replyOverride = { body: fixture({ data: { metrics: {}, rows: [], account: { funding: { state: "AVAILABLE", scope: "SUPPORTED_CONTRACTS_ONLY" } } } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("scoped cash funding never becomes a global certification", () => assert.match(get("truth-notice").textContent, /no global funding certification/));
+get("analytics-kind").value = "workspace-funded-fill";
+await get("analytics-kind").dispatch("change");
+checked("funded partial fill is an explicit idempotent protocol event", () => {
+  const body = JSON.parse(get("analytics-input").value);
+  assert.equal(body.operation, "event");
+  assert.equal(body.event.kind, "FILL");
+  assert.equal(body.event.event_id, "authored-funded-fill-1");
+  assert.equal(body.event.quantity, "1");
+});
+replyOverride = { body: fixture({ data: { metrics: { nav: null }, rows: [], account: { funding_scope: "USD_LONG_ONLY_SUPPORTED_CONTRACTS", mark_state: "UNKNOWN", reservations: [] } } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("real funded account shape retains scope and unknown valuation notice", () => {
+  assert.match(get("truth-notice").textContent, /no global funding certification/);
+  assert.match(get("truth-notice").textContent, /Mark valuation UNKNOWN/);
+});
+replyOverride = { body: fixture({ data: { metrics: {}, rows: [], account: { funding_scope: "USD_LONG_ONLY_SUPPORTED_CONTRACTS", mark_state: "AVAILABLE", reservations: [{ client_id: "fixture-open", remaining_quantity: "1", buy_cash: "300", fee_cash: "1.9" }] } } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("outstanding cash reservations remain inspectable as backend evidence", () => assert.match(tbody().textContent, /fixture-open/));
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);
