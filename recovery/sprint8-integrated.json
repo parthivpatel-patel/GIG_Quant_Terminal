@@ -8,5 +8,10 @@
   "archive_sha256": "e81bc3a567d02da57b51c8a1c24d650b821686f242318da2b16e4325e16cd8bf",
   "file_count": 637,
   "all_local_hashes_and_modes_verified": true,
-  "independent_external_restore": "PENDING"
+  "independent_external_restore": "VERIFIED_PINNED_GITHUB_DOWNLOAD_ALL_HASHES_AND_MODES",
+  "publication_commit": "8f60faaeb1b0e37b66c83c631d47981b7245780f",
+  "download_url": "https://raw.githubusercontent.com/parthivpatel-patel/GIG_Quant_Terminal/8f60faaeb1b0e37b66c83c631d47981b7245780f/recovery/sprint8-integrated-source.tar.gz",
+  "restored_files": 637,
+  "restored_source_compiles": true,
+  "external_storage_provider": "GitHub only; no second provider claimed"
 }

@@ -1,0 +1,9 @@
+Processing ./gig-sprint8-independent-restore
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: gig
+  Building wheel for gig (pyproject.toml): started
+  Building wheel for gig (pyproject.toml): finished with status 'done'
+  Created wheel for gig: filename=gig-0.1.0-cp312-cp312-linux_x86_64.whl size=577643 sha256=d9a92ad92261a5f065da15fc942202ab4ee2902bbb41050468d3cc1fffa98a7a
+  Stored in directory: /tmp/pip-ephem-wheel-cache-isn01iih/wheels/be/c3/8f/04c2ec990a3b9128829be20e5c1afd59ca05b89ec6290b14ed
+Successfully built gig

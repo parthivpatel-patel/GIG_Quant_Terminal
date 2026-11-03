@@ -119,3 +119,34 @@ The three-to-four-week preferred engineering target remains November 24–Decemb
 1, with December 8 as the five-week planning ceiling, conditional on the explicit
 external blockers. FinBERT remains noncommercial research only;
 `fully_funded_certified=false`, `T4_NOT_CERTIFIED`, and historical §139 UNSUPPLIED.
+
+## Follow-on acceptance preparation
+
+After protecting Sprint 8, the browser runner was extended with an explicit
+Chromium/Firefox selector, a 30-second launch bound and task-local writable cache.
+The library, frontend and backend-test source remain byte-identical to frozen
+commit `50f7443…`. Ruff, Pyflakes and compilation passed for the modified runner;
+the final Chromium run again passed all 194 workflows with no JavaScript errors.
+
+Firefox 153.0 assets downloaded successfully, but actual launch timed out before
+any workflow ran. The final attempt logged `Sandbox: writing /proc/self/uid_map:
+EROFS` and `RenderCompositorSWGL failed mapping default framebuffer`. This is a
+failed startup/blocked runtime check, not Firefox validation. No host namespace
+or filesystem permissions were changed to force a pass. Cross-browser acceptance
+therefore remains open; the failure evidence is preserved separately.
+
+The 637-file Sprint 8 source/evidence archive was independently downloaded from
+pinned GitHub commit `8f60faaeb1b0e37b66c83c631d47981b7245780f`, restored into a
+fresh directory, verified against every SHA-256 and file mode, and compiled.
+Archive SHA-256:
+`e81bc3a567d02da57b51c8a1c24d650b821686f242318da2b16e4325e16cd8bf`.
+That independently restored source then built and installed a fresh native wheel.
+All 155 Python/static/schema package files matched the original wheel, the rebuilt
+extension imported from its independent installation, and 13 native numerical
+tests passed with zero skips. Compiled binary bit identity is not claimed.
+These checks overlap the release tests and are not additional unique coverage.
+
+GitHub is the sole verified external storage provider. Local temporary copies
+and complete-history Git bundles do not constitute another durable provider.
+Recovery records identify exact source/archive commits; later documentation and
+runner commits do not rewrite earlier evidence or model findings.

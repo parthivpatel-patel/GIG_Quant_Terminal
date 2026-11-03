@@ -1,0 +1,17 @@
+{
+  "recovered_from_archive_sha256": "e81bc3a567d02da57b51c8a1c24d650b821686f242318da2b16e4325e16cd8bf",
+  "frozen_implementation_commit": "50f7443e10352e8a935e591545e13a4b2182ce49",
+  "fresh_rebuilt_wheel_sha256": "d9a92ad92261a5f065da15fc942202ab4ee2902bbb41050468d3cc1fffa98a7a",
+  "pure_python_static_schema_files_matching_original_wheel": 155,
+  "compiled_binary_bit_identity_claimed": false,
+  "rebuilt_native_extension_import_verified": true,
+  "rebuilt_installed_package_path": "/tmp/gig-sprint8-restored-installed/gig/__init__.py",
+  "native_numerical_tests": {
+    "passed": 13,
+    "failed": 0,
+    "skipped": 0
+  },
+  "independent_external_storage_provider": "GitHub only",
+  "broker_connections": 0,
+  "paid_services": false
+}

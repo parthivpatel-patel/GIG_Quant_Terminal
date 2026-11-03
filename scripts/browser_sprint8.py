@@ -1,4 +1,4 @@
-"""Actual Chromium Sprint 8 accrual, scoring and archive workflows, fixture-only.
+"""Actual browser Sprint 8 accrual, scoring and archive workflows, fixture-only.
 
 All requests target an isolated local service. Public-provider fetching is never
 invoked by this browser check; synthetic CSV admission tests that distinct path.
@@ -24,14 +24,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evidence-dir", type=Path, required=True)
     parser.add_argument("--axe", type=Path)
+    parser.add_argument("--browser", choices=("chromium", "firefox"), default="chromium")
     parser.add_argument("--skip-observed", action="store_true", help="Component-only check; records observed-workflow exclusion explicitly.")
     args = parser.parse_args()
     out = args.evidence_dir.absolute()
     out.mkdir(parents=True, exist_ok=True)
     checks, errors, responses, accessibility = [], [], {}, []
-    report = {"runner": "real-playwright-chromium", "checks": checks, "javascript_errors": errors,
+    report = {"runner": "real-playwright-"+args.browser, "browser_name": args.browser, "checks": checks, "javascript_errors": errors,
               "accessibility": accessibility, "broker_connections": 0, "provider_connections": 0,
               "public_deployment": False, "input_classification": "AUTHORED_SYNTHETIC_FIXTURES",
+              "browser_launch_timeout_ms": 30000,
               "observed_research": "SKIPPED_BY_ARGUMENT" if args.skip_observed else "INCLUDED",
               "formal_accessibility_certification": False}
     if args.axe:
@@ -50,7 +52,8 @@ def main():
         url = f"http://127.0.0.1:{port}"
         env = {key: value for key, value in os.environ.items() if not any(x in key for x in ("ALPACA", "FINNHUB", "FRED_API", "FINBERT_MODEL_DIR"))}
         env.update(PYTHONPATH=str(ROOT/"src")+os.pathsep+env.get("PYTHONPATH", ""),
-                   GIG_BROKER_CONNECTIVITY_ENABLED="false", OPENBLAS_NUM_THREADS="1", OMP_NUM_THREADS="1")
+                   GIG_BROKER_CONNECTIVITY_ENABLED="false", OPENBLAS_NUM_THREADS="1", OMP_NUM_THREADS="1",
+                   XDG_CACHE_HOME=str(directory/"browser-cache"), GSETTINGS_BACKEND="memory")
         now = "2026-11-02T15:49:00Z"
         split_at, pay_at = "2026-11-04T15:49:00Z", "2026-11-06T15:49:00Z"
         server = None
@@ -68,8 +71,10 @@ def main():
             try:
                 start("statement-state")
                 with sync_playwright() as pw:
-                    browser = pw.chromium.launch(headless=True, args=["--no-sandbox"], env=env)
-                    report["chromium_version"] = browser.version
+                    browser = getattr(pw, args.browser).launch(headless=True, timeout=30000, args=["--no-sandbox"] if args.browser == "chromium" else [], env=env)
+                    report["browser_version"] = browser.version
+                    if args.browser == "chromium":
+                        report["chromium_version"] = browser.version
                     context = browser.new_context(viewport={"width": 1440, "height": 1100}, reduced_motion="reduce")
                     context.route("**/*", lambda route: route.continue_() if route.request.url.startswith(url+"/") else route.abort())
                     page = context.new_page()

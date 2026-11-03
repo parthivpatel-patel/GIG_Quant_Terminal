@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.7.0
+rootdir: /tmp
+collected 13 items
+
+gig-sprint8-installed-tests/test_native_neutralize.py .............      [100%]
+
+------ generated xml file: /tmp/gig-sprint8-evidence/restored-native.xml -------
+============================== 13 passed in 0.39s ==============================

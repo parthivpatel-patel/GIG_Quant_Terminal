@@ -1,0 +1,30 @@
+{
+  "runner": "real-playwright-firefox",
+  "browser_name": "firefox",
+  "checks": [
+    {
+      "name": "workflow completed without interruption",
+      "passed": false,
+      "detail": "TimeoutError: BrowserType.launch: Timeout 30000ms exceeded.\nCall log:\n  - <launching> /tmp/gig-browser/firefox-1538/firefox/firefox -no-remote -headless -profile /tmp/playwright_firefoxdev_profile-A3ECqh -juggler-pipe -silent\n  - <launched> pid=12228\n  - [pid=12228][err] *** You are running in headless mode.\n  - [pid=12228][err] [12262] Sandbox: writing /proc/self/uid_map: EROFS\n  - [pid=12228][out] Crash Annotation GraphicsCriticalError: |[0][GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt (t=0.532582) [GFX1-]: RenderCompositorSWGL failed mapping default framebuffer, no dt\n"
+    }
+  ],
+  "javascript_errors": [],
+  "accessibility": [],
+  "broker_connections": 0,
+  "provider_connections": 0,
+  "public_deployment": false,
+  "input_classification": "AUTHORED_SYNTHETIC_FIXTURES",
+  "browser_launch_timeout_ms": 30000,
+  "observed_research": "INCLUDED",
+  "formal_accessibility_certification": false,
+  "axe_asset": {
+    "package": "axe-core",
+    "version": "4.10.3",
+    "license": "MPL-2.0",
+    "source_url": "https://registry.npmjs.org/axe-core/-/axe-core-4.10.3.tgz",
+    "npm_integrity": "sha512-Xm7bpRXnDSX2YE2YFfBk2FnF0ep6tmG7xPh8iHee8MIcrgq762Nkce856dYtJYLkuIoYZvGfTs/PbZhideTcEg==",
+    "script_sha256": "880970c081707360e64f34cea25ff91892f5bc95675b0776925b9709dd8a68bb"
+  },
+  "passed": 0,
+  "failed": 1
+}

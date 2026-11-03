@@ -48,5 +48,33 @@
   "t4": "T4_NOT_CERTIFIED",
   "historical_section_139": "UNSUPPLIED",
   "paid_services": false,
-  "broker_connections": 0
+  "broker_connections": 0,
+  "acceptance_followup": {
+    "library_frontend_and_backend_tests_unchanged": true,
+    "browser_runner_sha256": "5adbb8552d0df154be6e397bad86113581ee7c6fc068216411eae9b8c2ebbfcb",
+    "chromium_reverified": {
+      "passed": 194,
+      "failed": 0,
+      "javascript_errors": 0
+    },
+    "firefox": {
+      "installed_asset_version": "153.0",
+      "state": "UNAVAILABLE",
+      "startup_attempt_failed": true,
+      "workflow_checks_executed": 0,
+      "observed_errors": [
+        "BrowserType.launch timeout30000ms",
+        "Sandbox uid_map EROFS",
+        "RenderCompositorSWGL framebuffer mapping failure"
+      ]
+    },
+    "independent_recovery": {
+      "files_restored_and_verified": 637,
+      "native_wheel_rebuilt": true,
+      "matching_nonbinary_package_files": 155,
+      "native_tests_passed": 13,
+      "native_tests_skipped": 0,
+      "second_external_storage_provider_claimed": false
+    }
+  }
 }
