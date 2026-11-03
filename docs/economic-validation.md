@@ -110,4 +110,3 @@ Focused tests cover actual saved ridge and statsmodels-backed pairs research,
 scalar HAC/cost/attribution references, bootstrap seeds, missing securities and
 whole missing cross-sections, training overlap, capacity/zero volume, declared
 family bounds, late corrections, stale state, tampering and deterministic replay.
-

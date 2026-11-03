@@ -127,7 +127,7 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
     total_fees = sum(fees.values(), Decimal(0))
     nav = cash+total_value if not missing else None
     pnl = total_realized+total_unrealized-total_fees if not missing else None
-    if nav is not None and nav != initial+pnl:
+    if nav is not None and (pnl is None or nav != initial+pnl):
         raise ValueError("funded cash, liabilities and P&L conservation failed")
     return {"currency": "USD", "initial_cash": str(initial), "cash": str(cash),
         "nav": str(nav) if nav is not None else None, "total_pnl": str(pnl) if pnl is not None else None,

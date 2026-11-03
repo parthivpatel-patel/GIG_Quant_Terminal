@@ -9,11 +9,13 @@ from __future__ import annotations
 import hashlib
 import sqlite3
 from decimal import Decimal
+from fractions import Fraction
 from pathlib import Path
 
 from gig.artifacts import write_immutable
 from gig.execution.oms import TERMINAL, OfflineOMS, _decimal
 from gig.options import black_scholes
+from gig.risk.analytics import historical_loss_risk
 from gig.service.contracts import Contract, State
 from gig.service.execution_workspace import _stamp
 from gig.service.funded_workspace import FundedWorkspace
@@ -193,6 +195,41 @@ class FundedRiskWorkspace:
                 "scenario_pnl": changes, "multiplier": multiplier}
         return units
 
+    def _historical(self, oms, snapshot, request):
+        now = aware_timestamp(request["now"])
+        day = 86400*1_000_000_000
+        samples = snapshot.get("risk_nav_samples")
+        if samples is None:
+            selected = {}
+            entries = oms.connection.execute("SELECT snapshot_id,as_of FROM funded_snapshots ORDER BY rowid LIMIT 1001").fetchall()
+            if len(entries) > 1000:
+                raise ValueError("historical funded NAV read bound exceeded")
+            for identity, stamp in entries:
+                at = aware_timestamp(stamp)
+                if at > now or at.value % day != now.value % day:
+                    continue
+                source = self.book.load(identity)
+                account = source["account"]
+                if (account["mark_state"] != "AVAILABLE" or account["funding_state"] != "AVAILABLE"
+                        or account["nav"] is None or Decimal(account["nav"]) <= 0 or account["pending_expiries"]
+                        or any(Decimal(r["quantity"]) and aware_timestamp(r["mark_asof"]) != at for r in account["rows"])):
+                    continue
+                selected[at.value] = {"snapshot_id": identity, "as_of": stamp, "nav": account["nav"], "initial_cash": account["initial_cash"]}
+            samples = [selected[k] for k in sorted(selected)][-21:]
+            snapshot["risk_nav_samples"] = samples
+        if len(samples) < 21 or aware_timestamp(samples[-1]["as_of"]) != now:
+            return {"state": "UNAVAILABLE", "var": None, "es": None, "reason": "NEED_21_CURRENT_COMPARABLE_DAILY_FUNDED_NAV_MARKS"}
+        if (len({s["initial_cash"] for s in samples}) != 1
+                or any(aware_timestamp(b["as_of"]).value-aware_timestamp(a["as_of"]).value != day for a, b in zip(samples, samples[1:], strict=False))):
+            return {"state": "UNAVAILABLE", "var": None, "es": None, "reason": "IRREGULAR_HISTORY_OR_DIFFERENT_CAPITAL_BASE"}
+        returns = [float(Fraction(Decimal(b["nav"])-Decimal(a["nav"]))/Fraction(Decimal(a["nav"])))
+                   for a, b in zip(samples, samples[1:], strict=False)]
+        risk = historical_loss_risk(returns, .99)
+        return {"state": "AVAILABLE", **risk, "es": risk["expected_shortfall"],
+                "period": "EXACT_24_HOUR_SIMULATED_ACCOUNT_MARKS", "source_snapshot_ids": [s["snapshot_id"] for s in samples],
+                "scope": "FUNDED_SIMULATION_NAV_RETURNS_NO_UNREPORTED_EXTERNAL_CASH_FLOWS",
+                "economic_validation": False}
+
     def _evaluate(self, oms, request, candidate=None, *, snapshot_override=None):
         at = _stamp(request["now"])
         clock = self.book._config(oms, "clock") if oms is not None else None
@@ -270,12 +307,13 @@ class FundedRiskWorkspace:
             if "max_participation_rate" in request and (ratio is None or ratio > request["max_participation_rate"]):
                 violations.append("liquidity:"+symbol)
         rows = [{"instrument_id": s, "actual_quantity": quantities.get(s, 0.), "worst_working_quantity": worst_quantity[s], **units[s]} for s in sorted(required)]
+        historical = self._historical(oms, snapshot, request)
         return {"schema_version": VERSION, "as_of": request["now"], "request": request, "account_source_identity": snapshot["source_identity"],
             "account_cash": account["cash"], "account_nav": account["nav"], "available_cash": account["available_cash"],
             "account_snapshot": snapshot, "underlying_gross_notional": by_underlying,
             "rows": rows, "units": units, "scenarios": scenarios, "metrics": measures, "violations": violations,
             "state": "ERROR" if violations else "AVAILABLE", "liquidity": liquidity_rows,
-            "historical_var_es": {"state": "UNAVAILABLE", "var": None, "es": None, "reason": "COMPARABLE_REGULAR_FUNDED_NAV_HISTORY_NOT_ADMITTED"},
+            "historical_var_es": historical,
             "risk_scope": "CONSERVATIVE_LONG_ONLY_MODEL_BUDGETS_AND_ASYNCHRONOUS_ORDERS",
             "liquidity_evidence_state": "CALLER_DECLARED_EXECUTED_PRINTS_NOT_EXECUTABLE_LIQUIDITY",
             "model_assumptions": "BSM_FIXED_ADMITTED_IV_CONTINUOUS_RATES_AND_DIVIDENDS; OPTION_MARK_BASIS_DIFFERENCES_DISCLOSED",
@@ -338,6 +376,10 @@ class FundedRiskWorkspace:
             raise ValueError("risk index differs from immutable evidence")
         for identity in body["request"]["options_run_ids"]:
             OptionsWorkspace(self.base_dir).load(identity)
+        for sample in body.get("account_snapshot", {}).get("risk_nav_samples", []):
+            source = self.book.load(sample["snapshot_id"])
+            if (source["as_of"], source["account"]["nav"], source["account"]["initial_cash"]) != (sample["as_of"], sample["nav"], sample["initial_cash"]):
+                raise ValueError("risk historical NAV evidence differs")
         if "account_snapshot" in body and self._evaluate(None, body["request"], snapshot_override=body["account_snapshot"]) != body:
             raise ValueError("saved risk calculation differs from immutable replay")
         return {**body, "report_id": report_id}

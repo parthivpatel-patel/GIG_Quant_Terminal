@@ -226,6 +226,15 @@ class FundedWorkspace:
                 finally:
                     with_adapter.close()
             with oms._transaction():
+                # Another process may have completed this request after the
+                # optimistic receipt read. Recheck under the writer lock.
+                if remember_request:
+                    prior = oms.connection.execute("SELECT snapshot_id FROM funded_requests WHERE identity=?", (request_id,)).fetchone()
+                    if prior:
+                        return self._contract(self.load(prior[0]))
+                clock = self._config(oms, "clock")
+                if clock is not None and aware_timestamp(clock) > aware_timestamp(at):
+                    raise ValueError("funded simulation clock cannot move backward")
                 DurableTWAPScheduler(oms, outbox, create=False).ensure_not_before(at)
                 if operation == "initialize":
                     previous = self._config(oms, "initial_cash")

@@ -1,0 +1,43 @@
+{
+  "classification": "SYNTHETIC",
+  "report_id": "0a5de55a972574c750673f9acbd4baeec46b8b1f6a162915eb21f94803812ea2",
+  "evaluation_state": "AVAILABLE",
+  "economically_validated": false,
+  "production_suitable": false,
+  "scenarios": [
+    {
+      "bonferroni_positive_mean_pvalue": 1.0,
+      "cost_bps": 0.0,
+      "cost_return_sum": 0.0,
+      "net_return_sum": -0.04683164897649733,
+      "performance": {
+        "annualized_mean": -0.2950393885519332,
+        "annualized_volatility": 0.07190343461997897,
+        "compounded_return": -0.046160823737966594,
+        "max_drawdown": -0.07017262843181349,
+        "return_definition": "FRACTIONAL_CONSTANT_NOTIONAL_RESEARCH_RETURNS_COMPOUNDED_FOR_DIAGNOSTIC_ONLY",
+        "sharpe": -4.103272536440895,
+        "sharpe_definition": "ANNUALIZED_MEAN_OVER_VOLATILITY_ZERO_RATE_ASSUMPTION_NOT_RISK_ADJUSTED_ALPHA",
+        "state": "AVAILABLE"
+      },
+      "slippage_bps": 0.0
+    },
+    {
+      "bonferroni_positive_mean_pvalue": 1.0,
+      "cost_bps": 10.0,
+      "cost_return_sum": 0.018000000000000002,
+      "net_return_sum": -0.06483164897649733,
+      "performance": {
+        "annualized_mean": -0.4084393885519333,
+        "annualized_volatility": 0.06591263593917081,
+        "compounded_return": -0.06314024847259259,
+        "max_drawdown": -0.0738885281118431,
+        "return_definition": "FRACTIONAL_CONSTANT_NOTIONAL_RESEARCH_RETURNS_COMPOUNDED_FOR_DIAGNOSTIC_ONLY",
+        "sharpe": -6.196678113872919,
+        "sharpe_definition": "ANNUALIZED_MEAN_OVER_VOLATILITY_ZERO_RATE_ASSUMPTION_NOT_RISK_ADJUSTED_ALPHA",
+        "state": "AVAILABLE"
+      },
+      "slippage_bps": 0.0
+    }
+  ]
+}

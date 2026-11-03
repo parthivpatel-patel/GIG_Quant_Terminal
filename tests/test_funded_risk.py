@@ -10,6 +10,7 @@ from pathlib import Path
 
 from gig.execution.oms import OfflineOMS
 from gig.options import black_scholes
+from gig.risk.analytics import historical_loss_risk
 from gig.service.funded_risk_workspace import FundedRiskWorkspace
 from gig.service.options_workspace import OptionsWorkspace
 from test_funded_accounting import EXPIRY, NOW, funded_fill, reserve_request, seed_funded
@@ -164,3 +165,39 @@ class FundedRiskTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.workspace.run(bad)
         self.assertFalse((self.base/"funded-account/risk").exists())
+
+    def historical_book(self, *, irregular=False):
+        base = self.base/"history"
+        book = seed_funded(base, "10000")
+        book.run(reserve_request("stock", "A", quantity="10", limit_price="100", fee_budget="0"))
+        book.run({"operation": "dispatch", "now": NOW.isoformat()})
+        funded_fill(book, "stock", "stock-fill", quantity="10", price="100", fee="0")
+        navs = []
+        for index in range(21):
+            stamp = NOW+timedelta(days=index+(1 if irregular and index >= 10 else 0))
+            price = 100+index*(-1 if index % 3 == 0 else 1)
+            book.run({"operation": "mark", "now": stamp.isoformat(), "max_age_seconds": 60,
+                      "marks": {"A": {"price": str(price), "as_of": stamp.isoformat()}}})
+            navs.append(9000+10*price)
+        request = risk_request([], now=stamp.isoformat())
+        request["marks"] = {"A": {"price": str(price), "as_of": stamp.isoformat()}}
+        return FundedRiskWorkspace(base), request, navs
+
+    def test_regular_funded_nav_history_has_reference_var_es_and_saved_sources(self):
+        workspace, request, navs = self.historical_book()
+        result = workspace.run(request).to_dict()
+        self.assertEqual(result["state"], "AVAILABLE")
+        risk = result["data"]["historical_var_es"]
+        reference = historical_loss_risk([(b-a)/a for a, b in zip(navs, navs[1:], strict=False)], .99)
+        self.assertEqual(risk["state"], "AVAILABLE")
+        self.assertEqual(risk["observations"], 20)
+        self.assertAlmostEqual(risk["var"], reference["var"], places=14)
+        self.assertAlmostEqual(risk["es"], reference["expected_shortfall"], places=14)
+        self.assertEqual(len(risk["source_snapshot_ids"]), 21)
+        self.assertEqual(workspace.replay({"report_id": result["data"]["report_id"]}).to_dict(), result)
+
+    def test_irregular_funded_nav_history_does_not_fabricate_daily_returns(self):
+        workspace, request, _ = self.historical_book(irregular=True)
+        risk = workspace.run(request).to_dict()["data"]["historical_var_es"]
+        self.assertEqual(risk["state"], "UNAVAILABLE")
+        self.assertIsNone(risk["var"])

@@ -8,9 +8,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, localcontext
 from pathlib import Path
+from threading import Barrier, local
+from unittest.mock import patch
 
 from gig.execution.oms import OfflineOMS
 from gig.service.contracts import EnvelopeSchema
@@ -66,6 +69,22 @@ class FundedAccountingTests(unittest.TestCase):
     def prepare(self, **changes):
         self.workspace.run(reserve_request(**changes))
         return self.decode(self.workspace.run({"operation": "dispatch", "now": NOW.isoformat()}))
+
+    def test_concurrent_duplicate_intents_recheck_receipt_inside_writer_lock(self):
+        barrier, visited = Barrier(2), local()
+        original = FundedWorkspace._config
+        def gate(oms, name, default=None):
+            if name == "clock" and not getattr(visited, "waiting_done", False):
+                visited.waiting_done = True
+                barrier.wait(timeout=10)
+            return original(oms, name, default)
+        def submit(_):
+            return FundedWorkspace(self.base).run(reserve_request()).to_dict()
+        with patch.object(FundedWorkspace, "_config", new=staticmethod(gate)), ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(submit, range(2)))
+        self.assertEqual(results[0], results[1])
+        with OfflineOMS(self.base/"funded-account/oms.sqlite") as oms:
+            self.assertEqual(oms.connection.execute("SELECT COUNT(*) FROM orders").fetchone()[0], 1)
 
     def mark(self, marks, now=NOW, maximum=60):
         return self.decode(self.workspace.run({"operation": "mark", "now": now.isoformat(),

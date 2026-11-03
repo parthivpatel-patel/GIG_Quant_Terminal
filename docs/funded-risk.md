@@ -45,6 +45,15 @@ event and atomically admit ERROR risk evidence with the existing durable kill
 switch. Pre-trade rejection creates no order. A successful report does not release
 an engaged switch or approve trading.
 
+Historical VaR/ES is admitted only from 21 complete, positive, published funded
+NAV snapshots on an exact 24-hour UTC observation grid ending at the risk clock.
+Capital bases must match, held-position mark clocks must equal each snapshot's
+clock, and unsettled, stale or missing valuations are excluded. Irregular or
+insufficient history is UNAVAILABLE. The resulting 20 simulated account returns
+use empirical 99% loss VaR and fractionally weighted ES from the existing risk
+kernel; they are not market-wide observations or a profitability claim. Original
+snapshot IDs and NAV inputs are frozen in the report and verified on replay.
+
 Risk files are immutable SHA-256 artifacts; their authoritative index, policy and
 kill control commit in the same OMS database transaction. Saved account inputs
 and model identities support deterministic historical replay. Replay does not
