@@ -1,0 +1,86 @@
+{
+  "additional_build_write_budget_bytes": null,
+  "aggregated_filesystems": [
+    {
+      "available_bytes": 0,
+      "capacity_sufficient": false,
+      "device": "27",
+      "required_bytes": 3221225472,
+      "roles": [
+        "docker"
+      ]
+    },
+    {
+      "available_bytes": 2414391296,
+      "capacity_sufficient": true,
+      "device": "34",
+      "required_bytes": 402653184,
+      "roles": [
+        "source",
+        "scratch"
+      ]
+    }
+  ],
+  "broker_connections": 0,
+  "budget_scope": "Conservative admission policy; concurrent writers or larger workloads can still exhaust capacity.",
+  "capacity_admitted": false,
+  "container_create_attempted": false,
+  "container_restart_verified": false,
+  "container_start_verified": false,
+  "daemon": {
+    "architecture": "amd64",
+    "driver": "vfs",
+    "image": "gig-bounded-source-11dcdc87a8c5:latest",
+    "image_bytes": 697300556,
+    "image_id": "sha256:c5446b87672bb72ee3fcf6809357c43dee2d9098d969a77c9c119ae1ab82325f",
+    "managed_local_socket": true,
+    "root": "/var/lib/docker",
+    "state": "AVAILABLE"
+  },
+  "filesystems": {
+    "docker": {
+      "available_bytes": 0,
+      "device": "27",
+      "free_including_reserved_bytes": 54956032,
+      "path": "/var/lib/docker",
+      "state": "AVAILABLE"
+    },
+    "scratch": {
+      "available_bytes": 2414391296,
+      "device": "34",
+      "free_including_reserved_bytes": 2414391296,
+      "path": "/tmp",
+      "state": "AVAILABLE"
+    },
+    "source": {
+      "available_bytes": 2414391296,
+      "device": "34",
+      "free_including_reserved_bytes": 2414391296,
+      "path": "/tmp/gig-sprint7-publication",
+      "state": "AVAILABLE"
+    }
+  },
+  "fresh_image_built": false,
+  "operation": "container",
+  "paid_services": false,
+  "physical_arm64_verified": false,
+  "reasons": [
+    "INSUFFICIENT_AVAILABLE_BYTES:docker"
+  ],
+  "required_bytes_by_role": {
+    "docker": 3221225472,
+    "scratch": 268435456,
+    "source": 134217728
+  },
+  "required_runtime_boundaries": {
+    "cpus": 1,
+    "memory_bytes": 805306368,
+    "network": "none",
+    "pids_limit": 128,
+    "root_filesystem": "read-only",
+    "tmpfs_bytes": 67108864
+  },
+  "resources_deleted": false,
+  "schema_version": "bounded-operations-capacity-v1",
+  "state": "UNAVAILABLE"
+}

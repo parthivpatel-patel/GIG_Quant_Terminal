@@ -1,0 +1,9 @@
+{
+  "url": "https://archive.ics.uci.edu/dataset/312/dow+jones+index",
+  "final_url": "https://archive.ics.uci.edu/dataset/312/dow+jones+index",
+  "status": 200,
+  "acquired_at": "2026-11-03T19:42:02.613021+00:00",
+  "bytes": 132639,
+  "sha256": "1bbd82fdeeb86d6511b8a4685e8bcd2ca736d9e1104472d5710806b1cc01b1e3",
+  "content_type": "text/html"
+}

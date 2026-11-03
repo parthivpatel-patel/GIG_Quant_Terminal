@@ -51,3 +51,19 @@ class Sprint8HTTPTests(unittest.IsolatedAsyncioTestCase):
             "engine": "observed-reference", "as_of": report["as_of"], "max_age_seconds": 60}))
         self.assertNotIn("evaluation_id", earlier["data"])
         self.assertEqual(earlier["data"]["report_id"], report["report_id"])
+
+    async def test_equity_archive_http_provenance_sections_and_replay(self):
+        from test_public_equity import ACQUIRED, REQUEST, fixture
+        endpoint = "/api/v1/workspace/equity-reference"
+        source = self.decoded(await self.client.post(endpoint, json={"operation": "admit", **REQUEST,
+                              "csv_text": fixture(), "acquired_at": ACQUIRED}))
+        for section in ("markets", "research", "operations"):
+            selected = self.decoded(await self.client.get("/api/v1/terminal/"+section, params={
+                "engine": "observed-equity", "as_of": ACQUIRED, "max_age_seconds": 60}))
+            self.assertEqual(selected["data"]["snapshot_id"], source["data"]["snapshot_id"])
+            self.assertEqual(selected["provenance"]["classification"], "SYNTHETIC")
+            self.assertFalse(selected["data"]["funded_allocation_eligible"])
+        replay = self.decoded(await self.client.post(endpoint, json={"operation": "replay", "snapshot_id": source["data"]["snapshot_id"]}))
+        self.assertEqual(source, replay)
+        blocked = await self.client.post(endpoint, json={"operation": "fetch"}, headers={"Origin": "https://outside.invalid"})
+        self.assertEqual(blocked.status_code, 403)

@@ -1,0 +1,18 @@
+{
+  "scope": "SPRINT7_BASELINE_INSTALLED_WHEEL_ONLY_NOT_CURRENT_SPRINT8_ACCEPTANCE",
+  "wheel_source_commit": "8cbeeccfef967d198a5d405f0f187e38257c19af",
+  "gig_import_path": "/tmp/gig-sprint7-evaluation-installed/gig/__init__.py",
+  "native_import_path": "/tmp/gig-sprint7-evaluation-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "native_sha256": "77a8bcad69f3a248a4784702c24b8b9ab26fdc5c989ee5e521aa07531bbd201d",
+  "sqlite_restore_sha256": "f423228aeeb783122d6718bb7a8cbb87bc4aa915a3a7279daa988ecc8723cd9d",
+  "sqlite_restore_exact_bytes_and_query_verified": true,
+  "backup": {
+    "sha256": "e607b6f873bd8d93a16848264c068be856c275bda441062a78c621f69eae64f9",
+    "file_count": 1,
+    "durable_external_backup": false
+  },
+  "provider_connections": 0,
+  "broker_connections": 0,
+  "paid_services": false,
+  "physical_arm64_verified": false
+}

@@ -206,6 +206,13 @@ class CycleServices:
     def observed_reference(self, payload: dict[str, Any]) -> Contract:
         return self._observed().run(payload)
 
+    def _equity(self):
+        from gig.service.equity_workspace import ObservedEquityWorkspace
+        return ObservedEquityWorkspace(self.workspace.base_dir)
+
+    def equity_reference(self, payload: dict[str, Any]) -> Contract:
+        return self._equity().run(payload)
+
     def section(self, engine: str, section: str, as_of: Any, maximum: float | None,
                 *, universe_id: str | None = None, instrument_id: str | None = None) -> Contract:
         result = None
@@ -258,6 +265,8 @@ class CycleServices:
             result = self._statements().section(section, as_of, maximum)
         elif engine == "observed-reference":
             result = self._observed().section(section, as_of, maximum)
+        elif engine == "observed-equity":
+            result = self._equity().section(section, as_of, maximum)
         if result is not None:
             return result
         return Contract.admit(State.UNAVAILABLE, None, source=f"local-{engine}",

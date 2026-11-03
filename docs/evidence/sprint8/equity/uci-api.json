@@ -1,0 +1,9 @@
+{
+  "url": "https://archive.ics.uci.edu/api/dataset?id=312",
+  "final_url": "https://archive.ics.uci.edu/api/dataset?id=312",
+  "status": 200,
+  "acquired_at": "2026-11-03T19:42:02.241019+00:00",
+  "bytes": 6578,
+  "sha256": "f2263d962572427cd403a2583fefd8533b31e44a9289202195b859864fbe4925",
+  "content_type": "text/plain;charset=UTF-8"
+}
