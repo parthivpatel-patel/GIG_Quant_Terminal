@@ -193,4 +193,4 @@ class ObservedWorkspace:
         observed, identity, kind = max(eligible)
         state = State.UNKNOWN if maximum is None else State.STALE if (cutoff.value-observed.value)/1e9 > maximum else State.AVAILABLE
         document = self.snapshot(identity) if kind == "snapshot" else self.load_evaluation(identity) if kind == "evaluation" else self.load(identity)
-        return self._contract(document, state=state, research=kind == "report")
+        return self._contract(document, state=state, research=kind != "snapshot")
