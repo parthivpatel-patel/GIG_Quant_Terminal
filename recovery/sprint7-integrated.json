@@ -1,0 +1,10 @@
+{
+  "source_commit": "92951605090a9047e6aee5f632608ee8c5868c45",
+  "archive": "sprint7-integrated-source.tar.gz",
+  "archive_sha256": "cbc0f871f7fbfca27bc7450bd4f3c49f4221074bf6766fec8fc1f7d33c4216af",
+  "file_count": 539,
+  "local_verification": "ALL_FILE_HASHES_AND_MODES_MATCH",
+  "external_restore": "PENDING",
+  "restricted_weights_included": false,
+  "runtime_state_included": false
+}
