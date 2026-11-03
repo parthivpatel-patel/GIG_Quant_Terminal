@@ -150,3 +150,12 @@ GitHub is the sole verified external storage provider. Local temporary copies
 and complete-history Git bundles do not constitute another durable provider.
 Recovery records identify exact source/archive commits; later documentation and
 runner commits do not rewrite earlier evidence or model findings.
+
+The final acceptance follow-up archive is
+`recovery/sprint8-acceptance-source.tar.gz`, preserving 643 source/evidence files
+from `71375ecd315d4e085edae467229ce196d799c081`. Its SHA-256 is
+`33d49dd68cb749171b3d153c993deb61aecdf20dea530741d526da36224402af`.
+It was independently downloaded from pinned GitHub commit
+`f23759ab418bb0c85448620c8cd408b3d37eddea`, restored into another fresh directory,
+verified for every file hash and mode, and compiled. The recovery JSON records
+the distinction between the frozen implementation and later acceptance tooling.
