@@ -1,0 +1,129 @@
+PASS initial request uses local mode and renders explicit unavailable
+PASS all twelve sections request typed backend paths
+PASS local queries use the visible explicit freshness policy
+PASS point-in-time input preserves original timezone and nanosecond precision
+PASS synthetic mode requires explicit selection and shows provenance
+PASS all twelve sections retain explicitly selected synthetic mode
+PASS zero, unknown, signed zero and exact scalar tags remain distinct
+PASS provider text is rendered as text without HTML injection
+PASS large identity integers sort without binary64 rounding
+PASS descending sort keeps unknown identities last
+PASS table filter preserves source text and matches observations
+PASS CSV exports visible rows, formula-safe strings and exact identities as text
+PASS 3D chart draws finite observations
+PASS 2D alternative retains axis explanation and access state
+PASS keyboard chart navigation and light theme execute
+PASS mixed exact decimal/integer sorting handles subnormal-scale and huge exponents
+PASS stale snapshots retain timestamp and visible stale disclosure
+PASS unknown is not displayed as empty success or zero
+PASS HTTP error preserves the public typed backend error
+PASS invalid ERROR-with-data envelope cannot render apparent success
+PASS wrong schema, unknown-with-data and stale-without-time are rejected
+PASS network failures expose a generic error and clear prior data
+PASS workbench sends original JSON text including duplicate keys and exact integer lexemes
+PASS invalid workbench JSON is rejected before transport
+PASS explicit ingest fixture uses its backend contract without automatic submission
+PASS explicit universe fixture uses its backend contract without automatic submission
+PASS explicit train-sequence fixture uses its backend contract without automatic submission
+PASS explicit predict-sequence fixture uses its backend contract without automatic submission
+PASS explicit finbert fixture uses its backend contract without automatic submission
+PASS explicit execution-engine fixture uses its backend contract without automatic submission
+PASS public Treasury selection declares acquisition without fetching automatically
+PASS explicit Treasury submission uses the bounded provider contract
+PASS all four explicit workspace actions use distinct JSON endpoints without automatic admission
+PASS rejected workspace admission preserves exact raw evidence and cannot render successful save
+PASS persisted caller source claims never become vendor authenticity
+PASS calendar research uses explicit calculation without admitting market data
+PASS corporate-actions research uses explicit calculation without admitting market data
+PASS explicit local evidence views preserve engine selection in backend requests
+PASS point-in-time universe selection uses explicit saved identity
+PASS synthetic demonstrations cannot impersonate a selected local model engine
+PASS explicit pipeline-bars workflow uses its backend contract
+PASS explicit pipeline-universe workflow uses its backend contract
+PASS explicit research-dataset workflow uses its backend contract
+PASS explicit research-model workflow uses its backend contract
+PASS explicit research-predict workflow uses its backend contract
+PASS explicit research-allocate workflow uses its backend contract
+PASS explicit research-prepare workflow uses its backend contract
+PASS explicit portfolio-accounting workflow uses its backend contract
+PASS explicit offline-dispatch workflow uses its backend contract
+PASS explicit offline-fill workflow uses its backend contract
+PASS explicit schedule-twap workflow uses its backend contract
+PASS explicit advance-clock workflow uses its backend contract
+PASS successful persisted dataset identity fills the next explicit model request
+PASS successful research identity fills allocation without automatically preparing an order
+PASS successful allocation identity fills explicit durable preparation
+PASS offline fill example uses a prepared client identity and remains explicitly simulated
+PASS a newly selected dataset clears dependent run and allocation identities
+PASS depth ladder preserves exact quantity text and source classification
+PASS failed depth request clears previous levels
+PASS full provenance has an explicit accessible toggle
+PASS camera starts paused under reduced-motion fallback
+PASS Sprint 5 pairs-research is an explicit backend request
+PASS Sprint 5 pairs-replay is an explicit backend request
+PASS Sprint 5 options-admit is an explicit backend request
+PASS Sprint 5 options-research is an explicit backend request
+PASS Sprint 5 options-replay is an explicit backend request
+PASS Sprint 5 research-signals is an explicit backend request
+PASS Sprint 5 signals-replay is an explicit backend request
+PASS Sprint 5 allocate-signals is an explicit backend request
+PASS Sprint 5 allocate-pairs is an explicit backend request
+PASS options fixture declares modeled synthetic quotes without OPRA coverage
+PASS Sprint 5 pairs view preserves backend engine identity
+PASS Sprint 5 options-research view preserves backend engine identity
+PASS Sprint 5 signals-research view preserves backend engine identity
+PASS saved pair identity fills replay independently of CPU model ID
+PASS signal allocation selects exactly one saved origin
+PASS experiment comparison records only actual submitted identities
+PASS rejected pairs remain visible as backend screening evidence
+PASS Sprint 6 funded-initialize submits the original explicit JSON
+PASS Sprint 6 funded-register submits the original explicit JSON
+PASS Sprint 6 funded-reserve submits the original explicit JSON
+PASS Sprint 6 funded-dispatch submits the original explicit JSON
+PASS Sprint 6 funded-fill submits the original explicit JSON
+PASS Sprint 6 funded-cancel submits the original explicit JSON
+PASS Sprint 6 funded-mark submits the original explicit JSON
+PASS Sprint 6 funded-settle submits the original explicit JSON
+PASS Sprint 6 funded-state submits the original explicit JSON
+PASS Sprint 6 funded-replay submits the original explicit JSON
+PASS Sprint 6 economic-research submits the original explicit JSON
+PASS Sprint 6 economic-replay submits the original explicit JSON
+PASS Sprint 6 funded-risk submits the original explicit JSON
+PASS Sprint 6 funded-risk-replay submits the original explicit JSON
+PASS Sprint 6 microstructure-admit submits the original explicit JSON
+PASS Sprint 6 microstructure-research submits the original explicit JSON
+PASS Sprint 6 microstructure-replay submits the original explicit JSON
+PASS Sprint 6 funded-account keeps its evidence identity
+PASS Sprint 6 funded-risk keeps its evidence identity
+PASS Sprint 6 economic-research keeps its evidence identity
+PASS Sprint 6 microstructure-research keeps its evidence identity
+PASS economic report identity is separate from model and pair experiments
+PASS microstructure replay selects only its saved report identity
+PASS simulated funded snapshot uses the account replay operation
+PASS scoped cash funding never becomes a global certification
+PASS funded partial fill is an explicit idempotent protocol event
+PASS real funded account shape retains scope and unknown valuation notice
+PASS outstanding cash reservations remain inspectable as backend evidence
+PASS Sprint 7 funded-factor-risk retains explicit original JSON
+PASS Sprint 7 lifecycle-configure retains explicit original JSON
+PASS Sprint 7 lifecycle-split retains explicit original JSON
+PASS Sprint 7 lifecycle-dividend retains explicit original JSON
+PASS Sprint 7 lifecycle-apply retains explicit original JSON
+PASS Sprint 7 lifecycle-state retains explicit original JSON
+PASS Sprint 7 lifecycle-replay retains explicit original JSON
+PASS Sprint 7 statement-admit retains explicit original JSON
+PASS Sprint 7 statement-reconcile retains explicit original JSON
+PASS Sprint 7 statement-replay retains explicit original JSON
+PASS Sprint 7 observed-fetch retains explicit original JSON
+PASS Sprint 7 observed-admit retains explicit original JSON
+PASS Sprint 7 observed-research retains explicit original JSON
+PASS Sprint 7 observed-replay retains explicit original JSON
+PASS Sprint 7 funded-lifecycle preserves backend evidence identity
+PASS Sprint 7 independent-statement preserves backend evidence identity
+PASS Sprint 7 observed-reference preserves backend evidence identity
+PASS independent statement replay identity remains separate
+PASS lifecycle application selects only a successful admitted action hash
+PASS reference research uses separate successful source identity
+PASS public reference acquisition warns about dates unknown volume and historic availability
+PASS completed discrepancy report never claims successful external reconciliation
+Verified 128 frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.

@@ -4,7 +4,12 @@
   "archive_sha256": "cbc0f871f7fbfca27bc7450bd4f3c49f4221074bf6766fec8fc1f7d33c4216af",
   "file_count": 539,
   "local_verification": "ALL_FILE_HASHES_AND_MODES_MATCH",
-  "external_restore": "PENDING",
+  "external_restore": "VERIFIED_GITHUB_DOWNLOAD_ALL_FILES_AND_MODES",
   "restricted_weights_included": false,
-  "runtime_state_included": false
+  "runtime_state_included": false,
+  "publication_commit": "f6eb53f82eb560c0fbdb4f701c3fbe86f5559a58",
+  "download_url": "https://raw.githubusercontent.com/parthivpatel-patel/GIG_Quant_Terminal/f6eb53f82eb560c0fbdb4f701c3fbe86f5559a58/recovery/sprint7-integrated-source.tar.gz",
+  "restored_file_count": 539,
+  "restored_source_compiles": true,
+  "independent_storage_provider": "GitHub only; second provider unavailable"
 }

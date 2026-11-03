@@ -1,0 +1,50 @@
+{
+  "source_commit": "92951605090a9047e6aee5f632608ee8c5868c45",
+  "backend": {
+    "passed": 880,
+    "failed": 0,
+    "skipped": 0,
+    "branch_aware_coverage_percent": 81.67546292154934
+  },
+  "installed_wheel": {
+    "passed": 108,
+    "failed": 0,
+    "skipped": 1,
+    "skip_reason": "Separately built optional rolling C-ABI library is absent from wheel; its source native parity test passed."
+  },
+  "native": {
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "architecture": "x86_64"
+  },
+  "chromium": {
+    "version": "151.0.7922.34",
+    "release_workflow_passed": 77,
+    "failed": 0,
+    "javascript_errors": 0,
+    "retained_suites": [
+      87,
+      24,
+      32
+    ],
+    "formal_accessibility_certification": false
+  },
+  "node_smoke": {
+    "passed": 128,
+    "browser_certification": false
+  },
+  "static_analysis": {
+    "ruff": "PASS",
+    "pyflakes": "PASS",
+    "compilation": "PASS",
+    "configured_mypy": "PASS: 147 source files"
+  },
+  "counts_overlap": true,
+  "arm64_physical_verified": false,
+  "fresh_current_image": "BLOCKED_SAFE_DISK_RESERVE",
+  "external_broker_connections": 0,
+  "paid_services": false,
+  "t4": "T4_NOT_CERTIFIED",
+  "historical_section_139": "UNSUPPLIED"
+}
