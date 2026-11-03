@@ -25,8 +25,10 @@
   Object.assign(workspaceActions, { "workspace-economic-research": "economic-research", "workspace-economic-replay": "economic-replay", "workspace-microstructure-admit": "microstructure-admit", "workspace-microstructure-research": "microstructure-research", "workspace-microstructure-replay": "microstructure-replay", "workspace-funded-risk": "funded-risk", "workspace-funded-risk-replay": "funded-risk-replay" });
   for (const operation of ["initialize", "register", "reserve", "dispatch", "fill", "cancel", "mark", "settle", "state", "replay"]) workspaceActions["workspace-funded-" + operation] = "funded-account";
   Object.assign(workspaceActions, { "workspace-lifecycle-configure": "funded-lifecycle", "workspace-lifecycle-split": "funded-lifecycle", "workspace-lifecycle-dividend": "funded-lifecycle", "workspace-lifecycle-apply": "funded-lifecycle", "workspace-lifecycle-state": "funded-lifecycle", "workspace-lifecycle-replay": "funded-lifecycle", "workspace-statement-admit": "statement-admit", "workspace-statement-reconcile": "statement-reconcile", "workspace-statement-replay": "statement-replay", "workspace-observed-fetch": "observed-reference", "workspace-observed-admit": "observed-reference", "workspace-observed-research": "observed-reference", "workspace-observed-replay": "observed-reference" });
+  workspaceActions["workspace-observed-evaluate"] = "observed-reference";
+  workspaceActions["workspace-observed-evaluation-replay"] = "observed-reference";
   workspaceActions["workspace-funded-factor-risk"] = "funded-risk";
-  const workflowReferences = { lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
+  const workflowReferences = { lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
   const comparisonResults = [];
 
   workspaceActions["workspace-depth"] = "depth";
@@ -719,6 +721,8 @@
   const referenceCsv = "Date,USD,GBP,JPY\n" + Array.from({ length: 100 }, (_, i) => `${new Date(Date.UTC(2025, 0, 1+i)).toISOString().slice(0, 10)},${[0, 1, 2].map(j => (1+j*10+.01*Math.sin(i/3+j)+i*.0001).toFixed(6)).join(",")}`).join("\n");
   examples["workspace-observed-admit"] = { operation: "admit", provider: "ECB_REFERENCE_FX", currencies: ["USD", "GBP", "JPY"], start: "2025-01-01", end: "2025-04-10", acquired_at: "2026-11-03T15:00:00Z", csv_text: referenceCsv };
   examples["workspace-observed-research"] = { operation: "research", snapshot_id: "0".repeat(64), model: "ridge", training_observations: 60, test_observations: 20, embargo: 1, seed: 17 };
+  examples["workspace-observed-evaluate"] = { operation: "evaluate", report_id: "0".repeat(64), bootstrap_replications: 500, block_length: 5, seed: 17 };
+  examples["workspace-observed-evaluation-replay"] = { operation: "evaluation-replay", evaluation_id: "0".repeat(64) };
   examples["workspace-observed-replay"] = { operation: "replay", report_id: "0".repeat(64) };
   function loadExample() {
     const kind = $("analytics-kind").value;
@@ -728,6 +732,8 @@
     if (kind === "workspace-statement-reconcile") { if (workflowReferences.statement_hash) example.statement_hash = workflowReferences.statement_hash; if (workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id; }
     if (kind === "workspace-statement-replay" && workflowReferences.statement_report_id) example.report_id = workflowReferences.statement_report_id;
     if (kind === "workspace-observed-research" && workflowReferences.observed_snapshot_id) example.snapshot_id = workflowReferences.observed_snapshot_id;
+    if (kind === "workspace-observed-evaluate" && workflowReferences.observed_report_id) example.report_id = workflowReferences.observed_report_id;
+    if (kind === "workspace-observed-evaluation-replay" && workflowReferences.observed_evaluation_id) example.evaluation_id = workflowReferences.observed_evaluation_id;
     if (kind === "workspace-observed-replay" && workflowReferences.observed_report_id) example.report_id = workflowReferences.observed_report_id;
 
     if (["workspace-research-model", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
@@ -835,6 +841,8 @@
       "workspace-observed-fetch": "This explicit action fetches permitted official ECB daily reference-rate data. Observation precision is a DATE, not a fabricated intraday quote; volume, executable liquidity and historical publication availability remain UNKNOWN. Rates are not funded-account instruments.",
       "workspace-observed-admit": "Admit an authored SYNTHETIC CSV protocol fixture. These values are not ECB observations, OHLC bars or actual traded volume. Public observed-data acquisition is a separate explicit action.",
       "workspace-observed-research": "Run a local model on selected reference-rate evidence. Chronological reconstruction is performed after acquisition; it does not prove inputs were knowable at historical trading decisions or establish alpha.",
+      "workspace-observed-evaluate": "Compare saved return forecasts with zero-return and training-only mean baselines on the same available dates. Paired date-block uncertainty is retrospective; missing fits, costs, capacity and multiplicity limits remain explicit. This does not establish alpha.",
+      "workspace-observed-evaluation-replay": "Verify the saved baseline comparison against its original report, model bytes and evaluation settings. Later experiments cannot alter this evidence.",
       "workspace-observed-replay": "Reload the saved reference-rate model report with source identities and original daily units. Unknown original publication clocks remain unknown."
     });
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
@@ -864,6 +872,7 @@
         if (action === "statement-admit" && identity(result.data.statement_hash)) workflowReferences.statement_hash = result.data.statement_hash;
         if (action === "statement-reconcile" && identity(result.data.report_id)) workflowReferences.statement_report_id = result.data.report_id;
         if (action === "observed-reference" && identity(result.data.snapshot_id) && ["fetch", "admit"].includes(inputs.operation)) workflowReferences.observed_snapshot_id = result.data.snapshot_id;
+        if (action === "observed-reference" && identity(result.data.evaluation_id)) workflowReferences.observed_evaluation_id = result.data.evaluation_id;
         if (action === "observed-reference" && identity(result.data.report_id)) workflowReferences.observed_report_id = result.data.report_id;
 
         if (action === "research-dataset" && identity(result.data.dataset_id)) { workflowReferences.dataset_id = result.data.dataset_id; workflowReferences.run_id = null; workflowReferences.pair_run_id = null; workflowReferences.signal_id = null; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }

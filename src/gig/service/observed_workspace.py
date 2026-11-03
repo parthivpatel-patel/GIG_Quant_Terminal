@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 
 from gig.artifacts import write_immutable
@@ -39,7 +40,7 @@ class ObservedWorkspace:
             source="ECB_REFERENCE_FX" if document.get("classification", document.get("input_classification")) == "HISTORICAL" else "authored-reference-fixture",
             classification="MODEL_ESTIMATE" if research else document["classification"],
             as_of=document["as_of"] if research else document["acquired_at"], scope="workspace.observed-reference",
-            source_identity=document["snapshot_id"], model_identity=document.get("report_id"), model_version=VERSION if research else None,
+            source_identity=document["snapshot_id"], model_identity=document.get("evaluation_id", document.get("report_id")), model_version=document["schema_version"] if research else None,
             evidence_state="OBSERVATION_ORDER_RECONSTRUCTION_NOT_HISTORICAL_POINT_IN_TIME" if research else document["source_authenticity"], readiness="RESEARCH_ONLY")
 
     def _index(self, kind, identity, as_of):
@@ -130,6 +131,26 @@ class ObservedWorkspace:
             return self._admit(*fetch_reference(request))
         if operation == "research":
             return self.research(request)
+        if operation == "evaluate":
+            from gig.research.reference_evaluation import configuration, evaluate_reference
+            config = configuration(request)
+            try:
+                report = self.load(config["report_id"])
+            except FileNotFoundError:
+                return self._missing()
+            models = {identity: loads(self._path("models/"+identity+".json").read_bytes()) for identity in report["model_ids"]}
+            body = evaluate_reference(report, models, config, datetime.now(UTC).isoformat())
+            identity = digest(body)
+            result = self._contract({**body, "evaluation_id": identity}, research=True)
+            write_immutable(self._path("evaluations/"+identity+".json"), dumps(body).encode())
+            self._index("evaluation", identity, body["as_of"])
+            return result
+        if operation == "evaluation-replay":
+            _fields(request, {"evaluation_id"}, {"evaluation_id"})
+            try:
+                return self._contract(self.load_evaluation(request["evaluation_id"]), research=True)
+            except FileNotFoundError:
+                return self._missing()
         if operation == "replay":
             _fields(request, {"report_id"}, {"report_id"})
             try:
@@ -137,6 +158,21 @@ class ObservedWorkspace:
             except FileNotFoundError:
                 return self._missing()
         raise ValueError("unsupported reference operation")
+
+    def load_evaluation(self, evaluation_id):
+        from gig.research.reference_evaluation import VERSION as EVALUATION_VERSION
+        from gig.research.reference_evaluation import configuration, evaluate_reference
+        identity = _identity(evaluation_id)
+        wire = self._path("evaluations/"+identity+".json").read_bytes()
+        body = loads(wire)
+        if digest(body) != identity or dumps(body).encode() != wire or body.get("schema_version") != EVALUATION_VERSION:
+            raise ValueError("reference evaluation integrity failure")
+        self._verify_index("evaluation", identity, body["as_of"])
+        report = self.load(body["report_id"])
+        models = {key: loads(self._path("models/"+key+".json").read_bytes()) for key in report["model_ids"]}
+        if digest(evaluate_reference(report, models, configuration(body["request"]), body["as_of"])) != identity:
+            raise ValueError("reference evaluation replay differs")
+        return {**body, "evaluation_id": identity}
 
     def section(self, section, as_of, max_age_seconds):
         if section not in {"markets", "research", "models", "signals", "operations"}:
@@ -146,14 +182,15 @@ class ObservedWorkspace:
         if not path.is_file():
             return None
         kind = "snapshot" if section in {"markets", "operations"} else "report"
+        kinds = (kind,) if kind == "snapshot" else ("report", "evaluation")
         with sqlite3.connect(path.as_uri()+"?mode=ro", uri=True) as connection:
-            entries = connection.execute("SELECT identity,as_of FROM entries WHERE kind=? LIMIT 1001", (kind,)).fetchall()
+            entries = connection.execute("SELECT kind,identity,as_of FROM entries WHERE kind IN ("+",".join("?" for _ in kinds)+") LIMIT 1001", kinds).fetchall()
         if len(entries) > 1000:
             raise ValueError("reference history read bound exceeded")
-        eligible = [(aware_timestamp(stamp), identity) for identity, stamp in entries if aware_timestamp(stamp) <= cutoff]
+        eligible = [(aware_timestamp(stamp), identity, entry_kind) for entry_kind, identity, stamp in entries if aware_timestamp(stamp) <= cutoff]
         if not eligible:
             return None
-        observed, identity = max(eligible)
+        observed, identity, kind = max(eligible)
         state = State.UNKNOWN if maximum is None else State.STALE if (cutoff.value-observed.value)/1e9 > maximum else State.AVAILABLE
-        document = self.snapshot(identity) if kind == "snapshot" else self.load(identity)
+        document = self.snapshot(identity) if kind == "snapshot" else self.load_evaluation(identity) if kind == "evaluation" else self.load(identity)
         return self._contract(document, state=state, research=kind == "report")

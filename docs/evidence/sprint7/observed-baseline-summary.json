@@ -1,0 +1,218 @@
+{
+  "input_classification": "HISTORICAL",
+  "source_snapshot": "c484e4865b71fccafbdb14675cf3cce56d100639d35610a18698e592694a6b13",
+  "models": {
+    "ridge": {
+      "evaluation_id": "42bc6bad1aad11c2a9dfe5bef1483e1b453de047e40aea9991cacf9a48f986b9",
+      "report_id": "b9c3a7a88da162a07a1a5b9934bacb9f7485d52207399aa0231ac62d65c6a50c",
+      "evaluation_state": "AVAILABLE",
+      "coverage_state": "COMPLETE",
+      "metrics": {
+        "excluded_rows": 0,
+        "matched_date_equal_weight_model_mse": 2.582351668523317e-05,
+        "paired_dates": 80,
+        "paired_rows": 240
+      },
+      "comparisons": {
+        "training_mean_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 2.0450518550538845e-05,
+          "mean_model_minus_baseline_loss": 5.372998134694333e-06,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            3.0212113058868865e-06,
+            7.653978117413688e-06
+          ],
+          "replications": 500
+        },
+        "zero_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 2.0424010555395035e-05,
+          "mean_model_minus_baseline_loss": 5.399506129838142e-06,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            3.1587319785065288e-06,
+            7.716334286842165e-06
+          ],
+          "replications": 500
+        }
+      },
+      "interpretation": "MODEL_WORSE_THAN_BOTH_BASELINES_ON_MATCHED_DATES",
+      "reason": null,
+      "as_of": "2026-11-03T18:30:55.711485+00:00",
+      "replay_verified": true
+    },
+    "lightgbm": {
+      "evaluation_id": "2885c1178ef1316675e525360ecce67eecbc1baa4b1a1634744dac2b49a42365",
+      "report_id": "8c06b437d22e9ab754251f3eec3715514bf145caa9ee2282c538bc7b2c83cea5",
+      "evaluation_state": "UNAVAILABLE",
+      "coverage_state": null,
+      "metrics": null,
+      "comparisons": null,
+      "interpretation": null,
+      "reason": "Return MSE baselines do not apply to variance forecasts or cross-reference rank scores.",
+      "as_of": "2026-11-03T18:30:55.819684+00:00",
+      "replay_verified": true
+    },
+    "hmm": {
+      "evaluation_id": "6744efc5423abd1ddff98f6465ff88c066b119902eb84e7a4804dfed9a4faa50",
+      "report_id": "a295ce039e167c7a1d809983b3161e0d550771dd6ce2a80b4e080c30eaa6b2d3",
+      "evaluation_state": "AVAILABLE",
+      "coverage_state": "PARTIAL",
+      "metrics": {
+        "excluded_rows": 20,
+        "matched_date_equal_weight_model_mse": 2.0284037754101973e-05,
+        "paired_dates": 80,
+        "paired_rows": 220
+      },
+      "comparisons": {
+        "training_mean_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 1.9746430164853245e-05,
+          "mean_model_minus_baseline_loss": 5.376075892487299e-07,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            1.3209161678476051e-07,
+            1.0138025187355212e-06
+          ],
+          "replications": 500
+        },
+        "zero_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 2.0025680859117653e-05,
+          "mean_model_minus_baseline_loss": 2.583568949843277e-07,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            -6.70185606270703e-07,
+            1.1962723737376201e-06
+          ],
+          "replications": 500
+        }
+      },
+      "interpretation": "MODEL_WORSE_THAN_BOTH_BASELINES_ON_MATCHED_DATES",
+      "reason": null,
+      "as_of": "2026-11-03T18:30:55.927908+00:00",
+      "replay_verified": true
+    },
+    "garch": {
+      "evaluation_id": "ed31b4d1797480d8253947cb255a220aa0d437581ee00f548f0b658dff980a2a",
+      "report_id": "19ee26f892bfdf99a370a8e66c69aa7c82fe7e29b271a8e86c02deb6137c474d",
+      "evaluation_state": "UNAVAILABLE",
+      "coverage_state": null,
+      "metrics": null,
+      "comparisons": null,
+      "interpretation": null,
+      "reason": "Return MSE baselines do not apply to variance forecasts or cross-reference rank scores.",
+      "as_of": "2026-11-03T18:30:56.039893+00:00",
+      "replay_verified": true
+    },
+    "kalman": {
+      "evaluation_id": "1ad70e19719e3cc7861a603e68528c61f7cb3b459a620e8a22c3ff86c3a6fda4",
+      "report_id": "3622c0fa0c5503a29732a6747a362a58cbb3842a9fd6edd14f09a30a6186e90f",
+      "evaluation_state": "AVAILABLE",
+      "coverage_state": "COMPLETE",
+      "metrics": {
+        "excluded_rows": 0,
+        "matched_date_equal_weight_model_mse": 2.1462909764137277e-05,
+        "paired_dates": 80,
+        "paired_rows": 240
+      },
+      "comparisons": {
+        "training_mean_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 2.0450518550538845e-05,
+          "mean_model_minus_baseline_loss": 1.0123912135984432e-06,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            3.4039523335253704e-08,
+            2.107067694274439e-06
+          ],
+          "replications": 500
+        },
+        "zero_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 2.0424010555395035e-05,
+          "mean_model_minus_baseline_loss": 1.0388992087422524e-06,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            -5.6648462092222625e-08,
+            2.007798794179505e-06
+          ],
+          "replications": 500
+        }
+      },
+      "interpretation": "MODEL_WORSE_THAN_BOTH_BASELINES_ON_MATCHED_DATES",
+      "reason": null,
+      "as_of": "2026-11-03T18:30:56.136545+00:00",
+      "replay_verified": true
+    },
+    "bilstm": {
+      "evaluation_id": "420918609a98f60d72a29ab7116f60986dc7bf4aea9aec6b05ecd4f4fb4d3b1b",
+      "report_id": "a08cae4f481406cf9804845023b458ce04138bd1d4a4eea881d72e77568e66f3",
+      "evaluation_state": "AVAILABLE",
+      "coverage_state": "COMPLETE",
+      "metrics": {
+        "excluded_rows": 0,
+        "matched_date_equal_weight_model_mse": 0.038191005238629096,
+        "paired_dates": 80,
+        "paired_rows": 240
+      },
+      "comparisons": {
+        "training_mean_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 2.0450518550538845e-05,
+          "mean_model_minus_baseline_loss": 0.03817055472007856,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            0.03466741891990466,
+            0.04166374159976685
+          ],
+          "replications": 500
+        },
+        "zero_return": {
+          "assumptions": "Date blocks approximate temporal dependence; currencies are kept together. No stationarity or family-completeness guarantee.",
+          "block_length": 5,
+          "calibrated_confidence_state": "UNKNOWN",
+          "matched_date_equal_weight_baseline_mse": 2.0424010555395035e-05,
+          "mean_model_minus_baseline_loss": 0.038170581228073694,
+          "method": "CIRCULAR_MOVING_BLOCK_BOOTSTRAP_PAIRED_OBSERVATION_DATES",
+          "multiplicity_adjusted": false,
+          "percentile_95_interval": [
+            0.0346682376459595,
+            0.04166306004107527
+          ],
+          "replications": 500
+        }
+      },
+      "interpretation": "MODEL_WORSE_THAN_BOTH_BASELINES_ON_MATCHED_DATES",
+      "reason": null,
+      "as_of": "2026-11-03T18:30:56.253851+00:00",
+      "replay_verified": true
+    }
+  },
+  "historical_point_in_time_validated": false,
+  "economic_validation_established": false,
+  "paid_services": false,
+  "broker_connections": 0
+}

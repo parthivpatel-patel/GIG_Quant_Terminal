@@ -59,3 +59,7 @@ Genuine historical equity coverage, authoritative historical publication clocks,
 observed trading capacity and independently validated economic performance remain
 unavailable. Alpaca remains fixture-only. FinBERT is a separate noncommercial
 research workflow; no restricted weights are included in source or recovery.
+
+Saved reports can now be compared with training-only baselines; see
+[reference-model evaluation](reference-model-evaluation.md) for the actual negative
+findings, uncertainty assumptions and immutable HTTP/terminal workflow.

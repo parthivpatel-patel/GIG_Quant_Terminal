@@ -75,3 +75,17 @@ class Sprint7HTTPTests(unittest.IsolatedAsyncioTestCase):
             response = await self.client.post("/api/v1/workspace/statement-reconcile", json={})
             self.decoded(response, 422)
             self.assertNotIn("private-statement", response.text)
+
+    async def test_saved_reference_evaluation_http_replay_and_explicit_unknowns(self):
+        from test_observed_reference import reference_fixture
+        endpoint = "/api/v1/workspace/observed-reference"
+        admitted = self.decoded(await self.client.post(endpoint, json={"operation": "admit", **reference_fixture()}))["data"]
+        report = self.decoded(await self.client.post(endpoint, json={"operation": "research", "snapshot_id": admitted["snapshot_id"],
+                              "model": "ridge", "training_observations": 30, "test_observations": 10}))["data"]
+        result = self.decoded(await self.client.post(endpoint, json={"operation": "evaluate", "report_id": report["report_id"], "bootstrap_replications": 100}))
+        self.assertEqual(result["data"]["evaluation_state"], "AVAILABLE")
+        self.assertEqual(result["data"]["input_classification"], "SYNTHETIC")
+        self.assertEqual(result["data"]["capacity_state"], "UNKNOWN")
+        self.assertFalse(result["data"]["trading_approved"])
+        replay = self.decoded(await self.client.post(endpoint, json={"operation": "evaluation-replay", "evaluation_id": result["data"]["evaluation_id"]}))
+        self.assertEqual(result, replay)
