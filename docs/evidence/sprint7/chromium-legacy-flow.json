@@ -1,0 +1,639 @@
+{
+  "checks": [
+    {
+      "name": "pipeline-bars explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "pipeline-universe explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "research-dataset explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "research-model explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "research-predict explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "research-allocate explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "research-prepare explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "offline-dispatch explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "offline-fill explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "portfolio-accounting explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "schedule-twap explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "advance-clock explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "returned dataset run and allocation identities connected",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "acknowledgement creates no positions",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "partial fill creates simulated position",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved model inference does not retrain",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "persisted models terminal view",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "persisted signals terminal view",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "allocation portfolio terminal view",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "accounting portfolio terminal view",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "accounting risk terminal view",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "execution-engine execution terminal view",
+      "passed": true,
+      "detail": "AVAILABLE"
+    },
+    {
+      "name": "dark analyst visible contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "dark analyst automated accessibility",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "light analyst visible contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light analyst automated accessibility",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "analyst 320px no document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "analyst 375px no document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "analyst 768px no document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "analyst 1024px no document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "analyst 1920px no document overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript exceptions",
+      "passed": true,
+      "detail": null
+    }
+  ],
+  "javascript_errors": [],
+  "broker_connections": 0,
+  "classification": "AUTHORED_SYNTHETIC_OFFLINE_WORKFLOW",
+  "formal_accessibility_certified": false,
+  "chromium_version": "151.0.7922.34",
+  "accessibility": [
+    {
+      "theme": "dark",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"empty-mark\" aria-hidden=\"true\">\u224b</span>",
+              "target": [
+                ".empty-mark"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "8.3pt (11px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+                      "target": [
+                        "#workflow-identities"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+              "target": [
+                "#workflow-identities"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"empty-mark\" aria-hidden=\"true\">\u224b</span>",
+              "target": [
+                ".empty-mark"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "8.3pt (11px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+                      "target": [
+                        "#workflow-identities"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+              "target": [
+                "#workflow-identities"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "passed": 32,
+  "failed": 0
+}

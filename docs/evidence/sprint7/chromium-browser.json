@@ -1,0 +1,909 @@
+{
+  "runner": "real-playwright-chromium",
+  "checks": [
+    {
+      "name": "funded-initialize explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-register explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-reserve explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "paid equity cash and fees reserve exactly",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-dispatch explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "equity acknowledgement is not a fill",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-fill explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-mark explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "hand-calculated paid stock cash and NAV",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "statement-admit explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "statement-reconcile explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "independent literal statement agrees with engine",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "fixture agreement does not claim broker reconciliation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "statement-replay explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "statement comparison exactly replays",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "statement-admit explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "statement-reconcile explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "cash discrepancy remains unresolved",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "statement-replay explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "saved discrepancies replay without changing account",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "statement-replay explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "actual service restart preserves discrepancy evidence",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "statement comparison leaves exact funded balances unchanged",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-factor-risk explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "assumed factor budget uses actual paid equity position",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "declared factor loading is never represented as calibrated",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-initialize explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-register explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "lifecycle-configure explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-reserve explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "paid equity cash and fees reserve exactly",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-dispatch explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "equity acknowledgement is not a fill",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-fill explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-mark explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "hand-calculated paid stock cash and NAV",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "lifecycle-split explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "lifecycle-apply explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "split uses selected admitted immutable revision",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-mark explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "two-for-one split preserves value and basis",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "lifecycle-dividend explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "lifecycle-apply explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "record-date entitlement credits only declared pay-date cash",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-mark explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "dividend cash and paid stock NAV conserve",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "lifecycle-replay explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "lifecycle replay preserves exact saved funded state",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-reserve explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-dispatch explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "funded-fill explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "sale cash is recorded but proceeds remain unavailable before settlement",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "lifecycle-state explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "settlement releases only previously booked sale proceeds",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "funded-mark explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "partial sale fees preserve exact final stock NAV",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "lifecycle-replay explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "settled sale and remaining positions replay exactly",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observed-admit explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "observed-research explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "reference fixture and research retain separate identities",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observed-replay explicit browser action",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "state": "AVAILABLE"
+      }
+    },
+    {
+      "name": "reference research replays exactly",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reference fixture is never labeled provider-observed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "lifecycle terminal shows persisted cash book",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "dark visible text contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "dark automated accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light visible text contrast",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "light automated accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "320px lifecycle layout without overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "375px lifecycle layout without overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "768px lifecycle layout without overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1024px lifecycle layout without overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "1920px lifecycle layout without overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "all twelve terminal sections retained",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reduced-motion camera remains paused",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript exceptions",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "javascript_errors": [],
+  "accessibility": [
+    {
+      "theme": "dark",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "8.3pt (11px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+                      "target": [
+                        "#workflow-identities"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+              "target": [
+                "#workflow-identities"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "version": "4.10.3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT"
+          ],
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+          "nodes": [
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span class=\"workspace-icon\" aria-hidden=\"true\">\u25a6</span>",
+              "target": [
+                ".workspace-icon"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<button class=\"icon-button\" id=\"theme-toggle\" aria-label=\"Switch to light theme\" title=\"Switch theme\">\u25d0</button>",
+              "target": [
+                "#theme-toggle"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "messageKey": "nonBmp"
+                  },
+                  "relatedNodes": [],
+                  "impact": "serious",
+                  "message": "Element content contains only non-text characters"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<span aria-hidden=\"true\">\u21bb</span>",
+              "target": [
+                "#refresh > span[aria-hidden=\"true\"]"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+                      "target": [
+                        "#analytics-input"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<textarea id=\"analytics-input\" spellcheck=\"false\" rows=\"10\" style=\"\"></textarea>",
+              "target": [
+                "#analytics-input"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "8.3pt (11px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+                      "target": [
+                        "#workflow-identities"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"workflow-identities\" class=\"workflow-identities\" role=\"region\" tabindex=\"0\" aria-labelledby=\"workflow-identities-label\">",
+              "target": [
+                "#workflow-identities"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            },
+            {
+              "any": [
+                {
+                  "id": "color-contrast",
+                  "data": {
+                    "fgColor": null,
+                    "bgColor": null,
+                    "contrastRatio": 0,
+                    "fontSize": "9.0pt (12px)",
+                    "fontWeight": "normal",
+                    "messageKey": "elmPartiallyObscured",
+                    "expectedContrastRatio": "4.5:1",
+                    "shadowColor": null
+                  },
+                  "relatedNodes": [
+                    {
+                      "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+                      "target": [
+                        "#analytics-output"
+                      ]
+                    }
+                  ],
+                  "impact": "serious",
+                  "message": "Element's background color could not be determined because it's partially obscured by another element"
+                }
+              ],
+              "all": [],
+              "none": [],
+              "impact": "serious",
+              "html": "<pre id=\"analytics-output\" role=\"region\" tabindex=\"0\" aria-labelledby=\"analytics-output-label\">",
+              "target": [
+                "#analytics-output"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "broker_connections": 0,
+  "provider_connections": 0,
+  "public_deployment": false,
+  "input_classification": "AUTHORED_SYNTHETIC_FIXTURES",
+  "observed_research": "INCLUDED",
+  "formal_accessibility_certification": false,
+  "axe_asset": {
+    "package": "axe-core",
+    "version": "4.10.3",
+    "license": "MPL-2.0",
+    "source_url": "https://registry.npmjs.org/axe-core/-/axe-core-4.10.3.tgz",
+    "npm_integrity": "sha512-Xm7bpRXnDSX2YE2YFfBk2FnF0ep6tmG7xPh8iHee8MIcrgq762Nkce856dYtJYLkuIoYZvGfTs/PbZhideTcEg==",
+    "script_sha256": "880970c081707360e64f34cea25ff91892f5bc95675b0776925b9709dd8a68bb"
+  },
+  "chromium_version": "151.0.7922.34",
+  "passed": 77,
+  "failed": 0
+}

@@ -1,0 +1,195 @@
+{
+  "source": {
+    "snapshot_id": "c484e4865b71fccafbdb14675cf3cce56d100639d35610a18698e592694a6b13",
+    "classification": "HISTORICAL",
+    "acquired_at": "2026-11-03T13:18:38.769375+00:00",
+    "source_url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip",
+    "source_authenticity": "OFFICIAL_HTTPS_FETCH",
+    "raw_sha256": "850354d391e3505b832bed6f9cb2371f04ab86b9c51a259540b47a759dcea44f",
+    "csv_sha256": "20d8ba65d048edca30db7b6fe86d02ec182c4dfd6349967e1282f41c6e8dfd4f",
+    "diagnostics": {
+      "imputed_values": 0,
+      "intraday_time_supplied": false,
+      "missing_quotes": 0,
+      "observed_dates": 255,
+      "rows": 765,
+      "volume_supplied": false
+    },
+    "attribution": "Source: European Central Bank. ECB information is available free of charge. Derived features, returns and models are modifications by GIG, not ECB outputs.",
+    "license_url": "https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html"
+  },
+  "models": {
+    "ridge": {
+      "report_id": "b9c3a7a88da162a07a1a5b9934bacb9f7485d52207399aa0231ac62d65c6a50c",
+      "model_ids": [
+        "16932c7d183725fcf3846c5b5898ed544dd9360b54705c6bc42d9ae67bac6d53",
+        "22002232c0367d21e0aa5127e46206964075618749f10ff3c29897f7441e53d8",
+        "3e7dc128b395a4caafea4c6071c6234ef6ced4360bba898ee5bf074f0b67a339",
+        "42c09367218d92f97087b66d082a11b974e1bbfeeb175153e947dd5e3655f1a4",
+        "4779be51256c5cfd084e4368cc1249cafd62ab24aa9cd2ec65170ab1687609a4",
+        "6b2e07860edb5908c2a5d56af28100f4ebf01df294ac0820305a858064e34226",
+        "8307849431dfaf8de743e01c5ce175d11e3c833a275400c045d8c9d4878182fa",
+        "8612af9c462b4be68de43126996ddb9a52471ed5af5fca17fecf40e042d56737",
+        "a0d6a160bf4fe8bb8bcf4470c0752bdec8523f37775defaf93a331c261effced",
+        "b738c5fd5edaa726868fd856df84d766177d3f75c123ed05fb712ed08b75bda8",
+        "b97abc4a4b4e1fe8ec419dc6a2e7d7eb57dee9e1cdaee42e9a86268d2b58adce",
+        "cecdb942ac3cb4b1fb42f102871e043de7e7b002c7173f5c6180538747dabdae"
+      ],
+      "prediction_kind": "DERIVED_REFERENCE_RETURN_ESTIMATE",
+      "metrics": {
+        "heldout_mse": 2.5823516685233173e-05,
+        "predictions": 240,
+        "unavailable_predictions": 0
+      },
+      "input_classification": "HISTORICAL",
+      "research_mode": "RETROSPECTIVE_OBSERVATION_ORDER_RESEARCH",
+      "fit_states": [
+        "CONVERGED"
+      ],
+      "replay_verified": true
+    },
+    "lightgbm": {
+      "report_id": "8c06b437d22e9ab754251f3eec3715514bf145caa9ee2282c538bc7b2c83cea5",
+      "model_ids": [
+        "3c5667de0638caea14ae01b62ab42df8a6cd0346ba8129e91880f6b45a32535a",
+        "63e6988e4ddfe2bdb5898e3a70754e86cf3c44f6308af5824b42e2c1cd18b814",
+        "934c0107ceb4412cad184e018878f4e928ca060826b191812a50b447a7555c9b",
+        "947413953be1daeadea6db0d0eeb32c7bbdfe5d3957a925c7706bf261126da6d"
+      ],
+      "prediction_kind": "CROSS_REFERENCE_RANK_SCORE",
+      "metrics": {
+        "heldout_mse": null,
+        "predictions": 240,
+        "unavailable_predictions": 0
+      },
+      "input_classification": "HISTORICAL",
+      "research_mode": "RETROSPECTIVE_OBSERVATION_ORDER_RESEARCH",
+      "fit_states": [
+        "CONVERGED"
+      ],
+      "replay_verified": true
+    },
+    "hmm": {
+      "report_id": "a295ce039e167c7a1d809983b3161e0d550771dd6ce2a80b4e080c30eaa6b2d3",
+      "model_ids": [
+        "01d4a86dec8a5dc0dc52015a7883d3e0761cec4bb591ed747ecd2427db1cc48f",
+        "3fd17d5c875bc3cbb89751c35326f9a5af72e95588a385a270a72f9500090b9a",
+        "4402fc6748ad0899b3ee80587179a7de975af8c6108ced5c145128fc5dae3d90",
+        "47c21afef91aaf49ce696dc45268f5de570dd2c2145676dfebf8d5da6a88ccb7",
+        "49b79cc0169230930be161c5d4b0ed6a872e2c692d934919638887656346a8f5",
+        "5eaf3cd7d6887fc011763815709e6d989c3d727d1c7c503a121d7fa45d590644",
+        "8768d7198530ae36494f7ed63d117ac698f5ff5aca5dfa8e0e255d07ae362995",
+        "978171000da22e98ce088fbe39b6c00efb83b40b47618fe6992a003abf7d602c",
+        "c0a7662e0f1141ed49f58fa278fdcfe66af512de41c32e1934ce1286c107c2b5",
+        "cfea00ea53ce4f60e2b77b7194097f2cc3aff583bc86b9009ae29cecfab317b3",
+        "d8dd8e0fc68b302d4ef9fa06cf4b9a556f88725b85f92aeaa9018c01de9e9bc5",
+        "edb18ace36feb8985fd35f366e5dc67378eeb851f6639d957617e717ada16d22"
+      ],
+      "prediction_kind": "DERIVED_REFERENCE_RETURN_ESTIMATE",
+      "metrics": {
+        "heldout_mse": 2.1294947326011774e-05,
+        "predictions": 220,
+        "unavailable_predictions": 20
+      },
+      "input_classification": "HISTORICAL",
+      "research_mode": "RETROSPECTIVE_OBSERVATION_ORDER_RESEARCH",
+      "fit_states": [
+        "CONVERGED",
+        "NONCONVERGED"
+      ],
+      "replay_verified": true
+    },
+    "garch": {
+      "report_id": "19ee26f892bfdf99a370a8e66c69aa7c82fe7e29b271a8e86c02deb6137c474d",
+      "model_ids": [
+        "29b92ef029b5c2fc1c441e9bf677bb878a2d7af1381dc06d39c6becaafdb827a",
+        "2c5f9ac062be71bb7cbd18b9d4b7f292534607a4bcc350a476507a4d581d346e",
+        "7f784ae9161ef96bc237e705968a0c9fcb28f4b1680c0eab99438c79379bbe62",
+        "88ccbbe99dd4af1011b81b0ec4869fa1119de01652276f370b05ec6397620f33",
+        "977d92c903765fafd82d371f3fdac4f3ca178dc07ae139fcdae4e48c88f0a05e",
+        "996e6ed5229e2c8145ce310c1c517ef59ddd970ab9ef855a8a2aa157a63eb76c",
+        "9a784d443d8f5313ddff7d911a3b22a3cd874dd55cbc4e187cc005fdde9d9d26",
+        "9d1bb7dce703ba320ccf3054ddf132ed8a3e61300883fb1951ffb40103377832",
+        "9f2f33b2d945ff2a05449815a10edc655293ff07e5a78fca2c248f784115b784",
+        "a3adc6b8923bc7d5efb61ba973e4f2f3be62f0c6b9cf31d33f6af116bd8f99ab",
+        "b61000387c888174eccce1629e87f374179f4b74e3e9f7b039df5a7f7b11096e",
+        "c6b3a3f9962dc91743fa2e09c8d8f6fa8956e91708f846016405c5d732091bf8"
+      ],
+      "prediction_kind": "CONDITIONAL_VARIANCE_PER_REFERENCE_OBSERVATION",
+      "metrics": {
+        "heldout_mse": null,
+        "predictions": 240,
+        "unavailable_predictions": 0
+      },
+      "input_classification": "HISTORICAL",
+      "research_mode": "RETROSPECTIVE_OBSERVATION_ORDER_RESEARCH",
+      "fit_states": [
+        "CONVERGED"
+      ],
+      "replay_verified": true
+    },
+    "kalman": {
+      "report_id": "3622c0fa0c5503a29732a6747a362a58cbb3842a9fd6edd14f09a30a6186e90f",
+      "model_ids": [
+        "1e4c36169e7429528df4d6c8e04957491d544a7b74f2f6f7a0eeaf775d54344a",
+        "20d83f26c70ccf669f43aafa0de26e10a327ef16ad9b527c0b55501c3e8b9473",
+        "2f9763f5311c57f2d3ced67d8f64ad24ddafed7dc1e9aadd89680b593710f14b",
+        "333aa8a08313753a5354cbb837bc19f1aeba78af5f3d60a5d34dbc44e339b486",
+        "650f3844f4cdccab6951d16af65ca56a63e50def9e2679705a24a9f838fae2f5",
+        "9712d5d830ea8e4c5511431be0ed3851755e3f184b61a9cc55dd4b7bade65315",
+        "a8ab75a3706cb6b82fbaf8aa1a0fcc760147a94835a6239eddc93c385b7bf12c",
+        "b9a4832f9453fc7c055a0c68499c01170691eddcd86a0a0c10ed3fe5df1a031e",
+        "c7cf830f956a6b08d01ad1028d63e561a9edd8eaa187fb990f651486b2d6fd66",
+        "c9a8e6f9cb2fb34cde358110bd850e33937bf52c9ab94010ee97a186d74d60ea",
+        "e9cc2508f1d7b69ed20d8b4dc2416594ba0ec2a28e4b70ac113b6dd5e8097595",
+        "f079cd8f9cb568467d8fe29276c80a214cc21fea43f7fecf3a0ef9eaebced2b4"
+      ],
+      "prediction_kind": "DERIVED_REFERENCE_RETURN_ESTIMATE",
+      "metrics": {
+        "heldout_mse": 2.146290976413728e-05,
+        "predictions": 240,
+        "unavailable_predictions": 0
+      },
+      "input_classification": "HISTORICAL",
+      "research_mode": "RETROSPECTIVE_OBSERVATION_ORDER_RESEARCH",
+      "fit_states": [
+        "CONVERGED"
+      ],
+      "replay_verified": true
+    },
+    "bilstm": {
+      "report_id": "a08cae4f481406cf9804845023b458ce04138bd1d4a4eea881d72e77568e66f3",
+      "model_ids": [
+        "0a37e862915baf654092361550685dd1cebbdeb5625204f57fa5135286adadc4",
+        "4f959a504c7fc8376def5a33029b1572231fac62e5b643a750e93c1967d7115b",
+        "50c89e07a5771f291ce5dbe537dc441409fec8e63ee51e826eda57a7d28f79ce",
+        "6395fba30afc9c972221d38731fab5bd86bb76848fdc4822c0144e581e69fae4",
+        "935959ebb7b651dd5b416e6d22e823c0d2483b83adb0a0dabada102357178f8a",
+        "b7a0b10a81a2b95c9cbc9e17773b1afc64e1ab23236afc01c68332622484a3ba",
+        "c3048f017c45224be55204b03202188048e0c1b6d3539ae26f5e2f9977e81f7a",
+        "c352b992227154d2cce0c01c76de354d2d5cb17f789c8290af84e9ac0ae81d2f",
+        "d2d583987c9b3cfb63ade40c15cf64026607342e83d2f95481f27c348ba987ef",
+        "db2b892f2cc30db76ac9fc2dd2659f4752295fa3b8ed5344c9aee024fa9f3f3f",
+        "ecfe9f2f9e5c647471bd4b2271672bbf6f9bd9491e30142d1fcb22ef81fd0901",
+        "f5908dea75a9da34d6ca6fa121454839c37768816adb02ca7ac56b342bb48409"
+      ],
+      "prediction_kind": "DERIVED_REFERENCE_RETURN_ESTIMATE",
+      "metrics": {
+        "heldout_mse": 0.03819100523862909,
+        "predictions": 240,
+        "unavailable_predictions": 0
+      },
+      "input_classification": "HISTORICAL",
+      "research_mode": "RETROSPECTIVE_OBSERVATION_ORDER_RESEARCH",
+      "fit_states": [
+        "CONVERGED"
+      ],
+      "replay_verified": true
+    }
+  },
+  "broker_connections": 0,
+  "paid_services": false,
+  "historical_point_in_time_validated": false,
+  "funded_allocation_eligible": false,
+  "economic_validation_established": false
+}

@@ -27,6 +27,8 @@ from gig.timestamps import aware_timestamp
 VERSION = "funded-scoped-risk-v1"
 LIMITS = {"max_gross_notional", "max_name_notional", "max_abs_delta_notional", "max_abs_gamma_dollar",
           "max_abs_vega_per_point", "max_abs_theta_per_day", "max_scenario_loss", "min_available_cash"}
+OPTIONAL_LIMITS = {"max_sector_gross_notional", "max_abs_factor_exposure", "max_drawdown"}
+METADATA_FIELDS = {"metadata", "metadata_source_identity", "metadata_available_at"}
 
 
 def _hash(value):
@@ -39,6 +41,10 @@ def _seconds(later, earlier):
 
 class RiskUnavailable(ValueError):
     pass
+
+
+class RiskMetadataUnavailable(RiskUnavailable):
+    """A requested budget lacks knowable metadata; it is not a zero exposure."""
 
 
 class FundedRiskWorkspace:
@@ -59,19 +65,58 @@ class FundedRiskWorkspace:
     @staticmethod
     def _request(payload):
         required = {"now", "marks", "options_run_ids", "max_age_seconds", "limits", "scenarios"}
-        _fields(payload, required | {"liquidity", "max_participation_rate"}, required)
+        _fields(payload, required | {"liquidity", "max_participation_rate"} | METADATA_FIELDS, required)
         request = loads(dumps(payload))
         request["now"] = _stamp(request["now"]).isoformat()
         _, maximum = _age(request["now"], request["max_age_seconds"])
         if maximum is None or maximum > 86400:
             raise ValueError("explicit risk freshness of at most one day required")
         request["max_age_seconds"] = maximum
-        _fields(request["limits"], LIMITS, LIMITS)
+        _fields(request["limits"], LIMITS | OPTIONAL_LIMITS, LIMITS)
         for key in LIMITS:
             value = _number(request["limits"][key])
             if not 0 <= value <= 1e15:
                 raise ValueError("finite bounded nonnegative USD risk caps required")
             request["limits"][key] = value
+        if "max_sector_gross_notional" in request["limits"]:
+            cap = _number(request["limits"]["max_sector_gross_notional"])
+            if not 0 <= cap <= 1e15:
+                raise ValueError("finite bounded sector USD cap required")
+            request["limits"]["max_sector_gross_notional"] = cap
+        if "max_drawdown" in request["limits"]:
+            cap = _number(request["limits"]["max_drawdown"])
+            if not 0 <= cap <= 1:
+                raise ValueError("drawdown cap must lie between zero and one")
+            request["limits"]["max_drawdown"] = cap
+        if "max_abs_factor_exposure" in request["limits"]:
+            factors = request["limits"]["max_abs_factor_exposure"]
+            if not isinstance(factors, dict) or not 1 <= len(factors) <= 16:
+                raise ValueError("one to 16 explicit factor USD caps required")
+            for factor, cap in factors.items():
+                _text(factor, bound=128)
+                cap = _number(cap)
+                if not 0 <= cap <= 1e15:
+                    raise ValueError("finite bounded factor USD cap required")
+                factors[factor] = cap
+        if "metadata" in request and request["metadata"] is not None:
+            metadata = request["metadata"]
+            if not isinstance(metadata, dict) or len(metadata) > 64:
+                raise ValueError("bounded underlying metadata required")
+            for underlying, item in metadata.items():
+                _text(underlying, bound=128)
+                _fields(item, {"sector", "factors"}, {"sector", "factors"})
+                if item["sector"] is not None:
+                    _text(item["sector"], bound=128)
+                if not isinstance(item["factors"], dict) or len(item["factors"]) > 16:
+                    raise ValueError("bounded explicit factor metadata required")
+                for factor, value in item["factors"].items():
+                    _text(factor, bound=128)
+                    if value is not None and not -100 <= _number(value) <= 100:
+                        raise ValueError("factor loading outside declared bound")
+        if "metadata_source_identity" in request and request["metadata_source_identity"] is not None:
+            _text(request["metadata_source_identity"], bound=128)
+        if "metadata_available_at" in request and request["metadata_available_at"] is not None:
+            request["metadata_available_at"] = aware_timestamp(request["metadata_available_at"]).isoformat()
         ids = request["options_run_ids"]
         if not isinstance(ids, list) or len(ids) > 8:
             raise ValueError("at most eight saved option-model runs required")
@@ -195,6 +240,89 @@ class FundedRiskWorkspace:
                 "scenario_pnl": changes, "multiplier": multiplier}
         return units
 
+    @staticmethod
+    def _factor_budgets(request, units, quantities, worst_quantity):
+        """Conservative delta-equivalent USD budgets, never guessed loadings."""
+        limits = request["limits"]
+        sector_requested = "max_sector_gross_notional" in limits
+        factor_caps = limits.get("max_abs_factor_exposure", {})
+        if not sector_requested and not factor_caps:
+            return None, []
+        metadata = request.get("metadata")
+        known = request.get("metadata_available_at")
+        source = request.get("metadata_source_identity")
+        if metadata is None or known is None or source is None:
+            raise RiskMetadataUnavailable("requested risk metadata has no complete provenance")
+        age = _seconds(request["now"], known)
+        if not 0 <= age <= request["max_age_seconds"]:
+            raise RiskMetadataUnavailable("requested risk metadata is stale or future")
+        sectors, factor_bounds, signed_factors = {}, dict.fromkeys(factor_caps, 0.), dict.fromkeys(factor_caps, 0.)
+        underlying_bounds = {}
+        for symbol in sorted(worst_quantity):
+            unit = units[symbol]
+            underlying = unit["underlying_id"]
+            item = metadata.get(underlying)
+            if item is None:
+                raise RiskMetadataUnavailable("a required underlying has no risk metadata")
+            delta_bound = worst_quantity[symbol]*abs(unit["delta_notional"])
+            underlying_bounds[underlying] = underlying_bounds.get(underlying, 0.)+delta_bound
+            if sector_requested:
+                if item.get("sector") is None:
+                    raise RiskMetadataUnavailable("a required sector is unknown")
+                sectors[item["sector"]] = sectors.get(item["sector"], 0.)+delta_bound
+            for factor in factor_caps:
+                loading = item["factors"].get(factor)
+                if loading is None:
+                    raise RiskMetadataUnavailable("a requested factor loading is unknown")
+                factor_bounds[factor] += delta_bound*abs(loading)
+                signed_factors[factor] += quantities.get(symbol, 0.)*unit["delta_notional"]*loading
+        violations = []
+        if sector_requested:
+            violations += ["sector:"+sector for sector, value in sorted(sectors.items())
+                           if value > limits["max_sector_gross_notional"]]
+        violations += ["factor:"+factor for factor, value in sorted(factor_bounds.items()) if value > factor_caps[factor]]
+        return {"state": "AVAILABLE", "metadata_source_identity": source, "metadata_available_at": known,
+                "metadata_evidence_state": "CALLER_DECLARED_NOT_INDEPENDENTLY_VALIDATED",
+                "underlying_delta_gross_usd": underlying_bounds, "sector_delta_gross_usd": sectors,
+                "factor_abs_budget_usd": factor_bounds, "current_signed_factor_exposure_usd": signed_factors,
+                "method": "SUM_ABSOLUTE_PER_LEG_DELTA_USD_TIMES_ABSOLUTE_LOADING_NO_NETTING_CREDIT",
+                "point_and_budget_units": "USD_DELTA_EQUIVALENT", "calibrated_factor_model": False}, violations
+
+    def _drawdown_budget(self, oms, snapshot, request):
+        """Freeze complete admitted NAV observations; do not infer unseen peaks."""
+        samples = snapshot.get("risk_drawdown_samples")
+        if samples is None:
+            entries = oms.connection.execute("SELECT snapshot_id,as_of FROM funded_snapshots ORDER BY rowid LIMIT 1001").fetchall()
+            if len(entries) > 1000:
+                raise ValueError("drawdown history read bound exceeded")
+            samples = []
+            for identity, stamp in entries:
+                if aware_timestamp(stamp) > aware_timestamp(request["now"]):
+                    continue
+                source = self.book.load(identity)
+                account = source["account"]
+                if (account["mark_state"] != "AVAILABLE" or account["funding_state"] != "AVAILABLE"
+                        or account.get("reconciliation_state") != "AVAILABLE" or account["nav"] is None
+                        or account["pending_expiries"] or Decimal(account["nav"]) < 0):
+                    continue
+                if Decimal(account["initial_cash"]) != Decimal(snapshot["account"]["initial_cash"]):
+                    raise RiskUnavailable("drawdown capital bases differ")
+                samples.append({"snapshot_id": identity, "as_of": stamp, "nav": account["nav"],
+                                "initial_cash": account["initial_cash"]})
+            snapshot["risk_drawdown_samples"] = samples
+        if not samples or snapshot["account"]["nav"] is None:
+            raise RiskUnavailable("no complete admitted drawdown history")
+        current = Decimal(snapshot["account"]["nav"])
+        if current < 0:
+            raise RiskUnavailable("negative NAV outside funded drawdown scope")
+        peak = max([Decimal(snapshot["account"]["initial_cash"]), current, *[Decimal(row["nav"]) for row in samples]])
+        loss_fraction = float((Fraction(peak)-Fraction(current))/Fraction(peak))
+        return {"state": "AVAILABLE", "current_drawdown": -loss_fraction, "loss_fraction": loss_fraction,
+                "peak_nav": str(peak), "current_nav": str(current), "observations": len(samples),
+                "source_snapshot_ids": [s["snapshot_id"] for s in samples],
+                "scope": "INITIAL_CAPITAL_CURRENT_NAV_AND_COMPLETE_ADMITTED_NAV_OBSERVATIONS_ONLY",
+                "unobserved_peak_state": "UNKNOWN", "units": "FRACTION_OF_OBSERVED_CAPITAL_PEAK"}, loss_fraction > request["limits"]["max_drawdown"]
+
     def _historical(self, oms, snapshot, request):
         now = aware_timestamp(request["now"])
         day = 86400*1_000_000_000
@@ -257,6 +385,8 @@ class FundedRiskWorkspace:
         required = sorted(set(quantities) | set(changes))
         if set(required) - units.keys() or account["pending_expiries"] or account["mark_state"] != "AVAILABLE":
             raise RiskUnavailable("position or order risk exposure unavailable")
+        if account["funding_state"] == "UNKNOWN" or account.get("reconciliation_state") == "UNKNOWN":
+            raise RiskUnavailable("funded lifecycle or reconciliation input is unresolved")
         if oms is not None:
             stored = self.book._config(oms, "marks", {"marks": {}})["marks"]
             for symbol in quantities:
@@ -308,6 +438,15 @@ class FundedRiskWorkspace:
                 violations.append("liquidity:"+symbol)
         rows = [{"instrument_id": s, "actual_quantity": quantities.get(s, 0.), "worst_working_quantity": worst_quantity[s], **units[s]} for s in sorted(required)]
         historical = self._historical(oms, snapshot, request)
+        extension = {}
+        factor_risk, extra_violations = self._factor_budgets(request, units, quantities, worst_quantity)
+        if factor_risk is not None:
+            extension["sector_factor_risk"] = factor_risk
+            violations += extra_violations
+        if "max_drawdown" in request["limits"]:
+            extension["drawdown_risk"], breached = self._drawdown_budget(oms, snapshot, request)
+            if breached:
+                violations.append("max_drawdown")
         return {"schema_version": VERSION, "as_of": request["now"], "request": request, "account_source_identity": snapshot["source_identity"],
             "account_cash": account["cash"], "account_nav": account["nav"], "available_cash": account["available_cash"],
             "account_snapshot": snapshot, "underlying_gross_notional": by_underlying,
@@ -317,7 +456,7 @@ class FundedRiskWorkspace:
             "risk_scope": "CONSERVATIVE_LONG_ONLY_MODEL_BUDGETS_AND_ASYNCHRONOUS_ORDERS",
             "liquidity_evidence_state": "CALLER_DECLARED_EXECUTED_PRINTS_NOT_EXECUTABLE_LIQUIDITY",
             "model_assumptions": "BSM_FIXED_ADMITTED_IV_CONTINUOUS_RATES_AND_DIVIDENDS; OPTION_MARK_BASIS_DIFFERENCES_DISCLOSED",
-            "trading_approved": False, "fully_funded_certified": False, "economically_validated": False}
+            "trading_approved": False, "fully_funded_certified": False, "economically_validated": False, **extension}
 
     @staticmethod
     def _missing():
@@ -356,6 +495,9 @@ class FundedRiskWorkspace:
             self._schema(oms)
             try:
                 body = self._evaluate(oms, request)
+            except RiskMetadataUnavailable:
+                return Contract.admit(State.UNKNOWN, None, source="funded-scoped-risk", classification="UNKNOWN",
+                                      scope="workspace.funded-risk", evidence_state="REQUESTED_RISK_METADATA_UNKNOWN")
             except (RiskUnavailable, FileNotFoundError):
                 return self._missing()
             result = self._publish(oms, body)
@@ -380,6 +522,10 @@ class FundedRiskWorkspace:
             source = self.book.load(sample["snapshot_id"])
             if (source["as_of"], source["account"]["nav"], source["account"]["initial_cash"]) != (sample["as_of"], sample["nav"], sample["initial_cash"]):
                 raise ValueError("risk historical NAV evidence differs")
+        for sample in body.get("account_snapshot", {}).get("risk_drawdown_samples", []):
+            source = self.book.load(sample["snapshot_id"])
+            if (source["as_of"], source["account"]["nav"], source["account"]["initial_cash"]) != (sample["as_of"], sample["nav"], sample["initial_cash"]):
+                raise ValueError("risk drawdown evidence differs")
         if "account_snapshot" in body and self._evaluate(None, body["request"], snapshot_override=body["account_snapshot"]) != body:
             raise ValueError("saved risk calculation differs from immutable replay")
         return {**body, "report_id": report_id}

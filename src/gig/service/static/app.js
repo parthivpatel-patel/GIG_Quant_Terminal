@@ -24,7 +24,9 @@
   workspaceActions["workspace-options-overlay-replay"] = "options-overlay-replay";
   Object.assign(workspaceActions, { "workspace-economic-research": "economic-research", "workspace-economic-replay": "economic-replay", "workspace-microstructure-admit": "microstructure-admit", "workspace-microstructure-research": "microstructure-research", "workspace-microstructure-replay": "microstructure-replay", "workspace-funded-risk": "funded-risk", "workspace-funded-risk-replay": "funded-risk-replay" });
   for (const operation of ["initialize", "register", "reserve", "dispatch", "fill", "cancel", "mark", "settle", "state", "replay"]) workspaceActions["workspace-funded-" + operation] = "funded-account";
-  const workflowReferences = { funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
+  Object.assign(workspaceActions, { "workspace-lifecycle-configure": "funded-lifecycle", "workspace-lifecycle-split": "funded-lifecycle", "workspace-lifecycle-dividend": "funded-lifecycle", "workspace-lifecycle-apply": "funded-lifecycle", "workspace-lifecycle-state": "funded-lifecycle", "workspace-lifecycle-replay": "funded-lifecycle", "workspace-statement-admit": "statement-admit", "workspace-statement-reconcile": "statement-reconcile", "workspace-statement-replay": "statement-replay", "workspace-observed-fetch": "observed-reference", "workspace-observed-admit": "observed-reference", "workspace-observed-research": "observed-reference", "workspace-observed-replay": "observed-reference" });
+  workspaceActions["workspace-funded-factor-risk"] = "funded-risk";
+  const workflowReferences = { lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
   const comparisonResults = [];
 
   workspaceActions["workspace-depth"] = "depth";
@@ -166,7 +168,7 @@
         if (!["3600", "86400", "604800"].includes(maximumAge)) throw new Error("Unsupported freshness policy.");
         query += `&max_age_seconds=${maximumAge}`;
         const engine = $("analysis-engine").value || "default";
-        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation", "depth", "pairs", "options-research", "signals-research", "options-overlay", "funded-account", "funded-risk", "economic-research", "microstructure-research"].includes(engine)) throw new Error("Unsupported local evidence view.");
+        if (!["default", "sequence", "finbert", "provider", "execution-engine", "persisted", "accounting", "allocation", "depth", "pairs", "options-research", "signals-research", "options-overlay", "funded-account", "funded-risk", "economic-research", "microstructure-research", "funded-lifecycle", "independent-statement", "observed-reference"].includes(engine)) throw new Error("Unsupported local evidence view.");
         if (engine !== "default") query += `&engine=${encodeURIComponent(engine)}`;
         const universe = $("universe-id").value;
         if (engine === "provider" && universe) {
@@ -209,6 +211,9 @@
     if (isObject(data.overlay_financing) && data.overlay_financing.state === "UNKNOWN") $("truth-notice").textContent += " Hypothetical options financing UNKNOWN · Modeled overlay value is not funded NAV.";
     if (typeof data.funding_scope === "string" || typeof data.account?.funding_scope === "string" || isObject(data.funding) || isObject(data.account?.funding)) $("truth-notice").textContent += " SIMULATED cash account · Funding is limited to the explicitly supported contract, cash and reservation rules; no global funding certification.";
     if (isObject(data.account) && typeof data.account.mark_state === "string" && data.account.mark_state !== "AVAILABLE") $("truth-notice").textContent += ` Mark valuation ${data.account.mark_state} · Missing or stale marks do not establish reconciled NAV.`;
+    if ($("analysis-engine").value === "observed-reference") $("truth-notice").textContent += " Reference-rate observations have DATE precision only · Intraday time, volume and historical publication availability are UNKNOWN · Retrospective model research is not executable-price evidence.";
+    if (typeof data.reconciliation_state === "string") $("truth-notice").textContent += ` Independent offline statement comparison: ${data.reconciliation_state} · ${data.reconciliation_state === "MATCH" ? "Fixture agreement only; external account reconciliation remains unverified." : "Unresolved or unavailable evidence; the account is not reconciled."}`;
+    if (data.historical_publication_state === "UNKNOWN" || data.historical_availability === "UNKNOWN") $("truth-notice").textContent += " Historical publication availability UNKNOWN · Retrospective research is not a past trading decision.";
     if (typeof data.risk_scope === "string") $("truth-notice").textContent += " Scoped simulated-account model risk · Unavailable liquidity and historical tail estimates remain explicit; no trading approval.";
     if (typeof data.economically_validated === "boolean" && data.economically_validated === false && (data.report_id || data.experiments)) $("truth-notice").textContent += " Economic research diagnostics do not establish profitable alpha or production suitability.";
     if (data.title) $("section-title").textContent = String(data.title);
@@ -265,6 +270,19 @@
     if (Array.isArray(data.experiments)) addTable("oos_economic_periods", data.experiments.flatMap(experiment => Array.isArray(experiment.periods) ? experiment.periods.map(row => ({ run_id: experiment.run_id, ...row })) : []));
     if (Array.isArray(data.scenarios)) addTable("funded_risk_scenarios", data.scenarios);
     addTable("liquidity_diagnostics", data.liquidity);
+    addTable("lifecycle_events", data.lifecycle_events);
+    addTable("trade_settlement_schedule", data.trade_settlements);
+    addTable("pending_corporate_actions", data.pending_corporate_actions);
+    addTable("corporate_actions", data.actions);
+    addTable("cash_entitlements", data.entitlements);
+    addTable("unsettled_trade_cash", data.unsettled_trades);
+    addTable("statement_discrepancies", data.discrepancies);
+    addTable("independent_statement_positions", data.statement_positions);
+    if (isObject(data.sector_factor_risk)) {
+      addTable("assumed_sector_budgets", Object.entries(data.sector_factor_risk.sector_delta_gross_usd || {}).map(([sector, delta_gross_usd]) => ({ sector, delta_gross_usd, evidence: "CALLER_DECLARED_NOT_INDEPENDENTLY_VALIDATED" })));
+      addTable("assumed_factor_budgets", Object.entries(data.sector_factor_risk.factor_abs_budget_usd || {}).map(([factor, absolute_budget_usd]) => ({ factor, absolute_budget_usd, current_signed_exposure_usd: data.sector_factor_risk.current_signed_factor_exposure_usd?.[factor], calibrated_factor_model: false })));
+    }
+    if (isObject(data.lifecycle)) { addTable("cash_entitlements", data.lifecycle.entitlements); addTable("unsettled_trade_cash", data.lifecycle.unsettled_trades); }
     if (!state.tables.observations.length) {
       const candidate = Object.keys(state.tables).find(key => key !== "observations" && state.tables[key].length);
       if (candidate) delete state.tables.observations;
@@ -685,9 +703,33 @@
   examples["workspace-microstructure-replay"] = { report_id: "0".repeat(64) };
   examples["workspace-funded-risk"] = { now: fundedNow, max_age_seconds: 3600, options_run_ids: ["0".repeat(64)], marks: JSON.parse(JSON.stringify(examples["workspace-funded-mark"].marks)), limits: { max_gross_notional: 100000, max_name_notional: 50000, max_abs_delta_notional: 100000, max_abs_gamma_dollar: 1000000, max_abs_vega_per_point: 100000, max_abs_theta_per_day: 100000, max_scenario_loss: 50000, min_available_cash: 0 }, scenarios: [ { name: "authored-spot-down", spot_shocks: { SYN101: -.1 }, vol_shocks: { SYN101: .02 }, elapsed_days: 0 }, { name: "authored-spot-up", spot_shocks: { SYN101: .1 }, vol_shocks: { SYN101: 0 }, elapsed_days: 0 } ] };
   examples["workspace-funded-risk-replay"] = { report_id: "0".repeat(64) };
+  examples["workspace-funded-factor-risk"] = { ...JSON.parse(JSON.stringify(examples["workspace-funded-risk"])), metadata: { SYN101: { sector: "Authored synthetic sector", factors: { market: 1 } } }, metadata_source_identity: "AUTHORED_NOT_OBSERVED_FACTOR_METADATA", metadata_available_at: fundedNow };
+  Object.assign(examples["workspace-funded-factor-risk"].limits, { max_sector_gross_notional: 100000, max_abs_factor_exposure: { market: 100000 } });
+  const lifecycleSplitAt = "2026-11-04T15:49:00Z", lifecyclePayAt = "2026-11-06T15:49:00Z";
+  examples["workspace-lifecycle-configure"] = { operation: "configure", now: fundedNow, settlement_policy: "EXPLICIT_EQUITY_DATES" };
+  examples["workspace-lifecycle-split"] = { operation: "admit", now: "2026-11-03T21:00:00Z", action: { action_id: "authored-split-SYN101", revision: 1, instrument_id: "SYN101", source: "AUTHORED_SYNTHETIC_ACTION_FIXTURE", kind: "SPLIT", known_at: "2026-11-03T21:00:00Z", effective_at: lifecycleSplitAt, record_at: lifecycleSplitAt, pay_at: lifecycleSplitAt, ratio_new: 2, ratio_old: 1 } };
+  examples["workspace-lifecycle-dividend"] = { operation: "admit", now: lifecycleSplitAt, action: { action_id: "authored-dividend-SYN101", revision: 1, instrument_id: "SYN101", source: "AUTHORED_SYNTHETIC_ACTION_FIXTURE", kind: "CASH_DIVIDEND", known_at: lifecycleSplitAt, effective_at: "2026-11-05T15:49:00Z", record_at: "2026-11-05T15:49:00Z", pay_at: lifecyclePayAt, amount_per_share: "1" } };
+  examples["workspace-lifecycle-apply"] = { operation: "apply", now: lifecycleSplitAt, action_hash: "0".repeat(64) };
+  examples["workspace-lifecycle-state"] = { operation: "state", now: lifecyclePayAt };
+  examples["workspace-lifecycle-replay"] = { operation: "replay", now: lifecyclePayAt, snapshot_id: "0".repeat(64) };
+  examples["workspace-statement-admit"] = { source: "authored-statement-supplier", statement_id: "authored-equity-1", observed_at: fundedNow, available_at: fundedNow, currency: "USD", balances: { cash: "899.8", nav: "999.8", realized_gross_pnl: "0", unrealized_pnl: "0", fees: "0.2", reserved_cash: "0", available_cash: "899.8" }, positions: [{ instrument_id: "SYN101", kind: "EQUITY", currency: "USD", multiplier: 1, quantity: "10", cost_basis: "100", market_value: "100", unrealized_pnl: "0" }], orders: [{ client_id: "authored-statement-stock", instrument_id: "SYN101", side: "buy", quantity: "10", filled: "10", limit_price: "10", state: "FILLED", acknowledged: true, created_at: fundedNow, updated_at: fundedNow }], fills: [{ execution_id: "authored-statement-fill", client_id: "authored-statement-stock", instrument_id: "SYN101", side: "buy", quantity: "10", price: "10", fee: "0.2", occurred_at: fundedNow }], settlements: [], reservations: [] };
+  examples["workspace-statement-reconcile"] = { statement_hash: "0".repeat(64), snapshot_id: "0".repeat(64), now: fundedNow };
+  examples["workspace-statement-replay"] = { report_id: "0".repeat(64) };
+  examples["workspace-observed-fetch"] = { operation: "fetch", provider: "ECB_REFERENCE_FX", currencies: ["USD", "GBP", "JPY"], start: "2025-01-01", end: "2025-12-31" };
+  const referenceCsv = "Date,USD,GBP,JPY\n" + Array.from({ length: 100 }, (_, i) => `${new Date(Date.UTC(2025, 0, 1+i)).toISOString().slice(0, 10)},${[0, 1, 2].map(j => (1+j*10+.01*Math.sin(i/3+j)+i*.0001).toFixed(6)).join(",")}`).join("\n");
+  examples["workspace-observed-admit"] = { operation: "admit", provider: "ECB_REFERENCE_FX", currencies: ["USD", "GBP", "JPY"], start: "2025-01-01", end: "2025-04-10", acquired_at: "2026-11-03T15:00:00Z", csv_text: referenceCsv };
+  examples["workspace-observed-research"] = { operation: "research", snapshot_id: "0".repeat(64), model: "ridge", training_observations: 60, test_observations: 20, embargo: 1, seed: 17 };
+  examples["workspace-observed-replay"] = { operation: "replay", report_id: "0".repeat(64) };
   function loadExample() {
     const kind = $("analytics-kind").value;
     const example = JSON.parse(JSON.stringify(examples[kind]));
+    if (kind === "workspace-lifecycle-apply" && workflowReferences.lifecycle_action_hash) example.action_hash = workflowReferences.lifecycle_action_hash;
+    if (kind === "workspace-lifecycle-replay" && workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id;
+    if (kind === "workspace-statement-reconcile") { if (workflowReferences.statement_hash) example.statement_hash = workflowReferences.statement_hash; if (workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id; }
+    if (kind === "workspace-statement-replay" && workflowReferences.statement_report_id) example.report_id = workflowReferences.statement_report_id;
+    if (kind === "workspace-observed-research" && workflowReferences.observed_snapshot_id) example.snapshot_id = workflowReferences.observed_snapshot_id;
+    if (kind === "workspace-observed-replay" && workflowReferences.observed_report_id) example.report_id = workflowReferences.observed_report_id;
+
     if (["workspace-research-model", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (["workspace-research-predict", "workspace-research-allocate"].includes(kind) && workflowReferences.run_id) example.run_id = workflowReferences.run_id;
     if (kind === "workspace-pairs-research" && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
@@ -704,7 +746,7 @@
     if (kind === "workspace-economic-replay" && workflowReferences.economic_report_id) example.report_id = workflowReferences.economic_report_id;
     if (kind === "workspace-microstructure-replay" && workflowReferences.microstructure_report_id) example.report_id = workflowReferences.microstructure_report_id;
     if (kind === "workspace-funded-replay" && workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id;
-    if (kind === "workspace-funded-risk" && workflowReferences.options_run_id) example.options_run_ids = [workflowReferences.options_run_id];
+    if (["workspace-funded-risk", "workspace-funded-factor-risk"].includes(kind) && workflowReferences.options_run_id) example.options_run_ids = [workflowReferences.options_run_id];
     if (kind === "workspace-funded-risk-replay" && workflowReferences.funded_risk_id) example.report_id = workflowReferences.funded_risk_id;
     if (kind === "workspace-research-prepare" && workflowReferences.allocation_id) example.allocation_id = workflowReferences.allocation_id;
     if (kind === "workspace-offline-fill" && workflowReferences.prepared_client_ids.length) example.client_id = workflowReferences.prepared_client_ids[0];
@@ -779,6 +821,22 @@
       "workspace-schedule-twap": "Persist an exact offline TWAP plan under an explicit simulation clock. Scheduling never dispatches or fills a child order.",
       "workspace-advance-clock": "Advance the durable offline clock with explicitly fresh reference marks. Due children become idempotent intents; this does not dispatch or fill them. Backward time and stale marks are rejected."
     });
+    Object.assign(specialScopes, {
+      "workspace-funded-factor-risk": "Apply explicit sector and factor-exposure budgets to actual simulated positions. The example uses AUTHORED assumed sector/beta metadata, not observed issuer facts or calibrated factor loadings. Missing or stale metadata cannot become zero exposure. A drawdown budget requires separately adequate NAV history.",
+      "workspace-lifecycle-configure": "Configure supported trade-date versus settlement-date cash policy only on a flat account before orders. Legacy immediate settlement is explicit; no borrowed cash is introduced.",
+      "workspace-lifecycle-split": "Admit an authored SYNTHETIC split revision with separate source knowledge and effective clocks. Admission does not apply a position adjustment or fabricate an observed corporate action.",
+      "workspace-lifecycle-dividend": "Admit an authored SYNTHETIC dividend revision. Record-date entitlement and pay-date cash remain explicit; later purchases cannot acquire an earlier entitlement.",
+      "workspace-lifecycle-apply": "Apply only the selected hash-verified lifecycle revision under the declared clock. Raw OMS fills remain preserved; unsupported fractional or working-order states reject.",
+      "workspace-lifecycle-state": "Inspect the persisted lifecycle and supported cash-settlement state. Unsettled proceeds and unresolved obligations are not spendable cash.",
+      "workspace-lifecycle-replay": "Reload an immutable lifecycle/account snapshot. Historical replay does not reapprove today's portfolio or rewrite source revisions.",
+      "workspace-statement-admit": "Admit an independently authored offline statement fixture. The literal example assumes initial cash 1000, ten shares at 10 and fee 0.2. It is not generated from engine output or claimed to be a broker statement.",
+      "workspace-statement-reconcile": "Compare the selected immutable statement with a funded snapshot. MATCH means fixture agreement only; DISCREPANCY and UNKNOWN never establish external reconciliation.",
+      "workspace-statement-replay": "Verify and replay saved independent-statement discrepancies. A completed comparison is not evidence that unresolved cash, positions or lifecycle obligations agree.",
+      "workspace-observed-fetch": "This explicit action fetches permitted official ECB daily reference-rate data. Observation precision is a DATE, not a fabricated intraday quote; volume, executable liquidity and historical publication availability remain UNKNOWN. Rates are not funded-account instruments.",
+      "workspace-observed-admit": "Admit an authored SYNTHETIC CSV protocol fixture. These values are not ECB observations, OHLC bars or actual traded volume. Public observed-data acquisition is a separate explicit action.",
+      "workspace-observed-research": "Run a local model on selected reference-rate evidence. Chronological reconstruction is performed after acquisition; it does not prove inputs were knowable at historical trading decisions or establish alpha.",
+      "workspace-observed-replay": "Reload the saved reference-rate model report with source identities and original daily units. Unknown original publication clocks remain unknown."
+    });
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
   }
   async function runAnalysis() {
@@ -801,6 +859,13 @@
       if (!validContract(result) || (!response.ok && !["ERROR", "UNAVAILABLE"].includes(result.state))) throw new Error("Unsupported response contract.");
       if (response.ok && result.state === "AVAILABLE" && isObject(result.data)) {
         const identity = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+        if (action === "funded-lifecycle" && identity(result.data.action_hash)) workflowReferences.lifecycle_action_hash = result.data.action_hash;
+        if (action === "funded-lifecycle" && identity(result.data.snapshot_id)) workflowReferences.funded_snapshot_id = result.data.snapshot_id;
+        if (action === "statement-admit" && identity(result.data.statement_hash)) workflowReferences.statement_hash = result.data.statement_hash;
+        if (action === "statement-reconcile" && identity(result.data.report_id)) workflowReferences.statement_report_id = result.data.report_id;
+        if (action === "observed-reference" && identity(result.data.snapshot_id) && ["fetch", "admit"].includes(inputs.operation)) workflowReferences.observed_snapshot_id = result.data.snapshot_id;
+        if (action === "observed-reference" && identity(result.data.report_id)) workflowReferences.observed_report_id = result.data.report_id;
+
         if (action === "research-dataset" && identity(result.data.dataset_id)) { workflowReferences.dataset_id = result.data.dataset_id; workflowReferences.run_id = null; workflowReferences.pair_run_id = null; workflowReferences.signal_id = null; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
         if (action === "research-model" && identity(result.data.run_id)) { workflowReferences.run_id = result.data.run_id; workflowReferences.allocation_id = null; workflowReferences.prepared_client_ids = []; }
         if (action === "pairs-research" && identity(result.data.run_id)) workflowReferences.pair_run_id = result.data.run_id;
@@ -818,7 +883,7 @@
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
         if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
-        $("workflow-identities").textContent = ["dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+        $("workflow-identities").textContent = ["dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();

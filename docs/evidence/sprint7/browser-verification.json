@@ -1,0 +1,114 @@
+{
+  "browser": "151.0.7922.34",
+  "axe": "4.10.3",
+  "formal_accessibility_certification": false,
+  "physical_arm64_verified": false,
+  "provider_connections": 0,
+  "broker_connections": 0,
+  "suites": {
+    "sprint7-recovered-browser": {
+      "passed": 77,
+      "failed": 0,
+      "accessibility": [
+        {
+          "theme": "dark",
+          "violations": 0,
+          "incomplete_rule_ids": [
+            "color-contrast"
+          ]
+        },
+        {
+          "theme": "light",
+          "violations": 0,
+          "incomplete_rule_ids": [
+            "color-contrast"
+          ]
+        }
+      ]
+    },
+    "sprint7-recovered-baseline": {
+      "passed": 87,
+      "failed": 0,
+      "accessibility": [
+        {
+          "theme": "dark",
+          "violations": 0,
+          "incomplete_rule_ids": []
+        },
+        {
+          "theme": "light",
+          "violations": 0,
+          "incomplete_rule_ids": []
+        }
+      ]
+    },
+    "sprint7-recovered-depth": {
+      "passed": 24,
+      "failed": 0,
+      "accessibility": [
+        {
+          "theme": "dark",
+          "violations": 0,
+          "incomplete_rule_ids": [
+            "color-contrast"
+          ]
+        },
+        {
+          "theme": "light",
+          "violations": 0,
+          "incomplete_rule_ids": [
+            "color-contrast"
+          ]
+        }
+      ]
+    },
+    "sprint7-recovered-legacy-flow": {
+      "passed": 32,
+      "failed": 0,
+      "accessibility": [
+        {
+          "theme": "dark",
+          "violations": 0,
+          "incomplete_rule_ids": [
+            "color-contrast"
+          ]
+        },
+        {
+          "theme": "light",
+          "violations": 0,
+          "incomplete_rule_ids": [
+            "color-contrast"
+          ]
+        }
+      ]
+    }
+  },
+  "files": {
+    "sprint7-recovered-browser/server.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sprint7-recovered-browser/sprint7-dark.png": "297d24ce86f14bba10f0de215c0c7f703f51c2d627cd00b2a10a2279aca3a61b",
+    "sprint7-recovered-browser/report.json": "5a5020b3bcbc763b104e9a7e1aeda21ce60a6d60e5d939b022480d625887e88f",
+    "sprint7-recovered-browser/workflow-responses.json": "d56f5b6bcc1481c4302ee25ddc1cf5a8a6d7a0e74aece2421dbb4c7a425cc4de",
+    "sprint7-recovered-browser/sprint7-mobile-320.png": "fb4b0e46c69829f04a83b97b9bf8c958b5ef9218b28c53f9126d64a3ae8b5cb7",
+    "sprint7-recovered-browser/sprint7-light.png": "67aa57ae1b92f0b663aed4225dab97aab28eed65aa832964b73c8c1a60ddfbc5",
+    "sprint7-recovered-baseline/server.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sprint7-recovered-baseline/desktop-dark.png": "db422d0b8089c9620ae1c5790c20d61a4d8c05bf36798ab7de2b6afa459e8aec",
+    "sprint7-recovered-baseline/mobile-320.png": "696734d29d9608c90b59f2fde38c1abe7952b29df058fb7f8cfe84e5cb2a94fd",
+    "sprint7-recovered-baseline/desktop-light.png": "6e724e4d401ae9e927792e2f2ec9edbfaf6399bee69a7fa40ef3f77eee20d774",
+    "sprint7-recovered-baseline/report.json": "2720629ce03d698226557ab4887af4b0969d73f04b98b69dca0c74042f036440",
+    "sprint7-recovered-depth/server.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sprint7-recovered-depth/report.json": "8967169c322c8207ed22eea4f24108a2daba9d2e3e7a74d0ceb52357450e896d",
+    "sprint7-recovered-depth/depth-mobile-320.png": "b919e4548401fd196957b45f6065e46005076903fbeb87761aec9e9a0d60cc86",
+    "sprint7-recovered-depth/depth-dark.png": "e8d7383e2bf07b470dd170fa94c22996e6d42e62666d101abdd7e1c0b72944c3",
+    "sprint7-recovered-depth/depth-light.png": "2143e0e090f3b32dc88011a45aa6fc34e2163658c9de85c98f7b90e7f444976d",
+    "sprint7-recovered-depth/depth-mobile-320-viewport.png": "3a3d40c8a0e1b9f6668dc2934fc29daf0fa12e4ba67f180f587aaa5028354290",
+    "sprint7-recovered-legacy-flow/server.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sprint7-recovered-legacy-flow/analyst-dark.png": "aa9b6f0a9038adf63278e3b7b5da8c98252ce840d334b36e16171435b45db6bc",
+    "sprint7-recovered-legacy-flow/analyst-light.png": "6880d96178102f1b6dbe53441a8db07ed45b4e1e37d740ff3b56c05e3d4332e1",
+    "sprint7-recovered-legacy-flow/report.json": "3fc50368c86c8f9513eb79c0dfcd253a489cb0bb69c6fe6045dc092f3abef386"
+  },
+  "limitations": [
+    "Chromium only; automated accessibility is not formal certification.",
+    "Remaining axe contrast incomplete items require human interpretation; computed text contrast checks passed.",
+    "Fixture-only workflows do not establish external brokerage reconciliation or provider-observed execution prices."
+  ]
+}

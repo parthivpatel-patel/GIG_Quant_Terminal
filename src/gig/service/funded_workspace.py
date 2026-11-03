@@ -79,11 +79,33 @@ class FundedWorkspace:
                 raise ValueError("unmanaged OMS order in isolated funded account")
             orders.append({**order, **loads(saved[0])})
         settlements = [loads(row[0]) for row in oms.connection.execute("SELECT wire FROM funded_settlements ORDER BY settlement_id")]
+        from gig.service.lifecycle_workspace import lifecycle_snapshot
+        lifecycle = lifecycle_snapshot(oms)
         if len(fills) > 10000 or len(orders) > 100 or len(registry) > 64:
             raise ValueError("funded replay size bound exceeded")
         if any(fill["symbol"] not in registry for fill in fills):
             raise ValueError("unregistered funded execution instrument")
-        account = funded_account(initial, registry, fills, orders, settlements, marks, at.isoformat(), maximum)
+        if lifecycle and lifecycle["lifecycle_policy"]["settlement_policy"] != "IMMEDIATE":
+            identities = {row["execution_id"] for row in lifecycle["trade_settlements"]}
+            if any(fill["symbol"] in registry and registry[fill["symbol"]]["kind"] == "EQUITY" and fill["execution_id"] not in identities for fill in fills):
+                raise ValueError("dated account has equity executions without settlement evidence")
+        account = funded_account(initial, registry, fills, orders, settlements, marks, at.isoformat(), maximum,
+            lifecycle_events=lifecycle["lifecycle_events"] if lifecycle else None,
+            trade_settlements=lifecycle["trade_settlements"] if lifecycle else None)
+        if lifecycle:
+            due = [row for row in lifecycle["pending_corporate_actions"] if aware_timestamp(row["pay_at"]) <= aware_timestamp(at)]
+            account["pending_corporate_actions"] = [row["action_id"] for row in due]
+            if due:
+                account["funding_state"] = account["reconciliation_state"] = "UNKNOWN"
+            accruals = [row["action_id"] for row in lifecycle["pending_corporate_actions"]
+                if row["kind"] == "CASH_DIVIDEND" and aware_timestamp(row["effective_at"]) <= aware_timestamp(at)]
+            account["unmodeled_dividend_accruals"] = accruals
+            account["dividend_accrual_state"] = "UNKNOWN" if accruals else "NOT_REQUIRED"
+            if accruals or due:
+                # Cash remains spendable only under the existing funding rules;
+                # an unbooked entitlement cannot be treated as complete NAV.
+                account["nav"] = account["total_pnl"] = None
+                account["reconciliation_state"] = "UNKNOWN"
         actual = {key: Decimal(value) for key, value in oms.positions().items() if Decimal(value)}
         expected = {key: Decimal(value) for key, value in account["raw_oms_positions"].items() if Decimal(value)}
         if actual != expected:
@@ -100,6 +122,10 @@ class FundedWorkspace:
             "classification": "SIMULATED", "trading_approved": False, "broker_connected": False,
             "scope": "ISOLATED_OFFLINE_ACCOUNT_NOT_LEGACY_OMS_OR_BROKER_POSITIONS",
             "mark_evidence_state": "CALLER_SUPPLIED_NOT_VENDOR_VERIFIED"}
+        if lifecycle:
+            body.update(lifecycle)
+            body["source_identity"] = _hash({"initial_cash": initial, "instruments": registry, "fills": fills,
+                "settlements": settlements, **lifecycle})
         return body
 
     @staticmethod
@@ -146,6 +172,8 @@ class FundedWorkspace:
         if item["currency"] != "USD" or isinstance(item["multiplier"], bool) or not isinstance(item["multiplier"], int) or not 1 <= item["multiplier"] <= 1000000:
             raise ValueError("explicit USD currency and positive integer multiplier required")
         if item["kind"] == "EQUITY":
+            if item["instrument_id"].upper().startswith(("ECB:EXR:", "FX:", "REFERENCE:")):
+                raise ValueError("reference FX observations are not funded equity instruments")
             if set(item) != base or item["multiplier"] != 1:
                 raise ValueError("equities require unit multiplier and no option terms")
         elif item["kind"] == "OPTION":
@@ -187,7 +215,9 @@ class FundedWorkspace:
         if not isinstance(operation, str) or operation not in allowed:
             raise ValueError("unsupported funded operation")
         fields = {"operation", "now"}|allowed[operation]
-        _fields(request, fields, fields)
+        if operation == "event":
+            fields = fields | {"settlement_at"}
+        _fields(request, fields, fields-({"settlement_at"} if operation == "event" else set()))
         if operation == "replay":
             try:
                 document = self.load(request["snapshot_id"])
@@ -218,6 +248,8 @@ class FundedWorkspace:
             if operation == "dispatch":
                 from gig.service.funded_risk_workspace import reconcile_funded_risk
                 with oms._transaction():
+                    if self._snapshot(oms, at)["account"]["funding_state"] != "AVAILABLE":
+                        raise ValueError("unresolved funding or lifecycle obligations block dispatch")
                     reconcile_funded_risk(self.base_dir, oms, at)
                 DurableTWAPScheduler(oms, outbox, create=False).ensure_not_before(at)
                 with_adapter = OfflinePaperAdapter(self._path("counterparty.sqlite"))
@@ -260,7 +292,7 @@ class FundedWorkspace:
                 elif operation == "reserve":
                     self._reserve(oms, outbox, request, at)
                 elif operation == "event":
-                    operation_result = self._event(oms, outbox, request["event"], at)
+                    operation_result = self._event(oms, outbox, request["event"], at, settlement_at=request.get("settlement_at"))
                 elif operation == "cancel":
                     outbox.request_cancel(request["client_id"], now=at)
                 elif operation == "settle":
@@ -327,9 +359,16 @@ class FundedWorkspace:
             raise ValueError("cash, fees and conservative collateral cannot fund all working orders")
         self.hook("after_funded_order")
 
-    def _event(self, oms, outbox, payload, at):
+    def _event(self, oms, outbox, payload, at, *, settlement_at=None):
         event = event_value(payload)
         old = oms.connection.execute("SELECT digest FROM transport_events WHERE event_id=?", (event["event_id"],)).fetchone()
+        from gig.service.lifecycle_workspace import validate_trade_settlement
+        terms = self.instruments(oms)[oms.order(event["client_id"])["symbol"]]
+        dated = validate_trade_settlement(oms, event, terms, settlement_at, replay=old is not None)
+        if dated is not None:
+            prior_date = oms.connection.execute("SELECT settlement_at FROM funded_trade_settlements WHERE execution_id=?", (dated["execution_id"],)).fetchone()
+            if prior_date is not None and prior_date[0] != dated["settlement_at"]:
+                raise ValueError("execution settlement date conflicts with original evidence")
         if old is None:
             sent = oms.connection.execute("SELECT state FROM transport_outbox WHERE client_id=? AND kind='SUBMIT'", (event["client_id"],)).fetchone()
             if sent is None or sent[0] == "READY":
@@ -349,6 +388,9 @@ class FundedWorkspace:
             if paid+Decimal(event["fee"]) > Decimal(budget):
                 raise ValueError("fill fee exceeds reserved fee cash")
         result = outbox.ingest_event(event, received_at=at)
+        if dated is not None and oms.connection.execute("SELECT 1 FROM executions WHERE execution_id=?", (dated["execution_id"],)).fetchone():
+            write_immutable(self._path("trade-settlements/"+_hash(dated["execution_id"])+".json"), dumps(dated).encode())
+            oms.connection.execute("INSERT OR IGNORE INTO funded_trade_settlements VALUES(?,?)", (dated["execution_id"], dated["settlement_at"]))
         self.hook("after_funded_event")
         if result["state"] == "ERROR":
             return result

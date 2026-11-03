@@ -179,6 +179,33 @@ class CycleServices:
     def funded_risk_replay(self, payload: dict[str, Any]) -> Contract:
         return self._funded_risk().replay(payload)
 
+    def _lifecycle(self):
+        from gig.service.lifecycle_workspace import FundedLifecycleWorkspace
+        return FundedLifecycleWorkspace(self.workspace.base_dir)
+
+    def funded_lifecycle(self, payload: dict[str, Any]) -> Contract:
+        return self._lifecycle().run(payload)
+
+    def _statements(self):
+        from gig.service.statement_workspace import StatementWorkspace
+        return StatementWorkspace(self.workspace.base_dir)
+
+    def statement_admit(self, payload: dict[str, Any]) -> Contract:
+        return self._statements().ingest(payload)
+
+    def statement_reconcile(self, payload: dict[str, Any]) -> Contract:
+        return self._statements().run(payload)
+
+    def statement_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._statements().replay(payload)
+
+    def _observed(self):
+        from gig.service.observed_workspace import ObservedWorkspace
+        return ObservedWorkspace(self.workspace.base_dir)
+
+    def observed_reference(self, payload: dict[str, Any]) -> Contract:
+        return self._observed().run(payload)
+
     def section(self, engine: str, section: str, as_of: Any, maximum: float | None,
                 *, universe_id: str | None = None, instrument_id: str | None = None) -> Contract:
         result = None
@@ -225,6 +252,12 @@ class CycleServices:
             result = self._microstructure().section(section, as_of, maximum)
         elif engine == "funded-risk":
             result = self._funded_risk().section(section, as_of, maximum)
+        elif engine == "funded-lifecycle":
+            result = self._lifecycle().section(section, as_of, maximum)
+        elif engine == "independent-statement":
+            result = self._statements().section(section, as_of, maximum)
+        elif engine == "observed-reference":
+            result = self._observed().section(section, as_of, maximum)
         if result is not None:
             return result
         return Contract.admit(State.UNAVAILABLE, None, source=f"local-{engine}",

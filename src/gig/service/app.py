@@ -143,7 +143,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     def terminal_section(section: str, mode: str = Query("local", pattern="^(local|synthetic)$"),
                          as_of: str | None = Query(None, max_length=100),
                          max_age_seconds: float | None = Query(None, ge=0, le=366 * 86400),
-                         engine: str = Query("default", pattern="^(default|sequence|finbert|provider|execution-engine|persisted|allocation|accounting|depth|pairs|options-research|signals-research|options-overlay|funded-account|economic-research|microstructure-research|funded-risk)$"),
+                         engine: str = Query("default", pattern="^(default|sequence|finbert|provider|execution-engine|persisted|allocation|accounting|depth|pairs|options-research|signals-research|options-overlay|funded-account|economic-research|microstructure-research|funded-risk|funded-lifecycle|independent-statement|observed-reference)$"),
                          universe_id: str | None = Query(None, min_length=1, max_length=128),
                          instrument_id: str | None = Query(None, min_length=1, max_length=128)) -> Any:
         from gig.service.terminal import SECTIONS, section_snapshot
@@ -189,7 +189,10 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
                    "microstructure-admit": integrations.microstructure_admit,
                    "microstructure-research": integrations.microstructure_research,
                    "microstructure-replay": integrations.microstructure_replay,
-                   "funded-risk": integrations.funded_risk, "funded-risk-replay": integrations.funded_risk_replay}
+                   "funded-risk": integrations.funded_risk, "funded-risk-replay": integrations.funded_risk_replay,
+                   "funded-lifecycle": integrations.funded_lifecycle,
+                   "statement-admit": integrations.statement_admit, "statement-reconcile": integrations.statement_reconcile,
+                   "statement-replay": integrations.statement_replay, "observed-reference": integrations.observed_reference}
         if action not in methods:
             return failure("INVALID_REQUEST", 404)
         # Local mutations require JSON and reject cross-origin browser writes.

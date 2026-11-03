@@ -600,5 +600,45 @@ checked("real funded account shape retains scope and unknown valuation notice", 
 replyOverride = { body: fixture({ data: { metrics: {}, rows: [], account: { funding_scope: "USD_LONG_ONLY_SUPPORTED_CONTRACTS", mark_state: "AVAILABLE", reservations: [{ client_id: "fixture-open", remaining_quantity: "1", buy_cash: "300", fee_cash: "1.9" }] } } }) };
 await get("refresh").dispatch("click"); await settle();
 checked("outstanding cash reservations remain inspectable as backend evidence", () => assert.match(tbody().textContent, /fixture-open/));
+const sprint7Actions = {
+  "funded-factor-risk": "funded-risk",
+  "lifecycle-configure": "funded-lifecycle", "lifecycle-split": "funded-lifecycle", "lifecycle-dividend": "funded-lifecycle", "lifecycle-apply": "funded-lifecycle", "lifecycle-state": "funded-lifecycle", "lifecycle-replay": "funded-lifecycle",
+  "statement-admit": "statement-admit", "statement-reconcile": "statement-reconcile", "statement-replay": "statement-replay",
+  "observed-fetch": "observed-reference", "observed-admit": "observed-reference", "observed-research": "observed-reference", "observed-replay": "observed-reference"
+};
+replyOverride = { body: localUnavailable() };
+for (const [kind, endpoint] of Object.entries(sprint7Actions)) {
+  get("analytics-kind").value = "workspace-" + kind;
+  const previous = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, previous, "Selecting Sprint 7 actions cannot submit them");
+  const text = get("analytics-input").value;
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`Sprint 7 ${kind} retains explicit original JSON`, () => { assert.equal(calls.at(-1).url, "/api/v1/workspace/" + endpoint); assert.equal(calls.at(-1).options.body, text); });
+}
+for (const engine of ["funded-lifecycle", "independent-statement", "observed-reference"]) {
+  get("analysis-engine").value = engine;
+  await get("analysis-engine").dispatch("change"); await settle();
+  checked(`Sprint 7 ${engine} preserves backend evidence identity`, () => assert(calls.at(-1).url.includes("engine=" + engine)));
+}
+await successfulPipeline("statement-admit", { statement_hash: "4".repeat(64) });
+await successfulPipeline("statement-reconcile", { report_id: "5".repeat(64), reconciliation_state: "DISCREPANCY", external_reconciled: false });
+get("analytics-kind").value = "workspace-statement-replay";
+await get("analytics-kind").dispatch("change");
+checked("independent statement replay identity remains separate", () => assert.equal(JSON.parse(get("analytics-input").value).report_id, "5".repeat(64)));
+await successfulPipeline("lifecycle-split", { action_hash: "6".repeat(64), snapshot_id: "7".repeat(64) });
+get("analytics-kind").value = "workspace-lifecycle-apply";
+await get("analytics-kind").dispatch("change");
+checked("lifecycle application selects only a successful admitted action hash", () => assert.equal(JSON.parse(get("analytics-input").value).action_hash, "6".repeat(64)));
+await successfulPipeline("observed-admit", { snapshot_id: "8".repeat(64) });
+get("analytics-kind").value = "workspace-observed-research";
+await get("analytics-kind").dispatch("change");
+checked("reference research uses separate successful source identity", () => assert.equal(JSON.parse(get("analytics-input").value).snapshot_id, "8".repeat(64)));
+get("analytics-kind").value = "workspace-observed-fetch";
+await get("analytics-kind").dispatch("change");
+checked("public reference acquisition warns about dates unknown volume and historic availability", () => { assert.match(get("workbench-scope").textContent, /DATE/); assert.match(get("workbench-scope").textContent, /UNKNOWN/); });
+replyOverride = { body: fixture({ data: { rows: [{ field: "cash", expected: "899.8", supplied: "900" }], metrics: {}, reconciliation_state: "DISCREPANCY", external_reconciled: false } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("completed discrepancy report never claims successful external reconciliation", () => { assert.match(get("truth-notice").textContent, /DISCREPANCY/); assert.match(get("truth-notice").textContent, /not reconciled/); });
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

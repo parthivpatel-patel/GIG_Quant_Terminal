@@ -13,10 +13,14 @@ from gig.timestamps import aware_timestamp
 def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
                    fills: list[dict[str, Any]], orders: list[dict[str, Any]],
                    settlements: list[dict[str, Any]], marks: dict[str, Any],
-                   now: str, max_age_seconds: float) -> dict[str, Any]:
+                   now: str, max_age_seconds: float, *, lifecycle_events=None,
+                   trade_settlements=None) -> dict[str, Any]:
     """FIFO premiums use contract multipliers; settlement is not an OMS fill."""
     initial = _decimal(initial_cash)
     cash = initial
+    lifecycle_events, trade_settlements = lifecycle_events or [], trade_settlements or []
+    dividend_income = Decimal(0)
+    adjustments: dict[str, Decimal] = defaultdict(Decimal)
     lots: dict[str, list[list[Decimal]]] = defaultdict(list)
     realized: dict[str, Decimal] = defaultdict(Decimal)
     fees: dict[str, Decimal] = defaultdict(Decimal)
@@ -37,7 +41,31 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
         journal.append({"id": event["settlement_id"], "instrument_id": instrument,
             "quantity": -quantity, "price": Decimal(event["payoff"])*instruments[instrument]["multiplier"],
             "fee": Decimal(event["fee"]), "timestamp": event["available_at"], "kind": "CASH_SETTLEMENT"})
+    for event in lifecycle_events:
+        journal.append({**event, "id": event["event_id"], "timestamp": event["applied_at"]})
     for event in sorted(journal, key=lambda row: (aware_timestamp(row["timestamp"]), row["kind"] != "OMS_FILL", row["id"])):
+        if event["kind"] == "CASH_DIVIDEND":
+            amount = Decimal(event["cash_amount"])
+            cash += amount
+            dividend_income += amount
+            continue
+        if event["kind"] == "SPLIT":
+            symbol = event["instrument_id"]
+            before = sum((q for q, _ in lots[symbol]), Decimal(0))
+            try:
+                changed = [[q*event["ratio_new"]/event["ratio_old"], p*event["ratio_old"]/event["ratio_new"]] for q, p in lots[symbol]]
+                for quantity, price in changed:
+                    _decimal(quantity)
+                    _decimal(price)
+                    if quantity != quantity.to_integral_value():
+                        raise ValueError("fractional split delivery or cash-in-lieu is unsupported")
+            except ArithmeticError:
+                raise ValueError("split lot basis cannot be represented exactly at supported precision") from None
+            if sum((q*p for q, p in changed), Decimal(0)) != sum((q*p for q, p in lots[symbol]), Decimal(0)):
+                raise ValueError("split must conserve exact lot cost basis")
+            lots[symbol] = changed
+            adjustments[symbol] += sum((q for q, _ in changed), Decimal(0))-before
+            continue
         symbol, quantity, price, fee = (event[k] for k in ("instrument_id", "quantity", "price", "fee"))
         cash -= quantity*price+fee
         fees[symbol] += fee
@@ -60,7 +88,7 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
     for symbol in sorted(set(raw) | set(settled)):
         terms = instruments[symbol]
         quantity = sum((lot[0] for lot in lots[symbol]), Decimal(0))
-        if quantity != raw[symbol]-settled[symbol]:
+        if quantity != raw[symbol]-settled[symbol]+adjustments[symbol]:
             raise ValueError("funded lifecycle quantity reconciliation failed")
         quantities[symbol] = quantity
         if quantity < 0:
@@ -92,6 +120,10 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
             "cost_basis": str(basis), "realized_gross_pnl": str(realized[symbol]),
             "unrealized_pnl": str(unrealized) if unrealized is not None else None,
             "fees": str(fees[symbol]), "classification": "SIMULATED"})
+    from gig.portfolio.lifecycle import settlement_balances
+    receivables, payables, settled_trade, pending_trades = settlement_balances(fills, instruments, trade_settlements, now)
+    for symbol, adjustment in adjustments.items():
+        settled_trade[symbol] = settled_trade.get(symbol, Decimal(0))+adjustment
     reservations = []
     buy_reserve = put_reserve = fee_reserve = Decimal(0)
     reserved_sales: dict[str, Decimal] = defaultdict(Decimal)
@@ -117,22 +149,27 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
             "remaining_quantity": str(remaining), "buy_cash": str(premium),
             "short_put_collateral": str(secured), "fee_cash": str(fee_left), "state": order["state"]})
     for symbol, quantity in reserved_sales.items():
-        if quantity > max(quantities.get(symbol, Decimal(0)), Decimal(0)):
+        available_inventory = min(settled_trade.get(symbol, Decimal(0)), quantities.get(symbol, Decimal(0))) if instruments[symbol]["kind"] == "EQUITY" else quantities.get(symbol, Decimal(0))
+        if quantity > max(available_inventory, Decimal(0)):
             raise ValueError("working sales exceed owned inventory")
     reserved_cash = buy_reserve+put_reserve+fee_reserve
-    available = cash-collateral-reserved_cash
+    available = cash-receivables-collateral-reserved_cash
     funding_ok = cash >= 0 and available >= 0
     mark_state = "UNKNOWN" if missing else "STALE" if stale else "AVAILABLE"
     total_realized = sum(realized.values(), Decimal(0))
     total_fees = sum(fees.values(), Decimal(0))
     nav = cash+total_value if not missing else None
-    pnl = total_realized+total_unrealized-total_fees if not missing else None
+    pnl = total_realized+total_unrealized+dividend_income-total_fees if not missing else None
     if nav is not None and (pnl is None or nav != initial+pnl):
         raise ValueError("funded cash, liabilities and P&L conservation failed")
     return {"currency": "USD", "initial_cash": str(initial), "cash": str(cash),
         "nav": str(nav) if nav is not None else None, "total_pnl": str(pnl) if pnl is not None else None,
         "realized_gross_pnl": str(total_realized), "unrealized_pnl": str(total_unrealized) if not missing else None,
         "fees": str(total_fees), "rows": rows, "raw_oms_positions": {k: str(v) for k, v in sorted(raw.items())},
+        "dividend_income": str(dividend_income), "lifecycle_position_adjustments": {k: str(v) for k, v in adjustments.items() if v},
+        "settled_cash": str(cash+payables-receivables), "unsettled_sale_receivables": str(receivables),
+        "unsettled_buy_payables": str(payables), "pending_trade_settlements": pending_trades,
+        "settled_trade_positions": {k: str(v) for k, v in sorted(settled_trade.items())},
         "effective_positions": {k: str(v) for k, v in sorted(quantities.items())},
         "settled_positions": {k: str(v) for k, v in sorted(settled.items())}, "pending_expiries": pending_expiries,
         "mark_state": mark_state, "missing_marks": missing, "stale_marks": stale,
