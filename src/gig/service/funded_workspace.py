@@ -62,7 +62,7 @@ class FundedWorkspace:
             "SELECT e.execution_id,e.client_id,o.symbol,o.side,e.quantity,e.price,e.fee,e.timestamp FROM executions e JOIN orders o USING(client_id) ORDER BY e.rowid")]
 
     @_exact
-    def _snapshot(self, oms, at, marks=None, max_age_seconds=None):
+    def _snapshot(self, oms, at, marks=None, max_age_seconds=None, *, recognize=True):
         initial = self._config(oms, "initial_cash")
         if initial is None:
             raise ValueError("funded account is not initialized")
@@ -79,7 +79,9 @@ class FundedWorkspace:
                 raise ValueError("unmanaged OMS order in isolated funded account")
             orders.append({**order, **loads(saved[0])})
         settlements = [loads(row[0]) for row in oms.connection.execute("SELECT wire FROM funded_settlements ORDER BY settlement_id")]
-        from gig.service.lifecycle_workspace import lifecycle_snapshot
+        from gig.service.lifecycle_workspace import lifecycle_snapshot, recognize_dividends
+        if recognize and oms.connection.in_transaction:
+            recognize_dividends(self, oms, at)
         lifecycle = lifecycle_snapshot(oms)
         if len(fills) > 10000 or len(orders) > 100 or len(registry) > 64:
             raise ValueError("funded replay size bound exceeded")
@@ -93,14 +95,18 @@ class FundedWorkspace:
             lifecycle_events=lifecycle["lifecycle_events"] if lifecycle else None,
             trade_settlements=lifecycle["trade_settlements"] if lifecycle else None)
         if lifecycle:
-            due = [row for row in lifecycle["pending_corporate_actions"] if aware_timestamp(row["pay_at"]) <= aware_timestamp(at)]
+            recognized = {row[0]: row[1] for row in oms.connection.execute("SELECT action_id,digest FROM funded_dividend_accruals")} if oms.connection.execute("SELECT 1 FROM sqlite_master WHERE name='funded_dividend_accruals'").fetchone() else {}
+            due = [row for row in lifecycle["pending_corporate_actions"] if aware_timestamp(row["pay_at"]) <= aware_timestamp(at)
+                   and (row["kind"] != "CASH_DIVIDEND" or recognized.get(row["action_id"]) != _hash(row))]
             account["pending_corporate_actions"] = [row["action_id"] for row in due]
             if due:
                 account["funding_state"] = account["reconciliation_state"] = "UNKNOWN"
+            account["dividend_receivables"] = lifecycle["dividend_receivables"]
+            account["dividend_valuation_assumption"] = "EXACT_DECLARED_CASH_ENTITLEMENT_AT_FACE; NO_CREDIT_OR_TAX_ADJUSTMENT; NOT_EXTERNAL_CONFIRMATION"
             accruals = [row["action_id"] for row in lifecycle["pending_corporate_actions"]
-                if row["kind"] == "CASH_DIVIDEND" and aware_timestamp(row["effective_at"]) <= aware_timestamp(at)]
+                if row["kind"] == "CASH_DIVIDEND" and aware_timestamp(row["effective_at"]) <= aware_timestamp(at) and recognized.get(row["action_id"]) != _hash(row)]
             account["unmodeled_dividend_accruals"] = accruals
-            account["dividend_accrual_state"] = "UNKNOWN" if accruals else "NOT_REQUIRED"
+            account["dividend_accrual_state"] = "UNKNOWN" if accruals else "AVAILABLE" if Decimal(account["dividend_receivable"]) else "NOT_REQUIRED"
             if accruals or due:
                 # Cash remains spendable only under the existing funding rules;
                 # an unbooked entitlement cannot be treated as complete NAV.
@@ -172,8 +178,8 @@ class FundedWorkspace:
         if item["currency"] != "USD" or isinstance(item["multiplier"], bool) or not isinstance(item["multiplier"], int) or not 1 <= item["multiplier"] <= 1000000:
             raise ValueError("explicit USD currency and positive integer multiplier required")
         if item["kind"] == "EQUITY":
-            if item["instrument_id"].upper().startswith(("ECB:EXR:", "FX:", "REFERENCE:")):
-                raise ValueError("reference FX observations are not funded equity instruments")
+            if item["instrument_id"].upper().startswith(("ECB:EXR:", "FX:", "REFERENCE:", "DJIA_MEMBER_LABEL:")):
+                raise ValueError("reference observations and unverified archive labels are not funded equity instruments")
             if set(item) != base or item["multiplier"] != 1:
                 raise ValueError("equities require unit multiplier and no option terms")
         elif item["kind"] == "OPTION":
@@ -383,6 +389,10 @@ class FundedWorkspace:
                 raise ValueError("option fill requires whole contracts before expiry")
             if oms.connection.execute("SELECT 1 FROM funded_settlements WHERE instrument_id=?", (order["symbol"],)).fetchone():
                 raise ValueError("late fill after cash settlement requires unsupported lifecycle revision")
+            from gig.service.lifecycle_workspace import lifecycle_snapshot
+            lifecycle_state = lifecycle_snapshot(oms)
+            if lifecycle_state and any(e["kind"] in {"DIVIDEND_ACCRUAL", "CASH_DIVIDEND"} and e["instrument_id"] == order["symbol"] and _stamp(event["occurred_at"]) < _stamp(e["effective_at"]) for e in lifecycle_state["lifecycle_events"]):
+                raise ValueError("late execution cannot rewrite frozen dividend entitlement")
             budget = loads(oms.connection.execute("SELECT wire FROM funded_orders WHERE client_id=?", (event["client_id"],)).fetchone()[0])["fee_budget"]
             paid = sum((Decimal(row[0]) for row in oms.connection.execute("SELECT fee FROM executions WHERE client_id=?", (event["client_id"],))), Decimal(0))
             if paid+Decimal(event["fee"]) > Decimal(budget):

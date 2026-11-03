@@ -31,7 +31,7 @@ RESERVATION = {"client_id", "instrument_id", "remaining_quantity", "buy_cash", "
 LIFECYCLE = {"event_id", "kind", "instrument_id", "action_id", "applied_at", "effective_at", "known_at", "cash_amount", "entitlement_quantity"}
 NUMERIC = BALANCES|LIFECYCLE_BALANCES|{"quantity", "filled", "limit_price", "cost_basis", "market_value", "position_quantity",
     "price", "fee", "spot", "payoff", "remaining_quantity", "buy_cash", "short_put_collateral", "fee_cash",
-    "cash_amount", "entitlement_quantity", "amount_per_share", "ratio_new", "ratio_old", "multiplier"}
+    "cash_amount", "entitlement_quantity", "income_amount", "receivable_amount", "total_income", "recognized_income", "paid_cash", "outstanding_receivable", "amount_per_share", "ratio_new", "ratio_old", "multiplier"}
 
 
 def _hash(value):
@@ -60,7 +60,7 @@ def _rows(value, maximum):
 
 def _normalize_record(row, fields, numbers=(), stamps=(), nullable=()):
     _fields(row, fields, fields)
-    for key in fields-set(numbers)-set(stamps)-set(nullable)-{"acknowledged", "multiplier", "ratio_new", "ratio_old"}:
+    for key in fields-set(numbers)-set(stamps)-set(nullable)-{"acknowledged", "multiplier", "ratio_new", "ratio_old", "revision"}:
         _text(row[key], bound=256)
     for key in numbers:
         row[key] = _amount(row[key])
@@ -83,7 +83,7 @@ class StatementWorkspace:
     @staticmethod
     def _admit(payload):
         required = {"source", "statement_id", "observed_at", "available_at", "currency", "balances", "positions", "orders", "fills", "settlements", "reservations"}
-        optional = {"lifecycle_events", "trade_settlements", "settled_trade_positions"}
+        optional = {"lifecycle_events", "trade_settlements", "settled_trade_positions", "dividend_receivables"}
         _fields(payload, required|optional, required)
         value = loads(dumps(payload))
         for key in ("source", "statement_id"):
@@ -120,16 +120,29 @@ class StatementWorkspace:
         for row in _rows(value["reservations"], 200):
             _normalize_record(row, RESERVATION, ("remaining_quantity", "buy_cash", "short_put_collateral", "fee_cash"))
         for row in _rows(value.get("lifecycle_events", []), 1000):
-            if not isinstance(row, dict) or row.get("kind") not in {"SPLIT", "CASH_DIVIDEND"}:
+            if not isinstance(row, dict) or row.get("kind") not in {"SPLIT", "CASH_DIVIDEND", "DIVIDEND_ACCRUAL"}:
                 raise ValueError("supported explicit lifecycle statement records required")
-            additional = {"amount_per_share"} if row["kind"] == "CASH_DIVIDEND" else {"ratio_new", "ratio_old"}
-            _normalize_record(row, LIFECYCLE|additional, ("cash_amount", "entitlement_quantity"), ("applied_at", "effective_at", "known_at"))
-            if row["kind"] == "CASH_DIVIDEND":
-                row["amount_per_share"] = _amount(row["amount_per_share"])
+            dividend = row["kind"] != "SPLIT"
+            additional = {"amount_per_share"} if dividend else {"ratio_new", "ratio_old"}
+            extended = {"income_amount", "receivable_amount", "status"} if dividend else set()
+            if row["kind"] == "DIVIDEND_ACCRUAL":
+                additional |= {"income_amount", "receivable_amount", "total_income", "status", "record_at", "pay_at"}
+            _fields(row, LIFECYCLE|additional|extended, LIFECYCLE|additional)
+            _normalize_record(row, set(row), set(row)&NUMERIC, set(row)&{"applied_at", "effective_at", "known_at", "record_at", "pay_at"})
+            if dividend:
+                if row.get("status", "ACTIVE") not in {"ACTIVE", "CANCELLED"}:
+                    raise ValueError("explicit dividend status required")
             else:
                 for key in ("ratio_new", "ratio_old"):
                     if isinstance(row[key], bool) or not isinstance(row[key], int) or not 1 <= row[key] <= 1_000_000:
                         raise ValueError("positive bounded split ratio required")
+        for row in _rows(value.get("dividend_receivables", []), 1000):
+            required = {"action_id", "revision", "instrument_id", "source", "known_at", "effective_at", "record_at", "pay_at",
+                        "entitlement_quantity", "recognized_income", "paid_cash", "outstanding_receivable", "status"}
+            _normalize_record(row, required, {"entitlement_quantity", "recognized_income", "paid_cash", "outstanding_receivable"},
+                              {"known_at", "effective_at", "record_at", "pay_at"})
+            if isinstance(row["revision"], bool) or not isinstance(row["revision"], int) or not 1 <= row["revision"] <= 1000 or row["status"] not in {"ACTIVE", "CANCELLED"}:
+                raise ValueError("bounded dividend revision and explicit status required")
         for row in _rows(value.get("trade_settlements", []), 2000):
             _normalize_record(row, {"execution_id", "settlement_at"}, stamps=("settlement_at",))
         if "settled_trade_positions" in value:
@@ -272,15 +285,31 @@ class StatementWorkspace:
                 finding("LIFECYCLE_COVERAGE_MISSING", "lifecycle_events", severity="UNKNOWN")
             else:
                 coverage["corporate_actions"] = True
-                for kind in ("SPLIT", "CASH_DIVIDEND"):
+                for kind in ("SPLIT", "CASH_DIVIDEND", "DIVIDEND_ACCRUAL"):
                     fields = LIFECYCLE | ({"ratio_new", "ratio_old"} if kind == "SPLIT" else {"amount_per_share"})
+                    if kind == "DIVIDEND_ACCRUAL":
+                        fields |= {"income_amount", "receivable_amount", "total_income", "status", "record_at", "pay_at"}
+                    elif kind == "CASH_DIVIDEND" and any("income_amount" in r for r in lifecycle if r["kind"] == kind):
+                        fields |= {"income_amount", "receivable_amount", "status"}
                     records("lifecycle_events."+kind, [r for r in lifecycle if r["kind"] == kind],
                             [r for r in statement["lifecycle_events"] if r["kind"] == kind], "event_id", fields)
-                if any(r["kind"] == "CASH_DIVIDEND" for r in lifecycle):
+                if any(r["kind"] in {"CASH_DIVIDEND", "DIVIDEND_ACCRUAL"} for r in lifecycle):
                     compare("balances.dividend_income", account.get("dividend_income"), statement["balances"].get("dividend_income"))
         elif statement.get("lifecycle_events"):
             finding("UNEXPECTED_STATEMENT_RECORD", "lifecycle_events", [], statement["lifecycle_events"])
-        if snapshot.get("pending_corporate_actions"):
+        accrued = snapshot.get("dividend_receivables", [])
+        if accrued:
+            compare("balances.dividend_receivable", account.get("dividend_receivable"), statement["balances"].get("dividend_receivable"))
+            if "dividend_receivables" not in statement:
+                finding("DIVIDEND_RECEIVABLE_COVERAGE_MISSING", "dividend_receivables", severity="UNKNOWN")
+            else:
+                fields = {"revision", "instrument_id", "source", "known_at", "effective_at", "record_at", "pay_at", "entitlement_quantity", "recognized_income", "paid_cash", "outstanding_receivable", "status"}
+                records("dividend_receivables", accrued, statement["dividend_receivables"], "action_id", fields)
+        elif statement.get("dividend_receivables"):
+            finding("UNEXPECTED_STATEMENT_RECORD", "dividend_receivables", [], statement["dividend_receivables"])
+        accrued_hashes = {r["action_hash"] for r in accrued}
+        unresolved = [r for r in snapshot.get("pending_corporate_actions", []) if _hash(r) not in accrued_hashes]
+        if unresolved:
             # The supported statement schema covers applied actions, not future
             # entitlement accrual or unapplied revisions. Empty event lists do
             # not establish that these known obligations have been reconciled.

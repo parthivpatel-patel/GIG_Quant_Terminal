@@ -1,0 +1,41 @@
+{
+  "original_index_unchanged": true,
+  "checks": [
+    {
+      "model": "ridge",
+      "evaluation_id": "42bc6bad1aad11c2a9dfe5bef1483e1b453de047e40aea9991cacf9a48f986b9",
+      "version": "reference-predictive-baselines-v1",
+      "replay_verified": true
+    },
+    {
+      "model": "lightgbm",
+      "evaluation_id": "2885c1178ef1316675e525360ecce67eecbc1baa4b1a1634744dac2b49a42365",
+      "version": "reference-predictive-baselines-v1",
+      "replay_verified": true
+    },
+    {
+      "model": "hmm",
+      "evaluation_id": "6744efc5423abd1ddff98f6465ff88c066b119902eb84e7a4804dfed9a4faa50",
+      "version": "reference-predictive-baselines-v1",
+      "replay_verified": true
+    },
+    {
+      "model": "garch",
+      "evaluation_id": "ed31b4d1797480d8253947cb255a220aa0d437581ee00f548f0b658dff980a2a",
+      "version": "reference-predictive-baselines-v1",
+      "replay_verified": true
+    },
+    {
+      "model": "kalman",
+      "evaluation_id": "1ad70e19719e3cc7861a603e68528c61f7cb3b459a620e8a22c3ff86c3a6fda4",
+      "version": "reference-predictive-baselines-v1",
+      "replay_verified": true
+    },
+    {
+      "model": "bilstm",
+      "evaluation_id": "420918609a98f60d72a29ab7116f60986dc7bf4aea9aec6b05ecd4f4fb4d3b1b",
+      "version": "reference-predictive-baselines-v1",
+      "replay_verified": true
+    }
+  ]
+}

@@ -55,3 +55,6 @@ body{font-size:14px;line-height:1.6;font-weight:400;font-feature-settings:"tnum"
 .context-value:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
 
 .analysis-grid:not(.context-expanded) .context-entry:nth-child(n+6) { display:none; }
+
+/* Saved financial and model evidence uses the existing typographic hierarchy. */
+.analysis-summary{padding:18px;border:1px solid var(--border);border-radius:4px;margin-bottom:20px;background:var(--panel)}.analysis-summary h3{font-size:14px;font-weight:500;margin:0 0 16px}.analysis-summary dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0}.analysis-summary-entry{min-width:0}.analysis-summary dd{margin:5px 0 0;overflow-wrap:anywhere}.analysis-summary p{margin:16px 0 0}@media(max-width:420px){.analysis-summary dl{grid-template-columns:minmax(0,1fr)}}

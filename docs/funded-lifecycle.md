@@ -5,7 +5,8 @@ records never rewrite fills, acknowledgements, orders or raw OMS quantities.
 Economic positions include separately disclosed split offsets; option expiry
 offsets retain their existing meaning. All support is USD paid-long simulation;
 `fully_funded_certified` remains false and external settlement confirmation stays
-UNKNOWN. Reference FX namespaces cannot be registered as funded equity shares.
+UNKNOWN. Reference FX and unverified DJIA_MEMBER_LABEL archive namespaces cannot be
+registered as funded equity shares.
 
 ## Configure before trading
 
@@ -61,8 +62,9 @@ Apply only by the returned hash:
 ```
 
 Application requires the latest known revision, reached effective/payment time,
-and no affected working orders. Unapplied due actions make funding and financial
-reconciliation UNKNOWN and block new reservations and dispatch. Future
+and no affected working orders. Unresolved due actions make funding and financial
+reconciliation UNKNOWN and block new reservations and dispatch. Supported
+recognized unpaid dividends retain their receivable without supplying cash. Future
 announcements alone do not block funding. A split preserves total FIFO basis,
 adjusts quantities/unit costs exactly and clears the old mark. Whole-lot delivery
 and representable exact unit costs are required. Fractional delivery,
@@ -74,17 +76,66 @@ before an already applied split instant cannot be newly appended ambiguously.
 Dividend entitlement uses trades strictly before ex-time that settle by
 record-time. Later ex-date buys receive no entitlement. Delayed execution
 knowledge or a late split that makes original ownership ambiguous rejects
-instead of guessing zero. The first application freezes entitlement; a later
-rate revision posts only the cash difference on that frozen quantity. Earlier
-cash/NAV snapshots remain immutable. An unfundable debit correction rejects;
-the admitted unapplied revision remains a known unresolved obligation.
+instead of guessing zero. The first recognition freezes entitlement; later rate revisions post only
+compensating income/receivable changes on that frozen quantity. Payment uses the
+same frozen quantity. Earlier cash/NAV snapshots remain immutable. An unfundable
+debit correction stays admitted as a known unresolved obligation; strict
+recognition/application rejects rather than borrowing or removing the source.
 
-Dividend receivable accrual between ex-time and explicit payment is not modeled.
-Once ex-time is reached, an unapplied dividend makes complete NAV, total P&L and
-financial reconciliation UNKNOWN; these values are not filled with zero. Existing
-cash can remain available before payment under the conservative funding rules,
-but the future dividend never supplies buying power. At payment time the existing
-unresolved-obligation guard also blocks new funding until the action is applied.
+## Dividend receivable recognition and payment
+
+`accrue` uses the same immutable action hash and explicit microsecond-representable
+OMS clock as `apply`:
+
+```json
+{"operation":"accrue","now":"2026-11-05T15:00:00Z","action_hash":"<64-hex admitted identity>"}
+```
+
+Supported known dividends are also recognized when a funded/lifecycle transaction
+advances the account clock past ex-time. Recognition posts a DIVIDEND_ACCRUAL
+journal event: cash remains unchanged, dividend income and a separate receivable
+increase by exactly the frozen eligible quantity times the declared rate.
+NAV equals cash plus marked positions plus the receivable, and equals initial
+capital plus total P&L. Available/reserved cash never includes the receivable.
+The valuation convention is exact declared cash entitlement at face value;
+credit loss, taxes, withholding, interest and discounting are not modeled. This
+is modeled offline accounting, never external payment confirmation.
+
+Recognition requires known source evidence and reached ex-time. Pre-ex working
+orders, delayed execution knowledge, and pre-ex trades whose future scheduled
+settlement determines record-date ownership leave recognition UNKNOWN until the
+ambiguity is resolved. Explicit `accrue` rejects those cases. Source dates and
+original record-date eligibility rules are preserved; future fills never supply
+historical entitlement. New backdated fills cannot rewrite a recognized/paid
+entitlement. Late splits or split corrections crossing a frozen dividend
+entitlement reject rather than silently changing it.
+
+At pay-time, explicit `apply` converts the receivable into cash: it posts cash
+and the opposite receivable change with zero additional income. Merely reaching
+pay-time does not claim a cash receipt. Supported accrued but unpaid cash can
+remain in NAV without becoming buying power. Duplicate application is inert.
+Old pre-Sprint8 paid dividends remain cash/income records; migration never
+recognizes their income twice.
+
+A higher revision with later known_at may change the per-share rate while source,
+identity, instrument, ex/record/pay dates and kind remain fixed. `status` may be
+ACTIVE (the default) or CANCELLED. Explicit cancellation requires a zero rate.
+Before payment, a revision or cancellation changes income and receivable only.
+After payment, a downward correction/cancellation posts a cash recovery only if
+existing unreserved cash can fund it; no negative receivable or borrowing is
+introduced. An unfundable recovery preserves the source but leaves complete
+NAV/P&L, reconciliation and funding UNKNOWN, blocking reservations/dispatch until
+resolved within the supported scope. Late action-date changes, corporate mergers,
+cash-in-lieu and credit-loss modeling remain unsupported.
+
+Snapshots include `account.dividend_receivable`, `dividend_income`,
+`dividend_accrual_state`, the valuation assumption, and `dividend_receivables`
+records with source/revision/knowledge, frozen quantity, recognized income,
+paid cash, outstanding receivable and status. The realized supplier evidence is
+not inferred from these modeled records. Current state verifies both accrual and
+paid indexes against immutable events. New source identities include lifecycle
+sources/events/receivables, while historical snapshots replay their original
+bytes rather than being upgraded or recalculated.
 
 ## Persistence and replay
 

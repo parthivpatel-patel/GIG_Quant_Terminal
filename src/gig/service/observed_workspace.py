@@ -139,7 +139,8 @@ class ObservedWorkspace:
             except FileNotFoundError:
                 return self._missing()
             models = {identity: loads(self._path("models/"+identity+".json").read_bytes()) for identity in report["model_ids"]}
-            body = evaluate_reference(report, models, config, datetime.now(UTC).isoformat())
+            body = evaluate_reference(report, models, config, datetime.now(UTC).isoformat(),
+                                      snapshot=self.snapshot(report["snapshot_id"]))
             identity = digest(body)
             result = self._contract({**body, "evaluation_id": identity}, research=True)
             write_immutable(self._path("evaluations/"+identity+".json"), dumps(body).encode())
@@ -160,17 +161,21 @@ class ObservedWorkspace:
         raise ValueError("unsupported reference operation")
 
     def load_evaluation(self, evaluation_id):
-        from gig.research.reference_evaluation import VERSION as EVALUATION_VERSION
-        from gig.research.reference_evaluation import configuration, evaluate_reference
+        from gig.research.reference_evaluation import (
+            SUPPORTED_VERSIONS,
+            configuration,
+            evaluate_reference,
+        )
         identity = _identity(evaluation_id)
         wire = self._path("evaluations/"+identity+".json").read_bytes()
         body = loads(wire)
-        if digest(body) != identity or dumps(body).encode() != wire or body.get("schema_version") != EVALUATION_VERSION:
+        if digest(body) != identity or dumps(body).encode() != wire or body.get("schema_version") not in SUPPORTED_VERSIONS:
             raise ValueError("reference evaluation integrity failure")
         self._verify_index("evaluation", identity, body["as_of"])
         report = self.load(body["report_id"])
         models = {key: loads(self._path("models/"+key+".json").read_bytes()) for key in report["model_ids"]}
-        if digest(evaluate_reference(report, models, configuration(body["request"]), body["as_of"])) != identity:
+        if digest(evaluate_reference(report, models, configuration(body["request"]), body["as_of"],
+                                     schema_version=body["schema_version"], snapshot=self.snapshot(report["snapshot_id"]))) != identity:
             raise ValueError("reference evaluation replay differs")
         return {**body, "evaluation_id": identity}
 

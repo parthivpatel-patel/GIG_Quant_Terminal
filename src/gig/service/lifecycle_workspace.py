@@ -26,11 +26,13 @@ def lifecycle_schema(oms):
         "CREATE TABLE IF NOT EXISTS funded_lifecycle_actions(digest TEXT PRIMARY KEY,action_id TEXT NOT NULL,revision INTEGER NOT NULL,wire TEXT NOT NULL,UNIQUE(action_id,revision))",
         "CREATE TABLE IF NOT EXISTS funded_lifecycle_events(event_id TEXT PRIMARY KEY,wire TEXT NOT NULL)",
         "CREATE TABLE IF NOT EXISTS funded_lifecycle_applied(action_id TEXT PRIMARY KEY,digest TEXT NOT NULL,entitlement TEXT NOT NULL,total_cash TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS funded_dividend_accruals(action_id TEXT PRIMARY KEY,digest TEXT NOT NULL,entitlement TEXT NOT NULL,total_income TEXT NOT NULL)",
         "CREATE TABLE IF NOT EXISTS funded_trade_settlements(execution_id TEXT PRIMARY KEY REFERENCES executions(execution_id),settlement_at TEXT NOT NULL)",
     ):
         oms.connection.execute(sql)
 
 
+@_exact
 def lifecycle_snapshot(oms):
     if not oms.connection.execute("SELECT 1 FROM sqlite_master WHERE name='funded_lifecycle_policy'").fetchone():
         return None
@@ -54,9 +56,26 @@ def lifecycle_snapshot(oms):
             raise ValueError("corporate action index differs from immutable identity")
         verify("lifecycle-actions/"+row[0]+".json", action)
     for row, event in zip(event_rows, events, strict=True):
-        if row[0] != event["event_id"] or row[0] != _hash([event["action_id"], event["action_hash"]]):
+        if row[0] != event["event_id"] or row[0] != _hash([event["action_id"], event["action_hash"]]+(["ACCRUAL"] if event["kind"] == "DIVIDEND_ACCRUAL" else [])):
             raise ValueError("lifecycle event index differs from immutable identity")
         verify("lifecycle-events/"+row[0]+".json", event)
+    expected_paid = {}
+    for event in events:
+        if event["kind"] == "SPLIT":
+            expected_paid[event["action_id"]] = (event["action_hash"], Decimal(0), Decimal(0))
+        elif event["kind"] == "CASH_DIVIDEND" or (event["kind"] == "DIVIDEND_ACCRUAL"
+                and (Decimal(event["cash_amount"]) or event.get("status") == "CANCELLED")):
+            previous = expected_paid.get(event["action_id"], (None, Decimal(0), Decimal(0)))
+            expected_paid[event["action_id"]] = (event["action_hash"], Decimal(event["entitlement_quantity"]), previous[2]+Decimal(event["cash_amount"]))
+    indexed_paid = {row[0]: (row[1], Decimal(row[2]), Decimal(row[3]))
+                    for row in oms.connection.execute("SELECT action_id,digest,entitlement,total_cash FROM funded_lifecycle_applied")}
+    if indexed_paid != expected_paid:
+        raise ValueError("lifecycle paid index differs from immutable events")
+    if oms.connection.execute("SELECT 1 FROM sqlite_master WHERE name='funded_dividend_accruals'").fetchone():
+        indexed = {row[0]: tuple(row[1:]) for row in oms.connection.execute("SELECT action_id,digest,entitlement,total_income FROM funded_dividend_accruals")}
+        expected = {e["action_id"]: (e["action_hash"], e["entitlement_quantity"], e["total_income"]) for e in events if e["kind"] == "DIVIDEND_ACCRUAL"}
+        if indexed != expected:
+            raise ValueError("dividend accrual index differs from immutable events")
     for row in trades:
         path = directory/"trade-settlements"/(_hash(row["execution_id"])+".json")
         if any(p.is_symlink() for p in (path, *path.parents)) or not path.is_file() or path.read_bytes() != dumps(row).encode():
@@ -65,8 +84,25 @@ def lifecycle_snapshot(oms):
     for action in actions:
         latest[action["action_id"]] = action
     pending = [row for row in latest.values() if applied.get(row["action_id"]) != _hash(row)]
-    return {"lifecycle_policy": policy, "lifecycle_events": events, "trade_settlements": trades,
-            "pending_corporate_actions": pending,
+    accrual_rows = []
+    sources = {_hash(action): action for action in actions}
+    for action_id, latest_source in latest.items():
+        if latest_source["kind"] != "CASH_DIVIDEND":
+            continue
+        recognized = next((e for e in reversed(events) if e["kind"] == "DIVIDEND_ACCRUAL" and e["action_id"] == action_id), None)
+        if recognized is None:
+            continue
+        source = sources[recognized["action_hash"]]
+        paid_row = oms.connection.execute("SELECT total_cash FROM funded_lifecycle_applied WHERE action_id=?", (action_id,)).fetchone()
+        paid_total = Decimal(paid_row[0]) if paid_row else Decimal(0)
+        accrual_rows.append({"action_id": action_id, "revision": source["revision"], "action_hash": recognized["action_hash"],
+            "instrument_id": source["instrument_id"], "source": source["source"], "known_at": source["known_at"],
+            "effective_at": source["effective_at"], "record_at": source["record_at"], "pay_at": source["pay_at"],
+            "entitlement_quantity": recognized["entitlement_quantity"], "recognized_income": recognized["total_income"],
+            "paid_cash": str(paid_total), "outstanding_receivable": str(Decimal(recognized["total_income"])-paid_total),
+            "status": source.get("status", "ACTIVE"), "classification": "SIMULATED"})
+    return {"dividend_receivables": accrual_rows, "lifecycle_policy": policy, "lifecycle_events": events, "trade_settlements": trades,
+            "pending_corporate_actions": pending, "corporate_action_sources": actions,
             "cash_settlement_evidence_state": "MODELED_SCHEDULED_DATES_NOT_BROKER_CONFIRMED"}
 
 
@@ -101,6 +137,79 @@ def validate_trade_settlement(oms, event, terms, provided, *, replay=False):
     return {"execution_id": event["event_id"], "settlement_at": due.isoformat()}
 
 
+@_exact
+def recognize_dividends(book, oms, at, *, only=None, strict=False):
+    """Same-transaction recognition; frozen entitlement never follows later fills."""
+    if not oms.connection.in_transaction:
+        raise ValueError("dividend recognition requires the existing OMS transaction")
+    state = lifecycle_snapshot(oms)
+    if not state:
+        return
+    lifecycle_schema(oms)
+    latest = {}
+    for action in state["corporate_action_sources"]:
+        latest[action["action_id"]] = action
+    if only is not None and not any(_hash(a) == only for a in latest.values()):
+        raise ValueError("accrual requires latest admitted action revision")
+    for action in latest.values():
+        digest = _hash(action)
+        if action["kind"] != "CASH_DIVIDEND" or (only is not None and digest != only):
+            continue
+        if _stamp(action["known_at"]) > at or _stamp(action["effective_at"]) > at:
+            if strict:
+                raise ValueError("dividend must be known and ex-date reached before recognition")
+            continue
+        prior = oms.connection.execute("SELECT digest,entitlement,total_income FROM funded_dividend_accruals WHERE action_id=?", (action["action_id"],)).fetchone()
+        if prior is not None and prior[0] == digest:
+            continue
+        paid = oms.connection.execute("SELECT digest,entitlement,total_cash FROM funded_lifecycle_applied WHERE action_id=?", (action["action_id"],)).fetchone()
+        if prior is None and paid is not None and paid[0] == digest:
+            continue  # Legacy paid income must never be recognized twice.
+        fills = book._fills(oms)
+        try:
+            if any(oms.order(row[0])["state"] not in TERMINAL and _stamp(oms.order(row[0])["created_at"]) < _stamp(action["effective_at"])
+                   for row in oms.connection.execute("SELECT client_id FROM orders WHERE symbol=?", (action["instrument_id"],))):
+                raise ValueError("pre-ex working orders prevent final entitlement recognition")
+            if prior is not None or paid is not None:
+                quantity = Decimal((prior or paid)[1])
+            else:
+                dates = {r["execution_id"]: _stamp(r["settlement_at"]) for r in state["trade_settlements"]}
+                if at < _stamp(action["record_at"]) and any(f["symbol"] == action["instrument_id"] and _stamp(f["timestamp"]) < _stamp(action["effective_at"]) and at < dates.get(f["execution_id"], _stamp(f["timestamp"])) <= _stamp(action["record_at"]) for f in fills):
+                    raise ValueError("record-date ownership depends on unsettled future evidence")
+                for row in oms.connection.execute("SELECT occurred_at,received_at,payload FROM transport_events WHERE kind='FILL'"):
+                    event = loads(row[2])
+                    matching = next((f for f in fills if f["execution_id"] == event["event_id"]), None)
+                    if matching and matching["symbol"] == action["instrument_id"] and _stamp(row[0]) < _stamp(action["effective_at"]) and _stamp(row[1]) > _stamp(action["record_at"]):
+                        raise ValueError("late execution knowledge makes original entitlement unavailable")
+                quantity = dividend_entitlement(fills, state["trade_settlements"], state["lifecycle_events"], instrument_id=action["instrument_id"], ex_at=action["effective_at"], record_at=action["record_at"])
+        except ValueError:
+            if strict:
+                raise
+            continue  # Snapshot retains an explicit unmodeled obligation.
+        total = quantity*Decimal(action["amount_per_share"])
+        old_total = Decimal(prior[2]) if prior else Decimal(paid[2]) if paid else Decimal(0)
+        delta = total-old_total
+        paid_total = Decimal(paid[2]) if paid else Decimal(0)
+        cash_recovery = min(total-paid_total, Decimal(0))
+        if cash_recovery and Decimal(book._snapshot(oms, at, recognize=False)["account"]["available_cash"])+cash_recovery < 0:
+            if strict:
+                raise ValueError("dividend correction requires unsupported financing")
+            continue  # Preserve admitted source, unresolved obligation and fail-closed funding.
+        event = {"event_id": _hash([action["action_id"], digest, "ACCRUAL"]), "kind": "DIVIDEND_ACCRUAL", "instrument_id": action["instrument_id"],
+                 "action_id": action["action_id"], "action_hash": digest, "known_at": action["known_at"], "effective_at": action["effective_at"],
+                 "record_at": action["record_at"], "pay_at": action["pay_at"], "applied_at": at.isoformat(), "cash_amount": str(cash_recovery),
+                 "income_amount": str(delta), "receivable_amount": str(delta-cash_recovery), "entitlement_quantity": str(quantity),
+                 "amount_per_share": action["amount_per_share"], "total_income": str(total), "status": action.get("status", "ACTIVE"),
+                 "record_evidence": "KNOWN_TRADE_AND_SCHEDULED_SETTLEMENT_EVIDENCE; NOT_EXTERNAL_CONFIRMATION"}
+        if len(state["lifecycle_events"]) >= 1000:
+            raise ValueError("lifecycle replay bounds exceeded")
+        write_immutable(book._path("lifecycle-events/"+event["event_id"]+".json"), dumps(event).encode())
+        oms.connection.execute("INSERT INTO funded_lifecycle_events VALUES(?,?)", (event["event_id"], dumps(event)))
+        if cash_recovery or action.get("status") == "CANCELLED":
+            oms.connection.execute("INSERT INTO funded_lifecycle_applied VALUES(?,?,?,?) ON CONFLICT(action_id) DO UPDATE SET digest=excluded.digest,entitlement=excluded.entitlement,total_cash=excluded.total_cash", (action["action_id"], digest, str(quantity), str(paid_total+cash_recovery)))
+        oms.connection.execute("INSERT INTO funded_dividend_accruals VALUES(?,?,?,?) ON CONFLICT(action_id) DO UPDATE SET digest=excluded.digest,entitlement=excluded.entitlement,total_income=excluded.total_income", (action["action_id"], digest, str(quantity), str(total)))
+
+
 class FundedLifecycleWorkspace:
     def __init__(self, base_dir: Path, *, fault_hook=None):
         self.book = FundedWorkspace(base_dir)
@@ -112,7 +221,8 @@ class FundedLifecycleWorkspace:
         if not isinstance(value, dict) or value.get("kind") not in {"SPLIT", "CASH_DIVIDEND"}:
             raise ValueError("supported explicit equity action required")
         keys = {"ratio_new", "ratio_old"} if value["kind"] == "SPLIT" else {"amount_per_share"}
-        _fields(value, base|keys, base|keys)
+        optional = {"status"} if value["kind"] == "CASH_DIVIDEND" else set()
+        _fields(value, base|keys|optional, base|keys)
         action = loads(dumps(value))
         for name in ("action_id", "instrument_id", "source"):
             _text(action[name], name)
@@ -130,11 +240,13 @@ class FundedLifecycleWorkspace:
                     raise ValueError("bounded positive integer split ratio required")
         else:
             action["amount_per_share"] = str(_decimal(action["amount_per_share"], positive=False))
+            if action.get("status", "ACTIVE") not in {"ACTIVE", "CANCELLED"} or (action.get("status") == "CANCELLED" and Decimal(action["amount_per_share"]) != 0):
+                raise ValueError("explicit dividend cancellation requires zero per-share amount")
         return action
 
     @_exact
     def run(self, payload):
-        allowed = {"configure": {"settlement_policy"}, "admit": {"action"}, "apply": {"action_hash"}, "state": set(), "replay": {"snapshot_id"}}
+        allowed = {"configure": {"settlement_policy"}, "admit": {"action"}, "apply": {"action_hash"}, "accrue": {"action_hash"}, "state": set(), "replay": {"snapshot_id"}}
         if not isinstance(payload, dict) or payload.get("operation") not in allowed:
             raise ValueError("supported lifecycle operation required")
         op = payload["operation"]
@@ -187,7 +299,7 @@ class FundedLifecycleWorkspace:
                     raise ValueError("corporate action retention bound exceeded")
                 write_immutable(self.book._path("lifecycle-actions/"+action_hash+".json"), dumps(action).encode())
                 oms.connection.execute("INSERT OR IGNORE INTO funded_lifecycle_actions VALUES(?,?,?,?)", (action_hash, action["action_id"], action["revision"], dumps(action)))
-            elif op == "apply":
+            elif op in {"apply", "accrue"}:
                 action_hash = request["action_hash"]
                 if not isinstance(action_hash, str) or len(action_hash) != 64 or any(c not in "0123456789abcdef" for c in action_hash):
                     raise ValueError("canonical action identity required")
@@ -197,7 +309,10 @@ class FundedLifecycleWorkspace:
                 action = loads(found[0])
                 if _hash(action) != action_hash or self.book._path("lifecycle-actions/"+action_hash+".json").read_bytes() != dumps(action).encode():
                     raise ValueError("corporate action evidence differs from immutable source")
-                self._apply(oms, action, action_hash, at)
+                if op == "accrue":
+                    recognize_dividends(self.book, oms, at, only=action_hash, strict=True)
+                else:
+                    self._apply(oms, action, action_hash, at)
             self.hook("after_lifecycle_transition")
             from gig.service.funded_risk_workspace import reconcile_funded_risk
             reconcile_funded_risk(self.book.base_dir, oms, at)
@@ -208,6 +323,7 @@ class FundedLifecycleWorkspace:
             return self.book._publish(oms, document)
 
     def _apply(self, oms, action, digest, at):
+        recognize_dividends(self.book, oms, at, only=digest, strict=True) if action["kind"] == "CASH_DIVIDEND" else None
         latest = oms.connection.execute("SELECT digest FROM funded_lifecycle_actions WHERE action_id=? ORDER BY revision DESC LIMIT 1", (action["action_id"],)).fetchone()[0]
         if latest != digest or _stamp(action["known_at"]) > at or _stamp(action["pay_at"]) > at:
             raise ValueError("action must be the latest known revision and already effective/payable")
@@ -231,6 +347,9 @@ class FundedLifecycleWorkspace:
                  "effective_at": action["effective_at"], "applied_at": at.isoformat()}
         entitlement = total_cash = Decimal(0)
         if action["kind"] == "SPLIT":
+            if any(e["kind"] == "DIVIDEND_ACCRUAL" and e["instrument_id"] == symbol
+                   and _stamp(e["effective_at"]) >= _stamp(action["effective_at"]) for e in state["lifecycle_events"]):
+                raise ValueError("late split correction crosses a frozen dividend entitlement")
             if any(f["symbol"] == symbol and _stamp(f["timestamp"]) >= _stamp(action["effective_at"]) for f in fills):
                 raise ValueError("late split or revised split after intervening trades is unsupported")
             dates = {r["execution_id"]: _stamp(r["settlement_at"]) for r in state["trade_settlements"]}
@@ -244,13 +363,15 @@ class FundedLifecycleWorkspace:
             marks["marks"].pop(symbol, None)
             oms.connection.execute("INSERT INTO funded_config VALUES('marks',?) ON CONFLICT(name) DO UPDATE SET wire=excluded.wire", (dumps(marks),))
         else:
-            entitlement = Decimal(applied[1]) if applied else dividend_entitlement(fills, state["trade_settlements"], state["lifecycle_events"],
+            accrued = oms.connection.execute("SELECT entitlement FROM funded_dividend_accruals WHERE action_id=?", (action["action_id"],)).fetchone()
+            entitlement = Decimal(accrued[0]) if accrued else Decimal(applied[1]) if applied else dividend_entitlement(fills, state["trade_settlements"], state["lifecycle_events"],
                 instrument_id=symbol, ex_at=action["effective_at"], record_at=action["record_at"])
             total_cash = entitlement*Decimal(action["amount_per_share"])
             amount = total_cash-(Decimal(applied[2]) if applied else Decimal(0))
             if Decimal(self.book._snapshot(oms, at)["account"]["available_cash"])+amount < 0:
                 raise ValueError("corporate-action revision would require unsupported financing")
-            event.update(cash_amount=str(amount), entitlement_quantity=str(entitlement), amount_per_share=action["amount_per_share"])
+            event.update(cash_amount=str(amount), entitlement_quantity=str(entitlement), amount_per_share=action["amount_per_share"],
+                         income_amount="0", receivable_amount=str(-amount), status=action.get("status", "ACTIVE"))
         write_immutable(self.book._path("lifecycle-events/"+event["event_id"]+".json"), dumps(event).encode())
         oms.connection.execute("INSERT INTO funded_lifecycle_events VALUES(?,?)", (event["event_id"], dumps(event)))
         oms.connection.execute("INSERT INTO funded_lifecycle_applied VALUES(?,?,?,?) ON CONFLICT(action_id) DO UPDATE SET digest=excluded.digest,entitlement=excluded.entitlement,total_cash=excluded.total_cash", (action["action_id"], digest, str(entitlement), str(total_cash)))

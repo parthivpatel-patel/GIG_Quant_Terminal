@@ -170,6 +170,8 @@ def fit_reference(snapshot, config):
                 "seed": config["seed"], "min_data_in_leaf": 3, "num_leaves": 7, "label_gain": list(range(5))},
                 lgb.Dataset((x-mean)/scale, label=labels, group=[len(groups)]*(len(train)//len(groups))), num_boost_round=32)
             state = {"model": "lightgbm", "fit_state": "CONVERGED", "booster_text": booster.model_to_string(), "mean": mean.tolist(), "scale": scale.tolist(), "library_version": lgb.__version__}
+            state["ranking_baseline"] = {"scope": "FROZEN_TRAINING_TARGETS_ONLY",
+                "mean_return_by_instrument": {key: float(np.mean([r["target"] for r in train if r["instrument_id"] == key])) for key in sorted(groups)}}
             predicted = booster.predict((np.asarray([r["features"] for r in test])-mean)/scale).tolist()
             batches = [("ALL_REQUESTED_REFERENCE_CURRENCIES", train, test, state, predicted)]
         else:

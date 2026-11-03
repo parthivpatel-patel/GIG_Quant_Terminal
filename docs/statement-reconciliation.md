@@ -64,12 +64,11 @@ engine's internal `action_hash`. Dividend events additionally require the
 `dividend_income` balance. Missing enabled-lifecycle coverage cannot produce
 MATCH even if cash and quantities happen to agree.
 
-Known unapplied corporate actions, including future announcements and revised
-actions awaiting application, leave corporate-action coverage UNKNOWN. The
-current statement schema does not independently reconcile future entitlement
-accrual; empty applied-event lists cannot establish that coverage. This does not
-change the funded book's separate treatment of future announcements. An engine
-snapshot whose own reconciliation state is incomplete also cannot produce MATCH.
+Known actions lacking recognized coverage, including future announcements and
+unfundable revisions, leave corporate-action coverage UNKNOWN. Recognized
+receivables require the explicit coverage below; an empty list cannot establish
+it. An engine snapshot whose reconciliation state is incomplete cannot produce
+MATCH. Fixture authenticity and actual external settlement remain UNKNOWN.
 
 ## Comparison and public states
 
@@ -117,3 +116,28 @@ Focused tests cover independent scalar balances, contract multipliers and cash
 expiry, partial-fill reservations, missing/duplicate/extra records, exact decimal
 boundaries, nanosecond knowledge cutoffs, coverage gaps, data/index tampering,
 failure injection, defensive copies, restarts and deterministic replay.
+
+## Sprint 8 dividend accrual coverage
+
+For recognized dividends, balances additionally require `dividend_income` and
+`dividend_receivable`. A mandatory `dividend_receivables` array covers action_id,
+revision, instrument_id, source, known_at, effective_at, record_at, pay_at,
+entitlement_quantity, recognized_income, paid_cash, outstanding_receivable and
+status. Exact signed decimal text is compared without a tolerance; a zero amount
+must be explicitly supplied. This records declared offline receivables, not
+supplier creditworthiness or a bank confirmation.
+
+`lifecycle_events` additionally supports DIVIDEND_ACCRUAL. Alongside the common
+identity/timestamp/cash/quantity fields it requires amount_per_share,
+income_amount, receivable_amount, total_income, status, record_at and pay_at.
+Modern CASH_DIVIDEND payment records also require their income_amount (zero),
+receivable_amount and status to match. Legacy payment records retain their
+original shape. ACTIVE/CANCELLED revision sources are independently covered by
+the receivable record. Unrecognized corrections remain unresolved coverage.
+
+The scalar regression uses independently supplied cash 899.8, marked positions
+90 and accrued receivable 10, yielding NAV 999.8 and income 10 after a stock-price
+drop. It does not copy financial balances from the engine. A wrong receivable
+produces DISCREPANCY; omitted receivable coverage produces UNKNOWN; immutable
+replay retains the original comparison. A fixture MATCH still never claims
+external_reconciled or fully_funded_certified.

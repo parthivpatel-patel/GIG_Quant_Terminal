@@ -19,7 +19,7 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
     initial = _decimal(initial_cash)
     cash = initial
     lifecycle_events, trade_settlements = lifecycle_events or [], trade_settlements or []
-    dividend_income = Decimal(0)
+    dividend_income = dividend_receivable = Decimal(0)
     adjustments: dict[str, Decimal] = defaultdict(Decimal)
     lots: dict[str, list[list[Decimal]]] = defaultdict(list)
     realized: dict[str, Decimal] = defaultdict(Decimal)
@@ -44,10 +44,11 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
     for event in lifecycle_events:
         journal.append({**event, "id": event["event_id"], "timestamp": event["applied_at"]})
     for event in sorted(journal, key=lambda row: (aware_timestamp(row["timestamp"]), row["kind"] != "OMS_FILL", row["id"])):
-        if event["kind"] == "CASH_DIVIDEND":
+        if event["kind"] in {"CASH_DIVIDEND", "DIVIDEND_ACCRUAL"}:
             amount = Decimal(event["cash_amount"])
             cash += amount
-            dividend_income += amount
+            dividend_income += Decimal(event.get("income_amount", event["cash_amount"]))
+            dividend_receivable += Decimal(event.get("receivable_amount", "0"))
             continue
         if event["kind"] == "SPLIT":
             symbol = event["instrument_id"]
@@ -158,7 +159,9 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
     mark_state = "UNKNOWN" if missing else "STALE" if stale else "AVAILABLE"
     total_realized = sum(realized.values(), Decimal(0))
     total_fees = sum(fees.values(), Decimal(0))
-    nav = cash+total_value if not missing else None
+    if dividend_receivable < 0:
+        raise ValueError("unsupported negative dividend receivable")
+    nav = cash+total_value+dividend_receivable if not missing else None
     pnl = total_realized+total_unrealized+dividend_income-total_fees if not missing else None
     if nav is not None and (pnl is None or nav != initial+pnl):
         raise ValueError("funded cash, liabilities and P&L conservation failed")
@@ -166,7 +169,7 @@ def funded_account(initial_cash: str, instruments: dict[str, dict[str, Any]],
         "nav": str(nav) if nav is not None else None, "total_pnl": str(pnl) if pnl is not None else None,
         "realized_gross_pnl": str(total_realized), "unrealized_pnl": str(total_unrealized) if not missing else None,
         "fees": str(total_fees), "rows": rows, "raw_oms_positions": {k: str(v) for k, v in sorted(raw.items())},
-        "dividend_income": str(dividend_income), "lifecycle_position_adjustments": {k: str(v) for k, v in adjustments.items() if v},
+        "dividend_income": str(dividend_income), "dividend_receivable": str(dividend_receivable), "lifecycle_position_adjustments": {k: str(v) for k, v in adjustments.items() if v},
         "settled_cash": str(cash+payables-receivables), "unsettled_sale_receivables": str(receivables),
         "unsettled_buy_payables": str(payables), "pending_trade_settlements": pending_trades,
         "settled_trade_positions": {k: str(v) for k, v in sorted(settled_trade.items())},

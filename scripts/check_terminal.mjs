@@ -640,5 +640,48 @@ checked("public reference acquisition warns about dates unknown volume and histo
 replyOverride = { body: fixture({ data: { rows: [{ field: "cash", expected: "899.8", supplied: "900" }], metrics: {}, reconciliation_state: "DISCREPANCY", external_reconciled: false } }) };
 await get("refresh").dispatch("click"); await settle();
 checked("completed discrepancy report never claims successful external reconciliation", () => { assert.match(get("truth-notice").textContent, /DISCREPANCY/); assert.match(get("truth-notice").textContent, /not reconciled/); });
+const sprint8Actions = { "lifecycle-accrue": "funded-lifecycle", "lifecycle-dividend-revise": "funded-lifecycle", "lifecycle-dividend-cancel": "funded-lifecycle", "observed-evaluate": "observed-reference", "observed-evaluation-replay": "observed-reference" };
+replyOverride = { body: localUnavailable() };
+for (const [kind, endpoint] of Object.entries(sprint8Actions)) {
+  get("analytics-kind").value = "workspace-" + kind;
+  const count = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, count, "Selecting Sprint 8 examples cannot submit them");
+  const original = get("analytics-input").value;
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`Sprint 8 ${kind} uses explicit original input and endpoint`, () => { assert.equal(calls.at(-1).url, "/api/v1/workspace/" + endpoint); assert.equal(calls.at(-1).options.body, original); });
+}
+get("analytics-kind").value = "workspace-lifecycle-dividend-cancel";
+await get("analytics-kind").dispatch("change");
+checked("cancellation is a later explicit zero-rate revision", () => { const request = JSON.parse(get("analytics-input").value); assert.equal(request.action.status, "CANCELLED"); assert.equal(request.action.amount_per_share, "0"); assert.equal(request.action.revision, 3); });
+await successfulPipeline("lifecycle-accrue", { action_hash: "9".repeat(64), account: { cash: "899.800000000000000001", available_cash: "899.8", dividend_receivable: "10", dividend_income: "10", nav: "999.8", dividend_accrual_state: "AVAILABLE" } });
+checked("receivable summary preserves exact decimals and nonspendable scope", () => { assert.match(get("analysis-summary-values").textContent, /899\.800000000000000001/); assert.match(get("analysis-summary-values").textContent, /Dividend receivable/); assert.match(get("analysis-summary-note").textContent, /not available cash/); });
+await successfulPipeline("observed-evaluate", { evaluation_id: "a".repeat(64), scoring_family: "CROSS_SECTIONAL_RANKING", evaluation_state: "AVAILABLE", fit_diagnostics: { coverage_state: "PARTIAL", converged_models: 2, models: 3 }, metrics: { mean_ndcg: .75, mean_spearman_ic: null }, economically_validated: false });
+checked("model summary retains method-specific unknown score and partial coverage", () => { assert.match(get("analysis-summary-values").textContent, /CROSS_SECTIONAL_RANKING/); assert.match(get("analysis-summary-values").textContent, /PARTIAL/); assert.match(get("analysis-summary-values").textContent, /Unknown/); assert.match(get("analysis-summary-values").textContent, /Not established/); });
+checked("saved evaluation identity is visible and independently replayable", () => { assert.match(get("workflow-identities").textContent, /Observed Evaluation Id: a{64}/); });
+get("analytics-kind").value = "workspace-observed-evaluation-replay";
+await get("analytics-kind").dispatch("change");
+checked("evaluation replay selects its own successful identity", () => assert.equal(JSON.parse(get("analytics-input").value).evaluation_id, "a".repeat(64)));
+get("analytics-input").value = "invalid";
+await get("run-analysis").dispatch("click");
+checked("invalid new input cannot retain an apparent successful summary", () => assert(get("analysis-summary").classList.contains("hidden")));
+for (const kind of ["equity-fetch", "equity-admit", "equity-replay"]) {
+  replyOverride = { body: localUnavailable() };
+  get("analytics-kind").value = "workspace-" + kind;
+  const count = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  checked(`${kind} requires explicit submission`, () => assert.equal(calls.length, count));
+  const original = get("analytics-input").value;
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`${kind} preserves bounded equity endpoint and input`, () => { assert.equal(calls.at(-1).url, "/api/v1/workspace/equity-reference"); assert.equal(calls.at(-1).options.body, original); });
+}
+await successfulPipeline("equity-admit", { snapshot_id: "b".repeat(64) });
+get("analytics-kind").value = "workspace-equity-replay";
+await get("analytics-kind").dispatch("change");
+checked("equity replay retains its distinct source identity", () => assert.equal(JSON.parse(get("analytics-input").value).snapshot_id, "b".repeat(64)));
+get("analysis-engine").value = "observed-equity";
+replyOverride = { body: fixture({ data: { rows: [], metrics: {} } }) };
+await get("analysis-engine").dispatch("change"); await settle();
+checked("weekly archive view retains source eligibility limits", () => { assert(calls.at(-1).url.includes("engine=observed-equity")); assert.match(get("truth-notice").textContent, /permanent security/); assert.match(get("truth-notice").textContent, /Not eligible/); });
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

@@ -122,7 +122,7 @@ class FundedLifecycleTests(unittest.TestCase):
         reopened = FundedWorkspace(self.base)
         self.assertEqual(reopened.load(original["snapshot_id"])["account"]["dividend_income"], "10")
 
-    def test_ex_date_unmodeled_receivable_cannot_be_complete_nav_or_future_cash(self):
+    def test_ex_date_receivable_completes_nav_without_becoming_future_cash(self):
         self.fill("buy")
         identity = self.admit(dividend())
         original = self.mark("10", NOW)
@@ -130,16 +130,17 @@ class FundedLifecycleTests(unittest.TestCase):
         pending = self.mark("9", at)["account"]
         self.assertEqual(pending["mark_state"], "AVAILABLE")
         self.assertEqual(pending["funding_state"], "AVAILABLE")
-        self.assertEqual(pending["reconciliation_state"], "UNKNOWN")
-        self.assertEqual(pending["dividend_accrual_state"], "UNKNOWN")
-        self.assertEqual(pending["unmodeled_dividend_accruals"], ["authored-dividend"])
-        self.assertIsNone(pending["nav"])
-        self.assertIsNone(pending["total_pnl"])
+        self.assertEqual(pending["reconciliation_state"], "AVAILABLE")
+        self.assertEqual(pending["dividend_accrual_state"], "AVAILABLE")
+        self.assertEqual(pending["unmodeled_dividend_accruals"], [])
+        self.assertEqual(pending["dividend_receivable"], "10")
+        self.assertEqual(pending["nav"], "999.8")
+        self.assertEqual(pending["total_pnl"], "-0.2")
         self.assertEqual(pending["cash"], "899.8")
         self.assertEqual(pending["available_cash"], "899.8")
         due = self.state(NOW+timedelta(days=4))["account"]
-        self.assertEqual(due["funding_state"], "UNKNOWN")
-        self.assertIsNone(due["nav"])
+        self.assertEqual(due["funding_state"], "AVAILABLE")
+        self.assertEqual(due["dividend_receivable"], "10")
         self.apply(identity, NOW+timedelta(days=4))
         paid = self.mark("9", NOW+timedelta(days=4))["account"]
         self.assertEqual(paid["dividend_accrual_state"], "NOT_REQUIRED")
@@ -263,7 +264,7 @@ class FundedLifecycleTests(unittest.TestCase):
             results = list(pool.map(apply_once, range(2)))
         self.assertEqual([row["account"]["dividend_income"] for row in results], ["10", "10"])
         with sqlite3.connect(self.base/"funded-account/oms.sqlite") as db:
-            self.assertEqual(db.execute("SELECT COUNT(*) FROM funded_lifecycle_events").fetchone()[0], 1)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM funded_lifecycle_events").fetchone()[0], 2)
         self.assertEqual(FundedWorkspace(self.base).load(results[0]["snapshot_id"])["account"]["cash"], results[1]["account"]["cash"])
 
     def test_split_rejects_working_orders_and_unsettled_delivery(self):
