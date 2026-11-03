@@ -1,0 +1,15 @@
+{
+  "source_commit": "cfa0654ccfeb75f84fe97b4a5787ef59ce301b49",
+  "implementation_commit": "3599e3b7f5cb719199c42bbf8ed947c73dd53fc8",
+  "archive_publication_commit": "7aebf22845b639e437e72c1874707d219e2df691",
+  "archive_sha256": "82aebb66ea04736963239ab25e7f4c67869c5605f2f91991f49bce8472371397",
+  "verified_restored_files": 510,
+  "content_and_modes_verified": true,
+  "restored_source_compilation": "PASS",
+  "independent_github_download": true,
+  "external_storage_provider": "GitHub",
+  "second_external_storage_provider_verified": false,
+  "complete_git_bundles_verified_locally": true,
+  "separate_external_git_bundle_verified": false,
+  "restricted_weights_included": false
+}
