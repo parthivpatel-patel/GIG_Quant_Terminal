@@ -1,0 +1,9 @@
+{
+  "url": "https://www.ecb.europa.eu/services/disclaimer/html/index.en.html",
+  "status": 200,
+  "final_url": "https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html",
+  "content_type": "text/html; charset=UTF-8",
+  "bytes": 107792,
+  "sha256": "e3ac4b32a026ab524dbc2afdd495a168b87b14e0b9a3eaf4989b246994418e21",
+  "acquired_at": "2026-11-03T13:07:55.867011+00:00"
+}

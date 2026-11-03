@@ -1,0 +1,86 @@
+{
+  "original_checkout": "/workspace/work/gig-ui-redesign",
+  "publication_checkout": "/tmp/gig-sprint7-publication",
+  "starting_commit": "8cbeeccfef967d198a5d405f0f187e38257c19af",
+  "transferred_files": [
+    {
+      "path": "docs/evidence/sprint7/container-restart-blocker.json",
+      "sha256": "02195cb8943daa15b6678fcfb248a23a22e9d85348c9b29a268bf0e07638b2d9"
+    },
+    {
+      "path": "docs/evidence/sprint7/ecb-disclaimer.json",
+      "sha256": "1440bf2955e677d992c6f5d8072c201ba8c3096fe0bb27340c416a79c8b93c65"
+    },
+    {
+      "path": "docs/evidence/sprint7/ecb-historical.json",
+      "sha256": "267111158556d5a16134f871fe793e23d68e606d851754100755c4d2de978430"
+    },
+    {
+      "path": "docs/evidence/sprint7/ecb-reference-info.json",
+      "sha256": "a26bbdc49a6c597f6f5eda7ed3c5a918905adceeff20c90951bda76b6ea4f4f3"
+    },
+    {
+      "path": "docs/evidence/sprint7/release-summary.json",
+      "sha256": "17390622e5365238a6075845772a76786f123336aa4ab5c4df85e278c1aa24ef"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-cli.txt",
+      "sha256": "93031082bce41ec798e15ec3606712caac07e58c96c1f9bb942ef8431186ced5"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-coverage.json",
+      "sha256": "39079fcc92fe113d101334550086be0a28029f4330f8675e5102395670d1c76c"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-full.txt",
+      "sha256": "1665f8d5c054bceeb3d820cd254e000b4b6a2089f0c69a92c1eaefe64ccffe61"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-full.xml",
+      "sha256": "ecdfb65f81f3144090c7bf15b624a8f38ce49c56e7ed5d3c7626d92758d3aaf4"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-wheel-build.txt",
+      "sha256": "0f5dc518a31be22549e97783bbda416d9ee154b7197e817001ae752cf4d01f3b"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-wheel-manifest.json",
+      "sha256": "daa7be0884fb1af75a3883dd6a32f554dedbfae30598e9b4228e30d0251d74c4"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-wheel-tests.txt",
+      "sha256": "3f21a5018a49e40e0fa635d2df4ae88c146d15cb5128cd727bd11b31404bbdf9"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-evaluation-wheel-tests.xml",
+      "sha256": "a9e4b97c0cbe889be85ac020a163131310bc135b8145b5061d9e719e081bfa46"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-final-mypy.txt",
+      "sha256": "545948304972c6078563b4f65158ee79085c50c23042d243a8c9471ff8b26e9f"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-final-pyflakes.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-final-ruff.txt",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "docs/evidence/sprint7/sprint7-independent-baseline-reference.json",
+      "sha256": "4e32474d663c219722227a7d65121e0f56f3368d998c2feef3a757119a2eebf4"
+    },
+    {
+      "path": "docs/sprint7-delivery.md",
+      "sha256": "57dd6b1397ed9214b4433bb28bd10f68edb3003f84bfc6fa0b74905180c2b9ad"
+    },
+    {
+      "path": "scripts/check_observed_reference.py",
+      "sha256": "16259eb8beb7ae63eb04cb942dc8f25964ee8d23aa7e7a3641a5d5fb398224a7"
+    }
+  ],
+  "all_hashes_verified": true,
+  "original_changes_discarded": false,
+  "reason": "Original Docker VFS filesystem exhausted; /tmp has independent free capacity."
+}

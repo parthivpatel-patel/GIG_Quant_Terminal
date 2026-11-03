@@ -1,0 +1,9 @@
+{
+  "url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
+  "status": 200,
+  "final_url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
+  "content_type": "text/html; charset=UTF-8",
+  "bytes": 119495,
+  "sha256": "c39e15a9f3c4d1e6bfffe885e2c8653cd69e5aaab28685dbd324b48963991748",
+  "acquired_at": "2026-11-03T13:07:56.876167+00:00"
+}

@@ -1,0 +1,9 @@
+Processing ./.
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: gig
+  Building wheel for gig (pyproject.toml): started
+  Building wheel for gig (pyproject.toml): finished with status 'done'
+  Created wheel for gig: filename=gig-0.1.0-cp312-cp312-linux_x86_64.whl size=562022 sha256=8efe593df31b458e6867c0d4979cd2036b07cc65856f2dc092b3f34e031f4c9e
+  Stored in directory: /tmp/pip-ephem-wheel-cache-oryv3jnl/wheels/70/f1/c3/ac74fb7efe34923d6e72648ffba7f901d384de74abe7380c6b
+Successfully built gig

@@ -1,0 +1,10 @@
+usage: check_observed_reference.py [-h] --state-dir STATE_DIR --evidence-dir
+                                   EVIDENCE_DIR [--models MODELS [MODELS ...]]
+
+Explicit permitted ECB acquisition and real CPU research, never brokerage.
+
+options:
+  -h, --help            show this help message and exit
+  --state-dir STATE_DIR
+  --evidence-dir EVIDENCE_DIR
+  --models MODELS [MODELS ...]

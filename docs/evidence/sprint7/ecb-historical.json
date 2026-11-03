@@ -1,0 +1,8 @@
+{
+  "url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.zip",
+  "status": 200,
+  "bytes": 642351,
+  "sha256": "850354d391e3505b832bed6f9cb2371f04ab86b9c51a259540b47a759dcea44f",
+  "csv_sha256": "20d8ba65d048edca30db7b6fe86d02ec182c4dfd6349967e1282f41c6e8dfd4f",
+  "acquired_at": "2026-11-03T13:09:40.168282+00:00"
+}

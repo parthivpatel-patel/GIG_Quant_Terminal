@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.3.5, pluggy-1.7.0
+rootdir: /tmp
+collected 118 items
+
+gig-sprint7-evaluation-wheel-tests/test_funded_accounting.py ........... [  9%]
+......                                                                   [ 14%]
+gig-sprint7-evaluation-wheel-tests/test_funded_factor_risk.py .......... [ 22%]
+...                                                                      [ 25%]
+gig-sprint7-evaluation-wheel-tests/test_funded_lifecycle.py ............ [ 35%]
+......                                                                   [ 40%]
+gig-sprint7-evaluation-wheel-tests/test_funded_risk.py ...........       [ 50%]
+gig-sprint7-evaluation-wheel-tests/test_native_neutralize.py ........... [ 59%]
+..                                                                       [ 61%]
+gig-sprint7-evaluation-wheel-tests/test_native_operations.py ..s......   [ 68%]
+gig-sprint7-evaluation-wheel-tests/test_observed_reference.py ........   [ 75%]
+gig-sprint7-evaluation-wheel-tests/test_reference_evaluation.py ........ [ 82%]
+                                                                         [ 82%]
+gig-sprint7-evaluation-wheel-tests/test_sprint7_http.py ......           [ 87%]
+gig-sprint7-evaluation-wheel-tests/test_statement_reconciliation.py .... [ 90%]
+...........                                                              [100%]
+
+- generated xml file: /workspace/work/evidence/sprint7-evaluation-wheel-tests.xml -
+======================= 117 passed, 1 skipped in 30.24s ========================

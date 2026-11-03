@@ -1,16 +1,16 @@
 {
-  "source_commit": "92951605090a9047e6aee5f632608ee8c5868c45",
   "backend": {
-    "passed": 880,
+    "passed": 889,
     "failed": 0,
     "skipped": 0,
-    "branch_aware_coverage_percent": 81.67546292154934
+    "branch_aware_coverage_percent": 81.73294823372584
   },
   "installed_wheel": {
-    "passed": 108,
+    "passed": 117,
     "failed": 0,
     "skipped": 1,
-    "skip_reason": "Separately built optional rolling C-ABI library is absent from wheel; its source native parity test passed."
+    "skip_reason": "Separately built optional rolling C-ABI library is absent from wheel; its source native parity test passed.",
+    "packaged_file_hashes_verified": 154
   },
   "native": {
     "passed": 22,
@@ -20,7 +20,7 @@
   },
   "chromium": {
     "version": "151.0.7922.34",
-    "release_workflow_passed": 77,
+    "release_workflow_passed": 82,
     "failed": 0,
     "javascript_errors": 0,
     "retained_suites": [
@@ -38,7 +38,7 @@
     "ruff": "PASS",
     "pyflakes": "PASS",
     "compilation": "PASS",
-    "configured_mypy": "PASS: 147 source files"
+    "configured_mypy": "PASS: 148 source files"
   },
   "counts_overlap": true,
   "arm64_physical_verified": false,
@@ -46,5 +46,9 @@
   "external_broker_connections": 0,
   "paid_services": false,
   "t4": "T4_NOT_CERTIFIED",
-  "historical_section_139": "UNSUPPLIED"
+  "historical_section_139": "UNSUPPLIED",
+  "initial_sprint7_source_commit": "92951605090a9047e6aee5f632608ee8c5868c45",
+  "current_verified_library_source_commit": "8cbeeccfef967d198a5d405f0f187e38257c19af",
+  "existing_image_current_source_restart": "BLOCKED: Docker container creation returned no space left on device before startup",
+  "observed_baseline_evaluation": "Four return models worse than both baselines on matched dates; HMM partial; variance/ranking return scores unavailable"
 }

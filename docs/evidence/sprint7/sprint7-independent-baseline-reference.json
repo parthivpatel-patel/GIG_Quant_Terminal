@@ -1,0 +1,46 @@
+{
+  "numpy_used": false,
+  "evaluator_called": false,
+  "models": [
+    {
+      "model": "ridge",
+      "paired_dates": 80,
+      "independent_stdlib_losses": [
+        2.5823516685233173e-05,
+        2.042401055539503e-05,
+        2.0450518550538838e-05
+      ],
+      "stored_metrics_match": true
+    },
+    {
+      "model": "hmm",
+      "paired_dates": 80,
+      "independent_stdlib_losses": [
+        2.0284037754101973e-05,
+        2.0025680859117647e-05,
+        1.9746430164853245e-05
+      ],
+      "stored_metrics_match": true
+    },
+    {
+      "model": "kalman",
+      "paired_dates": 80,
+      "independent_stdlib_losses": [
+        2.1462909764137284e-05,
+        2.042401055539503e-05,
+        2.0450518550538838e-05
+      ],
+      "stored_metrics_match": true
+    },
+    {
+      "model": "bilstm",
+      "paired_dates": 80,
+      "independent_stdlib_losses": [
+        0.038191005238629096,
+        2.042401055539503e-05,
+        2.0450518550538838e-05
+      ],
+      "stored_metrics_match": true
+    }
+  ]
+}

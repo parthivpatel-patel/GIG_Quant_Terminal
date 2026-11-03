@@ -1,0 +1,43 @@
+{
+  "attempt": "CURRENT_SOURCE_READ_ONLY_MOUNT_WITH_EXISTING_IMAGE",
+  "image": "sha256:c5446b87672bb72ee3fcf6809357c43dee2d9098d969a77c9c119ae1ab82325f amd64 linux",
+  "source_library_commit": "8cbeeccfef967d198a5d405f0f187e38257c19af",
+  "state": "BLOCKED",
+  "error": "docker: Error response from daemon: no space left on device",
+  "container_started": false,
+  "restart_verified": false,
+  "fresh_image_built": false,
+  "physical_arm64_verified": false,
+  "requested_limits": {
+    "cpus": 1,
+    "memory": "768m",
+    "pids": 128,
+    "network": "none",
+    "root_filesystem": "read-only",
+    "tmpfs_limit": "64m"
+  },
+  "paid_services": false,
+  "source_or_recovery_deleted": false,
+  "cleanup": [
+    {
+      "path": "/workspace/work/gig-ui-redesign/.mypy_cache",
+      "bytes": 35134357,
+      "kind": "DISPOSABLE_TASK_BUILD_OR_ANALYSIS_CACHE"
+    },
+    {
+      "path": "/workspace/work/gig-ui-redesign/.ruff_cache",
+      "bytes": 14458,
+      "kind": "DISPOSABLE_TASK_BUILD_OR_ANALYSIS_CACHE"
+    },
+    {
+      "path": "/workspace/work/gig-ui-redesign/.pytest_cache",
+      "bytes": 95056,
+      "kind": "DISPOSABLE_TASK_BUILD_OR_ANALYSIS_CACHE"
+    },
+    {
+      "path": "/workspace/work/gig-ui-redesign/build",
+      "bytes": 2081441,
+      "kind": "DISPOSABLE_TASK_BUILD_OR_ANALYSIS_CACHE"
+    }
+  ]
+}

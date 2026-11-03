@@ -52,3 +52,35 @@ T4 remains T4_NOT_CERTIFIED and historical §139 remains UNSUPPLIED.
 The next batch evaluates saved observed-reference predictions against training-only
 baselines, retaining unavailable fits and negative findings. It does not turn
 date-only FX reference research into equity alpha or account P&L.
+
+## Delivered follow-on: predictive baselines
+
+That batch is now delivered in source commit
+`8cbeeccfef967d198a5d405f0f187e38257c19af`, independently matched against all 603
+GitHub blobs/modes. It adds saved paired-date baseline evaluations, immutable
+restart replay, actual creation-time availability, terminal actions and independent
+scalar references. [Actual findings](reference-model-evaluation.md) show all four
+return estimators worse than both baselines on matching dates; HMM is partial.
+GARCH variance and LightGBM ranks retain unavailable return-MSE comparisons.
+A separate standard-library calculation reproduced all four acquired-data losses.
+
+Final regression supersedes the initial counts above: **889 passed, zero
+failures/skips, 81.73% coverage**. Installed-wheel verification: **117 passed,
+one optional C-ABI skip**, with all 154 packaged files verified against installation
+and source. Chromium workflows: **82/82**, including actual HTTP service restart
+and baseline replay, with no JavaScript errors. Configured mypy passes 148 source
+files; Ruff, Pyflakes and compilation pass. These suites overlap.
+
+A bounded current-source container restart was attempted using an existing amd64
+image with read-only source, no network, one CPU and 768 MiB memory. Docker failed
+container creation with `no space left on device` before startup. No container
+restart or fresh image result is claimed, and no source, prior evidence or
+unowned Docker artifacts were removed. This blocker is separate from the passed
+host HTTP restart checks and from unavailable physical ARM64 validation.
+
+Next priorities are dividend-receivable valuation with accounting/reconciliation
+tests, model-appropriate rank/variance evaluation, permitted observed equity data
+with reliable vintage clocks, and operational validation when resources permit.
+The completion-matrix forecast remains conditional, with November 24–December 1
+preferred and December 8 the planning ceiling; no economic or T4 certification
+date is promised.

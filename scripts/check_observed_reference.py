@@ -37,6 +37,14 @@ def main():
         proof["models"][model]["fit_states"] = sorted({row["fit_state"] for row in document["folds"]})
         proof["models"][model]["replay_verified"] = True
         (args.evidence_dir/("observed-"+model+".json")).write_text(json.dumps(result, indent=2)+"\n")
+        evaluation = workspace.run({"operation": "evaluate", "report_id": document["report_id"],
+                                    "bootstrap_replications": 500, "block_length": 5, "seed": 17}).to_dict()
+        saved = evaluation["data"]
+        if workspace.run({"operation": "evaluation-replay", "evaluation_id": saved["evaluation_id"]}).to_dict() != evaluation:
+            raise ValueError("observed reference baseline replay mismatch")
+        proof["models"][model]["baseline_evaluation"] = {key: saved.get(key) for key in
+            ("evaluation_id", "evaluation_state", "coverage_state", "metrics", "comparisons", "interpretation", "reason")}
+        (args.evidence_dir/("baseline-"+model+".json")).write_text(json.dumps(evaluation, indent=2)+"\n")
     (args.evidence_dir/"observed-source.json").write_text(json.dumps(source, indent=2)+"\n")
     (args.evidence_dir/"observed-verification.json").write_text(json.dumps(proof, indent=2)+"\n")
     print(json.dumps(proof, indent=2))
