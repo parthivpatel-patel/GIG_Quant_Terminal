@@ -1,0 +1,10 @@
+{
+  "source_commit": "7da8aa5f895ca8d88bdceb585d096a94824ab66c",
+  "archive": "sprint7-evaluation-source.tar.gz",
+  "archive_sha256": "013de39074e401d5e395821dda348523ca5260327899b62aa6e62d0efa8e6841",
+  "file_count": 576,
+  "local_verification": "ALL_FILE_HASHES_AND_MODES_MATCH",
+  "external_restore": "PENDING",
+  "restricted_weights_included": false,
+  "runtime_state_included": false
+}
