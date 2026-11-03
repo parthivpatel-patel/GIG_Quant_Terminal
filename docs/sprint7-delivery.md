@@ -84,3 +84,27 @@ with reliable vintage clocks, and operational validation when resources permit.
 The completion-matrix forecast remains conditional, with November 24–December 1
 preferred and December 8 the planning ceiling; no economic or T4 certification
 date is promised.
+
+## Publication recovery after Docker VFS exhaustion
+
+The Docker attempt exhausted the original writable filesystem. Only this
+checkout's disposable `build`, mypy, Ruff and pytest caches were removed; source,
+recovery files, shared Docker caches/images and protected workspaces were retained.
+Git object creation remained blocked. Publication therefore continued from an
+exact, independent Git copy at `/tmp/gig-sprint7-publication`, preserving ancestry
+from `8cbeeccfef967d198a5d405f0f187e38257c19af`. All 19 surviving release-document,
+CLI and evidence files were transferred with SHA-256 verification and committed
+as `7da8aa5f895ca8d88bdceb585d096a94824ab66c` before publication. The original
+checkout remains at `8cbeecc…` with those changes intact; it was not reset or cleaned.
+Use the published development branch for subsequent recovery if temporary files
+are unavailable. The transfer manifest is part of the published evidence.
+
+The final `recovery/sprint7-evaluation-source.tar.gz` preserves 576 source/evidence
+files from `7da8aa5…`, excluding nested archives, runtime state and model binaries.
+SHA-256: `013de39074e401d5e395821dda348523ca5260327899b62aa6e62d0efa8e6841`.
+An independent download from pinned GitHub commit
+`8e17e9df50d1600502860ec2698d846500c5d966` was restored into a fresh directory;
+all 576 hashes/modes matched and restored Python source compiled. A local
+complete-history Git bundle also verified all three development/quantitative/main
+references. GitHub is the only verified external storage provider; temporary
+copies and local bundles are not claimed as an additional durable external backup.

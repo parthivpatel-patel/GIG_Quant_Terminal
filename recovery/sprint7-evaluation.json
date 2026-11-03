@@ -4,7 +4,26 @@
   "archive_sha256": "013de39074e401d5e395821dda348523ca5260327899b62aa6e62d0efa8e6841",
   "file_count": 576,
   "local_verification": "ALL_FILE_HASHES_AND_MODES_MATCH",
-  "external_restore": "PENDING",
+  "external_restore": "VERIFIED_GITHUB_DOWNLOAD_ALL_FILES_AND_MODES",
   "restricted_weights_included": false,
-  "runtime_state_included": false
+  "runtime_state_included": false,
+  "publication_commit": "8e17e9df50d1600502860ec2698d846500c5d966",
+  "download_url": "https://raw.githubusercontent.com/parthivpatel-patel/GIG_Quant_Terminal/8e17e9df50d1600502860ec2698d846500c5d966/recovery/sprint7-evaluation-source.tar.gz",
+  "restored_file_count": 576,
+  "restored_source_compiles": true,
+  "independent_storage_provider": "GitHub only; second provider unavailable",
+  "local_bundle": {
+    "path": "/tmp/gig-sprint7-final.bundle",
+    "sha256": "de64b49a0bb4f2cd07a9f75133b430ec1b9641e44c5e7f0d9eb8a1a8985a9e75",
+    "development_ref_tip": "8e17e9df50d1600502860ec2698d846500c5d966",
+    "complete_history_verified": true,
+    "externally_uploaded": false
+  },
+  "original_checkout": {
+    "path": "/workspace/work/gig-ui-redesign",
+    "head": "8cbeeccfef967d198a5d405f0f187e38257c19af",
+    "surviving_changes_preserved": true,
+    "publication_blocker": "Docker VFS disk exhaustion; Git object creation blocked"
+  },
+  "publication_checkout": "/tmp/gig-sprint7-publication"
 }
