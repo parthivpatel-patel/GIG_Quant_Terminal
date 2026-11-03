@@ -1,0 +1,11 @@
+{
+  "base_commit": "0cffd576c66f795fa807e41d8379932a4c8431ba",
+  "branch": "development/gig-ui-redesign",
+  "verification_state": "PRESERVATION_ONLY_INTEGRATION_PENDING",
+  "archive": "sprint8-preserved-source.tar.gz",
+  "archive_sha256": "fdf0937a5b561680fba985231e544e88f3fe0791fad606caa6462fd17cb0320b",
+  "file_count": 589,
+  "all_hashes_and_modes_verified": true,
+  "restricted_weights_included": false,
+  "runtime_state_included": false
+}
