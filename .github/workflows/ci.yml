@@ -1,14 +1,32 @@
 name: CI
 
+# Free GitHub-hosted runners on a public repository only. No secrets, no
+# deployment, no provider or broker access, no paid runners or artifacts storage
+# beyond the default retention.
 on:
   push:
-    branches: [main, master]
+    branches: [main, "development/**", "cursor/**"]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GIG_BROKER_CONNECTIVITY_ENABLED: "false"
+  OPENBLAS_NUM_THREADS: "1"
+  OMP_NUM_THREADS: "1"
 
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
@@ -16,11 +34,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
       - name: Install
         run: |
           pip install 'torch>=2.2' --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[web,research,calendar,sequence,dev]"
+          pip install -e ".[web,research,calendar,sequence,dev]" pyflakes
+      - name: Build optional C++20 rolling kernel
+        run: CXX=g++ python scripts/build_native.py
+      - name: Ruff
+        run: ruff check src tests scripts/build_native.py
+      - name: Pyflakes
+        run: pyflakes src tests
+      - name: Compile
+        run: python -m compileall -q src tests scripts
+      - name: Mypy (Sprint 9 and Global Intelligence modules)
+        run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel
       - name: Tests
-        run: pytest --cov=gig --cov-report=term-missing
-      - name: Lint
-        run: ruff check src tests
+        run: pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Node DOM smoke checks
+        run: node scripts/check_terminal.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          pip install -e ".[web,dev]" playwright
+          python -m playwright install --with-deps chromium
+      - name: Chromium Sprint 9 terminal workflows
+        run: python scripts/browser_sprint9.py --evidence-dir /tmp/ci-browser-sprint9

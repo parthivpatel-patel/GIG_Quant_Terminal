@@ -237,6 +237,24 @@ def analytics(kind: str, payload: dict[str, Any]) -> Contract:
             return unavailable(scope)
         return _response(result, scope=scope, source="caller-evidenced-corporate-action-research",
                          as_of=payload["as_of"])
+    if kind == "cost-evidence":
+        from gig.execution.cost_evidence import cost_evidence_report
+
+        report = cost_evidence_report(payload)
+        return _response(report, scope=scope, source="caller-supplied-cost-evidence",
+                         classification="MODEL_ESTIMATE", as_of=report["as_of"])
+    if kind == "provenance":
+        from gig.data.provenance import assess_eligibility, documented_sources
+
+        if set(payload) - {"records", "record_id", "as_of", "purpose"} or not {"record_id", "as_of", "purpose"} <= set(payload):
+            raise ValueError("provenance request fields do not match the contract")
+        records = payload.get("records")
+        if records is None:
+            records = documented_sources()
+        result = assess_eligibility(records, record_id=payload["record_id"],
+                                    as_of=payload["as_of"], purpose=payload["purpose"])
+        return _response(result, scope=scope, source="lineage-records", classification="SNAPSHOT",
+                         as_of=result["as_of"])
     if kind == "options":
         from gig.options import black_scholes, implied_volatility
         allowed = {"spot", "strike", "rate", "div", "vol", "ttm", "call", "market_price"}
