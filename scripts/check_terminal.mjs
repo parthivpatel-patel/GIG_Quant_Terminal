@@ -83,7 +83,7 @@ class Element {
   setPointerCapture() {}
 }
 let drawnPoints = 0;
-const drawingContext = new Proxy({}, { get: (_, name) => name === "arc" ? () => { drawnPoints++; } : () => {}, set: () => true });
+const drawingContext = new Proxy({}, { get: (_, name) => name === "arc" ? () => { drawnPoints++; } : name === "measureText" ? (text) => ({ width: String(text).length * 6 }) : () => {}, set: () => true });
 const elements = new Map(ids.map((id) => [id, new Element("div", id)]));
 for (const match of html.matchAll(/<[^>]*\bid="([^"]+)"[^>]*>/g)) {
   const classes = /\bclass="([^"]*)"/.exec(match[0]);
@@ -675,7 +675,7 @@ await successfulPipeline("lifecycle-accrue", { action_hash: "9".repeat(64), acco
 checked("receivable summary preserves exact decimals and nonspendable scope", () => { assert.match(get("analysis-summary-values").textContent, /899\.800000000000000001/); assert.match(get("analysis-summary-values").textContent, /Dividend receivable/); assert.match(get("analysis-summary-note").textContent, /not available cash/); });
 await successfulPipeline("observed-evaluate", { evaluation_id: "a".repeat(64), scoring_family: "CROSS_SECTIONAL_RANKING", evaluation_state: "AVAILABLE", fit_diagnostics: { coverage_state: "PARTIAL", converged_models: 2, models: 3 }, metrics: { mean_ndcg: .75, mean_spearman_ic: null }, economically_validated: false });
 checked("model summary retains method-specific unknown score and partial coverage", () => { assert.match(get("analysis-summary-values").textContent, /CROSS_SECTIONAL_RANKING/); assert.match(get("analysis-summary-values").textContent, /PARTIAL/); assert.match(get("analysis-summary-values").textContent, /Unknown/); assert.match(get("analysis-summary-values").textContent, /Not established/); });
-checked("saved evaluation identity is visible and independently replayable", () => { assert.match(get("workflow-identities").textContent, /Observed Evaluation Id: a{64}/); });
+checked("saved evaluation identity is visible and independently replayable", () => { assert.match(get("workflow-identities").textContent, /Observed Evaluation ID: a{64}/); });
 get("analytics-kind").value = "workspace-observed-evaluation-replay";
 await get("analytics-kind").dispatch("change");
 checked("evaluation replay selects its own successful identity", () => assert.equal(JSON.parse(get("analytics-input").value).evaluation_id, "a".repeat(64)));

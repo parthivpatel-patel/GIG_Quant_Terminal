@@ -42,7 +42,16 @@
   state.orbit = !motionPreference.matches;
   let orbitFrame = null, orbitLast = null;
   const numberFormat = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 7 });
-  const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const ACRONYMS = { var: "VaR", es: "ES", nav: "NAV", pnl: "P&L", usd: "USD", id: "ID", ml: "ML", etf: "ETF", ols: "OLS", adf: "ADF", sma: "SMA", ema: "EMA", vwap: "VWAP", rsi: "RSI", macd: "MACD", atr: "ATR", api: "API", url: "URL", utc: "UTC", gi: "GI" };
+  const human = (value) => String(value).replace(/_/g, " ").replace(/\b\w+/g, (word) => ACRONYMS[word.toLowerCase()] || word.charAt(0).toUpperCase() + word.slice(1));
+  const METRIC_LABELS = {
+    historical_var_95_currency: ["Historical VaR (95%)", "One-day loss quantile · currency units"],
+    historical_es_95_currency: ["Historical ES (95%)", "Mean loss beyond VaR · currency units"],
+    synthetic_nav: ["Synthetic NAV", "Notional portfolio value · currency units"],
+    holding_period_days: ["Holding period", "Days"],
+    smoothed_uses_future_observations: ["Smoother uses future data", "Offline diagnostic only; not a tradable signal"],
+    kalman_log_likelihood: ["Kalman log-likelihood", null],
+  };
   const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
   function scalarTag(value) {
     if (!isObject(value) || Object.keys(value).length !== 1) return null;
@@ -464,15 +473,18 @@
   }
   function renderMetrics(metrics) {
     const entries = isObject(metrics) ? Object.entries(metrics) : Array.isArray(metrics) ? metrics.map((item, index) => [item.label || `Metric ${index + 1}`, item]) : [];
-    $("metrics").replaceChildren(...entries.slice(0, 12).map(([key, metric]) => {
+    const shown = entries.slice(0, 12);
+    $("metrics").dataset.count = String(shown.length);
+    $("metrics").replaceChildren(...shown.map(([key, metric]) => {
       const item = isObject(metric) && scalarTag(metric) === null ? metric : { value: metric };
       const value = printable(item.value);
+      const [knownLabel, knownDetail] = METRIC_LABELS[key] || [];
       const card = el("article", "metric-card");
       const label = el("div", "metric-label");
-      label.append(el("span", "", item.label || human(key)), el("span", "metric-marker"));
+      label.append(el("span", "", item.label || knownLabel || human(key)), el("span", "metric-marker"));
       const valueElement = el("div", `metric-value${value.length > 15 ? " long-value" : ""}`, value);
       const detail = [item.unit, item.state, item.description || item.note].filter((part) => part !== null && part !== undefined && part !== "").join(" · ");
-      card.append(label, valueElement, el("div", "metric-detail", detail || "Backend research metric"));
+      card.append(label, valueElement, el("div", "metric-detail", detail || knownDetail || "Backend research metric"));
       return card;
     }));
   }
@@ -604,20 +616,47 @@
     const origin = [-1, -1, -1];
     const endpoints = [[1.12, -1, -1], [-1, 1.12, -1], [-1, -1, 1.12]];
     const axisColors = [accent, style.getPropertyValue("--amber").trim(), style.getPropertyValue("--green").trim()];
-    context.font = "12px 'SFMono-Regular', Consolas, monospace";
-    endpoints.forEach((endpoint, index) => {
-      if (state.dimension === 2 && index === 1) return;
-      line(origin, endpoint, axisColors[index], 1.2);
-      const labelPoint = project(...endpoint, width, height);
-      context.fillStyle = axisColors[index];
+    const halo = document.documentElement.dataset.theme === "light" ? "rgba(255,255,255,0.9)" : "rgba(5,6,8,0.9)";
+    // Every axis starts at the shared origin corner, so labels try several
+    // offsets and are skipped rather than drawn over an already placed label.
+    const placed = [], labelLog = [];
+    const place = (text, x, y, color, font, offsets, required = false) => {
+      context.font = font;
+      const w = context.measureText(text).width, h = parseInt(font, 10) || 11;
+      for (const [dx, dy] of offsets) {
+        const left = Math.max(4, Math.min(x + (dx === "left" ? -w - 6 : dx), width - w - 4));
+        const base = Math.max(h + 2, Math.min(y + dy, height - 4));
+        const box = [left - 2, base - h - 1, left + w + 2, base + 3];
+        if (placed.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue;
+        placed.push(box); labelLog.push({ text, box });
+        context.lineJoin = "round"; context.lineWidth = 3; context.strokeStyle = halo; context.strokeText(text, left, base);
+        context.fillStyle = color; context.fillText(text, left, base);
+        return true;
+      }
+      if (required) { const [dx, dy] = offsets[0]; context.fillStyle = color; context.fillText(text, Math.max(4, x + (dx === "left" ? -w - 6 : dx)), y + dy); }
+      return false;
+    };
+    const visibleAxes = [0, 1, 2].filter((index) => !(state.dimension === 2 && index === 1));
+    visibleAxes.forEach((index) => line(origin, endpoints[index], axisColors[index], 1.2));
+    state.chartLabels = { place };
+    visibleAxes.forEach((index) => {
+      const labelPoint = project(...endpoints[index], width, height);
       const label = axes[index].label;
-      context.fillText(label.length > 24 ? `${label.slice(0, 22)}…` : label, Math.max(8, Math.min(labelPoint.x + 7, width - 175)), Math.max(14, Math.min(labelPoint.y - 5, height - 10)));
-      context.fillStyle = muted;
-      [0, 1].forEach((end) => {
-        const tickWorld = [...origin]; tickWorld[index] = end ? 1 : -1;
-        const tickPoint = project(...tickWorld, width, height);
-        context.fillText(printable(ranges[index][end]), Math.max(6, Math.min(tickPoint.x + 4, width - 65)), Math.max(12, Math.min(tickPoint.y + (index === 2 ? -7 : 13), height - 5)));
-      });
+      place(label.length > 24 ? `${label.slice(0, 22)}…` : label, labelPoint.x, labelPoint.y, axisColors[index], "12px 'SFMono-Regular', Consolas, monospace",
+        [[7, -5], [7, 14], ["left", -5], ["left", 14]], true);
+    });
+    visibleAxes.forEach((index) => {
+      const far = [...origin]; far[index] = 1;
+      const farPoint = project(...far, width, height);
+      place(printable(ranges[index][1]), farPoint.x, farPoint.y, muted, "11px 'SFMono-Regular', Consolas, monospace", [[4, index === 2 ? -7 : 13], [4, index === 2 ? 13 : -7], ["left", 13], ["left", -7]]);
+    });
+    const originPoint = project(...origin, width, height);
+    visibleAxes.forEach((index) => {
+      const near = project(...endpoints[index].map((v, i) => (i === index ? -1 + 0.18 : v)), width, height);
+      const dx = near.x - originPoint.x, dy = near.y - originPoint.y;
+      const ox = dx >= 0 ? 4 : "left", oy = dy >= 0 ? 15 : -6;
+      place(printable(ranges[index][0]), near.x, near.y, muted, "11px 'SFMono-Regular', Consolas, monospace",
+        [[ox, oy], [ox, -oy + 9], [ox === 4 ? "left" : 4, oy], [ox === 4 ? "left" : 4, -oy + 9], [4, 28], ["left", 28]]);
     });
     const projected = points.map((point, index) => {
       const coordinates = axes.map((axis, axisIndex) => normalize(point[axis.key], axisIndex));
@@ -641,9 +680,14 @@
       context.beginPath();
       context.arc(point.x, point.y, String(chart.kind).includes("surface") ? 2.7 : 3.7, 0, Math.PI * 2);
       context.fill();
-      if (point.point.symbol && points.length <= 25) { context.fillStyle = muted; context.font = "10px 'SFMono-Regular', Consolas, monospace"; context.fillText(String(point.point.symbol), point.x + 6, point.y - 5); }
     });
+    if (points.length <= 25) {
+      projected.filter((point) => point.point.symbol).sort((a, b) => b.depth - a.depth).forEach((point) => {
+        state.chartLabels.place(String(point.point.symbol), point.x, point.y, muted, "10px 'SFMono-Regular', Consolas, monospace", [[6, -5], ["left", -5], [6, 12], ["left", 12]]);
+      });
+    }
     state.projected = projected;
+    canvas.dataset.labels = JSON.stringify(labelLog);
     canvas.setAttribute("aria-label", `${$("chart-title").textContent}. ${points.length} backend observations. ${axes.map((axis) => `${axis.label}, ${axis.unit || "units unspecified"}`).join("; ")}. ${state.dimension}D view. Underlying observations also available in the table. Drag or use arrow keys to rotate; plus and minus zoom.`);
     if (state.orbit && state.dimension === 3 && orbitFrame === null && typeof window.requestAnimationFrame === "function") orbitFrame = window.requestAnimationFrame(orbitTick);
   }
