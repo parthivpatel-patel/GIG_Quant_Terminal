@@ -71,8 +71,17 @@ class NormalizationTests(unittest.TestCase):
         self.assertEqual(event["event_id"], "USGS:authored1")
         self.assertIsNone(event["geo_precision_km"])
         self.assertEqual(event["verification"], "PROVIDER_AUTOMATIC_SUBJECT_TO_REVISION")
-        self.assertLess(event["observed_at"], event["published_at"])
+        self.assertIsNone(event["published_at"])
+        self.assertLess(event["observed_at"], event["provider_updated_at"])
         self.assertGreater(event["reporting_delay_seconds"], 0)
+
+    def test_nonfinite_numbers_are_unknown(self):
+        payload = usgs(mag=float("inf"))
+        payload["features"][0]["geometry"]["coordinates"] = [56.0, 26.0, float("nan")]
+        event = normalize_usgs(payload, acquired_at="2026-11-04T03:00:00Z")[0]
+        self.assertIsNone(event["magnitude"])
+        self.assertIsNone(event["depth_km"])
+        json.dumps(event, allow_nan=False)
 
     def test_eonet_never_uses_geometry_after_acquisition(self):
         events = {e["event_id"]: e for e in normalize_eonet(eonet(), acquired_at="2026-11-04T03:00:00Z")}
@@ -145,6 +154,39 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(self.store.semantics("USGS_EARTHQUAKES", now=later, as_of=later)["semantics"], "CACHED")
         self.assertEqual(self.store.semantics("USGS_EARTHQUAKES", now=later, as_of=NOW)["semantics"], "HISTORICAL")
 
+    def test_malformed_payloads_fail_closed_and_back_off(self):
+        def raw(body):
+            return lambda url, timeout, max_bytes: (200, body)
+        cases = [b'{"type": "FeatureCollection", "features": [{"id": "x", "properties": {"mag": NaN}}]}',
+                 b'{"type": "FeatureCollection", "features": ["not-a-feature"]}',
+                 b'{"type": "FeatureCollection", "features": [{"id": "x", "geometry": {"type": "Point", "coordinates": [1, 2]}, "properties": {"time": "late"}}]}',
+                 b'\xff\xfe']
+        for i, body in enumerate(cases):
+            at = NOW + timedelta(days=i)
+            result = refresh(self.store, "USGS_EARTHQUAKES", now=at, opener=raw(body), force_schedule=True)
+            self.assertEqual((result["state"], result["error_code"]), ("FAILED", "INVALID_PAYLOAD"), body)
+        self.assertEqual(self.store.events(as_of=NOW + timedelta(days=10)), [])
+        self.assertEqual(self.store.semantics("USGS_EARTHQUAKES", now=NOW, as_of=NOW)["consecutive_failures"], 1)
+        self.assertIsNotNone(self.store.next_allowed("USGS_EARTHQUAKES"))
+
+    def test_redirects_off_the_registry_host_are_refused_before_following(self):
+        import urllib.request
+
+        from gig.intel.fetch import RedirectRejected, _SameHostRedirect
+        handler = _SameHostRedirect("earthquake.usgs.gov")
+        request = urllib.request.Request("https://earthquake.usgs.gov/feed.geojson")
+        for target in ("http://earthquake.usgs.gov/feed.geojson", "https://169.254.169.254/latest/meta-data",
+                       "https://earthquake.usgs.gov.attacker.example/feed", "//elsewhere.example/feed"):
+            with self.assertRaises(RedirectRejected, msg=target):
+                handler.redirect_request(request, None, 302, "Found", {}, target)
+        followed = handler.redirect_request(request, None, 302, "Found", {}, "https://earthquake.usgs.gov/earthquakes/feed/v2.geojson")
+        self.assertEqual(followed.full_url, "https://earthquake.usgs.gov/earthquakes/feed/v2.geojson")
+
+        def rejecting(url, timeout, max_bytes):
+            raise RedirectRejected("redirect left the approved host")
+        result = refresh(self.store, "NASA_EONET", now=NOW, opener=rejecting)
+        self.assertEqual(result["error_code"], "REDIRECT_REJECTED")
+
     def test_unregistered_source_rejected(self):
         with self.assertRaises(ValueError):
             refresh(self.store, "OPENSKY", now=NOW)
@@ -203,6 +245,19 @@ class ResearchTests(unittest.TestCase):
         self.assertEqual(market["model"], "MARKET_MODEL_OLS")
         with self.assertRaises(ValueError):
             research.event_study({**base, "prices": self.series(), "event_at": "2026-01-10T00:00:00Z"})
+        for bad in ({"instrument": {"x": 1}}, {"source": ""}, {"event_id": 7}):
+            with self.assertRaises(ValueError):
+                research.event_study({**base, "prices": self.series(), **bad})
+
+    def test_intraday_event_with_date_stamps_never_enters_estimation(self):
+        base = {"instrument": "SYN-ENERGY", "classification": "SYNTHETIC", "source": "authored",
+                "event_at": "2026-04-01T14:00:00Z", "estimation_window": 60, "pre": 0, "post": 3}
+        plain = research.event_study({**base, "prices": self.series()})
+        shocked = research.event_study({**base, "prices": self.series(jump=0.05)})
+        self.assertEqual(shocked["day0"], "2026-04-01T00:00:00+00:00")
+        self.assertEqual(plain["parameters"], shocked["parameters"])
+        self.assertAlmostEqual(shocked["window"][0]["abnormal_return"] - plain["window"][0]["abnormal_return"], 0.05, places=9)
+        self.assertLess(shocked["estimation"]["end"], shocked["day0"])
 
     def test_exposure_and_scenario(self):
         result = research.theme_exposure({"nav": 1000, "holdings": [
@@ -216,6 +271,13 @@ class ResearchTests(unittest.TestCase):
         self.assertEqual(result["untagged_market_value"], 100)
         with self.assertRaises(ValueError):
             research.theme_exposure({"holdings": [{"instrument": "S", "market_value": -1, "themes": []}]})
+
+    def test_risk_monitor_counts_partition_events(self):
+        events = [{"event_id": f"E{i}", "category": "SEVERE_STORM", "latitude": 26.0, "longitude": 56.0, "verification": v}
+                  for i, v in enumerate(("PROVIDER_REVIEWED", "UNVERIFIED_REPORT", "DEMONSTRATION_NOT_OBSERVED", "HISTORICAL_OBSERVATION"))]
+        for row in research.risk_monitor(events)["themes"]:
+            self.assertEqual((row["confirmed"], row["unverified"], row["other"]), (1, 1, 2))
+            self.assertEqual(row["events"], row["confirmed"] + row["unverified"] + row["other"])
 
     def test_links_are_hypotheses(self):
         links = research_links("SEVERE_STORM", 26.0, 56.0)

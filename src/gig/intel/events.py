@@ -42,6 +42,12 @@ def _coordinate(lat: Any, lon: Any) -> tuple[float, float]:
     return float(lat), float(lon)
 
 
+def _number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        return None
+    return float(value)
+
+
 def _text(value: Any, limit: int = 300) -> str:
     if not isinstance(value, str):
         return ""
@@ -88,11 +94,12 @@ def normalize_usgs(payload: Mapping[str, Any], *, acquired_at: str) -> list[dict
             **_base("USGS_EARTHQUAKES", acquired_at),
             "event_id": f"USGS:{event_id}", "provider_event_id": event_id, "category": "EARTHQUAKE",
             "layer": "hazards", "title": _text(props.get("title")), "latitude": lat, "longitude": lon,
-            "depth_km": coordinates[2] if len(coordinates) > 2 and isinstance(coordinates[2], (int, float)) else None,
+            "depth_km": _number(coordinates[2]) if len(coordinates) > 2 else None,
             "geo_precision_km": None, "geo_precision_note": "Summary feed omits horizontal location error.",
             "observed_at": _iso_ms(props.get("time")),
-            "published_at": _iso_ms(props["updated"]) if isinstance(props.get("updated"), int) else None,
-            "magnitude": props.get("mag") if isinstance(props.get("mag"), (int, float)) else None,
+            "published_at": None,
+            "provider_updated_at": _iso_ms(props["updated"]) if isinstance(props.get("updated"), int) else None,
+            "magnitude": _number(props.get("mag")),
             "magnitude_unit": _text(props.get("magType"), 16) or None,
             "verification": "PROVIDER_REVIEWED" if status == "reviewed" else "PROVIDER_AUTOMATIC_SUBJECT_TO_REVISION",
             "citations": [{"publisher": "U.S. Geological Survey", "url": _text(props.get("url"), 300)}],
@@ -154,7 +161,7 @@ def normalize_eonet(payload: Mapping[str, Any], *, acquired_at: str) -> list[dic
             "depth_km": None, "geo_precision_km": None if extent is None else round(extent, 1),
             "geo_precision_note": "Latest dated geometry; polygon extent where supplied, otherwise unknown.",
             "observed_at": observed.isoformat(), "published_at": None,
-            "magnitude": geometry.get("magnitudeValue") if isinstance(geometry.get("magnitudeValue"), (int, float)) else None,
+            "magnitude": _number(geometry.get("magnitudeValue")),
             "magnitude_unit": _text(geometry.get("magnitudeUnit"), 16) or None,
             "track_points": len(dated),
             "verification": "PROVIDER_CURATED",

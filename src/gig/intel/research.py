@@ -39,6 +39,10 @@ def event_study(payload: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("event study fields do not match the contract")
     if payload["classification"] not in ("HISTORICAL", "SYNTHETIC"):
         raise ValueError("classification must be HISTORICAL or SYNTHETIC")
+    for key, limit in (("instrument", 64), ("source", 200), ("event_id", 200)):
+        value = payload.get(key)
+        if (key != "event_id" or value is not None) and (not isinstance(value, str) or not value.strip() or len(value) > limit):
+            raise ValueError(f"{key} must be a nonempty string of at most {limit} characters")
     stamps, closes = _series(payload["prices"], "prices")
     returns = np.diff(np.log(closes))
     rstamps = stamps[1:]
@@ -53,7 +57,11 @@ def event_study(payload: Mapping[str, Any]) -> dict[str, Any]:
         if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
             raise ValueError("window parameters out of range")
     event_at = aware_timestamp(payload["event_at"])
-    day0 = next((i for i, t in enumerate(rstamps) if t >= event_at), None)
+    # Price stamps may be dates without a close time. Aligning on the event's UTC
+    # calendar date keeps any return that could contain the event out of the
+    # estimation window, at the cost of possibly starting the window a day early.
+    event_day = event_at.tz_convert("UTC").normalize()
+    day0 = next((i for i, t in enumerate(rstamps) if t >= event_day), None)
     if day0 is None or day0 - pre - window < 0 or day0 + post >= len(returns):
         raise ValueError("insufficient observations around the event")
     est = slice(day0 - pre - window, day0 - pre)
@@ -83,9 +91,10 @@ def event_study(payload: Mapping[str, Any]) -> dict[str, Any]:
     length = pre + post + 1
     t_stat = car / (sigma * math.sqrt(length)) if sigma > 0 else None
     return {
-        "instrument": str(payload["instrument"])[:64], "source": str(payload["source"])[:200],
+        "instrument": payload["instrument"], "source": payload["source"],
         "data_classification": payload["classification"], "event_id": payload.get("event_id"),
-        "event_at": event_at.isoformat(), "model": model, "parameters": params,
+        "event_at": event_at.isoformat(), "day0": rstamps[day0].isoformat(),
+        "day0_rule": "FIRST_RETURN_ENDING_ON_OR_AFTER_EVENT_UTC_DATE", "model": model, "parameters": params,
         "estimation": {"start": rstamps[est.start].isoformat(), "end": rstamps[est.stop - 1].isoformat(),
                        "observations": window, "residual_sigma": sigma},
         "window": rows, "car": car, "car_t_stat": t_stat,
@@ -163,13 +172,15 @@ def risk_monitor(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         for theme in links["themes"]:
             row = counts.setdefault(theme["theme"], {"theme": theme["theme"], "label": theme["label"],
                                                      "markets": theme["markets"], "events": 0, "confirmed": 0,
-                                                     "unverified": 0, "event_ids": []})
+                                                     "unverified": 0, "other": 0, "event_ids": []})
             row["events"] += 1
             verification = event.get("verification", "")
             if verification in ("CONFIRMED_OFFICIAL", "PROVIDER_REVIEWED", "PROVIDER_CURATED", "MULTI_SOURCE_REPORTED"):
                 row["confirmed"] += 1
             elif verification in ("UNVERIFIED_REPORT", "PROVIDER_AUTOMATIC_SUBJECT_TO_REVISION"):
                 row["unverified"] += 1
+            else:
+                row["other"] += 1
             if len(row["event_ids"]) < 20:
                 row["event_ids"].append(event["event_id"])
     rows = sorted(counts.values(), key=lambda r: (-r["events"], r["theme"]))

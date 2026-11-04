@@ -179,6 +179,7 @@
     row(dl, "Source", `${e.provider_name} — ${e.dataset}`);
     row(dl, "Observation time", `${iso(e.observed_at)}${e.observed_end ? ` → ${iso(e.observed_end)}` : ""}${e.observation_time_known === false ? " (publication time; observation time not stated)" : ""}`);
     row(dl, "Publication time", e.published_at ? iso(e.published_at) : "Not supplied by provider");
+    if (e.provider_updated_at) row(dl, "Provider last updated", iso(e.provider_updated_at));
     row(dl, "Acquired by GIG", iso(e.acquired_at));
     row(dl, "Reporting delay", duration(e.reporting_delay_seconds));
     row(dl, "Location", e.latitude === null ? "Not located" : `${e.latitude.toFixed(2)}°, ${e.longitude.toFixed(2)}°${e.region ? ` · ${e.region}` : ""}`);
@@ -241,7 +242,7 @@
     const max = Math.max(...rows.map((r) => r.events));
     rows.slice(0, 10).forEach((r) => {
       const item = el("div", "intel-risk-row"); const bar = el("span", "intel-risk-bar"); const fill = el("span", "intel-risk-fill"); fill.style.width = `${(100 * r.events) / max}%`; bar.append(fill);
-      item.append(el("span", "intel-risk-label", r.label), bar, el("span", "intel-risk-count", `${r.events} (${r.confirmed} confirmed, ${r.unverified} unverified)`), el("span", "intel-risk-markets", r.markets.join(" · ")));
+      item.append(el("span", "intel-risk-label", r.label), bar, el("span", "intel-risk-count", `${r.events} (${r.confirmed} confirmed, ${r.unverified} unverified${r.other ? `, ${r.other} demonstration, scenario or historical` : ""})`), el("span", "intel-risk-markets", r.markets.join(" · ")));
       list.append(item);
     });
   }
