@@ -223,6 +223,20 @@ class ResearchTests(unittest.TestCase):
         self.assertEqual(links["nearby_chokepoints"][0]["chokepoint"], "Strait of Hormuz")
 
 
+class WorkspaceRefreshTests(unittest.TestCase):
+    def test_deferred_and_failed_outcomes_are_valid_envelopes(self):
+        from gig.service.intel_workspace import IntelWorkspace
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = IntelWorkspace(Path(tmp), opener=opener_for(usgs()))
+            first = json.loads(workspace.refresh({"source_id": "USGS_EARTHQUAKES"}).wire)
+            self.assertEqual((first["data"]["state"], first["provenance"]["classification"]), ("ACQUIRED", "DELAYED"))
+            again = json.loads(workspace.refresh({"source_id": "USGS_EARTHQUAKES"}).wire)
+            self.assertEqual((again["data"]["state"], again["provenance"]["classification"]), ("DEFERRED", "SNAPSHOT"))
+            workspace.opener = opener_for({}, status=503)
+            failed = json.loads(workspace.refresh({"source_id": "NASA_EONET"}).wire)
+            self.assertEqual((failed["data"]["state"], failed["provenance"]["classification"]), ("FAILED", "SNAPSHOT"))
+
+
 class IntelHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -251,6 +265,7 @@ class IntelHTTPTests(unittest.IsolatedAsyncioTestCase):
         overview = (await self.client.get("/api/v1/intel/overview?days=60")).json()["data"]
         self.assertEqual(overview["counts_by_provider"], {"ADMITTED_REPORTS": 1, "DEMONSTRATION": 6})
         self.assertEqual(overview["data_semantics"]["DEMONSTRATION"], "DEMONSTRATION")
+        self.assertEqual(overview["data_semantics"]["ADMITTED_REPORTS"], "DEMONSTRATION")
         self.assertEqual(sum(r["count"] for r in overview["defense_aggregate"]["weekly"]), 1)
         filtered = (await self.client.get("/api/v1/intel/overview?days=60&layers=defense")).json()["data"]
         self.assertEqual(filtered["event_count"], 1)

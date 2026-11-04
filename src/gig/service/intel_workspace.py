@@ -71,7 +71,9 @@ class IntelWorkspace:
         if demo:
             semantics["DEMONSTRATION"] = "DEMONSTRATION"
         if admitted:
-            semantics["ADMITTED_REPORTS"] = "HISTORICAL"
+            kinds = {e.get("data_classification") for e in admitted}
+            semantics["ADMITTED_REPORTS"] = ("HISTORICAL" if kinds == {"HISTORICAL"} else "DEMONSTRATION"
+                                             if kinds == {"SYNTHETIC"} else "HISTORICAL_AND_DEMONSTRATION")
         data = {
             "title": "Global Intelligence", "as_of": as_of.isoformat(), "window_days": days,
             "events": events, "event_count": len(events),
@@ -96,8 +98,10 @@ class IntelWorkspace:
         if set(payload) != {"source_id"} or payload["source_id"] not in FETCHABLE:
             raise ValueError("refresh requires one integrated source_id")
         result = refresh(self.store, payload["source_id"], opener=self.opener)
+        # A deferred or failed attempt carries no observations; the envelope
+        # describes the request outcome only.
         return _envelope(result, scope="intel.refresh", source=payload["source_id"],
-                         classification="DELAYED" if result["state"] == "ACQUIRED" else "UNAVAILABLE")
+                         classification="DELAYED" if result["state"] == "ACQUIRED" else "SNAPSHOT")
 
     def admit(self, payload: dict[str, Any]) -> Contract:
         if set(payload) != {"records"} or not isinstance(payload["records"], list) or not 1 <= len(payload["records"]) <= 200:
