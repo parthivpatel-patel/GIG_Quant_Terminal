@@ -72,8 +72,17 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Chromium Sprint 9 terminal workflows
         run: python scripts/browser_sprint9.py --evidence-dir /tmp/ci-browser-sprint9
-      - name: Chromium 3D Analytics Lab and Global Intelligence (offline, no provider requests)
-        run: python scripts/browser_global_3d.py --evidence-dir /tmp/ci-browser-global-3d
+      - name: Fetch pinned axe-core 4.10.3 (SHA-256 verified)
+        env:
+          AXE_SHA256: 880970c081707360e64f34cea25ff91892f5bc95675b0776925b9709dd8a68bb
+        run: |
+          mkdir -p /tmp/axe && cd /tmp/axe
+          curl -fsSL https://registry.npmjs.org/axe-core/-/axe-core-4.10.3.tgz -o axe-core.tgz
+          tar -xzf axe-core.tgz package/axe.min.js
+          echo "$AXE_SHA256  package/axe.min.js" | sha256sum -c -
+          printf '{"name":"axe-core","version":"4.10.3","license":"MPL-2.0","script_sha256":"%s"}\n' "$AXE_SHA256" > package/manifest.json
+      - name: Chromium 3D Analytics Lab and Global Intelligence (offline, no provider requests, axe-core)
+        run: python scripts/browser_global_3d.py --evidence-dir /tmp/ci-browser-global-3d --axe /tmp/axe/package/axe.min.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
