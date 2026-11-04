@@ -48,7 +48,7 @@ jobs:
       - name: Compile
         run: python -m compileall -q src tests scripts
       - name: Mypy (Sprint 9 and Global Intelligence modules)
-        run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py
+        run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py src/gig/service/viz.py
       - name: Tests
         run: pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
 
@@ -68,7 +68,16 @@ jobs:
           cache: pip
       - name: Install
         run: |
-          pip install -e ".[web,dev]" playwright
+          pip install -e ".[web,research,dev]" playwright
           python -m playwright install --with-deps chromium
       - name: Chromium Sprint 9 terminal workflows
         run: python scripts/browser_sprint9.py --evidence-dir /tmp/ci-browser-sprint9
+      - name: Chromium 3D Analytics Lab and Global Intelligence (offline, no provider requests)
+        run: python scripts/browser_global_3d.py --evidence-dir /tmp/ci-browser-global-3d
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: |
+            /tmp/ci-browser-sprint9
+            /tmp/ci-browser-global-3d
