@@ -1,0 +1,102 @@
+{
+  "provider_refresh": {
+    "USGS_EARTHQUAKES": {
+      "acquired_at": "2026-11-04T13:26:06.121239+00:00",
+      "new_revisions": 339,
+      "raw_sha256": "9c13884af5e67cd3c1cd4b96e53e739443c860d1bbe77829590e443699252f85",
+      "received": 339,
+      "source_id": "USGS_EARTHQUAKES",
+      "state": "ACQUIRED"
+    },
+    "NASA_EONET": {
+      "acquired_at": "2026-11-04T13:26:06.501622+00:00",
+      "new_revisions": 44,
+      "raw_sha256": "20d8688f25905fce0309409a71f65c31f94e264ac01a318c0126b0ee9e343e01",
+      "received": 44,
+      "source_id": "NASA_EONET",
+      "state": "ACQUIRED"
+    }
+  },
+  "sources": [
+    {
+      "source_id": "USGS_EARTHQUAKES",
+      "status": "INTEGRATED",
+      "semantics": "DELAYED",
+      "layer": "hazards"
+    },
+    {
+      "source_id": "NASA_EONET",
+      "status": "INTEGRATED",
+      "semantics": "DELAYED",
+      "layer": "hazards"
+    },
+    {
+      "source_id": "GDACS",
+      "status": "CANDIDATE",
+      "semantics": null,
+      "layer": "hazards"
+    },
+    {
+      "source_id": "NASA_FIRMS",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "hazards"
+    },
+    {
+      "source_id": "AIS_MARITIME",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "maritime"
+    },
+    {
+      "source_id": "OPENSKY",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "aviation"
+    },
+    {
+      "source_id": "SENTINEL_LANDSAT",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "imagery"
+    },
+    {
+      "source_id": "GIG_REFERENCE_GEOMETRY",
+      "status": "REFERENCE",
+      "semantics": "HISTORICAL",
+      "layer": "reference"
+    },
+    {
+      "source_id": "ADMITTED_REPORTS",
+      "status": "INTEGRATED",
+      "semantics": "HISTORICAL",
+      "layer": "geopolitical"
+    }
+  ],
+  "source_health": [
+    {
+      "consecutive_failures": 0,
+      "last_attempt_at": "2026-11-04T13:26:06.121239+00:00",
+      "last_error": null,
+      "last_success_at": "2026-11-04T13:26:06.121239+00:00",
+      "next_allowed_at": "2026-11-04T13:31:06.121239+00:00",
+      "note": "Events appear after detection; automatic solutions are revised. Not LIVE.",
+      "semantics": "DELAYED",
+      "source_id": "USGS_EARTHQUAKES"
+    },
+    {
+      "consecutive_failures": 0,
+      "last_attempt_at": "2026-11-04T13:26:06.501622+00:00",
+      "last_error": null,
+      "last_success_at": "2026-11-04T13:26:06.501622+00:00",
+      "next_allowed_at": "2026-11-04T13:41:06.501622+00:00",
+      "note": "Curated metadata, typically hours to days after onset; no publication clock.",
+      "semantics": "DELAYED",
+      "source_id": "NASA_EONET"
+    }
+  ],
+  "event_counts_by_provider": {
+    "NASA_EONET": 21,
+    "USGS_EARTHQUAKES": 339
+  }
+}

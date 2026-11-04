@@ -1,0 +1,1060 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "checks": [
+    {
+      "name": "page background is #050608",
+      "passed": true,
+      "detail": "rgb(5, 6, 8)"
+    },
+    {
+      "name": "thirteen sections in navigation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "command-center: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "command-center: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "markets: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "markets: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "signals: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "signals: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "portfolio: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "portfolio: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "risk: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "risk: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "models: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "models: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "news: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "news: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "stat-arb: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "stat-arb: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "options: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "execution: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "execution: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "research: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    {
+      "name": "research: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "operations: loads, is current in navigation and labelled",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "local-process-diagnostics \u00b7 SNAPSHOT",
+        "As of 2026-11-04T13:26:56.834506+00:00",
+        "Research output requires review before any trading use."
+      ]
+    },
+    {
+      "name": "operations: no horizontal overflow at 1920px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "vol-surface: initial",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: rotate",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: zoom",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: pan",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: hover tooltip",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: keyboard select",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: data update",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: orbit animates",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: pause stops",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: alt 2d",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "vol-surface: click on hovered item selects it",
+      "passed": true,
+      "detail": "Strike\n85\nLog-moneyness\n-0.1625\nMaturity (years)\n0.75\nType\nPUT\nImplied vol\n0.2041\nVega\n0.1814\nSnapshot\ncurrent"
+    },
+    {
+      "name": "vol-surface: exact-value table available",
+      "passed": true,
+      "detail": 88
+    },
+    {
+      "name": "order-book: initial",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: rotate",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: zoom",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: pan",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: hover tooltip",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: keyboard select",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: data update",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: orbit animates",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: pause stops",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: alt 2d",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "order-book: click on hovered item selects it",
+      "passed": true,
+      "detail": "side\nASK\nprice\n50.07\nquantity\n986\nrank\n8\nstep\n4\nobserved at\n2026-09-30T14:00:40+00:00\nclassification\nAUTHORED_SYNTHETIC_DEPTH"
+    },
+    {
+      "name": "order-book: exact-value table available",
+      "passed": true,
+      "detail": 600
+    },
+    {
+      "name": "risk-terrain: initial",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: rotate",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: zoom",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: pan",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: hover tooltip",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: keyboard select",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: data update",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: orbit animates",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: pause stops",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: alt 2d",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "risk-terrain: click on hovered item selects it",
+      "passed": true,
+      "detail": "Spot shock\n-0.15\nVol shock\n0.03\nModel P&L (USD)\n488.851\nBeyond loss limit\nNO\nHorizon\ntoday"
+    },
+    {
+      "name": "risk-terrain: exact-value table available",
+      "passed": true,
+      "detail": 130
+    },
+    {
+      "name": "correlation-network: initial",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: rotate",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: zoom",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: pan",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: hover tooltip",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: keyboard select",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: data update",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: orbit animates",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: pause stops",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: alt 2d",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "correlation-network: click on hovered item selects it",
+      "passed": true,
+      "detail": "Instrument\nSYN002\nCluster\n2\nDaily volatility\n0.0122\n\u03c1 with SYN012\n0.2729\n\u03c1 with SYN004\n0.2006\n\u03c1 with SYN008\n0.1872\n\u03c1 with SYN009\n0.144"
+    },
+    {
+      "name": "correlation-network: exact-value table available",
+      "passed": true,
+      "detail": 66
+    },
+    {
+      "name": "stat-arb: initial",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: rotate",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: zoom",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: pan",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: hover tooltip",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: keyboard select",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: data update",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: orbit animates",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: pause stops",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: alt 2d",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "stat-arb: click on hovered item selects it",
+      "passed": true,
+      "detail": "Observation\n126\nHedge elasticity\n0.7999\nStandardized innovation\n0.0926\nFiltered regime\n0\nRegime probability\n0.8238"
+    },
+    {
+      "name": "stat-arb: exact-value table available",
+      "passed": true,
+      "detail": 160
+    },
+    {
+      "name": "model-evaluation: initial",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: rotate",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: zoom",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: pan",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: hover tooltip",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: keyboard select",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: data update",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: orbit animates",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: pause stops",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: alt 2d",
+      "passed": true,
+      "detail": true
+    },
+    {
+      "name": "model-evaluation: click on hovered item selects it",
+      "passed": true,
+      "detail": "Model\nKalman local level\nFamily\nOne-step return forecast MSE (lower better)\nFold\n0\nModel metric\n1.49e-4\nBaseline\n1.32e-4\nBeats baseline\nNO\nBar\ntraining-only bas"
+    },
+    {
+      "name": "model-evaluation: exact-value table available",
+      "passed": true,
+      "detail": 4
+    },
+    {
+      "name": "vol-surface legend range equals the payload implied-vol range shared by both snapshots",
+      "passed": true,
+      "detail": [
+        "Implied volatility \u00b7 annualized\n0.149\n0.343",
+        0.14852053501142956,
+        0.3431395098618745
+      ]
+    },
+    {
+      "name": "reduced motion: orbit refused in all six modules",
+      "passed": true,
+      "detail": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "Global Intelligence updates the global truth strip instead of keeping the previous section's",
+      "passed": false,
+      "detail": [
+        "AVAILABLE",
+        "local-process-diagnostics \u00b7 SNAPSHOT",
+        "As of 2026-11-04T13:27:25.024662+00:00",
+        "Research output requires review before any trading use."
+      ]
+    },
+    {
+      "name": "no source or event carries a LIVE label",
+      "passed": true,
+      "detail": [
+        "BLOCKED",
+        "CANDIDATE",
+        "DELAYED",
+        "INTEGRATED",
+        "REFERENCE",
+        "UNAVAILABLE"
+      ]
+    },
+    {
+      "name": "maritime layer is disabled with a stated blocker",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "aviation layer is disabled with a stated blocker",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "imagery layer is disabled with a stated blocker",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "hazard layer toggle filters the feed",
+      "passed": true,
+      "detail": [
+        383,
+        0
+      ]
+    },
+    {
+      "name": "globe renders from the bundled basemap",
+      "passed": true,
+      "detail": {
+        "hash": 1788148996,
+        "lit": 36880,
+        "width": 1808,
+        "height": 1036
+      }
+    },
+    {
+      "name": "globe rotates on drag",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "flat map renders",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "event detail shows observation, publication, provider-update and acquisition clocks",
+      "passed": true,
+      "detail": "DELAYED\nPROVIDER AUTOMATIC \u00b7 SUBJECT TO REVISION\nM 2.8 - 4 km WSW of Tyonek, Alaska\nCategory\nEARTHQUAKE\nSource\nU.S. Geological Survey \u2014 Earthquake Hazards Program GeoJSON summary feed, M2.5+ past 7 days\nObservation time\n2026-11-04T12:12:50.864000Z\nPublication time\nNot supplied by provider\nProvider l"
+    },
+    {
+      "name": "timeline replay switches integrated sources to HISTORICAL or UNAVAILABLE",
+      "passed": true,
+      "detail": [
+        "UNAVAILABLE",
+        "UNAVAILABLE"
+      ]
+    },
+    {
+      "name": "event study (authored inputs) estimates before the event and is labelled not causal",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "18-mobile-command-center: no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "mobile Global Intelligence: no horizontal overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript exceptions",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "browser attempted no external requests",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "javascript_errors": [],
+  "console_errors": [],
+  "blocked_external_requests": [],
+  "screenshots": [
+    "01-command-center.png",
+    "11-portfolio.png",
+    "12-risk.png",
+    "13-models.png",
+    "14-research.png",
+    "15-operations.png",
+    "05-options-vol-surface.png",
+    "06-order-book-landscape.png",
+    "07-portfolio-risk-terrain.png",
+    "08-correlation-network.png",
+    "09-stat-arb-landscape.png",
+    "10-model-evaluation.png",
+    "02-global-intelligence-globe.png",
+    "03-global-intelligence-flat-map.png",
+    "04-global-intelligence-event-detail.png",
+    "16-global-intelligence-research-panels.png",
+    "17-global-intelligence-sources.png",
+    "18-mobile-command-center.png",
+    "19-mobile-global-intelligence.png"
+  ],
+  "broker_connections": 0,
+  "orders_submitted": 0,
+  "zoom": "100%",
+  "sections": {
+    "command-center": {
+      "title": "Command Center",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "markets": {
+      "title": "Markets",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "signals": {
+      "title": "Signals",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "risk": {
+      "title": "Risk",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "models": {
+      "title": "Models",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "news": {
+      "title": "News",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "stat-arb": {
+      "title": "Stat Arb",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "options": {
+      "title": "Options",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "execution": {
+      "title": "Execution",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "research": {
+      "title": "Research",
+      "truth_strip": [
+        "AVAILABLE",
+        "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "As of 2026-09-30T20:00:00+00:00",
+        "SYNTHETIC INPUTS \u00b7 Demonstration and research only \u00b7 No broker-observed performance"
+      ]
+    },
+    "operations": {
+      "title": "Operations",
+      "truth_strip": [
+        "AVAILABLE",
+        "local-process-diagnostics \u00b7 SNAPSHOT",
+        "As of 2026-11-04T13:26:56.834506+00:00",
+        "Research output requires review before any trading use."
+      ]
+    }
+  },
+  "modules": {
+    "vol-surface": {
+      "initial": true,
+      "legend": "Implied volatility \u00b7 annualized\n0.149\n0.343",
+      "rotate": true,
+      "reset_restores_view": false,
+      "zoom": true,
+      "pan": true,
+      "hover_tooltip": true,
+      "hover_text": "Strike: 85\nLog-moneyness: -0.1625\nMaturity (years): 0.75\nType: PUT\nImplied vol: 0.2041\nVega: 0.1814",
+      "click_select": true,
+      "selected_details": "Strike\n85\nLog-moneyness\n-0.1625\nMaturity (years)\n0.75\nType\nPUT\nImplied vol\n0.2041\nVega\n0.1814\nSnapshot\ncurrent",
+      "keyboard_select": true,
+      "filter_changed": "SnapshotCurrentPrior (comparison)",
+      "data_update": true,
+      "rows_before_after_filter": [
+        88,
+        88
+      ],
+      "orbit_animates": true,
+      "pause_stops": true,
+      "alt_2d": true,
+      "data_table_rows": 88
+    },
+    "order-book": {
+      "initial": true,
+      "legend": "Side; blue dots = authored print counts\nASK (red)\nBID (green)",
+      "rotate": true,
+      "reset_restores_view": true,
+      "zoom": true,
+      "pan": true,
+      "hover_tooltip": true,
+      "hover_text": "side: ASK\nprice: 50.07\nquantity: 986\nrank: 8\nstep: 4\nobserved at: 2026-09-30T14:00:40+00:00",
+      "click_select": true,
+      "selected_details": "side\nASK\nprice\n50.07\nquantity\n986\nrank\n8\nstep\n4\nobserved at\n2026-09-30T14:00:40+00:00\nclassification\nAUTHORED_SYNTHETIC_DEPTH",
+      "keyboard_select": true,
+      "filter_changed": "SideBids and asksBids onlyAsks only",
+      "data_update": true,
+      "rows_before_after_filter": [
+        600,
+        360
+      ],
+      "orbit_animates": true,
+      "pause_stops": true,
+      "alt_2d": true,
+      "data_table_rows": 600
+    },
+    "risk-terrain": {
+      "initial": true,
+      "legend": "Model P&L (red loss, green gain); yellow edge = beyond limit \u00b7 USD\n-73,346.67\n73,346.67",
+      "rotate": true,
+      "reset_restores_view": false,
+      "zoom": true,
+      "pan": true,
+      "hover_tooltip": true,
+      "hover_text": "Spot shock: -0.15\nVol shock: 0.03\nModel P&L (USD): 488.851\nBeyond loss limit: NO\nHorizon: today",
+      "click_select": true,
+      "selected_details": "Spot shock\n-0.15\nVol shock\n0.03\nModel P&L (USD)\n488.851\nBeyond loss limit\nNO\nHorizon\ntoday",
+      "keyboard_select": true,
+      "filter_changed": "HorizonToday+30 days (time decay)",
+      "data_update": true,
+      "rows_before_after_filter": [
+        130,
+        130
+      ],
+      "orbit_animates": true,
+      "pause_stops": true,
+      "alt_2d": true,
+      "data_table_rows": 130
+    },
+    "correlation-network": {
+      "initial": true,
+      "legend": "Edge: Pearson \u03c1 (yellow negative, blue positive); node colour = cluster\n-1\n1",
+      "rotate": true,
+      "reset_restores_view": false,
+      "zoom": true,
+      "pan": true,
+      "hover_tooltip": true,
+      "hover_text": "Instrument: SYN002\nCluster: 2\nDaily volatility: 0.0122\n\u03c1 with SYN012: 0.2729\n\u03c1 with SYN004: 0.2006\n\u03c1 with SYN008: 0.1872",
+      "click_select": true,
+      "selected_details": "Instrument\nSYN002\nCluster\n2\nDaily volatility\n0.0122\n\u03c1 with SYN012\n0.2729\n\u03c1 with SYN004\n0.2006\n\u03c1 with SYN008\n0.1872\n\u03c1 with SYN009\n0.144",
+      "keyboard_select": true,
+      "filter_changed": "WindowLatest 60 daysLatest 120 daysPrior 60 days",
+      "data_update": true,
+      "rows_before_after_filter": [
+        66,
+        66
+      ],
+      "orbit_animates": true,
+      "pause_stops": true,
+      "alt_2d": true,
+      "data_table_rows": 66
+    },
+    "stat-arb": {
+      "initial": true,
+      "legend": "Filtered HMM regime; red points |z| \u2265 2\nRegime 1 (yellow)\nRegime 0 (blue)",
+      "rotate": true,
+      "reset_restores_view": false,
+      "zoom": true,
+      "pan": true,
+      "hover_tooltip": true,
+      "hover_text": "Observation: 126\nHedge elasticity: 0.7999\nStandardized innovation: 0.0926\nFiltered regime: 0\nRegime probability: 0.8238",
+      "click_select": true,
+      "selected_details": "Observation\n126\nHedge elasticity\n0.7999\nStandardized innovation\n0.0926\nFiltered regime\n0\nRegime probability\n0.8238",
+      "keyboard_select": true,
+      "filter_changed": "\u00b12\u03c3 bandsShownHidden",
+      "data_update": true,
+      "rows_before_after_filter": [
+        160,
+        160
+      ],
+      "orbit_animates": true,
+      "pause_stops": true,
+      "alt_2d": true,
+      "data_table_rows": 160
+    },
+    "model-evaluation": {
+      "initial": true,
+      "legend": "Model bar colour; grey = training-only baseline\nWorse than baseline\nBetter than baseline",
+      "rotate": true,
+      "reset_restores_view": true,
+      "zoom": true,
+      "pan": true,
+      "hover_tooltip": true,
+      "hover_text": "Model: Kalman local level\nFamily: One-step return forecast MSE (lower better)\nFold: 0\nModel metric: 1.49e-4\nBaseline: 1.",
+      "click_select": true,
+      "selected_details": "Model\nKalman local level\nFamily\nOne-step return forecast MSE (lower better)\nFold\n0\nModel metric\n1.49e-4\nBaseline\n1.32e-4\nBeats baseline\nNO\nBar\ntraining-only bas",
+      "keyboard_select": true,
+      "filter_changed": "Metric familyOne-step return forecast MSE (lower better)Cross-sectional Spearman IC (higher better)Out-of-sample log-likelihood per observation (higher better)Variance forecast QLIKE (lower better)",
+      "data_update": true,
+      "rows_before_after_filter": [
+        4,
+        4
+      ],
+      "orbit_animates": true,
+      "pause_stops": true,
+      "alt_2d": true,
+      "data_table_rows": 4
+    }
+  },
+  "browser_version": "156.0.8078.4",
+  "global_intelligence_truth_strip": [
+    "AVAILABLE",
+    "local-process-diagnostics \u00b7 SNAPSHOT",
+    "As of 2026-11-04T13:27:25.024662+00:00",
+    "Research output requires review before any trading use."
+  ],
+  "sources": [
+    {
+      "source_id": "USGS_EARTHQUAKES",
+      "status": "INTEGRATED",
+      "semantics": "DELAYED",
+      "layer": "hazards"
+    },
+    {
+      "source_id": "NASA_EONET",
+      "status": "INTEGRATED",
+      "semantics": "DELAYED",
+      "layer": "hazards"
+    },
+    {
+      "source_id": "GDACS",
+      "status": "CANDIDATE",
+      "semantics": null,
+      "layer": "hazards"
+    },
+    {
+      "source_id": "NASA_FIRMS",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "hazards"
+    },
+    {
+      "source_id": "AIS_MARITIME",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "maritime"
+    },
+    {
+      "source_id": "OPENSKY",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "aviation"
+    },
+    {
+      "source_id": "SENTINEL_LANDSAT",
+      "status": "BLOCKED",
+      "semantics": null,
+      "layer": "imagery"
+    },
+    {
+      "source_id": "GIG_REFERENCE_GEOMETRY",
+      "status": "REFERENCE",
+      "semantics": "HISTORICAL",
+      "layer": "reference"
+    },
+    {
+      "source_id": "ADMITTED_REPORTS",
+      "status": "INTEGRATED",
+      "semantics": "HISTORICAL",
+      "layer": "geopolitical"
+    }
+  ],
+  "source_health": [
+    {
+      "consecutive_failures": 0,
+      "last_attempt_at": "2026-11-04T13:26:06.121239+00:00",
+      "last_error": null,
+      "last_success_at": "2026-11-04T13:26:06.121239+00:00",
+      "next_allowed_at": "2026-11-04T13:31:06.121239+00:00",
+      "note": "Events appear after detection; automatic solutions are revised. Not LIVE.",
+      "semantics": "DELAYED",
+      "source_id": "USGS_EARTHQUAKES"
+    },
+    {
+      "consecutive_failures": 0,
+      "last_attempt_at": "2026-11-04T13:26:06.501622+00:00",
+      "last_error": null,
+      "last_success_at": "2026-11-04T13:26:06.501622+00:00",
+      "next_allowed_at": "2026-11-04T13:41:06.501622+00:00",
+      "note": "Curated metadata, typically hours to days after onset; no publication clock.",
+      "semantics": "DELAYED",
+      "source_id": "NASA_EONET"
+    }
+  ],
+  "event_counts_by_provider": {
+    "NASA_EONET": 21,
+    "USGS_EARTHQUAKES": 339
+  },
+  "semantics_panel": "NASA EONET\nDELAYED\nUSGS EARTHQUAKES\nDELAYED",
+  "feed_count": 383,
+  "globe_drag": {
+    "pointer_steps": 40,
+    "seconds": 1.287,
+    "animation_frames": 77,
+    "fps": 59.8
+  },
+  "event_detail": "DELAYED\nPROVIDER AUTOMATIC \u00b7 SUBJECT TO REVISION\nM 2.8 - 4 km WSW of Tyonek, Alaska\nCategory\nEARTHQUAKE\nSource\nU.S. Geological Survey \u2014 Earthquake Hazards Program GeoJSON summary feed, M2.5+ past 7 days\nObservation time\n2026-11-04T12:12:50.864000Z\nPublication time\nNot supplied by provider\nProvider last updated\n2026-11-04T12:16:05.933000Z\nAcquired by GIG\n2026-11-04T13:26:06.121239Z\nReporting delay\n1.2 h\nLocation\n61.05\u00b0, -151.22\u00b0\nGeographic uncertainty\nUnknown \u2014 Summary feed omits horizontal location error.\nMagnitude\n2.8 ml\nDepth\n75.8 km\nRevisions held\n1\nRevision hash\ne20f24f0aaa3522f\u2026\nLicense\nU.S. Government public domain (USGS information policy) \u00b7 U.S. Geological Survey\nCITATIONS\n\nU.S. Geological Survey: https://earthquake.usgs.gov/earthquakes/eventpage/aka2026vvzdxb\n\nMARKET RESEARCH LINKS (HYPOTHESES, NOT CAUSAL)\nRegional equities\nInsurance & reinsurance\nRegional currency & sovereign risk\nPrepare event study at this time",
+  "timeline": {
+    "feed_now": 383,
+    "feed_at_earliest_cutoff": 0
+  },
+  "passed": 115,
+  "failed": 1
+}
