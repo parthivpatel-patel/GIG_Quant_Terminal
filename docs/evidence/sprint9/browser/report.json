@@ -1,0 +1,155 @@
+{
+  "blocked_external_requests": [],
+  "broker_connections": 0,
+  "browser_version": "156.0.8078.4",
+  "checks": [
+    {
+      "detail": null,
+      "name": "static / served with no-store and nosniff",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "static /static/app.js served with no-store and nosniff",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "static /static/styles.css served with no-store and nosniff",
+      "passed": true
+    },
+    {
+      "detail": 403,
+      "name": "cross-origin workspace write rejected",
+      "passed": true
+    },
+    {
+      "detail": 400,
+      "name": "malformed JSON rejected without echo",
+      "passed": true
+    },
+    {
+      "detail": 200,
+      "name": "cost evidence browser calculation",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "estimated, simulated and observed classes stay separate",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "broker reconciliation shown unavailable",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "simulated fills never promoted",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "cost evidence rendered in workbench output",
+      "passed": true
+    },
+    {
+      "detail": "UNKNOWN",
+      "name": "lineage eligibility browser calculation",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "UCI archive is not claimed point-in-time",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "invalid request shows classified error",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "restart then deterministic replay of cost report",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "command-center renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "markets renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "signals renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "portfolio renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "risk renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "models renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "news renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "stat-arb renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "options renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "execution renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE",
+      "name": "research renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": "AVAILABLE",
+      "name": "operations renders a truth state",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "no JavaScript exceptions",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "no external requests attempted",
+      "passed": true
+    }
+  ],
+  "failed": 0,
+  "formal_accessibility_certification": false,
+  "input_classification": "AUTHORED_SYNTHETIC_FIXTURES",
+  "javascript_errors": [],
+  "passed": 28,
+  "provider_connections": 0,
+  "public_deployment": false,
+  "runner": "real-playwright-chromium"
+}

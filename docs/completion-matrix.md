@@ -1,5 +1,7 @@
 # GIG engineering completion matrix
 
+Sprint 9 delivery: [sprint9-delivery.md](sprint9-delivery.md).
+
 Authority: [Sprint 8 direct-chat directive](directives/sprint8-direct-chat-20261103.md),
 [accelerated master directive](directives/sprint7-master-20261103.md),
 the supplied [Sprint 4/UI directive](directives/sprint4-ui-20261102.md), and the
@@ -45,7 +47,9 @@ proving completion of new requirements. No baseline source was discarded.
 | Options admission, IV/Greeks, surface/skew/term/PCR/VTS (§8) | COMPLETE | Immutable European options and numerical references | No invented OPRA observations or entitlement | P1; observed option quotes absent |
 | CSM (§8) | BLOCKED | Public CSM result explicitly UNAVAILABLE | Authoritative definition must be supplied | P2; unsupplied definition |
 | OFI, Lee–Ready estimate, Kyle, VPIN (§8) | COMPLETE | Persisted quote/print fixtures and scalar references | True print/quote feeds for observed validation; depth is not executions | P1; permitted source evidence |
-| Executed-cost / market-impact / capacity evidence (§8) | IN PROGRESS | Existing execution-cost kernels and conservative volume assumptions | Independent statement/print matching; unsupported metrics UNKNOWN | P1; matching observed prints/executions |
+| Executed-cost / market-impact / capacity evidence (§8) | COMPLETE | Sprint 9 `execution/cost_evidence.py`: class-separated ESTIMATED/SIMULATED/OBSERVED_HISTORICAL reports, exact shortfall identity, independent print matching, measured non-causal impact, print-derived capacity; 8 tests; Chromium workbench | No observed executions/prints in repository, so observed class is fixture-exercised only; broker-reconciled class rejected | P1; observed executions/prints absent |
+| Market-data lineage / point-in-time eligibility (§4) | COMPLETE | Sprint 9 `data/provenance.py`: license, permission, five clocks, revision history, CA basis, identity, quality and verified lineage hash; purpose-specific ELIGIBLE/UNKNOWN/INELIGIBLE with parent inheritance; 9 tests | Documented ECB/UCI sources are not point-in-time eligible; vintage evidence required | P0; source clock evidence |
+| Free continuous integration (§13,15) | COMPLETE | Sprint 9 `.github/workflows/ci.yml`: GitHub-hosted 3.11/3.12 backend matrix, native build, lint/types/tests/coverage, Node smoke and Chromium workflow; read-only token | Whole-package mypy drift (9 pre-existing errors) keeps typing scoped to new modules | P1; no paid runners |
 | Actual funded Greeks, scenarios, concentration/funding (§9) | COMPLETE | Actual positions override hypothetical counts; working-order budgets and mark guards | Extend optional sector/factor/drawdown contracts | P0; scoped model estimates |
 | Funded sector/factor constraints and drawdown (§9) | COMPLETE | Delta-equivalent sector/factor budgets and immutable NAV drawdown tests | Explicit exposure/knowledge metadata and saved history; no inferred zero beta | P0; metadata availability |
 | Historical VaR/ES (§9) | COMPLETE | Empirical reference on 21 comparable daily funded NAV marks; gaps unavailable | New lifecycle must preserve capital/mark comparability | P1; sufficient admissible history |
@@ -56,7 +60,7 @@ proving completion of new requirements. No baseline source was discarded.
 | CPU C++20 / wheel / installation (§11,13) | COMPLETE | x86 native parity, wheel content hashes/import tests | Reverify new release; no GPU or infrastructure expansion | P1; none |
 | Fresh current container lifecycle (§11) | BLOCKED | Previous Sprint 4 image/restart evidence is scoped to that source | Read-only VFS gate: 0 available Docker-store bytes; requires at least 3 GiB container reserve / 6 GiB plus budget for build | P2; local disk capacity, no source/evidence deletion |
 | Physical Ubuntu 24.04 ARM64/Ampere (§11) | BLOCKED | Prior QEMU evidence explicitly separate | Actual hardware/runtime acceptance required; no spending/provisioning | P2; hardware unavailable |
-| Browser/manual accessibility / cross-browser (§13) | IN PROGRESS | Chromium 151 / axe 4.10.3, twelve-section HTTP workflows and selected manual inspection | Chromium194 checks; Firefox153 assets installed but startup timeout/uid_map EROFS/compositor errors; formal accessibility and broader browser acceptance remain open | P1; available tools/hardware |
+| Browser/manual accessibility / cross-browser (§13) | IN PROGRESS | Chromium 151 / axe 4.10.3; Sprint 9 Chromium 156 operations workflow 28/0; twelve-section HTTP workflows and selected manual inspection | Chromium194 checks; Firefox153 assets installed but startup timeout/uid_map EROFS/compositor errors; formal accessibility and broader browser acceptance remain open | P1; available tools/hardware |
 | Final comprehensive engineering acceptance (§13,16) | NOT STARTED | This matrix is the available requirements disposition | One final acceptance review after substantive work, not repeated audits | P0; feature completion first |
 | Verified publication and independently restored archives (§14) | COMPLETE | Sprint8 637-file release and643-file follow-up GitHub restores, every hash/mode; rebuilt native wheel and13 numerical checks; local Git bundle | Maintain pinned-source archives at each substantial checkpoint; GitHub is the sole verified external provider | P0; GitHub sole verified external provider |
 | Historical §139 / full T4 acceptance (§3,15,16) | BLOCKED | §139 UNSUPPLIED; T4_NOT_CERTIFIED | Required authoritative acceptance contract and independent evidence | P0; unsupplied requirements |
