@@ -1,0 +1,595 @@
+{
+  "blocked_external_requests": [],
+  "broker_connections": 0,
+  "browser_provider_connections": 0,
+  "browser_version": "156.0.8078.4",
+  "checks": [
+    {
+      "detail": null,
+      "name": "thirteen sections: all twelve originals plus Global Intelligence",
+      "passed": true
+    },
+    {
+      "detail": "rgb(5, 6, 8)",
+      "name": "deep-black page background #050608",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 2312930396,
+        "height": 480,
+        "lit": 4085,
+        "width": 841
+      },
+      "name": "vol-surface: renders non-blank canvas from AVAILABLE synthetic envelope",
+      "passed": true
+    },
+    {
+      "detail": 88,
+      "name": "vol-surface: exact-value table populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "vol-surface: drag rotates the camera",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "vol-surface: wheel zoom changes the view",
+      "passed": true
+    },
+    {
+      "detail": "Strike\n70\nLog-moneyness\n-0.3567\nMaturity (years)\n0.08\nType\nPUT\nImplied vol\n0.3431\nVega\n1.00e-4\nSnapshot\ncurrent",
+      "name": "vol-surface: keyboard N selects an item and fills details",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "vol-surface: selection announced to assistive technology",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "vol-surface: 2D alternative renders",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "vol-surface: snapshot filter re-renders",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 4104545453,
+        "height": 480,
+        "lit": 5924,
+        "width": 841
+      },
+      "name": "order-book: renders non-blank canvas from AVAILABLE synthetic envelope",
+      "passed": true
+    },
+    {
+      "detail": 600,
+      "name": "order-book: exact-value table populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "order-book: drag rotates the camera",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "order-book: wheel zoom changes the view",
+      "passed": true
+    },
+    {
+      "detail": "side\nBID\nprice\n49.99\nquantity\n233\nrank\n1\nstep\n0\nobserved at\n2026-09-30T14:00:00+00:00\nclassification\nAUTHORED_SYNTHETIC_",
+      "name": "order-book: keyboard N selects an item and fills details",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "order-book: selection announced to assistive technology",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "order-book: 2D alternative renders",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "order-book: side filter keeps only bids",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 4216258764,
+        "height": 480,
+        "lit": 4443,
+        "width": 841
+      },
+      "name": "risk-terrain: renders non-blank canvas from AVAILABLE synthetic envelope",
+      "passed": true
+    },
+    {
+      "detail": 130,
+      "name": "risk-terrain: exact-value table populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "risk-terrain: drag rotates the camera",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "risk-terrain: wheel zoom changes the view",
+      "passed": true
+    },
+    {
+      "detail": "Spot shock\n-0.3\nVol shock\n-0.09\nModel P&L (USD)\n11,889.8471\nBeyond loss limit\nNO\nHorizon\ntoday",
+      "name": "risk-terrain: keyboard N selects an item and fills details",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "risk-terrain: selection announced to assistive technology",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "risk-terrain: 2D alternative renders",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 1453656606,
+        "height": 480,
+        "lit": 468,
+        "width": 841
+      },
+      "name": "correlation-network: renders non-blank canvas from AVAILABLE synthetic envelope",
+      "passed": true
+    },
+    {
+      "detail": 66,
+      "name": "correlation-network: exact-value table populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "correlation-network: drag rotates the camera",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "correlation-network: wheel zoom changes the view",
+      "passed": true
+    },
+    {
+      "detail": "Instrument\nSYN001\nCluster\n2\nDaily volatility\n0.014\n\u03c1 with SYN009\n0.3345\n\u03c1 with SYN006\n0.2102\n\u03c1 with SYN004\n0.1203\n\u03c1 with",
+      "name": "correlation-network: keyboard N selects an item and fills details",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "correlation-network: selection announced to assistive technology",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "correlation-network: 2D alternative renders",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "correlation-network: |rho| threshold filter re-renders",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 3336615558,
+        "height": 480,
+        "lit": 6018,
+        "width": 841
+      },
+      "name": "stat-arb: renders non-blank canvas from AVAILABLE synthetic envelope",
+      "passed": true
+    },
+    {
+      "detail": 160,
+      "name": "stat-arb: exact-value table populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "stat-arb: drag rotates the camera",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "stat-arb: wheel zoom changes the view",
+      "passed": true
+    },
+    {
+      "detail": "Observation\n20\nHedge elasticity\n1.0002\nStandardized innovation\n-0.0486\nFiltered regime\n0\nRegime probability\n0.6302",
+      "name": "stat-arb: keyboard N selects an item and fills details",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "stat-arb: selection announced to assistive technology",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "stat-arb: 2D alternative renders",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 2154432601,
+        "height": 480,
+        "lit": 4425,
+        "width": 841
+      },
+      "name": "model-evaluation: renders non-blank canvas from AVAILABLE synthetic envelope",
+      "passed": true
+    },
+    {
+      "detail": 4,
+      "name": "model-evaluation: exact-value table populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "model-evaluation: drag rotates the camera",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "model-evaluation: wheel zoom changes the view",
+      "passed": true
+    },
+    {
+      "detail": "Model\nKalman local level\nFamily\nOne-step return forecast MSE (lower better)\nFold\n0\nModel metric\n1.49e-4\nBaseline\n1.32e-4",
+      "name": "model-evaluation: keyboard N selects an item and fills details",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "model-evaluation: selection announced to assistive technology",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "model-evaluation: 2D alternative renders",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "orbit animation runs when requested",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "pause stops the animation",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "local mode without admitted evidence shows UNAVAILABLE and renders nothing",
+      "passed": true
+    },
+    {
+      "detail": {
+        "heap_after": 4201683,
+        "heap_before": 29296265
+      },
+      "name": "24 module switches reuse one canvas and keep heap bounded",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 2734405089,
+        "height": 479,
+        "lit": 4487,
+        "width": 702
+      },
+      "name": "canvas follows browser resize",
+      "passed": true
+    },
+    {
+      "detail": [
+        "#news",
+        "panel lab-panel hidden"
+      ],
+      "name": "sections without a module hide the lab",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "standard terminal panels hidden in Global Intelligence",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "integrated sources start UNAVAILABLE before any acquisition",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "authored synthetic defense records admitted",
+      "passed": true
+    },
+    {
+      "detail": "ADMITTED REPORTS\nDEMONSTRATION\nDEMONSTRATION\nDEMONSTRATION\nNASA EONET\nUNAVAILABLE\nUSGS EARTHQUAKES\nUNAVAILABLE",
+      "name": "admitted synthetic records labeled DEMONSTRATION, not HISTORICAL",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "no LIVE semantic badge is rendered anywhere",
+      "passed": true
+    },
+    {
+      "detail": [
+        422,
+        422
+      ],
+      "name": "tracking fields and sub-24-hour records rejected",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "maritime layer disabled with an explicit blocker",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "aviation layer disabled with an explicit blocker",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "imagery layer disabled with an explicit blocker",
+      "passed": true
+    },
+    {
+      "detail": [
+        10,
+        4
+      ],
+      "name": "layer filter removes hazard events",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "title search filters server-side",
+      "passed": true
+    },
+    {
+      "detail": {
+        "hash": 1286612087,
+        "height": 518,
+        "lit": 9135,
+        "width": 744
+      },
+      "name": "globe renders basemap and events",
+      "passed": true
+    },
+    {
+      "detail": "DEMONSTRATION\nDEMONSTRATION \u00b7 NOT OBSERVED\nAuthored demonstration: cyclone approaching Strait of Hormuz\nCategory\nSEVERE STORM\nSource\nGIG authored demonstration fixture \u2014 Authored fictional hazard even",
+      "name": "event details show source, observation, publication, acquisition, delay, uncertainty, verification",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "research links stated as hypotheses, not causal",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "flat map projection renders",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "flat map pans on drag",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE\nNO POSITIONS SHOWN OR SIMULATED\nMaritime intelligence\nCandidate source\nNo permitted global AIS source configured \u2014 Commercial vessel positions\nStatu",
+      "name": "maritime view states blocker and alternatives without positions",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE\nNO POSITIONS SHOWN OR SIMULATED\nCivil aviation intelligence\nCandidate source\nOpenSky Network \u2014 Civil aircraft state vectors\nStatus\nBLOCKED\nBlocker\nC",
+      "name": "aviation view states blocker and alternatives without positions",
+      "passed": true
+    },
+    {
+      "detail": "UNAVAILABLE\nNO POSITIONS SHOWN OR SIMULATED\nSatellite imagery viewer\nCandidate source\nCopernicus Sentinel / USGS Landsat \u2014 Periodic satellite imagery scenes\nSta",
+      "name": "imagery view states blocker and alternatives without positions",
+      "passed": true
+    },
+    {
+      "detail": "EXERCISE ANNOUNCEMENT\nANALYTICAL SCENARIO\nAUTHORED SYNTHETIC\nAuthored fixture: announced multinational naval exercise (fictional)\nArabian Sea \u00b7 published 2026-10-31T04:19:51Z \u00b7 delay 5.0 days \u00b7 \u00b1111 k",
+      "name": "Navy research shows the admitted record with verification and synthetic label",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "ARMY research category populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "AIR_FORCE research category populated",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "event study estimates strictly before the event window",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "scenario exposure labeled ANALYTICAL_SCENARIO",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "investigation saved and listed",
+      "passed": true
+    },
+    {
+      "detail": [
+        10,
+        0
+      ],
+      "name": "point-in-time replay excludes records acquired after the cutoff",
+      "passed": true
+    },
+    {
+      "detail": "NASA EONET\nUNAVAILABLE\nUSGS EARTHQUAKES\nUNAVAILABLE",
+      "name": "replayed integrated sources are HISTORICAL or UNAVAILABLE",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "reduced motion: orbit request is refused",
+      "passed": true
+    },
+    {
+      "detail": 0,
+      "name": "17-mobile-layout: no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "detail": 0,
+      "name": "17-mobile-layout: Global Intelligence fits without horizontal overflow",
+      "passed": true
+    },
+    {
+      "detail": 0,
+      "name": "18-tablet-layout: no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "detail": 0,
+      "name": "18-tablet-layout: Global Intelligence fits without horizontal overflow",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "command-center renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "markets renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "signals renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "portfolio renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "risk renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "models renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "news renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "stat-arb renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "options renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "execution renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "research renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "operations renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": null,
+      "name": "global-intelligence renders without JavaScript errors",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "no JavaScript exceptions",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "no browser requests outside the local origin",
+      "passed": true
+    }
+  ],
+  "failed": 0,
+  "formal_accessibility_certification": false,
+  "javascript_errors": [],
+  "passed": 100,
+  "public_deployment": false,
+  "runner": "real-playwright-chromium",
+  "screenshots": [
+    "01-command-center.png",
+    "02-navigation.png",
+    "04-options-vol-surface.png",
+    "05-order-book-landscape.png",
+    "03-markets.png",
+    "06-portfolio-risk-terrain.png",
+    "16-portfolio-and-risk.png",
+    "07-correlation-network.png",
+    "08-stat-arb-landscape.png",
+    "09-model-evaluation.png",
+    "10-global-intelligence-globe.png",
+    "11-global-intelligence-flat-map.png",
+    "12-maritime-intelligence.png",
+    "13-civil-aviation-intelligence.png",
+    "14-satellite-imagery.png",
+    "19-geopolitical-defense-workspace.png",
+    "15-financial-impact-research.png",
+    "20-geopolitical-market-risk-monitor.png",
+    "21-source-coverage-and-permissions.png",
+    "17-mobile-layout.png",
+    "17-mobile-layout-global-intelligence.png",
+    "18-tablet-layout.png",
+    "18-tablet-layout-global-intelligence.png"
+  ],
+  "server_provider_refresh": false
+}
