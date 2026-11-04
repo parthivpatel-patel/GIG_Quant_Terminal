@@ -21,9 +21,26 @@ Tests: `tests/test_viz_modules.py`, `scripts/browser_global_3d.py`.
 - The default lab data is the authored synthetic fixture, labeled SYNTHETIC in
   the envelope and footer. "Admitted local evidence" returns UNAVAILABLE for
   every module and renders nothing; no local inputs are inferred.
+- Each builder (`build_vol_surface`, `build_order_book`, `build_risk_terrain`,
+  `build_correlation_network`, `build_stat_arb`, `build_model_evaluation`) is a
+  function of explicit inputs; the authored fixtures are only one caller, so the
+  same code accepts observed inputs once they are admitted.
 - Outputs are deterministic. `scripts/build_viz_fixtures.py` stores them so a
   request does not rerun the HMM and GARCH fits (about 12 s cold); the test
   suite recomputes all six modules and compares them with the stored file.
+- Input-sensitivity tests (`VizInputSensitivityTests`) perturb inputs and check
+  the outputs move as the method requires: one repriced option changes only its
+  implied vol; tripled bid depth raises imbalance; doubled positions double P&L;
+  a negated return series flips its correlations; a truncated price series gives
+  an identical causal stat-arb prefix; and changing data after a fold leaves
+  that fold's scores unchanged (no look-ahead).
+- The browser acceptance intercepts the vol-surface payload, changes it, and
+  checks that the canvas, legend and table change with it, so rendering follows
+  data rather than a prerendered image.
+- Scenes are fitted to the canvas from the projected cube corners and label
+  anchors on resize, mode change and reset; axis labels are drawn after the
+  data with a dark halo, clamped inside the canvas, and tick labels that would
+  overlap are skipped.
 - Model evaluation does not train the BiLSTM here and says so; metrics are not
   trading profitability or economic validation. Correlation is described as
   co-movement, not causation.

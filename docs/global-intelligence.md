@@ -43,19 +43,31 @@ never emitted: no integrated source has verified real-time semantics.
   DEMONSTRATION; they are drawn with dashed markers.
 
 Each event carries provider, dataset, license, observation time, publication
-time (or "not supplied"), acquisition time, reporting delay, geographic
-uncertainty with its basis, verification state, revision count and hash, and
-citations.
+time (or "not supplied"), provider last-updated time, acquisition time,
+reporting delay, geographic uncertainty with its basis, verification state,
+revision count and hash, and citations.
+
+USGS summary feeds give an `updated` timestamp but no first-publication time,
+so USGS events record `published_at` as not supplied and keep `updated` as
+`provider_updated_at`; the reporting delay is measured to acquisition, not to an
+assumed publication. Non-finite or non-numeric magnitudes and depths are
+recorded as unknown rather than coerced.
 
 ## Provider requests
 
 Reads never contact a provider. `POST /api/v1/intel/refresh` is the only path:
-it accepts only a registry source, uses that source's fixed HTTPS URL, allows
-redirects only to the same host, bounds the response size, enforces the
-source's minimum refresh interval and exponential failure backoff, and appends
-immutable revisions (a changed provider record becomes a new revision; an
-unchanged one is not duplicated). Deferred and failed attempts return a status
-record; previously acquired events remain available as CACHED.
+it accepts only a registry source, uses that source's fixed HTTPS URL, refuses
+any redirect to another host or to a non-HTTPS URL before following it, bounds
+the response size, enforces the source's minimum refresh interval and
+exponential failure backoff, and appends immutable revisions (a changed provider
+record becomes a new revision; an unchanged one is not duplicated).
+
+Provider JSON is parsed strictly (NaN and Infinity rejected). A payload is
+accepted or rejected whole: if any record fails normalization nothing from it is
+stored, so a partial feed is never presented as complete. Every failure
+(HTTP_STATUS, REDIRECT_REJECTED, INVALID_PAYLOAD, TIMEOUT_OR_NETWORK) is logged
+and counts toward backoff. Deferred and failed attempts return a status record;
+previously acquired events remain available as CACHED.
 
 ## Geopolitical and defense research
 
@@ -83,9 +95,15 @@ forecasts, targeting or interception support.
   container shipping, aviation, defense, insurance, regional FX and equities.
   They are labeled RESEARCH_HYPOTHESIS_NOT_CAUSAL.
 - The Geopolitical Market Risk Monitor counts linked events per theme, split
-  into confirmed and unverified; counts are attention indicators, not forecasts.
+  into confirmed, unverified and other (demonstration, scenario or historical),
+  so the three always sum to the event count; counts are attention indicators,
+  not forecasts.
 - Event studies (mean-adjusted or market model) estimate strictly before the
-  event window and are labeled DESCRIPTIVE_SINGLE_EVENT_NOT_CAUSAL.
+  event window and are labeled DESCRIPTIVE_SINGLE_EVENT_NOT_CAUSAL. Day 0 is the
+  first return stamped on or after the event's UTC date
+  (`FIRST_RETURN_ENDING_ON_OR_AFTER_EVENT_UTC_DATE`), so an intraday event on
+  daily data never leaks into the estimation window. Instrument and source must
+  be nonempty bounded strings.
 - Theme exposure accepts long-only holdings with caller-supplied tags; scenario
   shocks apply the most adverse shock once per holding and are labeled
   ANALYTICAL_SCENARIO.

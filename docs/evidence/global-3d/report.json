@@ -1,4 +1,46 @@
 {
+  "accessibility": [
+    {
+      "incomplete": 1,
+      "passes": 29,
+      "section": "options",
+      "theme": "dark",
+      "version": "4.10.3",
+      "violations": []
+    },
+    {
+      "incomplete": 1,
+      "passes": 29,
+      "section": "options",
+      "theme": "light",
+      "version": "4.10.3",
+      "violations": []
+    },
+    {
+      "incomplete": 1,
+      "passes": 32,
+      "section": "global-intelligence",
+      "theme": "dark",
+      "version": "4.10.3",
+      "violations": []
+    },
+    {
+      "incomplete": 1,
+      "passes": 32,
+      "section": "global-intelligence",
+      "theme": "light",
+      "version": "4.10.3",
+      "violations": []
+    }
+  ],
+  "axe_asset": {
+    "license": "MPL-2.0",
+    "name": "axe-core",
+    "script_sha256": "880970c081707360e64f34cea25ff91892f5bc95675b0776925b9709dd8a68bb",
+    "sha512_integrity_verified": true,
+    "source": "https://registry.npmjs.org/axe-core/-/axe-core-4.10.3.tgz",
+    "version": "4.10.3"
+  },
   "blocked_external_requests": [],
   "broker_connections": 0,
   "browser_provider_connections": 0,
@@ -16,9 +58,9 @@
     },
     {
       "detail": {
-        "hash": 2312930396,
+        "hash": 3834245111,
         "height": 480,
-        "lit": 4085,
+        "lit": 3710,
         "width": 841
       },
       "name": "vol-surface: renders non-blank canvas from AVAILABLE synthetic envelope",
@@ -61,9 +103,9 @@
     },
     {
       "detail": {
-        "hash": 4104545453,
+        "hash": 3826005718,
         "height": 480,
-        "lit": 5924,
+        "lit": 5418,
         "width": 841
       },
       "name": "order-book: renders non-blank canvas from AVAILABLE synthetic envelope",
@@ -106,9 +148,9 @@
     },
     {
       "detail": {
-        "hash": 4216258764,
+        "hash": 3573428169,
         "height": 480,
-        "lit": 4443,
+        "lit": 4056,
         "width": 841
       },
       "name": "risk-terrain: renders non-blank canvas from AVAILABLE synthetic envelope",
@@ -146,9 +188,9 @@
     },
     {
       "detail": {
-        "hash": 1453656606,
+        "hash": 2233542473,
         "height": 480,
-        "lit": 468,
+        "lit": 438,
         "width": 841
       },
       "name": "correlation-network: renders non-blank canvas from AVAILABLE synthetic envelope",
@@ -191,9 +233,9 @@
     },
     {
       "detail": {
-        "hash": 3336615558,
+        "hash": 1872072305,
         "height": 480,
-        "lit": 6018,
+        "lit": 5425,
         "width": 841
       },
       "name": "stat-arb: renders non-blank canvas from AVAILABLE synthetic envelope",
@@ -231,9 +273,9 @@
     },
     {
       "detail": {
-        "hash": 2154432601,
+        "hash": 3394620559,
         "height": 480,
-        "lit": 4425,
+        "lit": 4017,
         "width": 841
       },
       "name": "model-evaluation: renders non-blank canvas from AVAILABLE synthetic envelope",
@@ -286,17 +328,17 @@
     },
     {
       "detail": {
-        "heap_after": 4184491,
-        "heap_before": 29296853
+        "heap_after": 4888530,
+        "heap_before": 19258544
       },
       "name": "24 module switches reuse one canvas and keep heap bounded",
       "passed": true
     },
     {
       "detail": {
-        "hash": 2581468674,
+        "hash": 2391234527,
         "height": 479,
-        "lit": 4487,
+        "lit": 3919,
         "width": 702
       },
       "name": "canvas follows browser resize",
@@ -370,7 +412,7 @@
     },
     {
       "detail": [
-        403,
+        393,
         4
       ],
       "name": "layer filter removes hazard events",
@@ -383,16 +425,16 @@
     },
     {
       "detail": {
-        "hash": 1003941038,
+        "hash": 1639722438,
         "height": 518,
-        "lit": 9343,
+        "lit": 9345,
         "width": 744
       },
       "name": "globe renders basemap and events",
       "passed": true
     },
     {
-      "detail": "DELAYED\nPROVIDER REVIEWED\nM 3.2 - 3 km SE of Meno, Oklahoma\nCategory\nEARTHQUAKE\nSource\nU.S. Geological Survey \u2014 Earthquake Hazards Program GeoJSON summary feed, M2.5+ past 7 days\nObservation time\n2026",
+      "detail": "DELAYED\nPROVIDER AUTOMATIC \u00b7 SUBJECT TO REVISION\nM 3.0 - 55 km ENE of Pedro Bay, Alaska\nCategory\nEARTHQUAKE\nSource\nU.S. Geological Survey \u2014 Earthquake Hazards Program GeoJSON summary feed, M2.5+ past ",
       "name": "event details show source, observation, publication, acquisition, delay, uncertainty, verification",
       "passed": true
     },
@@ -427,7 +469,7 @@
       "passed": true
     },
     {
-      "detail": "EXERCISE ANNOUNCEMENT\nANALYTICAL SCENARIO\nAUTHORED SYNTHETIC\nAuthored fixture: announced multinational naval exercise (fictional)\nArabian Sea \u00b7 published 2026-10-31T04:18:24Z \u00b7 delay 5.0 days \u00b7 \u00b1111 k",
+      "detail": "EXERCISE ANNOUNCEMENT\nANALYTICAL SCENARIO\nAUTHORED SYNTHETIC\nAuthored fixture: announced multinational naval exercise (fictional)\nArabian Sea \u00b7 published 2026-10-31T12:59:07Z \u00b7 delay 5.0 days \u00b7 \u00b1111 k",
       "name": "Navy research shows the admitted record with verification and synthetic label",
       "passed": true
     },
@@ -458,7 +500,7 @@
     },
     {
       "detail": [
-        403,
+        393,
         0
       ],
       "name": "point-in-time replay excludes records acquired after the cutoff",
@@ -492,6 +534,36 @@
     {
       "detail": 0,
       "name": "18-tablet-layout: Global Intelligence fits without horizontal overflow",
+      "passed": true
+    },
+    {
+      "detail": {
+        "legend": "Implied volatility \u00b7 annualized\n0.149\n0.988",
+        "modified": 2925544843,
+        "original": 3834245111,
+        "table": "70\t0.08\tPUT\t2.10e-4\t0.98765\t1.00e-4\n80\t0.08\tPUT\t9.96e-4\t0.3693\t5.31e-4\n85\t0.08\tPUT\t0.00584\t0.32325\t0.00267\n90\t0.08\tPUT\t0.04887\t0.29127\t0.01559\n95\t0.08\tPUT\t0.376"
+      },
+      "name": "renderer follows its payload: modified implied vols change the canvas, legend and table",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "options dark: axe WCAG A/AA automated rules",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "options light: axe WCAG A/AA automated rules",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "global-intelligence dark: axe WCAG A/AA automated rules",
+      "passed": true
+    },
+    {
+      "detail": [],
+      "name": "global-intelligence light: axe WCAG A/AA automated rules",
       "passed": true
     },
     {
@@ -573,21 +645,21 @@
   "failed": 0,
   "formal_accessibility_certification": false,
   "javascript_errors": [],
-  "passed": 102,
+  "passed": 107,
   "provider_refresh": {
     "NASA_EONET": {
-      "acquired_at": "2026-11-04T04:18:24.750295+00:00",
-      "new_revisions": 45,
-      "raw_sha256": "c6be67fd88e9461d500575a8fe29a6b1594208064da9bd798993a6e2549242af",
-      "received": 45,
+      "acquired_at": "2026-11-04T12:59:07.917289+00:00",
+      "new_revisions": 44,
+      "raw_sha256": "20d8688f25905fce0309409a71f65c31f94e264ac01a318c0126b0ee9e343e01",
+      "received": 44,
       "source_id": "NASA_EONET",
       "state": "ACQUIRED"
     },
     "USGS_EARTHQUAKES": {
-      "acquired_at": "2026-11-04T04:18:24.385542+00:00",
-      "new_revisions": 348,
-      "raw_sha256": "4a68bf4e883c37be1b7bbb816a66297a040a71c944aa17e2b7d421950aae8c91",
-      "received": 348,
+      "acquired_at": "2026-11-04T12:59:07.534694+00:00",
+      "new_revisions": 339,
+      "raw_sha256": "8298bd784327048bfd60318d9f4ca8ab94abbd9f46966fcc03ea094a63f8c52f",
+      "received": 339,
       "source_id": "USGS_EARTHQUAKES",
       "state": "ACQUIRED"
     }
