@@ -41,18 +41,30 @@ def _ns(value: Any) -> int:
 
 
 class IntelStore:
+    """Reads never create state: the directory and schema appear on the first write."""
+
     def __init__(self, directory: Path):
-        directory.mkdir(parents=True, exist_ok=True)
+        self.directory = directory
         self.path = directory / "intel.sqlite3"
         self._lock = threading.Lock()
-        with self._connect() as db:
-            db.executescript(_SCHEMA)
+        self._ready = False
 
     def _connect(self) -> sqlite3.Connection:
+        if not self._ready:
+            self.directory.mkdir(parents=True, exist_ok=True)
         db = sqlite3.connect(self.path, timeout=10, isolation_level=None)
         db.execute("PRAGMA journal_mode=WAL")
         db.execute("PRAGMA synchronous=FULL")
+        if not self._ready:
+            db.executescript(_SCHEMA)
+            self._ready = True
         return db
+
+    def _rows(self, sql: str, params: tuple[Any, ...]) -> list[tuple[Any, ...]]:
+        if not self._ready and not self.path.exists():
+            return []
+        with self._connect() as db:
+            return db.execute(sql, params).fetchall()
 
     def append(self, records: Iterable[dict[str, Any]], *, classification: str, ingested_at: str) -> int:
         """Append revisions atomically; returns the count of new revisions."""
@@ -78,10 +90,8 @@ class IntelStore:
                         raw_sha256, received, new_revisions))
 
     def fetch_history(self, source_id: str, limit: int = 20) -> list[dict[str, Any]]:
-        with self._connect() as db:
-            rows = db.execute("SELECT attempted_at, ok, http_status, error_code, raw_sha256, received, new_revisions "
-                              "FROM fetches WHERE source_id=? ORDER BY attempted_ns DESC LIMIT ?",
-                              (source_id, limit)).fetchall()
+        rows = self._rows("SELECT attempted_at, ok, http_status, error_code, raw_sha256, received, new_revisions "
+                          "FROM fetches WHERE source_id=? ORDER BY attempted_ns DESC LIMIT ?", (source_id, limit))
         keys = ("attempted_at", "ok", "http_status", "error_code", "raw_sha256", "received", "new_revisions")
         return [dict(zip(keys, (*r[:1], bool(r[1]), *r[2:]), strict=True)) for r in rows]
 
@@ -122,10 +132,8 @@ class IntelStore:
 
     def events(self, *, as_of: datetime, layers: set[str] | None = None, categories: set[str] | None = None,
                since: datetime | None = None, query: str | None = None, limit: int = 1000) -> list[dict[str, Any]]:
-        with self._connect() as db:
-            rows = db.execute(
-                "SELECT event_id, record, acquired_ns FROM revisions WHERE acquired_ns <= ? ORDER BY acquired_ns",
-                (_ns(as_of),)).fetchall()
+        rows = self._rows("SELECT event_id, record, acquired_ns FROM revisions WHERE acquired_ns <= ? ORDER BY acquired_ns",
+                          (_ns(as_of),))
         latest: dict[str, dict[str, Any]] = {}
         counts: dict[str, int] = {}
         for event_id, raw, _ in rows:
@@ -157,7 +165,6 @@ class IntelStore:
         return {"investigation_id": identity, "name": name}
 
     def investigations(self, limit: int = 50) -> list[dict[str, Any]]:
-        with self._connect() as db:
-            rows = db.execute("SELECT investigation_id, created_at, name, body FROM investigations "
-                              "ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        rows = self._rows("SELECT investigation_id, created_at, name, body FROM investigations "
+                          "ORDER BY created_at DESC LIMIT ?", (limit,))
         return [{"investigation_id": r[0], "created_at": r[1], "name": r[2], "body": json.loads(r[3])} for r in rows]

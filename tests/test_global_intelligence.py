@@ -236,6 +236,20 @@ class WorkspaceRefreshTests(unittest.TestCase):
             failed = json.loads(workspace.refresh({"source_id": "NASA_EONET"}).wire)
             self.assertEqual((failed["data"]["state"], failed["provenance"]["classification"]), ("FAILED", "SNAPSHOT"))
 
+    def test_reads_create_no_state(self):
+        from gig.service.intel_workspace import IntelWorkspace
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp) / "intel"
+            workspace = IntelWorkspace(directory)
+            now = datetime.now(UTC)
+            overview = json.loads(workspace.overview(as_of=now, layers=None, categories=None, days=30, query=None).wire)
+            self.assertEqual(overview["data"]["events"], [])
+            self.assertEqual(workspace.store.investigations(), [])
+            self.assertFalse(directory.exists())
+            workspace.store.save_investigation("first", {"layers": []})
+            self.assertTrue((directory / "intel.sqlite3").exists())
+            self.assertEqual(len(IntelWorkspace(directory).store.investigations()), 1)
+
 
 class IntelHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
