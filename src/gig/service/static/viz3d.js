@@ -42,6 +42,7 @@
     const initial = { ...camera };
     const view = { width: 0, height: 0, dpr: 1, scale: 1, offsetX: 0, offsetY: 0 };
     let placed = [];
+    let pointLabels = [];
     let scene = { primitives: [], axes: null };
     let projected = [];
     let hovered = null; let selected = null; let frame = 0; let orbiting = false; let last = 0; let destroyed = false;
@@ -61,7 +62,14 @@
     // scene does not breathe while the user orbits.
     const ANCHORS = [];
     for (const x of [-1, 1]) for (const y of [-1, 1]) for (const z of [-1, 1]) ANCHORS.push([x, y, z]);
-    ANCHORS.push([0, -1.32, -1], [-1.36, 0, -1], [-1.2, -1.2, 1.18], [1, -1.14, -1], [-1.16, 1, -1]);
+    for (const s of [-1, 1]) ANCHORS.push([0, 1.32 * s, -1], [1.36 * s, 0, -1], [1, 1.14 * s, -1], [1.16 * s, 1, -1]);
+    ANCHORS.push([-1.2, -1.2, 1.18]);
+    // Floor axes sit on whichever parallel floor edge is nearer the viewer, so
+    // their titles and ticks fall outside the data instead of behind it.
+    function nearSides() {
+      const nearer = (a, b) => (rotate(a)[2] < rotate(b)[2] - 1e-9 ? 1 : -1);
+      return { sx: nearer([1, 0, -1], [-1, 0, -1]), sy: nearer([0, 1, -1], [0, -1, -1]) };
+    }
     function fit() {
       if (!view.width) return;
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -112,21 +120,23 @@
       for (let i = -1; i <= 1.001; i += 0.5) {
         edge([i, -1, -1], [i, 1, -1], "#1a222d"); edge([-1, i, -1], [1, i, -1], "#1a222d");
       }
-      edge([-1, -1, -1], [1, -1, -1], "#3a4656"); edge([-1, -1, -1], [-1, 1, -1], "#3a4656"); edge([-1, -1, -1], [-1, -1, 1], "#3a4656");
+      const { sx, sy } = nearSides();
+      edge([-1, sy, -1], [1, sy, -1], "#3a4656"); edge([sx, -1, -1], [sx, 1, -1], "#3a4656"); edge([-1, -1, -1], [-1, -1, 1], "#3a4656");
     }
     function drawAxisLabels() {
       const axes = scene.axes; if (!axes) return;
       const keys = ["x", "y", "z"].filter((key) => axes[key] && !(key === "z" && camera.ortho2d));
+      const { sx, sy } = nearSides();
       keys.forEach((key) => {
         const axis = axes[key];
-        const at = key === "x" ? [0, -1.32, -1] : key === "y" ? [-1.36, 0, -1] : [-1.2, -1.2, 1.18];
+        const at = key === "x" ? [0, 1.32 * sy, -1] : key === "y" ? [1.36 * sx, 0, -1] : [-1.2, -1.2, 1.18];
         const p = project(at); text(`${axis.label}${axis.unit ? ` (${axis.unit})` : ""}`, p[0], p[1], "#a6b2c3", "center", 11);
       });
       keys.forEach((key) => {
         const axis = axes[key];
         const ticks = axis.ticks || (axis.scale ? [-1, 0, 1].map((n) => [n, axis.scale.from(n)]) : []);
         ticks.forEach(([n, value]) => {
-          const at = key === "x" ? [n, -1.14, -1] : key === "y" ? [-1.16, n, -1] : [-1.12, -1.12, n];
+          const at = key === "x" ? [n, 1.14 * sy, -1] : key === "y" ? [1.16 * sx, n, -1] : [-1.12, -1.12, n];
           const p = project(at); text(format(value, 2), p[0], p[1], "#8292a5", "center", 10, true);
         });
       });
@@ -139,7 +149,7 @@
         const r = (item.radius || 3.5) * (highlight ? 1.6 : 1);
         ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], r, 0, TAU); ctx.fill();
         if (highlight) { ctx.strokeStyle = "#f2f5f9"; ctx.lineWidth = 1.5; ctx.stroke(); }
-        if (item.label) text(item.label, pts[0][0] + r + 4, pts[0][1], "#f2f5f9", "left", 11);
+        if (item.label) pointLabels.push({ item, r, highlight });
       } else if (item.type === "line") {
         ctx.strokeStyle = item.color; ctx.lineWidth = (item.width || 1.2) * (highlight ? 2 : 1);
         if (item.dash) ctx.setLineDash(item.dash);
@@ -149,6 +159,18 @@
         if (item.stroke || highlight) { ctx.strokeStyle = highlight ? "#f2f5f9" : item.stroke; ctx.lineWidth = highlight ? 1.5 : 0.6; ctx.stroke(); }
       }
       ctx.globalAlpha = 1;
+    }
+    // Point labels try right, left, above and below their point; a label that
+    // collides everywhere is omitted (hover, selection and the data table still
+    // name it) unless its point is selected or hovered.
+    function drawPointLabels() {
+      pointLabels.sort((a, b) => b.highlight - a.highlight);
+      for (const { item, r, highlight } of pointLabels) {
+        const [x, y] = item.screen[0]; const gap = r + 4;
+        const spots = [[x + gap, y, "left"], [x - gap, y, "right"], [x, y - gap - 6, "center"], [x, y + gap + 6, "center"]];
+        const drawn = spots.some(([sx, sy, align]) => text(item.label, sx, sy, "#f2f5f9", align, 11, true));
+        if (!drawn && highlight) text(item.label, spots[0][0], spots[0][1], "#f2f5f9", "left", 11);
+      }
     }
     function expand(item) {
       if (item.type !== "bar") return [item];
@@ -173,7 +195,9 @@
         }
       }
       projected.sort((a, b) => b.depth - a.depth || (a.type === "point") - (b.type === "point"));
+      pointLabels = [];
       projected.forEach(drawPrimitive);
+      drawPointLabels();
       drawAxisLabels();
       if (options.onDraw) options.onDraw(ctx, project, view);
     }
