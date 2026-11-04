@@ -150,7 +150,7 @@ def main() -> int:
 
                 for section in SECTIONS:
                     page.locator(f'#section-nav a[href="#{section}"]').click()
-                    page.wait_for_function(ready)
+                    page.wait_for_function(ready + " && document.getElementById('state-badge').textContent.trim() !== 'LOADING'")
                     badge = page.locator("#state-badge").inner_text()
                     check(f"{section} renders a truth state", badge in {"AVAILABLE", "UNAVAILABLE", "UNKNOWN", "STALE", "ERROR"}, badge)
                 browser.close()
