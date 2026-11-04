@@ -38,6 +38,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     from gig.service import snapshot
     from gig.service.contracts import Contract, EnvelopeSchema, State
     from gig.service.cycle_services import CycleServices
+    from gig.service.intel_workspace import LAYERS, IntelWorkspace
     from gig.service.serialization import (
         DEFAULT_LIMITS,
         SerializationError,
@@ -48,7 +49,9 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     from gig.service.workspace import TerminalWorkspace
     from gig.timestamps import aware_timestamp
 
-    workspace = TerminalWorkspace(state_dir if state_dir is not None else get_settings().data_dir / "terminal")
+    terminal_dir = state_dir if state_dir is not None else get_settings().data_dir / "terminal"
+    workspace = TerminalWorkspace(terminal_dir)
+    intel = IntelWorkspace(terminal_dir / "intel")
     integrations = CycleServices(workspace, finbert_dir=(finbert_dir if finbert_dir is not None
                                                        else get_settings().finbert_model_dir))
     workspace_write_lock = threading.Lock()
@@ -233,6 +236,47 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
             return failure("INVALID_REQUEST", 422)
         except ImportError:
             return failure("DEPENDENCY_UNAVAILABLE", 503)
+
+    @app.get("/api/v1/intel/overview", response_model=EnvelopeSchema)
+    def intel_overview(as_of: str | None = Query(None, max_length=100),
+                       layers: str | None = Query(None, max_length=200),
+                       categories: str | None = Query(None, max_length=300),
+                       days: int = Query(14, ge=1, le=365),
+                       q: str | None = Query(None, max_length=100)) -> Any:
+        try:
+            cutoff = aware_timestamp(as_of if as_of is not None else datetime.now(UTC)).to_pydatetime()
+        except (ValueError, TypeError, OverflowError):
+            return failure("INVALID_REQUEST", 422)
+        layer_set = set(layers.split(",")) if layers else None
+        if layer_set and layer_set - set(LAYERS):
+            return failure("INVALID_REQUEST", 422)
+        category_set = set(categories.split(",")) if categories else None
+        return intel.overview(as_of=cutoff, layers=layer_set, categories=category_set, days=days, query=q)
+
+    @app.post("/api/v1/intel/{action}", response_model=EnvelopeSchema)
+    async def intel_action(action: str, request: Request) -> Any:
+        methods = {"refresh": intel.refresh, "admit": intel.admit, "demonstration": intel.demonstration,
+                   "event-study": intel.event_study, "exposure": intel.exposure, "investigation": intel.investigate}
+        if action not in methods:
+            return failure("INVALID_REQUEST", 404)
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not workspace_write_lock.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            payload = loads(await request.body())
+            if not isinstance(payload, dict):
+                return failure("INVALID_REQUEST", 422)
+            return await run_in_threadpool(methods[action], payload)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        except (ValueError, TypeError, KeyError, OverflowError):
+            return failure("INVALID_REQUEST", 422)
+        finally:
+            workspace_write_lock.release()
 
     def cached_cloud(limit: int) -> dict[str, Any]:
         return snapshot._cached(

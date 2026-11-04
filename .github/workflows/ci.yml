@@ -47,8 +47,8 @@ jobs:
         run: pyflakes src tests
       - name: Compile
         run: python -m compileall -q src tests scripts
-      - name: Mypy (Sprint 9 modules)
-        run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py
+      - name: Mypy (Sprint 9 and Global Intelligence modules)
+        run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py
       - name: Tests
         run: pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
 
