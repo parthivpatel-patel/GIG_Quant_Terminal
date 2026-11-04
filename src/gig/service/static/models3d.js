@@ -105,6 +105,7 @@
       const grid = data.grid; const nx = grid.x.length;
       const all = Object.values(data.horizons).flat().map((p) => p.model_pnl).concat([data.risk_limit.loss_limit]);
       const [zmin, zmax] = minmax(all); const span = Math.max(Math.abs(zmin), Math.abs(zmax));
+      const [pmin, pmax] = minmax(Object.values(data.horizons).flat().map((p) => p.model_pnl));
       const sx = G().scaler(grid.x[0], grid.x[nx - 1]); const sy = G().scaler(grid.y[0], grid.y[grid.y.length - 1]); const sz = G().scaler(zmin, zmax);
       const at = (h, i, j) => data.horizons[h][i * grid.y.length + j];
       const primitives = [];
@@ -120,7 +121,9 @@
         for (let j = 0; j < grid.y.length; j += 2) primitives.push({ type: "line", pts: grid.x.map((_, i) => { const p = at(other, i, j); return [sx.to(p.spot_shock), sy.to(p.volatility_shock), sz.to(p.model_pnl)]; }), color: "#408bff", dash: [4, 3], alpha: 0.9 });
       }
       return { primitives, axes: { x: { ...data.axes.x, scale: sx }, y: { ...data.axes.y, scale: sy }, z: { ...data.axes.z, scale: sz } },
-        legend: { scale: "pnl", min: -span, max: span, label: "Model P&L (red loss, green gain); yellow edge = beyond limit", unit: "USD" },
+        legend: { scale: "pnl", min: pmin, max: pmax, range: [0.5 + pmin / (2 * span), 0.5 + pmax / (2 * span)],
+          zero: pmin < 0 && pmax > 0 ? -pmin / (pmax - pmin) : null,
+          label: "Model P&L range, both horizons (red loss, green gain, tick = 0); yellow edge = beyond limit", unit: "USD" },
         columns: [["spot_shock", "Spot shock"], ["volatility_shock", "Vol shock"], ["model_pnl", "Model P&L (USD)"]], rows: data.horizons[f.horizon],
         describe: (p) => [["Spot shock", p.spot_shock], ["Vol shock", p.volatility_shock], ["Model P&L (USD)", p.model_pnl], ["Beyond loss limit", p.breaches_limit ? "YES" : "NO"], ["Horizon", f.horizon.replaceAll("_", " ")]],
         extra: [["Loss limit (USD)", fmt(data.risk_limit.loss_limit, 2)], ...data.concentration.map((c) => [`Premium share · ${c.instrument}`, `${(c.share * 100).toFixed(1)}%`])],
@@ -138,7 +141,7 @@
       const clusterColors = ["#408bff", "#16c784", "#f2be4c", "#c08bff", "#f05259"];
       const focus = state.selected && state.selected.symbol;
       const primitives = w.edges.filter((e) => Math.abs(e.rho) >= threshold).map((e) => ({ type: "line", pts: [pos[e.a], pos[e.b]], color: G().ramp("correlation", (e.rho + 1) / 2), width: 0.6 + 2.4 * Math.abs(e.rho), alpha: focus && focus !== e.a && focus !== e.b ? 0.12 : 0.85 }));
-      w.nodes.forEach((n) => primitives.push({ type: "point", pts: [pos[n.symbol]], color: clusterColors[(n.cluster - 1) % clusterColors.length], radius: 4 + n.volatility * 250, label: n.symbol, data: n }));
+      w.nodes.forEach((n) => primitives.push({ type: "point", pts: [pos[n.symbol]], color: clusterColors[(n.cluster - 1) % clusterColors.length], radius: 4 + n.volatility * 250, label: n.symbol, data: n, declutter: true }));
       const prior = data.windows.prior_60;
       const rows = w.edges.map((e) => { const p = prior.edges.find((x) => x.a === e.a && x.b === e.b); return { pair: `${e.a}–${e.b}`, rho: e.rho, prior_60_rho: p ? p.rho : null, change: p ? e.rho - p.rho : null }; });
       return { primitives, axes: null,

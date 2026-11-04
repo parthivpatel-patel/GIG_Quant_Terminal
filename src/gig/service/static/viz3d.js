@@ -107,7 +107,7 @@
       const top = clamp(y, size / 2 + pad, Math.max(size / 2 + pad, view.height - size / 2 - pad));
       const box = [left - 2, top - size / 2 - 1, left + width + 2, top + size / 2 + 1];
       if (avoid && placed.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return false;
-      placed.push(box);
+      box.text = value; placed.push(box);
       ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
       ctx.strokeStyle = "rgba(5,6,8,0.88)"; ctx.lineWidth = 3; ctx.strokeText(value, left, top);
       ctx.fillStyle = color; ctx.fillText(value, left, top);
@@ -132,12 +132,16 @@
         const at = key === "x" ? [0, 1.32 * sy, -1] : key === "y" ? [1.36 * sx, 0, -1] : [-1.2, -1.2, 1.18];
         const p = project(at); text(`${axis.label}${axis.unit ? ` (${axis.unit})` : ""}`, p[0], p[1], "#a6b2c3", "center", 11);
       });
-      keys.forEach((key) => {
+      // Vertical ticks are placed first so the shared bottom corner keeps the
+      // value axis minimum; floor ticks then try small nudges before dropping.
+      const nudges = { z: [[0, 0], [-16, 0], [-30, 0]], x: [[0, 0], [0, 11], [0, -11], [12, 0], [-12, 0]], y: [[0, 0], [0, 11], [0, -11], [12, 0], [-12, 0]] };
+      [...keys].sort((a, b) => (a === "z" ? -1 : b === "z" ? 1 : 0)).forEach((key) => {
         const axis = axes[key];
         const ticks = axis.ticks || (axis.scale ? [-1, 0, 1].map((n) => [n, axis.scale.from(n)]) : []);
         ticks.forEach(([n, value]) => {
           const at = key === "x" ? [n, 1.14 * sy, -1] : key === "y" ? [1.16 * sx, n, -1] : [-1.12, -1.12, n];
-          const p = project(at); text(format(value, 2), p[0], p[1], "#8292a5", "center", 10, true);
+          const p = project(at); const label = format(value, 2);
+          if (nudges[key].some(([dx, dy]) => text(label, p[0] + dx, p[1] + dy, "#8292a5", "center", 10, true))) Object.assign(placed[placed.length - 1], { axis: key, at: n });
         });
       });
     }
@@ -147,7 +151,12 @@
       ctx.globalAlpha = item.alpha ?? 1;
       if (item.type === "point") {
         const r = (item.radius || 3.5) * (highlight ? 1.6 : 1);
+        if (item.anchor && Math.hypot(item.anchor[0] - pts[0][0], item.anchor[1] - pts[0][1]) > 0.5) {
+          ctx.strokeStyle = "#a6b2c3"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(item.anchor[0], item.anchor[1]); ctx.lineTo(pts[0][0], pts[0][1]); ctx.stroke();
+          ctx.fillStyle = "#a6b2c3"; ctx.beginPath(); ctx.arc(item.anchor[0], item.anchor[1], 1.6, 0, TAU); ctx.fill();
+        }
         ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], r, 0, TAU); ctx.fill();
+        if (item.declutter) { ctx.strokeStyle = "#050608"; ctx.lineWidth = 1.5; ctx.stroke(); }
         if (highlight) { ctx.strokeStyle = "#f2f5f9"; ctx.lineWidth = 1.5; ctx.stroke(); }
         if (item.label) pointLabels.push({ item, r, highlight });
       } else if (item.type === "line") {
@@ -172,6 +181,29 @@
         if (!drawn && highlight) text(item.label, spots[0][0], spots[0][1], "#f2f5f9", "left", 11);
       }
     }
+    // Markers flagged `declutter` that overlap on screen are separated: the one
+    // farther from the camera moves just clear of the nearer one and keeps a
+    // leader line to a dot at its true projected position.
+    function declutter() {
+      const pts = projected.filter((p) => p.type === "point" && p.declutter);
+      if (pts.length < 2) return;
+      pts.sort((a, b) => a.depth - b.depth);
+      for (let pass = 0; pass < 4; pass += 1) {
+        let moved = false;
+        for (let i = 0; i < pts.length; i += 1) for (let j = i + 1; j < pts.length; j += 1) {
+          const near = pts[i], far = pts[j];
+          const a = near.screen[0], b = far.screen[0];
+          const need = (near.radius || 3.5) + (far.radius || 3.5) + 3;
+          let dx = b[0] - a[0], dy = b[1] - a[1]; let d = Math.hypot(dx, dy);
+          if (d >= need) continue;
+          if (d < 1e-6) { dx = 0.7071; dy = -0.7071; d = 1; }
+          if (!far.anchor) far.anchor = [...b];
+          far.screen[0] = [a[0] + (dx / d) * need, a[1] + (dy / d) * need, b[2]];
+          moved = true;
+        }
+        if (!moved) break;
+      }
+    }
     function expand(item) {
       if (item.type !== "bar") return [item];
       const [x, y, z0, z1] = item.box; const w = item.half || 0.04;
@@ -191,9 +223,11 @@
         for (const item of expand(raw)) {
           item.screen = item.pts.map(project);
           item.depth = item.screen.reduce((sum, p) => sum + p[2], 0) / item.screen.length;
+          item.anchor = null;
           projected.push(item);
         }
       }
+      declutter();
       projected.sort((a, b) => b.depth - a.depth || (a.type === "point") - (b.type === "point"));
       pointLabels = [];
       projected.forEach(drawPrimitive);
@@ -289,6 +323,10 @@
       reset() { Object.assign(camera, initial, { ortho2d: camera.ortho2d }); fit(); draw(); },
       select(data) { setSelected(scene.primitives.find((p) => p.data === data) || null, false); },
       camera: () => ({ ...camera }), redraw: draw, project,
+      layout: () => ({
+        points: projected.filter((p) => p.type === "point").map((p) => ({ label: p.label || null, x: p.screen[0][0], y: p.screen[0][1], r: p.radius || 3.5, displaced: Boolean(p.anchor), declutter: Boolean(p.declutter) })),
+        labels: placed.map((b) => ({ box: b.slice(0, 4), text: b.text, axis: b.axis || null, at: b.at ?? null })), width: view.width, height: view.height,
+      }),
       destroy() {
         destroyed = true; if (frame) cancelAnimationFrame(frame); frame = 0;
         listeners.forEach(([target, type, fn, opts]) => target.removeEventListener(type, fn, opts));
@@ -299,11 +337,19 @@
     };
   }
 
-  function legend(container, { scale, min, max, label, unit }) {
+  // `range` limits the bar to the part of the colour ramp the data occupies, so
+  // the printed end values are the data extremes rather than the ramp's span.
+  function legend(container, { scale, min, max, label, unit, range, zero }) {
     container.replaceChildren();
     const title = document.createElement("span"); title.className = "legend-title"; title.textContent = `${label}${unit ? ` · ${unit}` : ""}`;
     const bar = document.createElement("span"); bar.className = "legend-bar";
-    bar.style.background = `linear-gradient(90deg, ${(SCALES[scale] || SCALES.sequential).join(",")})`;
+    if (range) {
+      const [a, b] = range; const stops = Array.from({ length: 9 }, (_, i) => ramp(scale, a + ((b - a) * i) / 8));
+      bar.style.background = `linear-gradient(90deg, ${stops.join(",")})`;
+    } else bar.style.background = `linear-gradient(90deg, ${(SCALES[scale] || SCALES.sequential).join(",")})`;
+    if (Number.isFinite(zero) && zero > 0 && zero < 1) {
+      const tick = document.createElement("span"); tick.className = "legend-zero"; tick.style.left = `${zero * 100}%`; tick.title = "Zero"; bar.append(tick);
+    }
     const low = document.createElement("span"); low.className = "legend-value"; low.textContent = format(min);
     const high = document.createElement("span"); high.className = "legend-value"; high.textContent = format(max);
     container.append(title, low, bar, high);

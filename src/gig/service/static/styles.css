@@ -82,7 +82,7 @@ body{font-size:14px;line-height:1.6;font-weight:400;font-feature-settings:"tnum"
 .lab-status[data-kind="warn"]{border-color:var(--amber)}.lab-status[data-kind="error"]{border-color:var(--red)}
 .lab-side{padding:16px 18px;overflow:auto;max-height:560px}
 .lab-side h3{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
-.lab-legend{display:grid;grid-template-columns:auto minmax(60px,1fr) auto;gap:6px 8px;align-items:center;font-size:11px;color:var(--subtle)}.legend-title{grid-column:1/-1;color:var(--text)}.legend-bar{height:8px;border-radius:2px;border:1px solid var(--border)}.legend-value{color:var(--muted);font-size:10px}
+.lab-legend{display:grid;grid-template-columns:auto minmax(60px,1fr) auto;gap:6px 8px;align-items:center;font-size:11px;color:var(--subtle)}.legend-title{grid-column:1/-1;color:var(--text)}.legend-bar{position:relative;height:8px;border-radius:2px;border:1px solid var(--border)}.legend-zero{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--text)}.legend-value{color:var(--muted);font-size:10px}
 .lab-details{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:12px}
 .lab-details dt{color:var(--muted)}.lab-details dd{margin:0;color:var(--text);overflow-wrap:anywhere}
 .lab-table-head{display:flex;justify-content:space-between;align-items:center;padding:8px 22px;border-top:1px solid var(--border)}
