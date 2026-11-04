@@ -168,7 +168,8 @@ checked("initial request uses local mode and renders explicit unavailable", () =
   assert.equal(tbody().children.length, 0);
   assert.match(get("error-panel").textContent, /DATA_UNAVAILABLE/);
   assert(!get("error-panel").classList.contains("hidden"));
-  assert.equal(document.querySelectorAll(".nav-link").length, 12);
+  assert.equal(document.querySelectorAll(".nav-link").length, 13);
+  assert.deepEqual(document.querySelectorAll(".nav-link").map((link) => link.hash.slice(1)), [...sections, "global-intelligence"]);
 });
 for (const section of sections) {
   location.hash = `#${section}`;
@@ -177,6 +178,22 @@ for (const section of sections) {
   assert.equal(get("state-badge").textContent, "UNAVAILABLE");
 }
 checked("all twelve sections request typed backend paths", () => assert.equal(document.querySelectorAll(".nav-link").filter((link) => link.getAttribute("aria-current") === "page").length, 1));
+{
+  const before = calls.length;
+  location.hash = "#global-intelligence";
+  await windowEvents.get("hashchange")(); await settle();
+  checked("Global Intelligence switches workspace without a terminal-section request", () => {
+    assert.equal(calls.length, before);
+    assert.equal(get("content").dataset.workspace, "intel");
+    assert.equal(get("section-title").textContent, "Global Intelligence");
+  });
+  location.hash = "#operations";
+  await windowEvents.get("hashchange")(); await settle();
+  checked("returning to a terminal section restores the terminal workspace", () => {
+    assert.equal(get("content").dataset.workspace, "terminal");
+    assert.equal(calls.at(-1).url, "/api/v1/terminal/operations?mode=local&max_age_seconds=86400");
+  });
+}
 get("freshness-policy").value = "3600";
 await get("freshness-policy").dispatch("change"); await settle();
 checked("local queries use the visible explicit freshness policy", () => assert.match(calls.at(-1).url, /max_age_seconds=3600$/));
