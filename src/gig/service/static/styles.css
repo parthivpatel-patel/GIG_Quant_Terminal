@@ -152,3 +152,61 @@ main[data-workspace="intel"] .view-controls{display:none}
 .intel .panel>.panel-header{margin-bottom:12px}
 .intel-why{font-size:11px;padding:0;min-height:0}
 .intel-alt{margin:0 0 8px;padding-left:18px;color:var(--subtle);font-size:12px}.intel-alt li{margin:4px 0}
+
+/* GIG next-generation workspace foundation — Phase 1 */
+:root {
+  --bg: #090d13;
+  --sidebar: #0d131c;
+  --panel: #121b27;
+  --panel-alt: #0e1621;
+  --border: #2a384a;
+  --muted: #a6b5c8;
+  --text: #edf3fa;
+  --subtle: #c7d3e1;
+  --accent: #6caeff;
+  --input: #0b1420;
+}
+
+body {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.sidebar { width: 232px; }
+.workspace { margin-left: 232px; }
+main { max-width: 1920px; padding: 28px 32px 0; }
+
+.nav-link { font-size: 13px; min-height: 42px; }
+.section-description { font-size: 13px; }
+h1 { font-size: clamp(28px, 2.2vw, 36px); }
+h2 { font-size: 15px; }
+
+label, .output-label { font-size: 12px; }
+select, input, textarea, .button { font-size: 12px; }
+.panel-kicker, .tiny-label, .context-label { font-size: 10px; }
+.context-value, .muted { font-size: 12px; }
+
+.panel-header { min-height: 70px; }
+.chart-container { height: clamp(380px, 42vh, 650px); }
+.lab-stage { min-height: 400px; }
+
+table { font-size: 12px; }
+th { font-size: 10px; }
+td.numeric { font-size: 12px; }
+
+@media (max-width: 1180px) {
+  .sidebar { width: 190px; }
+  .workspace { margin-left: 190px; }
+}
+
+@media (max-width: 920px) {
+  .sidebar { width: 65px; }
+  .workspace { margin-left: 65px; }
+  main { padding: 24px 20px 0; }
+}
+
+@media (max-width: 640px) {
+  .sidebar { width: 51px; }
+  .workspace { margin-left: 51px; }
+  main { padding: 20px 14px 0; }
+}
