@@ -50,7 +50,7 @@ jobs:
       - name: Mypy (Sprint 9 and Global Intelligence modules)
         run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py src/gig/service/viz.py
       - name: Tests
-        run: pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
+        run: python -m pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
 
   frontend:
     runs-on: ubuntu-latest
