@@ -42,6 +42,7 @@
     const initial = { ...camera };
     const view = { width: 0, height: 0, dpr: 1, scale: 1, offsetX: 0, offsetY: 0 };
     let placed = [];
+    let markers = [];
     let pointLabels = [];
     let scene = { primitives: [], axes: null };
     let projected = [];
@@ -106,7 +107,8 @@
       left = clamp(left, pad, Math.max(pad, view.width - width - pad));
       const top = clamp(y, size / 2 + pad, Math.max(size / 2 + pad, view.height - size / 2 - pad));
       const box = [left - 2, top - size / 2 - 1, left + width + 2, top + size / 2 + 1];
-      if (avoid && placed.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return false;
+      const hits = (b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1];
+      if (avoid && (placed.some(hits) || markers.some(hits))) return false;
       box.text = value; placed.push(box);
       ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
       ctx.strokeStyle = "rgba(5,6,8,0.88)"; ctx.lineWidth = 3; ctx.strokeText(value, left, top);
@@ -172,7 +174,10 @@
     // Point labels try right, left, above and below their point; a label that
     // collides everywhere is omitted (hover, selection and the data table still
     // name it) unless its point is selected or hovered.
+    // Labelled markers are obstacles too, so a label never covers another
+    // labelled point's marker.
     function drawPointLabels() {
+      markers = pointLabels.map(({ item, r }) => { const [x, y] = item.screen[0]; return [x - r, y - r, x + r, y + r]; });
       pointLabels.sort((a, b) => b.highlight - a.highlight);
       for (const { item, r, highlight } of pointLabels) {
         const [x, y] = item.screen[0]; const gap = r + 4;

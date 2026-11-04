@@ -173,6 +173,9 @@ def run(url: str, report_path: Path) -> int:
                   if ((a["x"] - b["x"]) ** 2 + (a["y"] - b["y"]) ** 2) ** 0.5 < a["r"] + b["r"] - 0.5]
         check(5, "correlation nodes do not overlap on screen", nodes and not hidden, {"nodes": [n["label"] for n in nodes], "overlapping": hidden})
         check(5, "SYN002 is drawn as its own marker", any(n["label"] == "SYN002" for n in nodes))
+        covered = [(b["text"], n["label"]) for b in layout["labels"] for n in nodes if b["text"] != n["label"]
+                   and b["box"][0] < n["x"] + n["r"] and b["box"][2] > n["x"] - n["r"] and b["box"][1] < n["y"] + n["r"] and b["box"][3] > n["y"] - n["r"]]
+        check(5, "no label covers another node's marker", not covered, covered)
         canvas = page.locator("#lab-canvas")
         box = canvas.bounding_box()
         page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
