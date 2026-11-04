@@ -123,7 +123,7 @@
         legend: { scale: "pnl", min: -span, max: span, label: "Model P&L (red loss, green gain); yellow edge = beyond limit", unit: "USD" },
         columns: [["spot_shock", "Spot shock"], ["volatility_shock", "Vol shock"], ["model_pnl", "Model P&L (USD)"]], rows: data.horizons[f.horizon],
         describe: (p) => [["Spot shock", p.spot_shock], ["Vol shock", p.volatility_shock], ["Model P&L (USD)", p.model_pnl], ["Beyond loss limit", p.breaches_limit ? "YES" : "NO"], ["Horizon", f.horizon.replaceAll("_", " ")]],
-        extra: [["Loss limit (USD)", data.risk_limit.loss_limit], ...data.concentration.map((c) => [`Premium share · ${c.instrument}`, `${(c.share * 100).toFixed(1)}%`])],
+        extra: [["Loss limit (USD)", fmt(data.risk_limit.loss_limit, 2)], ...data.concentration.map((c) => [`Premium share · ${c.instrument}`, `${(c.share * 100).toFixed(1)}%`])],
         filters() {
           control("select", "Horizon", [["today", "Today"], ["plus_30_days", "+30 days (time decay)"]], f.horizon, (v) => { f.horizon = v; });
           control("select", "Limit plane", [["on", "Shown"], ["off", "Hidden"]], f.limit, (v) => { f.limit = v; });

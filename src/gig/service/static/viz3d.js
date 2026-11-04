@@ -40,7 +40,8 @@
     const ctx = canvas.getContext("2d");
     const camera = { yaw: -0.75, pitch: 0.55, zoom: 1, panX: 0, panY: 0, ortho2d: false };
     const initial = { ...camera };
-    const view = { width: 0, height: 0, dpr: 1, scale: 1 };
+    const view = { width: 0, height: 0, dpr: 1, scale: 1, offsetX: 0, offsetY: 0 };
+    let placed = [];
     let scene = { primitives: [], axes: null };
     let projected = [];
     let hovered = null; let selected = null; let frame = 0; let orbiting = false; let last = 0; let destroyed = false;
@@ -53,7 +54,27 @@
       view.dpr = Math.min(2, window.devicePixelRatio || 1);
       view.width = Math.max(1, rect.width); view.height = Math.max(1, rect.height);
       canvas.width = Math.round(view.width * view.dpr); canvas.height = Math.round(view.height * view.dpr);
-      draw();
+      fit(); draw();
+    }
+    // Fit the cube and its label anchors to the canvas for the current camera
+    // orientation. Done on resize, scene change, reset and 2D toggle only, so the
+    // scene does not breathe while the user orbits.
+    const ANCHORS = [];
+    for (const x of [-1, 1]) for (const y of [-1, 1]) for (const z of [-1, 1]) ANCHORS.push([x, y, z]);
+    ANCHORS.push([0, -1.32, -1], [-1.36, 0, -1], [-1.2, -1.2, 1.18], [1, -1.14, -1], [-1.16, 1, -1]);
+    function fit() {
+      if (!view.width) return;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const point of ANCHORS) {
+        if (camera.ortho2d && point[2] > 1) continue;
+        const [x, y, depth] = rotate(point); const perspective = camera.ortho2d ? 1 : 3.4 / (3.4 + depth);
+        minX = Math.min(minX, x * perspective); maxX = Math.max(maxX, x * perspective);
+        minY = Math.min(minY, -y * perspective); maxY = Math.max(maxY, -y * perspective);
+      }
+      const marginX = Math.min(48, view.width * 0.08); const marginY = Math.min(28, view.height * 0.06);
+      view.scale = Math.max(1, Math.min((view.width - 2 * marginX) / (maxX - minX), (view.height - 2 * marginY) / (maxY - minY),
+        Math.min(view.width, view.height) * 0.42));
+      view.offsetX = -((minX + maxX) / 2) * view.scale; view.offsetY = -((minY + maxY) / 2) * view.scale;
     }
     function rotate([x, y, z]) {
       const yaw = camera.ortho2d ? 0 : camera.yaw; const pitch = camera.ortho2d ? Math.PI / 2 : camera.pitch;
@@ -65,32 +86,49 @@
       const [x, y, depth] = rotate(point);
       const perspective = camera.ortho2d ? 1 : 3.4 / (3.4 + depth);
       const s = view.scale * camera.zoom * perspective;
-      return [view.width / 2 + camera.panX + x * s, view.height / 2 + camera.panY - y * s, depth];
+      return [view.width / 2 + view.offsetX + camera.panX + x * s, view.height / 2 + view.offsetY + camera.panY - y * s, depth];
     }
-    function text(value, x, y, color = "#a6b2c3", align = "center", size = 11) {
-      ctx.fillStyle = color; ctx.font = `${size}px Inter, "Segoe UI", system-ui, sans-serif`;
-      ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.fillText(value, x, y);
+    // Labels stay inside the canvas, carry a dark halo so geometry behind them
+    // cannot make them illegible, and are skipped when `avoid` is set and they
+    // would collide with a label already placed this frame.
+    function text(value, x, y, color = "#a6b2c3", align = "center", size = 11, avoid = false) {
+      ctx.font = `${size}px Inter, "Segoe UI", system-ui, sans-serif`;
+      const width = ctx.measureText(value).width; const pad = 4;
+      let left = align === "center" ? x - width / 2 : align === "right" ? x - width : x;
+      left = clamp(left, pad, Math.max(pad, view.width - width - pad));
+      const top = clamp(y, size / 2 + pad, Math.max(size / 2 + pad, view.height - size / 2 - pad));
+      const box = [left - 2, top - size / 2 - 1, left + width + 2, top + size / 2 + 1];
+      if (avoid && placed.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return false;
+      placed.push(box);
+      ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(5,6,8,0.88)"; ctx.lineWidth = 3; ctx.strokeText(value, left, top);
+      ctx.fillStyle = color; ctx.fillText(value, left, top);
+      return true;
     }
-    function drawAxes() {
-      const axes = scene.axes; if (!axes) return;
+    function drawAxisLines() {
+      if (!scene.axes) return;
       ctx.lineWidth = 1;
       const edge = (a, b, color = "#26303d") => { const p = project(a), q = project(b); ctx.strokeStyle = color; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); };
       for (let i = -1; i <= 1.001; i += 0.5) {
         edge([i, -1, -1], [i, 1, -1], "#1a222d"); edge([-1, i, -1], [1, i, -1], "#1a222d");
       }
       edge([-1, -1, -1], [1, -1, -1], "#3a4656"); edge([-1, -1, -1], [-1, 1, -1], "#3a4656"); edge([-1, -1, -1], [-1, -1, 1], "#3a4656");
-      const tick = (axis, at, value) => { const p = project(at); text(format(value, 2), p[0], p[1], "#8292a5", "center", 10); };
-      ["x", "y", "z"].forEach((key) => {
-        const axis = axes[key]; if (!axis) return;
+    }
+    function drawAxisLabels() {
+      const axes = scene.axes; if (!axes) return;
+      const keys = ["x", "y", "z"].filter((key) => axes[key] && !(key === "z" && camera.ortho2d));
+      keys.forEach((key) => {
+        const axis = axes[key];
+        const at = key === "x" ? [0, -1.32, -1] : key === "y" ? [-1.36, 0, -1] : [-1.2, -1.2, 1.18];
+        const p = project(at); text(`${axis.label}${axis.unit ? ` (${axis.unit})` : ""}`, p[0], p[1], "#a6b2c3", "center", 11);
+      });
+      keys.forEach((key) => {
+        const axis = axes[key];
         const ticks = axis.ticks || (axis.scale ? [-1, 0, 1].map((n) => [n, axis.scale.from(n)]) : []);
         ticks.forEach(([n, value]) => {
-          if (key === "x") tick(axis, [n, -1.14, -1], value);
-          if (key === "y") tick(axis, [-1.16, n, -1], value);
-          if (key === "z" && !camera.ortho2d) tick(axis, [-1.12, -1.12, n], value);
+          const at = key === "x" ? [n, -1.14, -1] : key === "y" ? [-1.16, n, -1] : [-1.12, -1.12, n];
+          const p = project(at); text(format(value, 2), p[0], p[1], "#8292a5", "center", 10, true);
         });
-        const at = key === "x" ? [0, -1.32, -1] : key === "y" ? [-1.36, 0, -1] : [-1.2, -1.2, 1.18];
-        if (key === "z" && camera.ortho2d) return;
-        const p = project(at); text(`${axis.label}${axis.unit ? ` (${axis.unit})` : ""}`, p[0], p[1], "#a6b2c3", "center", 11);
       });
     }
     function drawPrimitive(item) {
@@ -124,8 +162,8 @@
       if (destroyed || !view.width) return;
       ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
       ctx.clearRect(0, 0, view.width, view.height);
-      view.scale = Math.min(view.width, view.height) * (view.width < 520 ? 0.22 : 0.27);
-      drawAxes();
+      placed = [];
+      drawAxisLines();
       projected = [];
       for (const raw of scene.primitives) {
         for (const item of expand(raw)) {
@@ -136,6 +174,7 @@
       }
       projected.sort((a, b) => b.depth - a.depth || (a.type === "point") - (b.type === "point"));
       projected.forEach(drawPrimitive);
+      drawAxisLabels();
       if (options.onDraw) options.onDraw(ctx, project, view);
     }
     function pick(x, y) {
@@ -204,7 +243,7 @@
       else if (event.key === "ArrowDown") { if (event.shiftKey) camera.panY += 20; else camera.pitch = clamp(camera.pitch - step, 0.05, 1.5); }
       else if (event.key === "+" || event.key === "=") camera.zoom = clamp(camera.zoom * 1.15, 0.35, 6);
       else if (event.key === "-" || event.key === "_") camera.zoom = clamp(camera.zoom / 1.15, 0.35, 6);
-      else if (event.key === "0") Object.assign(camera, initial, { ortho2d: camera.ortho2d });
+      else if (event.key === "0") { Object.assign(camera, initial, { ortho2d: camera.ortho2d }); fit(); }
       else if (event.key === "n" || event.key === "p" || event.key === "]" || event.key === "[") {
         const items = selectables(); if (!items.length) return;
         const index = items.indexOf(selected); const delta = event.key === "n" || event.key === "]" ? 1 : -1;
@@ -220,10 +259,10 @@
     if (motionQuery && motionQuery.addEventListener) motionQuery.addEventListener("change", motionChange);
     resize();
     return {
-      setScene(next) { scene = next; if (selected && !next.primitives.some((p) => p.data === selected.data)) selected = null; hovered = null; draw(); },
+      setScene(next) { scene = next; if (selected && !next.primitives.some((p) => p.data === selected.data)) selected = null; hovered = null; fit(); draw(); },
       setOrbit, isOrbiting: () => orbiting,
-      set2D(value) { camera.ortho2d = Boolean(value); if (value) setOrbit(false); draw(); },
-      reset() { Object.assign(camera, initial, { ortho2d: camera.ortho2d }); draw(); },
+      set2D(value) { camera.ortho2d = Boolean(value); if (value) setOrbit(false); fit(); draw(); },
+      reset() { Object.assign(camera, initial, { ortho2d: camera.ortho2d }); fit(); draw(); },
       select(data) { setSelected(scene.primitives.find((p) => p.data === data) || null, false); },
       camera: () => ({ ...camera }), redraw: draw, project,
       destroy() {

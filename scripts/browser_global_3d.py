@@ -9,6 +9,7 @@ without it no provider is contacted. Screenshots are real Chromium captures.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import socket
@@ -35,7 +36,13 @@ def main() -> int:
     parser.add_argument("--evidence-dir", type=Path, required=True)
     parser.add_argument("--screenshots", type=Path, default=None, help="Directory for the PNG views")
     parser.add_argument("--provider-refresh", action="store_true", help="Let the server request USGS and NASA EONET once")
+    parser.add_argument("--axe", type=Path, help="Integrity-verified axe-core script (manifest.json alongside)")
     args = parser.parse_args()
+    axe_manifest = None
+    if args.axe:
+        axe_manifest = json.loads((args.axe.parent / "manifest.json").read_text())
+        if hashlib.sha256(args.axe.read_bytes()).hexdigest() != axe_manifest["script_sha256"]:
+            raise SystemExit("axe-core script does not match its pinned SHA-256")
     out = args.evidence_dir.absolute()
     out.mkdir(parents=True, exist_ok=True)
     shots = (args.screenshots or out / "screenshots").absolute()
@@ -47,7 +54,8 @@ def main() -> int:
     report = {"runner": "real-playwright-chromium", "checks": checks, "javascript_errors": errors,
               "blocked_external_requests": blocked, "screenshots": captured, "broker_connections": 0,
               "browser_provider_connections": 0, "server_provider_refresh": args.provider_refresh,
-              "public_deployment": False, "formal_accessibility_certification": False}
+              "public_deployment": False, "formal_accessibility_certification": False,
+              "axe_asset": axe_manifest, "accessibility": []}
 
     def check(name, passed, detail=None):
         checks.append({"name": name, "passed": bool(passed), "detail": detail})
@@ -350,6 +358,57 @@ def main() -> int:
                     check(f"{name}: Global Intelligence fits without horizontal overflow", overflow <= 1, overflow)
                     shot(page, name + "-global-intelligence")
                     context.close()
+
+                # The renderer draws whatever the API returns: a modified payload
+                # must change both the canvas and the exact-value table.
+                context, page = open_page({"width": 1440, "height": 1000})
+                page.goto(url + "/#options", wait_until="networkidle")
+                lab_ready(page, "vol-surface")
+                original = pixels(page)
+                context.close()
+                context, page = open_page({"width": 1440, "height": 1000})
+
+                def modified(r):
+                    response = r.fetch()
+                    body = response.json()
+                    for point in body["data"]["snapshots"]["current"]:
+                        if point["implied_vol"] is not None:
+                            point["implied_vol"] *= 1.5
+                    body["data"]["snapshots"]["current"][0]["implied_vol"] = 0.987654
+                    r.fulfill(response=response, body=json.dumps(body))
+                page.route("**/api/v1/viz/vol-surface*", modified)
+                page.goto(url + "/#options", wait_until="networkidle")
+                lab_ready(page, "vol-surface")
+                changed = pixels(page)
+                legend = page.locator("#lab-legend").inner_text()
+                page.locator("#lab-table-toggle").click()
+                try:
+                    page.wait_for_function("document.querySelector('#lab-table tbody')?.textContent.includes('0.98765')", timeout=5000)
+                except Exception:  # noqa: BLE001 - the check below records the failure with the table text
+                    pass
+                table = page.locator("#lab-table tbody").inner_text()
+                check("renderer follows its payload: modified implied vols change the canvas, legend and table",
+                      changed["hash"] != original["hash"] and "0.988" in legend and "0.98765" in table,
+                      {"legend": legend, "table": table[:160], "original": original["hash"], "modified": changed["hash"]})
+                context.close()
+
+                if args.axe:
+                    for section, ready in (("options", "document.getElementById('lab-status').classList.contains('hidden')"),
+                                           ("global-intelligence", "document.getElementById('intel-asof').textContent.includes('window')")):
+                        for theme in ("dark", "light"):
+                            context, page = open_page({"width": 1440, "height": 1000})
+                            page.add_init_script(f"localStorage.setItem('gig-theme', {json.dumps(theme)})")
+                            page.goto(url + "/#" + section, wait_until="networkidle")
+                            page.wait_for_function(ready, timeout=20000)
+                            page.wait_for_timeout(300)
+                            page.add_script_tag(path=str(args.axe))
+                            scan = page.evaluate("async()=>await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa']}})")
+                            report["accessibility"].append({"section": section, "theme": theme, "version": scan["testEngine"]["version"],
+                                                            "violations": scan["violations"], "incomplete": len(scan["incomplete"]),
+                                                            "passes": len(scan["passes"])})
+                            check(f"{section} {theme}: axe WCAG A/AA automated rules", not scan["violations"],
+                                  [(v["id"], len(v["nodes"])) for v in scan["violations"]])
+                            context.close()
 
                 context, page = open_page({"width": 1440, "height": 1000})
                 for section in SECTIONS:
