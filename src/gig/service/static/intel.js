@@ -16,7 +16,7 @@
   const BRANCHES = [["ARMY", "Army"], ["AIR_FORCE", "Air Force"], ["NAVY", "Navy"], ["GEOPOLITICAL", "Geopolitical"]];
   const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const state = { started: false, world: null, data: null, layers: new Set(["hazards", "geopolitical", "defense", "reference"]), days: 30, query: "", asOf: null,
-    view: "globe", lon0: 40, lat0: 18, zoom: 1, panX: 0, panY: 0, selected: null, hover: null, drag: null, projected: [], playing: null, branch: "NAVY", ticket: 0, rotate: null };
+    view: "globe", lon0: 40, lat0: 18, zoom: 1, panY: 0, flatLon: 0, flatAuto: true, selected: null, hover: null, drag: null, projected: [], playing: null, branch: "NAVY", ticket: 0, rotate: null };
 
   const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined && text !== null) node.textContent = String(text); return node; };
   const iso = (value) => (value ? String(value).replace("+00:00", "Z") : "Unknown");
@@ -42,7 +42,7 @@
   /* ---------- projection ---------- */
   const rad = Math.PI / 180;
   function geometry() { const c = $("intel-canvas"); const r = c.getBoundingClientRect(); return { w: r.width, h: r.height }; }
-  function project(lat, lon) {
+  function project(lat, lon, copy) {
     const { w, h } = geometry();
     if (state.view === "globe") {
       const R = Math.min(w, h) * 0.44 * state.zoom; const l = (lon - state.lon0) * rad, p = lat * rad, p0 = state.lat0 * rad;
@@ -51,12 +51,35 @@
       if (visible) return { x: w / 2 + R * x, y: h / 2 - R * y, visible };
       const n = Math.hypot(x, y) || 1; return { x: w / 2 + (R * x) / n, y: h / 2 - (R * y) / n, visible };
     }
-    const scale = (Math.min(w / 360, h / 180)) * state.zoom;
-    return { x: w / 2 + state.panX + (lon * scale), y: h / 2 + state.panY - (lat * scale), visible: true };
+    const scale = flatScale(w, h);
+    const dlon = copy === undefined ? wrapLon(lon - state.flatLon) : lon - state.flatLon + copy * 360;
+    return { x: w / 2 + (dlon * scale), y: h / 2 + state.panY - (lat * scale), visible: true };
   }
+  // The flat map fills the canvas height at zoom 1 and wraps horizontally, so
+  // there are no empty bands and no fixed antimeridian seam.
+  const FLAT_LAT = 85;
+  const wrapLon = (lon) => ((((lon + 180) % 360) + 360) % 360) - 180;
+  function flatScale(w, h) { return Math.max(w / 360, h / (2 * FLAT_LAT)) * state.zoom; }
+  function clampPan() {
+    const { w, h } = geometry(); const half = FLAT_LAT * flatScale(w, h);
+    const limit = Math.max(0, half - h / 2); state.panY = Math.max(-limit, Math.min(limit, state.panY));
+    state.flatLon = wrapLon(state.flatLon);
+  }
+  function flatCentre() {
+    const { w, h } = geometry(); const half = (w / 2) / flatScale(w, h);
+    const lons = events().filter((e) => Number.isFinite(e.longitude)).map((e) => e.longitude);
+    if (!lons.length || half >= 180) return 0;
+    let best = 0, bestCount = -1;
+    for (let c = -180; c < 180; c += 5) {
+      const count = lons.filter((lon) => Math.abs(wrapLon(lon - c)) <= half - 4).length;
+      if (count > bestCount || (count === bestCount && Math.abs(c) < Math.abs(best))) { best = c; bestCount = count; }
+    }
+    return best;
+  }
+  function resetFlat() { state.zoom = 1; state.panY = 0; state.flatLon = flatCentre(); state.flatAuto = true; }
   function kmToPixels(km) {
     const { w, h } = geometry();
-    const pxPerDegree = state.view === "globe" ? (Math.min(w, h) * 0.44 * state.zoom * rad) : Math.min(w / 360, h / 180) * state.zoom;
+    const pxPerDegree = state.view === "globe" ? (Math.min(w, h) * 0.44 * state.zoom * rad) : flatScale(w, h);
     return (km / 111.2) * pxPerDegree;
   }
 
@@ -67,25 +90,28 @@
     if (canvas.width !== Math.round(w * ratio) || canvas.height !== Math.round(h * ratio)) { canvas.width = Math.round(w * ratio); canvas.height = Math.round(h * ratio); }
     const ctx = canvas.getContext("2d"); ctx.setTransform(ratio, 0, 0, ratio, 0, 0); ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#050608"; ctx.fillRect(0, 0, w, h);
+    if (state.view !== "globe") clampPan();
     if (state.view === "globe") {
       const R = Math.min(w, h) * 0.44 * state.zoom;
       const glow = ctx.createRadialGradient(w / 2, h / 2, R * 0.2, w / 2, h / 2, R);
       glow.addColorStop(0, "#0e1622"); glow.addColorStop(1, "#090d13");
       ctx.beginPath(); ctx.arc(w / 2, h / 2, R, 0, Math.PI * 2); ctx.fillStyle = glow; ctx.fill(); ctx.strokeStyle = "#26303d"; ctx.lineWidth = 1; ctx.stroke();
     } else {
-      const a = project(85, -180), b = project(-85, 180);
-      ctx.fillStyle = "#090d13"; ctx.fillRect(a.x, a.y, b.x - a.x, b.y - a.y); ctx.strokeStyle = "#26303d"; ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+      const top = project(FLAT_LAT, 0).y, bottom = project(-FLAT_LAT, 0).y;
+      ctx.fillStyle = "#090d13"; ctx.fillRect(0, top, w, bottom - top);
     }
-    graticule(ctx);
-    if (state.world) {
+    const copies = state.view === "globe" ? [undefined] : [-1, 0, 1];
+    for (const copy of copies) {
+      graticule(ctx, copy);
+      if (!state.world) continue;
       ctx.fillStyle = "#141a22"; ctx.strokeStyle = "#2f3b4a"; ctx.lineWidth = 0.7;
       for (const ring of state.world.land) {
         ctx.beginPath(); let any = false;
-        for (let i = 0; i < ring.length; i += 2) { const p = project(ring[i + 1], ring[i]); if (p.visible) any = true; if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }
+        for (let i = 0; i < ring.length; i += 2) { const p = project(ring[i + 1], ring[i], copy); if (p.visible) any = true; if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }
         if (any) { ctx.closePath(); ctx.fill(); ctx.stroke(); }
       }
       ctx.strokeStyle = "#26303d"; ctx.lineWidth = 0.5;
-      for (const line of state.world.borders) polyline(ctx, line);
+      for (const line of state.world.borders) polyline(ctx, line, copy);
     }
     state.projected = [];
     const data = state.data;
@@ -112,15 +138,15 @@
       }
     }
   }
-  function polyline(ctx, line) {
+  function polyline(ctx, line, copy) {
     ctx.beginPath(); let pen = false;
-    for (let i = 0; i < line.length; i += 2) { const p = project(line[i + 1], line[i]); if (!p.visible) { pen = false; continue; } if (pen) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); pen = true; }
+    for (let i = 0; i < line.length; i += 2) { const p = project(line[i + 1], line[i], copy); if (!p.visible) { pen = false; continue; } if (pen) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); pen = true; }
     ctx.stroke();
   }
-  function graticule(ctx) {
+  function graticule(ctx, copy) {
     ctx.strokeStyle = "#141a22"; ctx.lineWidth = 0.5;
-    for (let lon = -180; lon <= 180; lon += 30) { const line = []; for (let lat = -80; lat <= 80; lat += 5) line.push(lon, lat); polyline(ctx, line); }
-    for (let lat = -60; lat <= 60; lat += 30) { const line = []; for (let lon = -180; lon <= 180; lon += 5) line.push(lon, lat); polyline(ctx, line); }
+    for (let lon = -180; lon <= 180; lon += 30) { const line = []; for (let lat = -80; lat <= 80; lat += 5) line.push(lon, lat); polyline(ctx, line, copy); }
+    for (let lat = -60; lat <= 60; lat += 30) { const line = []; for (let lon = -180; lon <= 180; lon += 5) line.push(lon, lat); polyline(ctx, line, copy); }
   }
   const events = () => (state.data ? state.data.events.filter((e) => state.layers.has(e.layer)) : []);
 
@@ -130,7 +156,25 @@
     const semantics = $("intel-semantics"); semantics.replaceChildren();
     Object.entries(data.data_semantics).forEach(([source, value]) => { const item = el("span", "intel-semantic"); item.append(el("span", "intel-semantic-source", source.replaceAll("_", " ")), badge(value, SEMANTIC_KIND[value] || "unavailable")); semantics.append(item); });
     $("intel-asof").textContent = `${state.asOf ? "Replay cutoff" : "As of"} ${iso(data.as_of)} · ${data.window_days}-day window · ${data.event_count} events`;
+    renderTruth(data);
+    if (state.view !== "globe" && state.flatAuto) state.flatLon = flatCentre();
     renderLayers(); renderFeed(); renderHealth(); renderRisk(); renderDefense(); renderCoverage(); renderInvestigations(); renderDetails(); draw();
+  }
+  // The shared truth strip belongs to whichever section is visible, so this
+  // section must replace the previous section's provenance with its own.
+  function renderTruth(data) {
+    if ($("intel-panel").classList.contains("hidden")) return;
+    const entries = Object.entries(data.data_semantics);
+    const stateText = data.event_count > 0 ? "AVAILABLE" : "UNAVAILABLE";
+    $("state-badge").textContent = stateText; $("state-badge").dataset.state = stateText;
+    $("source-label").textContent = `global-intelligence · ${entries.length ? entries.map(([s, v]) => `${s.replaceAll("_", " ")} ${v}`).join(" · ") : "no source acquired"}`;
+    $("asof-label").textContent = `${state.asOf ? "Replay cutoff" : "As of"} ${iso(data.as_of)}`;
+    $("truth-notice").textContent = "Delayed public sources and cited reports · Not a live or tactical feed · Research only";
+  }
+  function truthLoading() {
+    $("state-badge").textContent = "LOADING"; $("state-badge").removeAttribute("data-state");
+    $("source-label").textContent = "global-intelligence · fetching sources…"; $("asof-label").textContent = "As of —";
+    $("truth-notice").textContent = "Delayed public sources and cited reports · Not a live or tactical feed · Research only";
   }
   function renderLayers() {
     const box = $("intel-layers"); box.replaceChildren();
@@ -290,8 +334,32 @@
     });
   }
   function select(item) {
-    state.selected = item; renderDetails(); renderFeed(); draw();
+    state.selected = item; renderDetails(); renderFeed();
+    const lat = item ? item.latitude ?? item.lat : null, lon = item ? item.longitude ?? item.lon : null;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) focusOn(lat, lon); else draw();
     if (item && item.title) say(`Selected ${item.title}`);
+  }
+  // Bring a selected location into view: the globe turns to centre it (one
+  // short ease, or an immediate jump under reduced motion); the flat map pans
+  // only when the point lies outside the visible area.
+  function focusOn(lat, lon) {
+    if (state.view !== "globe") {
+      const { w, h } = geometry(); const p = project(lat, lon); const margin = 40;
+      if (p.x < margin || p.x > w - margin || p.y < margin || p.y > h - margin) { state.flatLon = lon; state.panY += h / 2 - p.y; state.flatAuto = false; clampPan(); }
+      draw(); return;
+    }
+    if (state.rotate) setRotate(false);
+    const targetLat = Math.max(-80, Math.min(80, lat)); const startLat = state.lat0;
+    const startLon = state.lon0; const deltaLon = ((lon - startLon + 540) % 360) - 180;
+    if (state.focusFrame) cancelAnimationFrame(state.focusFrame);
+    if (reduced || typeof requestAnimationFrame !== "function") { state.lat0 = targetLat; state.lon0 = startLon + deltaLon; draw(); return; }
+    const started = performance.now(); const duration = 360;
+    const step = (now) => {
+      const t = Math.min(1, (now - started) / duration); const e = 1 - (1 - t) ** 3;
+      state.lat0 = startLat + (targetLat - startLat) * e; state.lon0 = startLon + deltaLon * e; draw();
+      state.focusFrame = t < 1 ? requestAnimationFrame(step) : null;
+    };
+    state.focusFrame = requestAnimationFrame(step);
   }
 
   /* ---------- data ---------- */
@@ -307,7 +375,11 @@
       const reference = state.selected && (state.selected.layer_ref || state.selected.kind_ref) ? state.selected : null;
       state.selected = pending ? state.data.events.find((e) => e.event_id === pending) || null : reference;
       renderAll();
-    } catch (error) { if (ticket === state.ticket) $("intel-status").textContent = `ERROR · ${error.message}`; }
+    } catch (error) {
+      if (ticket !== state.ticket) return;
+      $("intel-status").textContent = `ERROR · ${error.message}`;
+      if (!$("intel-panel").classList.contains("hidden")) { $("state-badge").textContent = "ERROR"; $("state-badge").dataset.state = "ERROR"; $("source-label").textContent = "global-intelligence · overview request failed"; }
+    }
   }
   async function loadWorld() {
     if (state.world) return;
@@ -433,7 +505,7 @@
       if (state.drag) {
         const dx = event.clientX - state.drag.x, dy = event.clientY - state.drag.y; if (Math.abs(dx) + Math.abs(dy) > 2) state.drag.moved = true;
         state.drag.x = event.clientX; state.drag.y = event.clientY;
-        if (state.view === "globe") { state.lon0 -= dx * 0.35 / state.zoom; state.lat0 = Math.max(-80, Math.min(80, state.lat0 + dy * 0.35 / state.zoom)); } else { state.panX += dx; state.panY += dy; }
+        if (state.view === "globe") { state.lon0 -= dx * 0.35 / state.zoom; state.lat0 = Math.max(-80, Math.min(80, state.lat0 + dy * 0.35 / state.zoom)); } else { const { w, h } = geometry(); state.flatLon -= dx / flatScale(w, h); state.panY += dy; state.flatAuto = false; clampPan(); }
         draw(); return;
       }
       const [x, y] = point(event); const target = hit(x, y); const tip = $("intel-tooltip");
@@ -445,16 +517,16 @@
     canvas.addEventListener("pointerup", (event) => { const drag = state.drag; state.drag = null; if (drag && !drag.moved) { const [x, y] = point(event); const target = hit(x, y); select(target ? asSelection(target) : null); } });
     canvas.addEventListener("pointercancel", () => { state.drag = null; });
     canvas.addEventListener("pointerleave", () => $("intel-tooltip").classList.add("hidden"));
-    canvas.addEventListener("wheel", (event) => { event.preventDefault(); state.zoom = Math.max(0.7, Math.min(8, state.zoom * (event.deltaY > 0 ? 0.9 : 1.1))); draw(); }, { passive: false });
+    canvas.addEventListener("wheel", (event) => { event.preventDefault(); zoomBy(event.deltaY > 0 ? 0.9 : 1.1); draw(); }, { passive: false });
     canvas.addEventListener("keydown", (event) => {
       const step = 8 / state.zoom; const ev = events().filter((e) => e.latitude !== null); let handled = true;
-      if (event.key === "ArrowLeft") { if (state.view === "globe") state.lon0 -= step; else state.panX += 30; }
-      else if (event.key === "ArrowRight") { if (state.view === "globe") state.lon0 += step; else state.panX -= 30; }
+      if (event.key === "ArrowLeft") { if (state.view === "globe") state.lon0 -= step; else { state.flatLon -= step; state.flatAuto = false; } }
+      else if (event.key === "ArrowRight") { if (state.view === "globe") state.lon0 += step; else { state.flatLon += step; state.flatAuto = false; } }
       else if (event.key === "ArrowUp") { if (state.view === "globe") state.lat0 = Math.min(80, state.lat0 + step); else state.panY += 30; }
       else if (event.key === "ArrowDown") { if (state.view === "globe") state.lat0 = Math.max(-80, state.lat0 - step); else state.panY -= 30; }
-      else if (event.key === "+" || event.key === "=") state.zoom = Math.min(8, state.zoom * 1.15);
-      else if (event.key === "-") state.zoom = Math.max(0.7, state.zoom / 1.15);
-      else if (event.key === "0") { state.zoom = 1; state.panX = 0; state.panY = 0; }
+      else if (event.key === "+" || event.key === "=") zoomBy(1.15);
+      else if (event.key === "-") zoomBy(1 / 1.15);
+      else if (event.key === "0") { state.zoom = 1; if (state.view === "globe") { state.lon0 = 40; state.lat0 = 18; } else resetFlat(); }
       else if ((event.key === "n" || event.key === "p") && ev.length) {
         const index = ev.findIndex((e) => state.selected && e.event_id === state.selected.event_id);
         const next = ev[(index + (event.key === "n" ? 1 : ev.length - 1) + (index < 0 && event.key === "p" ? 1 : 0)) % ev.length];
@@ -462,11 +534,11 @@
         select(next);
       } else if (event.key === "Escape") select(null);
       else handled = false;
-      if (handled) { event.preventDefault(); setRotate(false); draw(); }
+      if (handled) { event.preventDefault(); setRotate(false); if (state.view !== "globe") clampPan(); draw(); }
     });
     $("intel-view-globe").addEventListener("click", () => setView("globe"));
     $("intel-view-flat").addEventListener("click", () => setView("flat"));
-    $("intel-reset").addEventListener("click", () => { state.zoom = 1; state.panX = 0; state.panY = 0; state.lon0 = 40; state.lat0 = 18; draw(); });
+    $("intel-reset").addEventListener("click", () => { state.zoom = 1; state.lon0 = 40; state.lat0 = 18; resetFlat(); draw(); });
     $("intel-rotate").addEventListener("click", () => setRotate(!state.rotate));
     let searchTimer = null;
     $("intel-search").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { state.query = $("intel-search").value.trim().slice(0, 100); load(); }, 250); });
@@ -484,8 +556,14 @@
     if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => draw()).observe($("intel-map"));
     examples();
   }
+  // The flat map never zooms out past the fill scale, which would reopen the
+  // empty bands; the globe may shrink slightly.
+  function zoomBy(factor) {
+    state.zoom = Math.max(state.view === "globe" ? 0.7 : 1, Math.min(8, state.zoom * factor));
+    if (state.view !== "globe") clampPan();
+  }
   function setView(view) {
-    state.view = view; state.zoom = 1; state.panX = 0; state.panY = 0;
+    state.view = view; state.zoom = 1; resetFlat();
     $("intel-view-globe").setAttribute("aria-pressed", String(view === "globe")); $("intel-view-flat").setAttribute("aria-pressed", String(view === "flat"));
     $("intel-rotate").disabled = view !== "globe"; if (view !== "globe") setRotate(false); draw();
   }
@@ -494,7 +572,13 @@
     panel.classList.toggle("hidden", !visible);
     if (!visible) { setRotate(false); if (state.playing) togglePlay(); return; }
     if (!state.started) { state.started = true; bind(); loadWorld(); }
+    if (state.data) renderTruth(state.data); else truthLoading();
     load();
   }
-  window.GIGIntel = { show, state: () => ({ view: state.view, asOf: state.asOf, events: state.data ? state.data.event_count : null, selected: state.selected && (state.selected.event_id || state.selected.name) }), setView, select: (id) => select(state.data.events.find((e) => e.event_id === id) || null) };
+  function frame() {
+    const { w, h } = geometry();
+    const centre = state.view === "globe" ? project(state.lat0, state.lon0) : null;
+    return { width: w, height: h, mapTop: state.view === "globe" ? null : project(FLAT_LAT, 0).y, mapBottom: state.view === "globe" ? null : project(-FLAT_LAT, 0).y, lonSpan: state.view === "globe" ? null : w / flatScale(w, h), centre };
+  }
+  window.GIGIntel = { show, state: () => ({ view: state.view, asOf: state.asOf, events: state.data ? state.data.event_count : null, selected: state.selected && (state.selected.event_id || state.selected.name), lon0: state.lon0, lat0: state.lat0, flatLon: state.flatLon, zoom: state.zoom, focusing: Boolean(state.focusFrame) }), frame, project: (lat, lon) => project(lat, lon), events: () => events().map(({ event_id, title, latitude, longitude }) => ({ event_id, title, latitude, longitude })), setView, select: (id) => select(state.data.events.find((e) => e.event_id === id) || null) };
 })();
