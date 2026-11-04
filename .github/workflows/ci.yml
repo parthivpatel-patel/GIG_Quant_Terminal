@@ -83,6 +83,8 @@ jobs:
           printf '{"name":"axe-core","version":"4.10.3","license":"MPL-2.0","script_sha256":"%s"}\n' "$AXE_SHA256" > package/manifest.json
       - name: Chromium 3D Analytics Lab and Global Intelligence (offline, no provider requests, axe-core)
         run: python scripts/browser_global_3d.py --evidence-dir /tmp/ci-browser-global-3d --axe /tmp/axe/package/axe.min.js
+      - name: Chromium regressions for the 2026-11-04 visual review defects
+        run: python scripts/browser_stage_a_regressions.py --report /tmp/ci-browser-stage-a/report.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -90,3 +92,4 @@ jobs:
           path: |
             /tmp/ci-browser-sprint9
             /tmp/ci-browser-global-3d
+            /tmp/ci-browser-stage-a
