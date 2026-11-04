@@ -87,6 +87,87 @@ class VizModuleTests(unittest.TestCase):
             self.assertEqual(json.loads(viz.module(name, "local").wire)["state"], "UNAVAILABLE")
 
 
+class VizInputSensitivityTests(unittest.TestCase):
+    """Each module is a function of its inputs: changing an input changes exactly what it should."""
+
+    def test_vol_surface_follows_quoted_prices(self):
+        quotes = viz.authored_option_quotes()
+        base = viz.build_vol_surface(quotes, spot=100.0, rate=0.03)
+        bumped = {label: [dict(q) for q in rows] for label, rows in quotes.items()}
+        target = next(q for q in bumped["current"] if q["strike"] == 110 and q["tenor_years"] == 0.5)
+        target["price"] *= 1.2
+        moved = viz.build_vol_surface(bumped, spot=100.0, rate=0.03)
+        changed = [(a["strike"], a["tenor_years"]) for a, b in zip(base["snapshots"]["current"], moved["snapshots"]["current"], strict=True)
+                   if a["implied_vol"] != b["implied_vol"]]
+        self.assertEqual(changed, [(110, 0.5)])
+        point = lambda d: next(p for p in d["snapshots"]["current"] if p["strike"] == 110 and p["tenor_years"] == 0.5)  # noqa: E731
+        self.assertGreater(point(moved)["implied_vol"], point(base)["implied_vol"])
+        self.assertEqual(base["snapshots"]["prior"], moved["snapshots"]["prior"])
+        with self.assertRaises(ValueError):
+            viz.build_vol_surface({"current": quotes["current"][:-1]}, spot=100.0, rate=0.03)
+
+    def test_order_book_follows_depth(self):
+        frames = viz.authored_depth_frames()
+        base = viz.build_order_book(frames, instrument="X")
+        heavier = [dict(f, bids=[dict(b, quantity=b["quantity"] * 3) for b in f["bids"]]) for f in frames]
+        moved = viz.build_order_book(heavier, instrument="X")
+        for a, b in zip(base["frames"], moved["frames"], strict=True):
+            self.assertGreater(b["displayed_imbalance"], a["displayed_imbalance"])
+        crossed = [dict(frames[0], asks=[dict(frames[0]["asks"][0], price=frames[0]["bids"][0]["price"])])]
+        with self.assertRaises(ValueError):
+            viz.build_order_book(crossed, instrument="X")
+
+    def test_risk_terrain_scales_with_positions(self):
+        from gig.options import OptionPosition
+        grid = {"spot": 100, "rate": 0.03, "spot_shocks": [-0.2, 0.0, 0.2], "vol_shocks": [0.0, 0.05]}
+        base = viz.build_risk_terrain(viz.authored_option_positions(), **grid)
+        doubled = viz.build_risk_terrain([OptionPosition(p.instrument, p.underlying, p.strike, p.ttm, p.volatility,
+                                                         p.quantity * 2, call=p.call, source=p.source)
+                                          for p in viz.authored_option_positions()], **grid)
+        for a, b in zip(base["horizons"]["today"], doubled["horizons"]["today"], strict=True):
+            self.assertAlmostEqual(b["model_pnl"], 2 * a["model_pnl"], places=6)
+        self.assertAlmostEqual(doubled["risk_limit"]["loss_limit"], 2 * base["risk_limit"]["loss_limit"])
+
+    def test_correlation_network_follows_returns(self):
+        returns, _, symbols = viz._fixture()
+        base = viz.build_correlation_network(returns, symbols)
+        flipped = returns.copy()
+        flipped[:, 0] = -flipped[:, 0]
+        moved = viz.build_correlation_network(flipped, symbols)
+        for a, b in zip(base["windows"]["latest_60"]["edges"], moved["windows"]["latest_60"]["edges"], strict=True):
+            expected = -a["rho"] if symbols[0] in (a["a"], a["b"]) else a["rho"]
+            self.assertAlmostEqual(b["rho"], expected, places=12)
+        with self.assertRaises(ValueError):
+            viz.build_correlation_network(returns[:, :3], symbols[:3])
+
+    def test_stat_arb_follows_pair(self):
+        _, prices, symbols = viz._fixture()
+        first = viz.build_stat_arb(prices[:, 0], prices[:, 1], (symbols[0], symbols[1]))
+        second = viz.build_stat_arb(prices[:, 0], prices[:, 2], (symbols[0], symbols[2]))
+        self.assertEqual(second["pair"], [symbols[0], symbols[2]])
+        self.assertNotEqual([p["beta"] for p in first["points"]], [p["beta"] for p in second["points"]])
+        truncated = viz.build_stat_arb(prices[:120, 0], prices[:120, 1], (symbols[0], symbols[1]))
+        self.assertEqual([p["beta"] for p in truncated["points"]], [p["beta"] for p in first["points"][:120]])
+
+    def test_model_evaluation_follows_returns(self):
+        returns, prices, _ = viz._fixture()
+        folds = ((60, 90),)
+        base = viz.build_model_evaluation(returns, prices, folds)
+        future = returns.copy()
+        future[90:] *= 3
+        self.assertEqual(viz.build_model_evaluation(future, prices, folds)["rows"], base["rows"])
+        noisy = returns.copy()
+        noisy[60:90, 0] *= 3
+        moved = viz.build_model_evaluation(noisy, prices, folds)
+        value = lambda d, fam: next(r for r in d["rows"] if r["family"] == fam)  # noqa: E731
+        self.assertNotEqual(value(base, "variance_qlike")["value"], value(moved, "variance_qlike")["value"])
+        self.assertGreater(value(moved, "forecast_mse")["baseline"], value(base, "forecast_mse")["baseline"])
+
+    def test_local_mode_still_unavailable(self):
+        for name in viz.MODULES:
+            self.assertEqual(json.loads(viz.module(name, "local").wire)["state"], "UNAVAILABLE")
+
+
 class VizHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         async def clock():
