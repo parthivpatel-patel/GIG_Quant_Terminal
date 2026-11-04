@@ -237,6 +237,13 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
         except ImportError:
             return failure("DEPENDENCY_UNAVAILABLE", 503)
 
+    @app.get("/api/v1/viz/{name}", response_model=EnvelopeSchema)
+    def visualization(name: str, mode: str = Query("synthetic", pattern="^(local|synthetic)$")) -> Any:
+        from gig.service.viz import MODULES, module
+        if name not in MODULES:
+            return failure("INVALID_REQUEST", 404)
+        return module(name, mode)
+
     @app.get("/api/v1/intel/overview", response_model=EnvelopeSchema)
     def intel_overview(as_of: str | None = Query(None, max_length=100),
                        layers: str | None = Query(None, max_length=200),

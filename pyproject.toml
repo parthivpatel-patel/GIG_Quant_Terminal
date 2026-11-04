@@ -59,7 +59,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "gig.store" = ["schema.sql"]
-"gig.service" = ["static/*"]
+"gig.service" = ["static/*", "viz_synthetic.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
