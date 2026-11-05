@@ -85,6 +85,8 @@ jobs:
         run: python scripts/browser_global_3d.py --evidence-dir /tmp/ci-browser-global-3d --axe /tmp/axe/package/axe.min.js
       - name: Chromium regressions for the 2026-11-04 visual review defects
         run: python scripts/browser_stage_a_regressions.py --report /tmp/ci-browser-stage-a/report.json
+      - name: Chromium market charts, command palette and navigation
+        run: python scripts/browser_charts.py --evidence-dir /tmp/ci-browser-charts --axe /tmp/axe/package/axe.min.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -93,3 +95,4 @@ jobs:
             /tmp/ci-browser-sprint9
             /tmp/ci-browser-global-3d
             /tmp/ci-browser-stage-a
+            /tmp/ci-browser-charts

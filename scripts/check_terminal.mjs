@@ -107,6 +107,7 @@ const document = {
     assert.equal(selector, ".nav-link");
     return walk(elements.get("section-nav")).filter((node) => node.classList.contains("nav-link"));
   },
+  body: new Element("body"),
 };
 const windowEvents = new Map();
 const window = {
@@ -168,8 +169,8 @@ checked("initial request uses local mode and renders explicit unavailable", () =
   assert.equal(tbody().children.length, 0);
   assert.match(get("error-panel").textContent, /DATA_UNAVAILABLE/);
   assert(!get("error-panel").classList.contains("hidden"));
-  assert.equal(document.querySelectorAll(".nav-link").length, 13);
-  assert.deepEqual(document.querySelectorAll(".nav-link").map((link) => link.hash.slice(1)), [...sections, "global-intelligence"]);
+  assert.equal(document.querySelectorAll(".nav-link").length, 14);
+  assert.deepEqual(document.querySelectorAll(".nav-link").map((link) => link.hash.slice(1)), [...sections, "global-intelligence", "charts"]);
 });
 for (const section of sections) {
   location.hash = `#${section}`;

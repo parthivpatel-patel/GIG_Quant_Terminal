@@ -111,8 +111,9 @@ def main() -> int:
                 page.goto(url + "/#command-center", wait_until="networkidle")
                 page.wait_for_function("!document.getElementById('refresh').disabled")
                 links = page.locator("#section-nav a")
-                check("thirteen sections: all twelve originals plus Global Intelligence",
-                      links.count() == 13 and [links.nth(i).get_attribute("href")[1:] for i in range(13)] == list(SECTIONS))
+                check("fourteen sections: the twelve originals, Global Intelligence and Market Charts",
+                      links.count() == 14 and [links.nth(i).get_attribute("href")[1:] for i in range(13)] == list(SECTIONS)
+                      and links.nth(13).get_attribute("href") == "#charts")
                 lab_ready(page, "correlation-network")
                 shot(page, "01-command-center")
                 shot(page, "02-navigation", "aside.sidebar")
@@ -202,8 +203,11 @@ def main() -> int:
                         lab_ready(page, module)
                 page.evaluate("window.gc && window.gc()")
                 heap1 = page.evaluate("performance.memory ? performance.memory.usedJSHeapSize : null")
+                chart_canvases = page.locator("#charts-panel canvas").count()
                 check("24 module switches reuse one canvas and keep heap bounded",
-                      page.locator("canvas").count() == 3 and (heap0 is None or heap1 - heap0 < 40_000_000), {"heap_before": heap0, "heap_after": heap1})
+                      page.locator("canvas").count() - chart_canvases == 3 and chart_canvases == 3
+                      and (heap0 is None or heap1 - heap0 < 40_000_000),
+                      {"heap_before": heap0, "heap_after": heap1, "chart_canvases": chart_canvases})
                 page.set_viewport_size({"width": 1000, "height": 900})
                 page.wait_for_timeout(300)
                 resized = pixels(page)
