@@ -16,7 +16,7 @@
     { id: "research", label: "Research", icon: "M9 3h6M10 3v6L4 19c-.5 1 .5 2 2 2h12c1.5 0 2.5-1 2-2L14 9V3M7 15h10", description: "Reproducible experiments, research artifacts, and evidence-backed analysis." },
     { id: "operations", label: "Operations", icon: "M3 12h4l3-7 4 14 3-7h4M4 3h16M4 21h16", description: "Dependency readiness, safe configuration, restart recovery, and operating status." },
     { id: "global-intelligence", label: "Global Intelligence", icon: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18", description: "Hazards, geopolitical and delayed defense research with source, clocks, uncertainty and verification. Not a live or tactical feed." },
-    { id: "observatory", label: "Research Observatory", icon: "M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8", description: "The research backlog, recorded cycles, and the skeptic's verdicts. Both current experiments are synthetic. Admitted market data is not authorized for this scheduler." },
+    { id: "observatory", label: "Research Observatory", icon: "M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8", description: "Scheduler, backlog, and skeptic verdicts. Synthetic jobs stay labelled synthetic. The Treasury study uses the official 2023 par-yield file." },
     { id: "charts", label: "Market Charts", icon: "M5 3v18M12 3v18M19 3v18M3 7h4v9H3zM10 5h4v6h-4zM17 9h4v8h-4z", description: "Candlestick, OHLC, line and area charts with volume and backend-computed indicators, on admitted bars or the labelled synthetic demo." },
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
@@ -148,6 +148,7 @@
     const charts = state.section.id === "charts";
     const observatory = state.section.id === "observatory";
     $("content").dataset.workspace = intelligence ? "intel" : charts ? "charts" : observatory ? "observatory" : "terminal";
+    $("content").dataset.section = state.section.id;
     if (window.GIGIntel) window.GIGIntel.show(intelligence);
     if (window.GIGCharts) window.GIGCharts.show(charts);
     if (window.GIGObservatory) window.GIGObservatory.show(observatory);

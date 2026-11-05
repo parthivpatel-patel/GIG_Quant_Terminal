@@ -29,7 +29,10 @@
     $("state-badge").textContent = "AVAILABLE"; $("state-badge").dataset.state = "AVAILABLE";
     $("source-label").textContent = `research-organization · ${payload.provenance.classification} · ${data.run_count} recorded run${data.run_count === 1 ? "" : "s"}`;
     $("asof-label").textContent = last ? `Last verdict ${last.verdict}` : "No job has run";
-    $("truth-notice").textContent = "Authored synthetic experiments · Not market results · No orders";
+    const kind = payload.provenance.classification;
+    $("truth-notice").textContent = kind === "HISTORICAL"
+      ? "Official Treasury par yields · CC0 · Publication time unknown · Not a traded result"
+      : "Synthetic jobs are labelled synthetic · Treasury study is historical · No orders";
   }
 
   function spark(curve) {
@@ -51,6 +54,22 @@
     svg.append(line);
     svg.setAttribute("aria-label", `Equity on the authored series, from ${num(values[0])} to ${num(values[values.length - 1])}`);
     return svg;
+  }
+
+  function lineage(block) {
+    const dl = el("dl", "observatory-metrics");
+    const rows = [
+      ["Dataset", block.dataset || "—"],
+      ["Strategy", block.strategy ? `${block.strategy} · v${block.strategy_version}` : `v${block.strategy_version}`],
+      ["Point in time", block.point_in_time || "—"],
+      ["Costs", block.costs || "—"],
+      ["Assumptions", block.assumptions || "—"],
+      ["Configuration", block.configuration || "—"],
+      ["Skeptic", block.skeptic_verdict || block.verdict || "—"],
+      ["Artifacts", block.artifacts || "—"],
+    ];
+    rows.forEach(([key, value]) => { dl.append(el("dt", null, key), el("dd", null, value)); });
+    return dl;
   }
 
   function render(payload) {
@@ -89,16 +108,27 @@
       finding.append(el("p", null, last.interpretation));
       if (last.equity_curve && last.equity_curve.length > 1) finding.append(spark(last.equity_curve));
       const dl = el("dl", "observatory-metrics");
-      const rows = [["After-cost Sharpe", num(last.sharpe_after_cost)], ["Total return", num(last.total_return)],
+      const rows = [["Evidence class", last.evidence_class || "—"],
+        ["After-cost Sharpe", num(last.sharpe_after_cost)], ["Total return", num(last.total_return)],
         ["Sortino", num(last.sortino)], ["Max drawdown", num(last.max_drawdown)],
-        ["Held-out Sharpe", last.holdout ? num(last.holdout.sharpe) : "—"],
+        ["Hit rate", typeof last.hit_rate === "number" ? num(last.hit_rate) : "—"],
+        ["Held-out Sharpe", last.holdout && typeof last.holdout.sharpe === "number" ? num(last.holdout.sharpe) : "—"],
         ["Benchmark Sharpe", last.benchmark ? num(last.benchmark.sharpe) : "—"],
         ["Placebo median Sharpe", num(last.placebo_sharpe_median)], ["Deflated Sharpe", num(last.deflated_sharpe)],
-        ["Observations", String(last.n_obs)], ["Lookahead detected", last.lookahead_detected ? "Yes" : "No"],
+        ["Observations", String(last.n_obs)], ["Publication time", last.publication_time || "—"],
+        ["Lookahead detected", last.lookahead_detected ? "Yes" : "No"],
         ["Orders submitted", String(last.orders_submitted)]];
       rows.forEach(([key, value]) => { dl.append(el("dt", null, key), el("dd", null, value)); });
       finding.append(dl);
+      if (last.lineage) finding.append(lineage(last.lineage));
       if (last.reproduce) finding.append(el("p", "observatory-reproduce", last.reproduce));
+    }
+    const readout = $("scheduler-readout");
+    if (readout && data.scheduler_state) {
+      const scheduler = data.scheduler_state;
+      const reason = scheduler.reason ? ` · ${scheduler.reason}` : "";
+      const thread = scheduler.alive ? " · thread on" : "";
+      readout.textContent = `${scheduler.desired}${thread} · cadence ${scheduler.cadence_seconds}s${reason}`;
     }
     const objective = $("observatory-objective-result");
     objective.replaceChildren();
@@ -140,6 +170,24 @@
     }
   }
 
+  async function scheduler(action) {
+    const cadence = Number($("scheduler-cadence").value);
+    $("observatory-status").textContent = "Updating the scheduler…";
+    try {
+      const response = await fetch("/api/v1/research-org/scheduler", {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ action, cadence_seconds: cadence }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.data) throw new Error(payload.error ? payload.error.message : "unavailable");
+      state.payload = payload; render(payload); truth(payload, false);
+      $("observatory-status").textContent = payload.data.scheduler_state.desired;
+    } catch (error) {
+      $("observatory-status").textContent = `ERROR · ${error.message}`;
+      truth(null, true);
+    }
+  }
+
   async function objective(event) {
     event.preventDefault();
     const text = $("observatory-objective-text").value;
@@ -167,6 +215,9 @@
       state.started = true;
       $("observatory-run").addEventListener("click", tick);
       $("observatory-objective").addEventListener("submit", objective);
+      document.querySelectorAll("[data-scheduler]").forEach((button) => {
+        button.addEventListener("click", () => scheduler(button.dataset.scheduler));
+      });
     }
     truth({ data: { run_count: 0, last: null }, provenance: { classification: "SYNTHETIC" } }, false);
     $("state-badge").textContent = "LOADING";

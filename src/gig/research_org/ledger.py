@@ -6,7 +6,7 @@ import json
 import sqlite3
 import threading
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +23,11 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE TABLE IF NOT EXISTS objectives (
   id INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL,
   disposition TEXT NOT NULL, detail TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS scheduler (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  desired TEXT NOT NULL, cadence_seconds REAL NOT NULL,
+  lease_owner TEXT, lease_until TEXT, candidates INTEGER NOT NULL,
+  reason TEXT, updated_at TEXT NOT NULL);
 """
 MAX_RUNS = 200
 
@@ -164,7 +169,8 @@ class ResearchLedger:
                 db.execute(
                     "UPDATE jobs SET status = 'RUNNING', attempts = ?, updated_at = ? WHERE job_id = ?",
                     (attempts, now, row["job_id"]))
-                runner = next(item["runner"] for item in approved if item["job_id"] == row["job_id"])
+                match = next((item for item in approved if item["job_id"] == row["job_id"]), None)
+                runner = None if match is None else match.get("runner")
                 db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
                            (now, "orchestrator", "claim", row["job_id"]))
                 db.commit()
@@ -234,6 +240,141 @@ class ResearchLedger:
                 db.commit()
             finally:
                 db.close()
+
+    def scheduler_state(self) -> dict[str, Any]:
+        with self._lock:
+            db = self._read()
+            if db is None:
+                return _scheduler_default()
+            try:
+                try:
+                    row = db.execute(
+                        "SELECT desired, cadence_seconds, lease_owner, lease_until, candidates, reason "
+                        "FROM scheduler WHERE id = 1"
+                    ).fetchone()
+                except sqlite3.OperationalError:
+                    return _scheduler_default()
+            finally:
+                db.close()
+        if row is None:
+            return _scheduler_default()
+        return {"desired": row["desired"], "cadence_seconds": float(row["cadence_seconds"]),
+                "lease_owner": row["lease_owner"], "lease_until": row["lease_until"],
+                "candidates": int(row["candidates"]), "reason": row["reason"]}
+
+    def set_desired(self, desired: str, cadence_seconds: float | None = None, reason: str | None = None) -> None:
+        if desired not in {"STOPPED", "PAUSED", "RUNNING"}:
+            raise ValueError("scheduler state")
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                current = db.execute("SELECT cadence_seconds FROM scheduler WHERE id = 1").fetchone()
+                cadence = float(cadence_seconds) if cadence_seconds is not None else (
+                    float(current["cadence_seconds"]) if current else 5.0)
+                db.execute(
+                    "INSERT INTO scheduler (id, desired, cadence_seconds, lease_owner, lease_until, candidates, reason, updated_at) "
+                    "VALUES (1, ?, ?, NULL, NULL, 0, ?, ?) "
+                    "ON CONFLICT(id) DO UPDATE SET desired = excluded.desired, "
+                    "cadence_seconds = excluded.cadence_seconds, reason = excluded.reason, updated_at = excluded.updated_at",
+                    (desired, cadence, reason, now))
+                db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
+                           (now, "scheduler", desired.lower(), reason or ""))
+                db.commit()
+            finally:
+                db.close()
+
+    def lease_blocks(self, owner: str | None) -> bool:
+        state = self.scheduler_state()
+        until = state.get("lease_until")
+        holder = state.get("lease_owner")
+        if not until or not holder:
+            return False
+        if until <= datetime.now(UTC).isoformat():
+            return False
+        return holder != owner
+
+    def acquire_lease(self, owner: str, seconds: float) -> bool:
+        with self._lock:
+            now = datetime.now(UTC)
+            db = self._connect()
+            try:
+                db.execute("BEGIN IMMEDIATE")
+                row = db.execute("SELECT lease_owner, lease_until FROM scheduler WHERE id = 1").fetchone()
+                if (row and row["lease_until"] and row["lease_owner"] not in {None, owner}
+                        and row["lease_until"] > now.isoformat()):
+                    db.commit()
+                    return False
+                until = (now + timedelta(seconds=seconds)).isoformat()
+                if row is None:
+                    db.execute(
+                        "INSERT INTO scheduler (id, desired, cadence_seconds, lease_owner, lease_until, candidates, reason, updated_at) "
+                        "VALUES (1, 'RUNNING', 5, ?, ?, 0, NULL, ?)",
+                        (owner, until, now.isoformat()))
+                else:
+                    db.execute("UPDATE scheduler SET lease_owner = ?, lease_until = ?, updated_at = ? WHERE id = 1",
+                               (owner, until, now.isoformat()))
+                db.commit()
+            finally:
+                db.close()
+        return True
+
+    def expire_lease(self) -> None:
+        """Mark the lease as already over. Used to simulate a dead worker's clock."""
+        with self._lock:
+            past = (datetime.now(UTC) - timedelta(seconds=5)).isoformat()
+            db = self._connect()
+            try:
+                db.execute("UPDATE scheduler SET lease_until = ? WHERE id = 1", (past,))
+                db.commit()
+            finally:
+                db.close()
+
+    def release_lease(self, owner: str) -> None:
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                db.execute(
+                    "UPDATE scheduler SET lease_until = ?, updated_at = ? WHERE id = 1 AND lease_owner = ?",
+                    (now, now, owner))
+                db.commit()
+            finally:
+                db.close()
+
+    def find_hypothesis(self, hypothesis_id: str) -> bool:
+        with self._lock:
+            db = self._read()
+            if db is None:
+                return False
+            try:
+                try:
+                    row = db.execute("SELECT 1 FROM runs WHERE hypothesis_id = ? LIMIT 1",
+                                     (hypothesis_id,)).fetchone()
+                except sqlite3.OperationalError:
+                    return False
+            finally:
+                db.close()
+        return row is not None
+
+    def mark_candidate(self) -> None:
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                db.execute(
+                    "INSERT INTO scheduler (id, desired, cadence_seconds, lease_owner, lease_until, candidates, reason, updated_at) "
+                    "VALUES (1, 'STOPPED', 5, NULL, NULL, 1, NULL, ?) "
+                    "ON CONFLICT(id) DO UPDATE SET candidates = candidates + 1, updated_at = excluded.updated_at",
+                    (now,))
+                db.commit()
+            finally:
+                db.close()
+
+
+def _scheduler_default() -> dict[str, Any]:
+    return {"desired": "STOPPED", "cadence_seconds": 5.0, "lease_owner": None,
+            "lease_until": None, "candidates": 0, "reason": None}
 
 
 def _objectives(db: sqlite3.Connection) -> list[dict[str, Any]]:

@@ -1,0 +1,83 @@
+/* Desk slice for Command Center, Market Charts, and the Observatory.
+   The body background stays the reviewed #050608. These rules do not restyle other sections. */
+
+#analysis-grid { position: relative; }
+#analysis-split {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--context-w, 320px);
+  width: 12px;
+  margin-right: -6px;
+  cursor: col-resize;
+  z-index: 2;
+  background: transparent;
+}
+#analysis-split:before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 5px;
+  width: 2px;
+  background: var(--border);
+}
+#analysis-split:focus-visible { outline: 2px solid var(--accent); }
+main[data-section="command-center"] #analysis-split { display: block; }
+main[data-section="command-center"] .analysis-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, var(--context-w, 320px));
+}
+main[data-section="command-center"] h1 {
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+main[data-section="command-center"] .eyebrow { letter-spacing: 0.16em; }
+main[data-section="command-center"] .metric-card {
+  background: transparent;
+  border: 0;
+  border-top: 2px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+}
+main[data-section="command-center"] .metric-card:first-child { border-top-color: var(--accent); }
+main[data-section="command-center"] .metric-value { font-variant-numeric: tabular-nums; font-size: 30px; }
+main[data-section="command-center"] .chart-container { height: 500px; }
+
+main[data-workspace="charts"] .charts-header h2 {
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+main[data-workspace="charts"] .chart-read-date { font-variant-numeric: tabular-nums; }
+main[data-workspace="charts"] #charts-panel { border-top: 2px solid var(--accent); }
+
+main[data-workspace="observatory"] .view-controls { display: none !important; }
+main[data-workspace="observatory"] h1 {
+  font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+main[data-workspace="observatory"] #observatory-panel { border-top: 2px solid var(--accent); }
+.scheduler-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 22px 12px; }
+.scheduler-controls input { width: 88px; }
+.scheduler-readout { color: var(--muted); font-size: 12px; }
+.observatory-metrics dd { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 920px) {
+  main[data-section="command-center"] .analysis-grid { grid-template-columns: 1fr; }
+  main[data-section="command-center"] #analysis-split { display: none; }
+  main[data-section="command-center"] .chart-container { height: 360px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  main[data-section="command-center"] .page-heading,
+  main[data-workspace="charts"] #charts-panel,
+  main[data-workspace="observatory"] #observatory-panel {
+    animation: desk-in 180ms ease-out;
+  }
+}
+@keyframes desk-in { from { opacity: 0; } to { opacity: 1; } }

@@ -52,6 +52,8 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     terminal_dir = state_dir if state_dir is not None else get_settings().data_dir / "terminal"
     workspace = TerminalWorkspace(terminal_dir)
     intel = IntelWorkspace(terminal_dir / "intel")
+    from contextlib import asynccontextmanager
+
     from gig.research_org.cycle import (
         cycle_contract,
         objective_contract,
@@ -59,7 +61,9 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
         tick_contract,
     )
     from gig.research_org.ledger import ResearchLedger
+    from gig.research_org.service import ResearchWorker, public_scheduler, scheduler_contract
     research_ledger = ResearchLedger(terminal_dir / "research-org")
+    research_worker = ResearchWorker(research_ledger)
     integrations = CycleServices(workspace, finbert_dir=(finbert_dir if finbert_dir is not None
                                                        else get_settings().finbert_model_dir))
     workspace_write_lock = threading.Lock()
@@ -89,12 +93,19 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
                                   classification="UNAVAILABLE", error=public_error(code))
         return Response(contract.wire, media_type="application/json", status_code=status)
 
+    @asynccontextmanager
+    async def lifespan(_app):
+        research_worker.recover()
+        yield
+        research_worker.shutdown()
+
     app = FastAPI(
         title="GIG Trading Algorithm",
         version=__version__,
         description="Local research terminal with admitted evidence, reproducible experiments, and offline simulation. No brokerage order-entry API.",
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
+        lifespan=lifespan,
     )
     app.router.route_class = StrictRoute
     app.state.workspace = workspace
@@ -272,7 +283,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
 
     @app.get("/api/v1/research-org/status", response_model=EnvelopeSchema)
     def research_org_status() -> Any:
-        return status_contract(research_ledger)
+        return status_contract(research_ledger, public_scheduler(research_worker))
 
     @app.post("/api/v1/research-org/cycle", response_model=EnvelopeSchema)
     async def research_org_cycle(request: Request) -> Any:
@@ -325,6 +336,31 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
             if not isinstance(text, str) or not cleaned or len(cleaned) > 500:
                 return failure("INVALID_REQUEST", 422)
             return await run_in_threadpool(objective_contract, research_ledger, cleaned)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        finally:
+            workspace_write_lock.release()
+
+    @app.post("/api/v1/research-org/scheduler", response_model=EnvelopeSchema)
+    async def research_org_scheduler(request: Request) -> Any:
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not workspace_write_lock.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            body = loads(await request.body())
+            action = body.get("action") if isinstance(body, dict) else None
+            cadence = body.get("cadence_seconds") if isinstance(body, dict) else None
+            if action not in {"start", "pause", "resume", "stop"}:
+                return failure("INVALID_REQUEST", 422)
+            if cadence is not None and (isinstance(cadence, bool) or not isinstance(cadence, (int, float))
+                                         or not 0.05 <= float(cadence) <= 3600):
+                return failure("INVALID_REQUEST", 422)
+            return await run_in_threadpool(scheduler_contract, research_worker, action,
+                                           None if cadence is None else float(cadence))
         except SerializationError:
             return failure("INVALID_REQUEST", 400)
         finally:

@@ -202,6 +202,21 @@ def run_futures() -> tuple[str, dict[str, Any]]:
             "position lagged one session, module default transaction-cost model."
         ),
         "reproduce": "python -m gig.research_org --compute futures-tsmom-authored-excess-v1",
+        "publication_time": "NOT_APPLICABLE",
+        "lineage": {
+            "dataset": DATASET_ID,
+            "strategy": "gig.strategies.futures_tsmom.FuturesTSMOM",
+            "strategy_version": EXPERIMENT_VERSION,
+            "model_version": None,
+            "point_in_time": "Signal shifted one session. No later observation is used.",
+            "costs": "spread 4, commission 1, impact eta 0.10 at 1 percent participation",
+            "assumptions": "Authored zero-mean excess returns. Not a futures market.",
+            "configuration": "lookback 252, vol window 60, holdout last 63 scored sessions, seed 23",
+            "skeptic_verdict": verdict,
+            "evidence_class": "INCONCLUSIVE" if verdict == "INCONCLUSIVE" else "REJECTED",
+            "reproduce": "python -m gig.research_org --compute futures-tsmom-authored-excess-v1",
+            "artifacts": "The research ledger stores the report and the equity curve.",
+        },
         "follow_up": "Repeat only if an admitted futures excess-return series is in the store. None is.",
     }
     return config_hash(config), report
