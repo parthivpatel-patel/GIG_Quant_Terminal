@@ -16,6 +16,7 @@
     { id: "research", label: "Research", icon: "M9 3h6M10 3v6L4 19c-.5 1 .5 2 2 2h12c1.5 0 2.5-1 2-2L14 9V3M7 15h10", description: "Reproducible experiments, research artifacts, and evidence-backed analysis." },
     { id: "operations", label: "Operations", icon: "M3 12h4l3-7 4 14 3-7h4M4 3h16M4 21h16", description: "Dependency readiness, safe configuration, restart recovery, and operating status." },
     { id: "global-intelligence", label: "Global Intelligence", icon: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18", description: "Hazards, geopolitical and delayed defense research with source, clocks, uncertainty and verification. Not a live or tactical feed." },
+    { id: "charts", label: "Market Charts", icon: "M5 3v18M12 3v18M19 3v18M3 7h4v9H3zM10 5h4v6h-4zM17 9h4v8h-4z", description: "Candlestick, OHLC, line and area charts with volume and backend-computed indicators, on admitted bars or the labelled synthetic demo." },
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
@@ -141,10 +142,12 @@
     $("section-description").textContent = state.section.description;
     document.title = `${state.section.label} · GIG Quant Terminal`;
     const intelligence = state.section.id === "global-intelligence";
-    $("content").dataset.workspace = intelligence ? "intel" : "terminal";
+    const charts = state.section.id === "charts";
+    $("content").dataset.workspace = intelligence ? "intel" : charts ? "charts" : "terminal";
     if (window.GIGIntel) window.GIGIntel.show(intelligence);
+    if (window.GIGCharts) window.GIGCharts.show(charts);
     if (window.GIGModels) window.GIGModels.show(state.section.id);
-    if (intelligence) {
+    if (intelligence || charts) {
       if (state.request) state.request.abort();
       return;
     }
@@ -161,6 +164,8 @@
     loadSection();
   }
   async function loadSection() {
+    if (state.section.id === "charts") { if (window.GIGCharts) window.GIGCharts.reload(); return; }
+    if (state.section.id === "global-intelligence") return;
     $("universe-id").disabled = state.mode !== "local" || $("analysis-engine").value !== "provider";
     $("universe-control").classList.toggle("hidden", state.mode !== "local" || $("analysis-engine").value !== "provider");
     $("depth-control").classList.toggle("hidden", state.mode !== "local" || $("analysis-engine").value !== "depth");
@@ -1103,6 +1108,17 @@
   $("compare-left").addEventListener("change", renderComparison);
   $("compare-right").addEventListener("change", renderComparison);
   window.addEventListener("hashchange", selectSection);
+  const setNav = (collapsed) => {
+    document.body.classList.toggle("nav-collapsed", collapsed);
+    $("nav-toggle").setAttribute("aria-expanded", String(!collapsed));
+    $("nav-toggle").setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
+    $("nav-toggle").title = collapsed ? "Expand navigation" : "Collapse navigation";
+    try { localStorage.setItem("gig-nav-collapsed", collapsed ? "1" : "0"); } catch { /* Keep the choice for this page only. */ }
+  };
+  let navCollapsed = false;
+  try { navCollapsed = localStorage.getItem("gig-nav-collapsed") === "1"; } catch { /* Default expanded. */ }
+  setNav(navCollapsed);
+  $("nav-toggle").addEventListener("click", () => setNav(!document.body.classList.contains("nav-collapsed")));
   [2, 3].forEach((dimension) => $(`view-${dimension}d`).addEventListener("click", () => { state.dimension = dimension; [2, 3].forEach((d) => $(`view-${d}d`).setAttribute("aria-pressed", String(d === dimension))); renderChart(); }));
   $("chart-reset").addEventListener("click", () => { state.angle = -.55; state.tilt = .40; state.zoom = 1; renderChart(); });
   const canvas = $("analytics-chart");

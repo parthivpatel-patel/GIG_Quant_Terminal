@@ -9,20 +9,22 @@
   <script src="/static/viz3d.js" defer></script>
   <script src="/static/models3d.js" defer></script>
   <script src="/static/intel.js" defer></script>
+  <script src="/static/charts.js" defer></script>
+  <script src="/static/palette.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" id="skip-link" href="#content">Skip to analysis</a>
   <aside class="sidebar" aria-label="Terminal navigation">
     <a class="brand" href="#command-center" aria-label="GIG command center"><span class="brand-mark">G</span><span>GIG<span class="brand-sub">QUANT TERMINAL</span></span></a>
-    <div class="nav-caption">RESEARCH SYSTEM <span>01—13</span></div>
+    <div class="nav-caption">RESEARCH SYSTEM <span>01—14</span></div>
     <nav id="section-nav" aria-label="Analytics sections"></nav>
     <div class="sidebar-footer"><span class="connection-dot"></span>LOCAL RESEARCH ENVIRONMENT<p>Broker orders disabled · Local research</p></div>
   </aside>
   <div class="workspace">
     <header class="topbar">
-      <div class="workspace-label"><span class="workspace-icon" aria-hidden="true">▦</span> <span class="workspace-name">Quantitative workspace</span><span class="workspace-short">Research</span> <span class="divider" aria-hidden="true">/</span> <span id="breadcrumb">Command Center</span></div>
-      <div class="top-actions"><time id="clock" role="timer" aria-live="off" aria-label="Current UTC time"></time><button class="icon-button" id="theme-toggle" aria-label="Switch to light theme" title="Switch theme">◐</button><span class="session-label">LOCAL / RESEARCH</span></div>
+      <button class="icon-button nav-toggle" id="nav-toggle" type="button" aria-controls="section-nav" aria-expanded="true" aria-label="Collapse navigation" title="Collapse navigation">☰</button><div class="workspace-label"><span class="workspace-icon" aria-hidden="true">▦</span> <span class="workspace-name">Quantitative workspace</span><span class="workspace-short">Research</span> <span class="divider" aria-hidden="true">/</span> <span id="breadcrumb">Command Center</span></div>
+      <div class="top-actions"><button class="palette-button" id="palette-open" type="button" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K"><span aria-hidden="true">⌕</span> <span class="palette-button-text">Search or run a command</span> <kbd>Ctrl K</kbd></button><time id="clock" role="timer" aria-live="off" aria-label="Current UTC time"></time><button class="icon-button" id="theme-toggle" aria-label="Switch to light theme" title="Switch theme">◐</button><span class="session-label">LOCAL / RESEARCH</span></div>
     </header>
     <main id="content" tabindex="-1">
       <div class="page-heading">
@@ -109,7 +111,41 @@
         <section class="panel" aria-labelledby="intel-coverage-title"><div class="panel-header"><div><p class="panel-kicker">COVERAGE &amp; PERMISSIONS</p><h3 id="intel-coverage-title">Source availability: hazards, maritime, aviation, satellite imagery</h3></div></div><div id="intel-coverage" class="intel-coverage"></div></section>
         <div class="sr-only" id="intel-live" aria-live="polite"></div>
       </section>
+      <section class="charts hidden" id="charts-panel" aria-labelledby="charts-title">
+        <div class="panel charts-shell">
+          <div class="panel-header charts-header"><div><p class="panel-kicker">MARKET CHARTS</p><h2 id="charts-title">Price, volume and indicators</h2></div>
+            <div class="charts-layouts"><label class="sr-only" for="chart-layouts">Saved layouts</label><select id="chart-layouts"></select><button class="text-button" id="chart-layout-delete" type="button" disabled>Delete</button><label class="sr-only" for="chart-layout-name">Layout name</label><input id="chart-layout-name" maxlength="60" autocomplete="off" placeholder="Layout name"><button class="button" id="chart-layout-save" type="button">Save layout</button></div></div>
+          <div class="charts-toolbar" role="toolbar" aria-label="Chart controls">
+            <div class="charts-field"><label for="chart-symbol">Instrument</label><select id="chart-symbol"></select></div>
+            <div class="charts-field"><span class="charts-label" id="chart-tf-label">Timeframe</span><div class="segmented" role="group" aria-labelledby="chart-tf-label"><button type="button" data-chart-timeframe="1D" aria-pressed="true">1D</button><button type="button" data-chart-timeframe="1W" aria-pressed="false">1W</button><button type="button" data-chart-timeframe="1M" aria-pressed="false">1M</button></div></div>
+            <div class="charts-field"><span class="charts-label" id="chart-type-label">Chart type</span><div class="segmented" role="group" aria-labelledby="chart-type-label"><button type="button" data-chart-type="candles" aria-pressed="true">Candles</button><button type="button" data-chart-type="ohlc" aria-pressed="false">OHLC</button><button type="button" data-chart-type="line" aria-pressed="false">Line</button><button type="button" data-chart-type="area" aria-pressed="false">Area</button></div></div>
+            <fieldset class="charts-overlays"><legend>Overlays</legend><label><input type="checkbox" data-chart-overlay="sma20"> SMA 20</label><label><input type="checkbox" data-chart-overlay="sma50"> SMA 50</label><label><input type="checkbox" data-chart-overlay="ema20"> EMA 20</label><label><input type="checkbox" data-chart-overlay="bb"> Bollinger</label><label><input type="checkbox" data-chart-overlay="vwap20"> VWAP 20</label></fieldset>
+            <div class="charts-field"><label for="chart-lower-select">Lower pane</label><select id="chart-lower-select"><option value="rsi14">RSI 14</option><option value="macd">MACD 12, 26, 9</option><option value="atr14">ATR 14</option><option value="rv20">Realized volatility 20</option><option value="none">None</option></select></div>
+            <div class="charts-field"><label for="chart-compare">Synchronized comparison</label><select id="chart-compare"></select></div>
+            <button class="text-button" id="charts-reset" type="button">Reset view</button>
+          </div>
+          <div class="charts-body">
+            <aside class="charts-watch" aria-labelledby="chart-watch-title"><h3 id="chart-watch-title">Watchlist</h3><ul id="chart-watchlist" class="chart-watchlist"></ul></aside>
+            <div class="charts-stage" id="charts-stage">
+              <p id="charts-note" class="charts-note hidden"></p><div id="chart-readout" class="chart-readout" aria-live="off"></div>
+              <div class="chart-pane chart-pane-price"><canvas id="chart-price" tabindex="0" role="img" aria-label="Price and volume chart. Drag to pan, scroll or plus and minus to zoom, arrow keys move the crosshair, 0 resets."></canvas><p id="charts-status" class="charts-status">Loading bars…</p></div>
+              <div id="chart-lower-wrap"><div class="chart-splitter" id="chart-splitter" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize indicator pane" aria-valuemin="80" aria-valuemax="320" aria-valuenow="150"></div><div class="chart-pane" id="chart-lower-pane"><canvas id="chart-lower" tabindex="0" role="img" aria-label="Indicator pane, synchronized with the price chart"></canvas></div></div>
+              <div id="chart-compare-wrap" class="hidden"><div class="chart-pane chart-pane-compare"><canvas id="chart-compare-canvas" tabindex="0" role="img" aria-label="Comparison price chart, synchronized time axis and crosshair"></canvas></div></div>
+            </div>
+          </div>
+          <p class="charts-foot">Indicators are computed by the backend from the bars shown (EMA seeded with SMA; RSI and ATR use Wilder smoothing; Bollinger uses population deviation; VWAP is a rolling 20-bar typical-price VWAP, not a session VWAP). No values are filled across missing bars. Research only; no orders.</p>
+        </div>
+        <div class="sr-only" id="charts-live" aria-live="polite"></div>
+      </section>
     </main>
+  </div>
+  <div class="palette-backdrop hidden" id="palette" role="dialog" aria-modal="true" aria-labelledby="palette-title">
+    <div class="palette">
+      <h2 class="sr-only" id="palette-title">Command palette and search</h2>
+      <input id="palette-input" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" autocomplete="off" spellcheck="false" placeholder="Search sections, instruments, events and commands">
+      <ul id="palette-list" role="listbox" aria-label="Results"></ul>
+      <p class="palette-hint">Up and down to move · Enter to open · Esc to close · Ctrl or Cmd K</p>
+    </div>
   </div>
 </body>
 </html>
