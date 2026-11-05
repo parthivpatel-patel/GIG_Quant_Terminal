@@ -116,7 +116,7 @@ def main():
                     page.emulate_media(reduced_motion="reduce")
                     page.wait_for_function("document.getElementById('orbit-toggle').getAttribute('aria-pressed')==='false'")
                     check("reduced motion preference immediately pauses camera", "Reduced motion" in page.locator("#motion-state").inner_text())
-                    check("all twelve navigation sections retained plus Global Intelligence and Market Charts", page.locator("#section-nav a").count() == 14 and page.locator('#section-nav a[href="#global-intelligence"]').count() == 1 and page.locator('#section-nav a[href="#charts"]').count() == 1)
+                    check("all twelve navigation sections retained plus Global Intelligence and Market Charts", page.locator("#section-nav a").count() == 15 and page.locator('#section-nav a[href="#global-intelligence"]').count() == 1 and page.locator('#section-nav a[href="#observatory"]').count() == 1 and page.locator('#section-nav a[href="#charts"]').count() == 1)
                     check("no JavaScript exceptions", not errors, errors)
                     browser.close()
             finally:

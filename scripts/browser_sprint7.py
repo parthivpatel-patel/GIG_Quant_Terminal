@@ -204,7 +204,7 @@ def main():
                         if width == 320:
                             page.evaluate("window.scrollTo(0,0)")
                             page.screenshot(path=str(out/"sprint7-mobile-320.png"), full_page=True)
-                    check("all twelve terminal sections retained plus Global Intelligence and Market Charts", page.locator("#section-nav a").count() == 14 and page.locator('#section-nav a[href="#global-intelligence"]').count() == 1 and page.locator('#section-nav a[href="#charts"]').count() == 1)
+                    check("all twelve terminal sections retained plus Global Intelligence and Market Charts", page.locator("#section-nav a").count() == 15 and page.locator('#section-nav a[href="#global-intelligence"]').count() == 1 and page.locator('#section-nav a[href="#observatory"]').count() == 1 and page.locator('#section-nav a[href="#charts"]').count() == 1)
                     check("reduced-motion camera remains paused", page.locator("#orbit-toggle").get_attribute("aria-pressed") == "false")
                     check("no JavaScript exceptions", not errors, errors)
                     browser.close()

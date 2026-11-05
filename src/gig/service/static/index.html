@@ -10,6 +10,7 @@
   <script src="/static/models3d.js" defer></script>
   <script src="/static/intel.js" defer></script>
   <script src="/static/charts.js" defer></script>
+  <script src="/static/observatory.js" defer></script>
   <script src="/static/palette.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
@@ -17,7 +18,7 @@
   <a class="skip-link" id="skip-link" href="#content">Skip to analysis</a>
   <aside class="sidebar" aria-label="Terminal navigation">
     <a class="brand" href="#command-center" aria-label="GIG command center"><span class="brand-mark">G</span><span>GIG<span class="brand-sub">QUANT TERMINAL</span></span></a>
-    <div class="nav-caption">RESEARCH SYSTEM <span>01—14</span></div>
+    <div class="nav-caption">RESEARCH SYSTEM <span id="nav-count">01—15</span></div>
     <nav id="section-nav" aria-label="Analytics sections"></nav>
     <div class="sidebar-footer"><span class="connection-dot"></span>LOCAL RESEARCH ENVIRONMENT<p>Broker orders disabled · Local research</p></div>
   </aside>
@@ -136,6 +137,21 @@
           <p class="charts-foot">Indicators are computed by the backend from the bars shown (EMA seeded with SMA; RSI and ATR use Wilder smoothing; Bollinger uses population deviation; VWAP is a rolling 20-bar typical-price VWAP, not a session VWAP). No values are filled across missing bars. Research only; no orders.</p>
         </div>
         <div class="sr-only" id="charts-live" aria-live="polite"></div>
+      </section>
+      <section class="observatory hidden" id="observatory-panel" aria-labelledby="observatory-title">
+        <div class="panel">
+          <div class="panel-header"><div><p class="panel-kicker">RESEARCH ORGANIZATION</p><h2 id="observatory-title">Observatory</h2></div>
+            <button class="button" id="observatory-run" type="button">Run one bounded cycle</button></div>
+          <p class="observatory-lead">One approved hypothesis, run only when you ask. The scheduler does not run in the background. The series is authored and synthetic, and the verdict cannot be a market claim.</p>
+          <p id="observatory-status" class="observatory-status" role="status"></p>
+          <div class="observatory-grid">
+            <div><h3>Roles</h3><ul id="observatory-roles" class="observatory-roles"></ul></div>
+            <div><h3>This cycle must not</h3><ul id="observatory-bounds"></ul>
+              <h3>Latest finding</h3><div id="observatory-finding"></div></div>
+          </div>
+          <h3 class="observatory-sub">Strategy catalog</h3>
+          <div class="table-scroll"><table><caption class="sr-only">Strategies the organization knows about, and whether this cycle executed them.</caption><thead><tr><th>Strategy</th><th>Status</th><th>Note</th></tr></thead><tbody id="observatory-catalog"></tbody></table></div>
+        </div>
       </section>
     </main>
   </div>

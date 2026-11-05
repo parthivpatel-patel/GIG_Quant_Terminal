@@ -87,6 +87,8 @@ jobs:
         run: python scripts/browser_stage_a_regressions.py --report /tmp/ci-browser-stage-a/report.json
       - name: Chromium market charts, command palette and navigation
         run: python scripts/browser_charts.py --evidence-dir /tmp/ci-browser-charts --axe /tmp/axe/package/axe.min.js
+      - name: Chromium Research Observatory
+        run: python scripts/browser_observatory.py --evidence-dir /tmp/ci-browser-observatory
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -96,3 +98,4 @@ jobs:
             /tmp/ci-browser-global-3d
             /tmp/ci-browser-stage-a
             /tmp/ci-browser-charts
+            /tmp/ci-browser-observatory

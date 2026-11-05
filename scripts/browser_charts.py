@@ -112,7 +112,7 @@ def run(url: str, out: Path, axe: Path | None, isolated: bool) -> int:
         charts_ready(page)
         links = page.locator("#section-nav a")
         hrefs = [links.nth(i).get_attribute("href") for i in range(links.count())]
-        check("navigation lists fourteen sections ending with Market Charts", len(hrefs) == 14 and hrefs[-1] == "#charts", hrefs)
+        check("navigation lists fifteen sections ending with Market Charts", len(hrefs) == 15 and hrefs[-1] == "#charts" and "#observatory" in hrefs, hrefs)
         badge = page.locator("#state-badge").inner_text()
         check("local mode without admitted bars is UNAVAILABLE and says why", badge == "UNAVAILABLE"
               and "No admitted bars" in page.locator("#charts-status").inner_text(), badge)

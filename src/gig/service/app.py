@@ -52,6 +52,9 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     terminal_dir = state_dir if state_dir is not None else get_settings().data_dir / "terminal"
     workspace = TerminalWorkspace(terminal_dir)
     intel = IntelWorkspace(terminal_dir / "intel")
+    from gig.research_org.cycle import cycle_contract, status_contract
+    from gig.research_org.ledger import ResearchLedger
+    research_ledger = ResearchLedger(terminal_dir / "research-org")
     integrations = CycleServices(workspace, finbert_dir=(finbert_dir if finbert_dir is not None
                                                        else get_settings().finbert_model_dir))
     workspace_write_lock = threading.Lock()
@@ -261,6 +264,28 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
             return charts.local_chart(workspace._path("bars.sqlite"), symbol, timeframe, cutoff, max_age_seconds)
         except ValueError:
             return failure("INVALID_REQUEST", 422)
+
+    @app.get("/api/v1/research-org/status", response_model=EnvelopeSchema)
+    def research_org_status() -> Any:
+        return status_contract(research_ledger)
+
+    @app.post("/api/v1/research-org/cycle", response_model=EnvelopeSchema)
+    async def research_org_cycle(request: Request) -> Any:
+        # An explicit local action. It records a synthetic experiment and submits nothing.
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not workspace_write_lock.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            loads(await request.body())
+            return await run_in_threadpool(cycle_contract, research_ledger)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        finally:
+            workspace_write_lock.release()
 
     @app.get("/api/v1/intel/overview", response_model=EnvelopeSchema)
     def intel_overview(as_of: str | None = Query(None, max_length=100),

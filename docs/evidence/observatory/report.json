@@ -1,0 +1,47 @@
+{
+  "passed": 7,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "observatory replaces the truth strip",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "research-organization \u00b7 SYNTHETIC \u00b7 0 recorded runs",
+        "",
+        "No cycle has run",
+        "Authored synthetic experiment \u00b7 Not a market result \u00b7 No orders"
+      ]
+    },
+    {
+      "name": "nine roles are listed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "registered strategies are not marked executed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "the cycle records an inconclusive synthetic finding",
+      "passed": true,
+      "detail": "INCONCLUSIVE\n\nInconclusive: the series is authored and synthetic, so the numbers are not a market result. A positive verdict is not available for this classification.\n\nAfter-cost Sharpe\n1.813\nPlacebo median Sharpe\n0.018\nDeflated Sharpe\n1.00"
+    },
+    {
+      "name": "a second cycle returns the stored record",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no external requests",
+      "passed": true,
+      "detail": []
+    }
+  ]
+}

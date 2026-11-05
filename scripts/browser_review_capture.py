@@ -96,7 +96,7 @@ def main() -> int:
         background = page.evaluate("getComputedStyle(document.body).backgroundColor")
         check("page background is #050608", background == "rgb(5, 6, 8)", background)
         links = page.locator("#section-nav a")
-        check("fourteen sections in navigation", [links.nth(i).get_attribute("href")[1:] for i in range(links.count())] == [*SECTIONS, "charts"])
+        check("fifteen sections in navigation", [links.nth(i).get_attribute("href")[1:] for i in range(links.count())] == [*SECTIONS, "observatory", "charts"])
         for section in SECTIONS[:-1]:
             page.locator(f'#section-nav a[href="#{section}"]').click()
             section_ready(page, section)

@@ -166,6 +166,13 @@ body.nav-collapsed .sidebar{width:72px}body.nav-collapsed .workspace{margin-left
 .palette-kind{flex:0 0 78px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.palette-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.palette-detail{font:11px "SFMono-Regular",Consolas,monospace;color:var(--muted)}
 .palette-empty{padding:14px 12px;color:var(--muted)}.palette-hint{margin:0;padding:9px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)}
 main[data-workspace="charts"]>:not(.page-heading):not(#charts-panel){display:none!important}
+main[data-workspace="observatory"]>:not(.page-heading):not(#observatory-panel){display:none!important}
+.observatory-lead{margin:0 22px 8px;color:var(--muted);max-width:760px}.observatory-status{margin:0 22px 12px;min-height:1.2em}
+.observatory-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:22px;margin:0 22px 18px}
+.observatory-roles{list-style:none;margin:0;padding:0}.observatory-role{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,1.3fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.observatory-verdict{font-size:18px;letter-spacing:.04em;margin:0 0 6px}.observatory-metrics{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:10px 0}
+.observatory-metrics dt{color:var(--muted)}.observatory-sub{margin:0 22px 8px}
+@media(max-width:800px){.observatory-grid{grid-template-columns:1fr}.observatory-role{grid-template-columns:1fr}}
 main[data-workspace="charts"] .engine-control{display:none}
 .charts{display:block;margin-bottom:28px}.charts-shell{overflow:visible}
 .charts-header{display:flex;flex-wrap:wrap;gap:12px}.charts-header h2{margin:0;font-size:17px}
