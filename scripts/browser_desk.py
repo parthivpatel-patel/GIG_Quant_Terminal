@@ -89,6 +89,9 @@ def main() -> int:
         context.close()
         browser.close()
 
+    log = out / "stage-a-server.txt"
+    if log.exists():
+        log.unlink()
     report = {"passed": sum(c["passed"] for c in checks), "failed": sum(not c["passed"] for c in checks), "checks": checks}
     (out / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(f"{report['passed']} passed, {report['failed']} failed")
