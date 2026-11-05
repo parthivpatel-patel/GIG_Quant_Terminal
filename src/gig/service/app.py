@@ -244,6 +244,24 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
             return failure("INVALID_REQUEST", 404)
         return module(name, mode)
 
+    @app.get("/api/v1/charts/bars", response_model=EnvelopeSchema)
+    def chart_bars(mode: str = Query("local", pattern="^(local|synthetic)$"),
+                   symbol: str | None = Query(None, min_length=1, max_length=64),
+                   timeframe: str = Query("1D", pattern="^(1D|1W|1M)$"),
+                   as_of: str | None = Query(None, max_length=100),
+                   max_age_seconds: float | None = Query(None, ge=0, le=366 * 86400)) -> Any:
+        from gig.service import charts
+        if mode == "synthetic":
+            return charts.synthetic_chart(symbol or "SYN001", timeframe)
+        try:
+            cutoff = aware_timestamp(as_of if as_of is not None else datetime.now(UTC))
+        except (ValueError, TypeError, OverflowError):
+            return failure("INVALID_REQUEST", 422)
+        try:
+            return charts.local_chart(workspace._path("bars.sqlite"), symbol, timeframe, cutoff, max_age_seconds)
+        except ValueError:
+            return failure("INVALID_REQUEST", 422)
+
     @app.get("/api/v1/intel/overview", response_model=EnvelopeSchema)
     def intel_overview(as_of: str | None = Query(None, max_length=100),
                        layers: str | None = Query(None, max_length=200),
