@@ -52,7 +52,12 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     terminal_dir = state_dir if state_dir is not None else get_settings().data_dir / "terminal"
     workspace = TerminalWorkspace(terminal_dir)
     intel = IntelWorkspace(terminal_dir / "intel")
-    from gig.research_org.cycle import cycle_contract, status_contract
+    from gig.research_org.cycle import (
+        cycle_contract,
+        objective_contract,
+        status_contract,
+        tick_contract,
+    )
     from gig.research_org.ledger import ResearchLedger
     research_ledger = ResearchLedger(terminal_dir / "research-org")
     integrations = CycleServices(workspace, finbert_dir=(finbert_dir if finbert_dir is not None
@@ -282,6 +287,44 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
         try:
             loads(await request.body())
             return await run_in_threadpool(cycle_contract, research_ledger)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        finally:
+            workspace_write_lock.release()
+
+    @app.post("/api/v1/research-org/tick", response_model=EnvelopeSchema)
+    async def research_org_tick(request: Request) -> Any:
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not workspace_write_lock.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            loads(await request.body())
+            return await run_in_threadpool(tick_contract, research_ledger)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        finally:
+            workspace_write_lock.release()
+
+    @app.post("/api/v1/research-org/objective", response_model=EnvelopeSchema)
+    async def research_org_objective(request: Request) -> Any:
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not workspace_write_lock.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            body = loads(await request.body())
+            text = body.get("objective") if isinstance(body, dict) else None
+            cleaned = " ".join(text.split()) if isinstance(text, str) else ""
+            if not isinstance(text, str) or not cleaned or len(cleaned) > 500:
+                return failure("INVALID_REQUEST", 422)
+            return await run_in_threadpool(objective_contract, research_ledger, cleaned)
         except SerializationError:
             return failure("INVALID_REQUEST", 400)
         finally:

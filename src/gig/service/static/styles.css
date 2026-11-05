@@ -172,6 +172,11 @@ main[data-workspace="observatory"]>:not(.page-heading):not(#observatory-panel){d
 .observatory-roles{list-style:none;margin:0;padding:0}.observatory-role{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,1.3fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
 .observatory-verdict{font-size:18px;letter-spacing:.04em;margin:0 0 6px}.observatory-metrics{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:10px 0}
 .observatory-metrics dt{color:var(--muted)}.observatory-sub{margin:0 22px 8px}
+.observatory-objective{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 22px 8px}
+.observatory-objective input{flex:1;min-width:220px;background:transparent;color:inherit;border:1px solid var(--border);padding:8px 10px}
+.observatory-backlog{margin:0;padding-left:18px}.observatory-spark{width:240px;height:48px;display:block;margin:8px 0}
+#observatory-panel td{white-space:normal;overflow:visible;text-overflow:clip;max-width:none}
+.observatory-reproduce{font-family:ui-monospace,monospace;font-size:12px}
 @media(max-width:800px){.observatory-grid{grid-template-columns:1fr}.observatory-role{grid-template-columns:1fr}}
 main[data-workspace="charts"] .engine-control{display:none}
 .charts{display:block;margin-bottom:28px}.charts-shell{overflow:visible}

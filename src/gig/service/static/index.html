@@ -141,13 +141,21 @@
       <section class="observatory hidden" id="observatory-panel" aria-labelledby="observatory-title">
         <div class="panel">
           <div class="panel-header"><div><p class="panel-kicker">RESEARCH ORGANIZATION</p><h2 id="observatory-title">Observatory</h2></div>
-            <button class="button" id="observatory-run" type="button">Run one bounded cycle</button></div>
-          <p class="observatory-lead">One approved hypothesis, run only when you ask. The scheduler does not run in the background. The series is authored and synthetic, and the verdict cannot be a market claim.</p>
+            <button class="button" id="observatory-run" type="button">Run next approved job</button></div>
+          <p class="observatory-lead">Two approved jobs, run one at a time from the backlog. The process does not stay running in the background. Both series are authored and synthetic, and a verdict cannot be a market claim.</p>
+          <form class="observatory-objective" id="observatory-objective">
+            <label for="observatory-objective-text">Research objective</label>
+            <input id="observatory-objective-text" maxlength="500" placeholder="State an objective. Missing data is reported, not invented.">
+            <button class="button" type="submit">Submit objective</button>
+          </form>
+          <p id="observatory-objective-result" class="observatory-status"></p>
           <p id="observatory-status" class="observatory-status" role="status"></p>
           <div class="observatory-grid">
-            <div><h3>Roles</h3><ul id="observatory-roles" class="observatory-roles"></ul></div>
-            <div><h3>This cycle must not</h3><ul id="observatory-bounds"></ul>
-              <h3>Latest finding</h3><div id="observatory-finding"></div></div>
+            <div><h3>Roles</h3><ul id="observatory-roles" class="observatory-roles"></ul>
+              <h3>Backlog</h3><ul id="observatory-backlog" class="observatory-backlog"></ul></div>
+            <div><h3>This organization must not</h3><ul id="observatory-bounds"></ul>
+              <h3>Latest finding</h3><div id="observatory-finding"></div>
+              <h3>Recorded cycles</h3><div id="observatory-history"></div></div>
           </div>
           <h3 class="observatory-sub">Strategy catalog</h3>
           <div class="table-scroll"><table><caption class="sr-only">Strategies the organization knows about, and whether this cycle executed them.</caption><thead><tr><th>Strategy</th><th>Status</th><th>Note</th></tr></thead><tbody id="observatory-catalog"></tbody></table></div>

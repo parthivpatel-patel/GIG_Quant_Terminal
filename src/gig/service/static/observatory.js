@@ -9,7 +9,11 @@
     if (text !== undefined) node.textContent = text;
     return node;
   };
-  const num = (value) => (typeof value === "number" && Number.isFinite(value) ? value.toFixed(3) : "—");
+  const num = (value) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+    if (value !== 0 && Math.abs(value) < 0.0005) return value.toExponential(2);
+    return value.toFixed(3);
+  };
 
   function truth(payload, failed) {
     if ($("observatory-panel").classList.contains("hidden")) return;
@@ -21,11 +25,32 @@
       return;
     }
     const data = payload.data;
-    const last = data.last || (data.runs[0] && data.runs[0].report);
+    const last = data.last;
     $("state-badge").textContent = "AVAILABLE"; $("state-badge").dataset.state = "AVAILABLE";
     $("source-label").textContent = `research-organization · ${payload.provenance.classification} · ${data.run_count} recorded run${data.run_count === 1 ? "" : "s"}`;
-    $("asof-label").textContent = last ? `Last verdict ${last.verdict}` : "No cycle has run";
-    $("truth-notice").textContent = "Authored synthetic experiment · Not a market result · No orders";
+    $("asof-label").textContent = last ? `Last verdict ${last.verdict}` : "No job has run";
+    $("truth-notice").textContent = "Authored synthetic experiments · Not market results · No orders";
+  }
+
+  function spark(curve) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 240 48");
+    svg.setAttribute("class", "observatory-spark");
+    svg.setAttribute("role", "img");
+    const values = curve.map((point) => point.equity);
+    const min = Math.min(...values);
+    const span = Math.max(...values) - min || 1;
+    const points = values.map((value, index) => {
+      const x = values.length === 1 ? 0 : (index / (values.length - 1)) * 240;
+      return `${x},${46 - ((value - min) / span) * 44}`;
+    }).join(" ");
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    line.setAttribute("points", points);
+    line.setAttribute("fill", "none");
+    line.setAttribute("stroke", "currentColor");
+    svg.append(line);
+    svg.setAttribute("aria-label", `Equity on the authored series, from ${num(values[0])} to ${num(values[values.length - 1])}`);
+    return svg;
   }
 
   function render(payload) {
@@ -36,6 +61,11 @@
       row.append(el("strong", null, role.name), el("span", null, role.does));
       roles.append(row);
     });
+    const backlog = $("observatory-backlog"); backlog.replaceChildren();
+    data.backlog.forEach((job) => {
+      const row = el("li", null, `${job.hypothesis_id} · ${job.status}`);
+      backlog.append(row);
+    });
     const catalog = $("observatory-catalog"); catalog.replaceChildren();
     data.catalog.forEach((item) => {
       const row = document.createElement("tr");
@@ -44,23 +74,36 @@
     });
     const bounds = $("observatory-bounds"); bounds.replaceChildren();
     data.must_not.forEach((item) => bounds.append(el("li", null, item)));
-    const last = data.last || (data.runs[0] && data.runs[0].report);
-    const finding = $("observatory-finding"); finding.replaceChildren();
-    if (!last) {
-      finding.append(el("p", null, "No cycle has run. The button runs the one approved hypothesis once and keeps the record."));
-      return;
-    }
-    finding.append(el("p", "observatory-verdict", last.verdict));
-    finding.append(el("p", null, last.interpretation));
-    const dl = el("dl", "observatory-metrics");
-    [["After-cost Sharpe", num(last.sharpe_after_cost)], ["Placebo median Sharpe", num(last.placebo_sharpe_median)],
-     ["Deflated Sharpe", num(last.deflated_sharpe)], ["Max drawdown", num(last.max_drawdown)],
-     ["Observations", String(last.n_obs)], ["Cost", `${last.cost_bps} bp per change`],
-     ["Lookahead detected", last.lookahead_detected ? "Yes" : "No"], ["Orders submitted", String(last.orders_submitted)],
-     ["Deduplicated", data.deduplicated ? "Yes, the stored run was returned" : "No"]].forEach(([k, v]) => {
-      dl.append(el("dt", null, k), el("dd", null, v));
+    const history = $("observatory-history"); history.replaceChildren();
+    if (!data.runs.length) history.append(el("p", null, "No recorded cycle."));
+    data.runs.forEach((run) => {
+      const report = run.report;
+      history.append(el("p", null, `${report.hypothesis_id} · ${report.verdict} · Sharpe ${num(report.sharpe_after_cost)}`));
     });
-    finding.append(dl);
+    const finding = $("observatory-finding"); finding.replaceChildren();
+    const last = data.last;
+    if (!last) {
+      finding.append(el("p", null, "No job has run. The button runs the next approved job and keeps the record."));
+    } else {
+      finding.append(el("p", "observatory-verdict", last.verdict));
+      finding.append(el("p", null, last.interpretation));
+      if (last.equity_curve && last.equity_curve.length > 1) finding.append(spark(last.equity_curve));
+      const dl = el("dl", "observatory-metrics");
+      const rows = [["After-cost Sharpe", num(last.sharpe_after_cost)], ["Total return", num(last.total_return)],
+        ["Sortino", num(last.sortino)], ["Max drawdown", num(last.max_drawdown)],
+        ["Held-out Sharpe", last.holdout ? num(last.holdout.sharpe) : "—"],
+        ["Benchmark Sharpe", last.benchmark ? num(last.benchmark.sharpe) : "—"],
+        ["Placebo median Sharpe", num(last.placebo_sharpe_median)], ["Deflated Sharpe", num(last.deflated_sharpe)],
+        ["Observations", String(last.n_obs)], ["Lookahead detected", last.lookahead_detected ? "Yes" : "No"],
+        ["Orders submitted", String(last.orders_submitted)]];
+      rows.forEach(([key, value]) => { dl.append(el("dt", null, key), el("dd", null, value)); });
+      finding.append(dl);
+      if (last.reproduce) finding.append(el("p", "observatory-reproduce", last.reproduce));
+    }
+    const objective = $("observatory-objective-result");
+    objective.replaceChildren();
+    const latest = data.objective || data.objectives[0];
+    if (latest) objective.append(el("p", null, `${latest.disposition} · ${latest.detail}`));
   }
 
   async function load() {
@@ -77,15 +120,18 @@
     }
   }
 
-  async function cycle() {
+  async function tick() {
     $("observatory-run").disabled = true;
-    $("observatory-status").textContent = "Running one bounded cycle…";
+    $("observatory-status").textContent = "Running the next approved job…";
     try {
-      const response = await fetch("/api/v1/research-org/cycle", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: "{}" });
+      const response = await fetch("/api/v1/research-org/tick", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: "{}" });
       const payload = await response.json();
       if (!response.ok || !payload.data) throw new Error(payload.error ? payload.error.message : "unavailable");
       state.payload = payload; render(payload); truth(payload, false);
-      $("observatory-status").textContent = payload.data.deduplicated ? "Already recorded. The stored finding was returned." : "Recorded.";
+      const action = payload.data.tick ? payload.data.tick.action : "";
+      $("observatory-status").textContent = action === "idle" ? "No queued job remains."
+        : action === "failed" ? "The job failed. The ledger kept the failure."
+          : payload.data.deduplicated ? "Already recorded. The stored finding was returned." : "Recorded.";
     } catch (error) {
       $("observatory-status").textContent = `ERROR · ${error.message}`;
       truth(null, true);
@@ -94,12 +140,35 @@
     }
   }
 
+  async function objective(event) {
+    event.preventDefault();
+    const text = $("observatory-objective-text").value;
+    $("observatory-status").textContent = "Recording the objective…";
+    try {
+      const response = await fetch("/api/v1/research-org/objective", {
+        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ objective: text }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.data) throw new Error(payload.error ? payload.error.message : "unavailable");
+      state.payload = payload; render(payload); truth(payload, false);
+      $("observatory-status").textContent = payload.data.objective.disposition;
+    } catch (error) {
+      $("observatory-status").textContent = `ERROR · ${error.message}`;
+      truth(null, true);
+    }
+  }
+
   function show(on) {
     const panel = $("observatory-panel"); if (!panel) return;
     panel.classList.toggle("hidden", !on);
     if (!on) return;
-    if (!state.started) { state.started = true; $("observatory-run").addEventListener("click", cycle); }
-    truth({ data: { run_count: 0, runs: [], last: null }, provenance: { classification: "SYNTHETIC" } }, false);
+    if (!state.started) {
+      state.started = true;
+      $("observatory-run").addEventListener("click", tick);
+      $("observatory-objective").addEventListener("submit", objective);
+    }
+    truth({ data: { run_count: 0, last: null }, provenance: { classification: "SYNTHETIC" } }, false);
     $("state-badge").textContent = "LOADING";
     load();
   }

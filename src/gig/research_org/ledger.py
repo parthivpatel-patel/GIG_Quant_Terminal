@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,12 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE TABLE IF NOT EXISTS audit (
   id INTEGER PRIMARY KEY, at TEXT NOT NULL, actor TEXT NOT NULL,
   action TEXT NOT NULL, detail TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS jobs (
+  job_id TEXT PRIMARY KEY, hypothesis_id TEXT NOT NULL, status TEXT NOT NULL,
+  attempts INTEGER NOT NULL, error TEXT, seq INTEGER NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS objectives (
+  id INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL,
+  disposition TEXT NOT NULL, detail TEXT NOT NULL);
 """
 MAX_RUNS = 200
 
@@ -46,7 +53,7 @@ class ResearchLedger:
         with self._lock:
             db = self._read()
             if db is None:
-                return {"run_count": 0, "runs": [], "audit": []}
+                return {"run_count": 0, "runs": [], "audit": [], "objectives": []}
             try:
                 runs = [dict(row) for row in db.execute(
                     "SELECT run_id, hypothesis_id, config_hash, started_at, finished_at, payload "
@@ -54,11 +61,12 @@ class ResearchLedger:
                 audit = [dict(row) for row in db.execute(
                     "SELECT at, actor, action, detail FROM audit ORDER BY id DESC LIMIT 20")]
                 count = db.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+                objectives = _objectives(db)
             finally:
                 db.close()
         for row in runs:
             row["report"] = json.loads(row.pop("payload"))
-        return {"run_count": count, "runs": runs, "audit": audit}
+        return {"run_count": count, "runs": runs, "audit": audit, "objectives": objectives}
 
     def find(self, config_hash: str) -> dict[str, Any] | None:
         with self._lock:
@@ -97,7 +105,8 @@ class ResearchLedger:
                 db.execute(
                     "INSERT INTO runs (run_id, hypothesis_id, config_hash, started_at, finished_at, payload) "
                     "VALUES (?, ?, ?, ?, ?, ?)",
-                    (config_hash, report["hypothesis_id"], config_hash, now, now, json.dumps(report, sort_keys=True)))
+                    (config_hash, report["hypothesis_id"], config_hash, now, now,
+                     json.dumps(report, sort_keys=True, allow_nan=False)))
                 db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
                            (now, actor, "run", report["verdict"]))
                 db.commit()
@@ -115,3 +124,123 @@ class ResearchLedger:
                 db.commit()
             finally:
                 db.close()
+
+    def jobs(self) -> list[dict[str, Any]]:
+        with self._lock:
+            db = self._read()
+            if db is None:
+                return []
+            try:
+                try:
+                    rows = db.execute(
+                        "SELECT job_id, hypothesis_id, status, attempts, error, seq FROM jobs ORDER BY seq"
+                    ).fetchall()
+                except sqlite3.OperationalError:
+                    return []
+            finally:
+                db.close()
+        return [dict(row) for row in rows]
+
+    def recover_and_claim(self, approved: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+        """Return a crashed job to the queue, then claim the earliest queued job."""
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                db.execute("BEGIN IMMEDIATE")
+                db.execute("UPDATE jobs SET status = 'QUEUED', updated_at = ? WHERE status = 'RUNNING'", (now,))
+                for job in approved:
+                    db.execute(
+                        "INSERT OR IGNORE INTO jobs (job_id, hypothesis_id, status, attempts, error, seq, updated_at) "
+                        "VALUES (?, ?, 'QUEUED', 0, NULL, ?, ?)",
+                        (job["job_id"], job["hypothesis_id"], int(job["seq"]), now))
+                row = db.execute(
+                    "SELECT job_id, hypothesis_id, attempts, seq FROM jobs WHERE status = 'QUEUED' ORDER BY seq LIMIT 1"
+                ).fetchone()
+                if row is None:
+                    db.commit()
+                    return None
+                attempts = int(row["attempts"]) + 1
+                db.execute(
+                    "UPDATE jobs SET status = 'RUNNING', attempts = ?, updated_at = ? WHERE job_id = ?",
+                    (attempts, now, row["job_id"]))
+                runner = next(item["runner"] for item in approved if item["job_id"] == row["job_id"])
+                db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
+                           (now, "orchestrator", "claim", row["job_id"]))
+                db.commit()
+            finally:
+                db.close()
+        return {"job_id": row["job_id"], "hypothesis_id": row["hypothesis_id"],
+                "attempts": attempts, "runner": runner}
+
+    def complete_job(self, job_id: str, state: str, error: str | None) -> None:
+        if state not in {"DONE", "QUEUED", "FAILED", "CANCELLED"}:
+            raise ValueError("job state")
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                db.execute("UPDATE jobs SET status = ?, error = ?, updated_at = ? WHERE job_id = ?",
+                           (state, error, now, job_id))
+                db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
+                           (now, "orchestrator", state.lower(), job_id))
+                db.commit()
+            finally:
+                db.close()
+
+    def ensure_job(self, job: dict[str, Any]) -> None:
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                db.execute(
+                    "INSERT OR IGNORE INTO jobs (job_id, hypothesis_id, status, attempts, error, seq, updated_at) "
+                    "VALUES (?, ?, 'QUEUED', 0, NULL, ?, ?)",
+                    (job["job_id"], job["hypothesis_id"], int(job["seq"]), now))
+                db.commit()
+            finally:
+                db.close()
+
+    def cancel(self, job_id: str) -> bool:
+        """Cancel a job that has not started. A running or finished job stays as it is."""
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                db.execute("BEGIN IMMEDIATE")
+                row = db.execute("SELECT status FROM jobs WHERE job_id = ?", (job_id,)).fetchone()
+                if row is None or row["status"] != "QUEUED":
+                    db.commit()
+                    return False
+                db.execute("UPDATE jobs SET status = 'CANCELLED', updated_at = ? WHERE job_id = ?",
+                           (now, job_id))
+                db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
+                           (now, "orchestrator", "cancel", job_id))
+                db.commit()
+            finally:
+                db.close()
+        return True
+
+    def record_objective(self, text: str, disposition: str, detail: str) -> None:
+        with self._lock:
+            now = datetime.now(UTC).isoformat()
+            db = self._connect()
+            try:
+                db.execute(
+                    "INSERT INTO objectives (at, text, disposition, detail) VALUES (?, ?, ?, ?)",
+                    (now, text, disposition, detail))
+                db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
+                           (now, "director", disposition, detail))
+                db.commit()
+            finally:
+                db.close()
+
+
+def _objectives(db: sqlite3.Connection) -> list[dict[str, Any]]:
+    try:
+        rows = db.execute(
+            "SELECT at, text, disposition, detail FROM objectives ORDER BY id DESC LIMIT 10"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    return [dict(row) for row in rows]
