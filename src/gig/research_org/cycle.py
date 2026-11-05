@@ -8,6 +8,7 @@ from gig.research_org.experiment import HYPOTHESIS_ID, run_seeded
 from gig.research_org.futures_experiment import HYPOTHESIS_ID as FUTURES_ID
 from gig.research_org.ledger import ResearchLedger
 from gig.research_org.roles import MAY, MUST_NOT, REGISTERED_NOT_RUN, ROLES
+from gig.research_org.treasury_experiment import HYPOTHESIS_ID as TREASURY_ID
 from gig.service.contracts import Contract, State
 
 SCHEDULER = "BACKLOG_TICK"
@@ -29,7 +30,27 @@ def _catalog(executed: set[str]) -> list[dict[str, Any]]:
         "status": "EXECUTED_ON_AUTHORED_SYNTHETIC" if HYPOTHESIS_ID in executed else "APPROVED_NOT_YET_RUN",
         "note": "Authored synthetic series. A positive verdict is not available.",
     })
+    rows.append({
+        "id": TREASURY_ID, "name": "Treasury 10-year lagged sign, 2023",
+        "module": "gig.research_org.treasury_experiment",
+        "status": "EXECUTED_ON_OFFICIAL_YIELDS" if TREASURY_ID in executed else "APPROVED_NOT_YET_RUN",
+        "note": (
+            "Official daily par yields, CC0, calendar year 2023. Not a traded-futures result. "
+            "The scheduler queues it once after the two synthetic jobs."
+        ),
+    })
     return rows
+
+
+def _scheduler_public(ledger: ResearchLedger) -> dict[str, Any]:
+    state = ledger.scheduler_state()
+    return {
+        "desired": state["desired"],
+        "cadence_seconds": state["cadence_seconds"],
+        "candidates": state["candidates"],
+        "reason": state["reason"],
+        "lease_held": ledger.lease_blocks(None),
+    }
 
 
 def _public(ledger: ResearchLedger, *, last: dict[str, Any] | None = None, deduplicated: bool = False) -> dict[str, Any]:
@@ -38,6 +59,7 @@ def _public(ledger: ResearchLedger, *, last: dict[str, Any] | None = None, dedup
     executed = {row["hypothesis_id"] for row in stored["runs"]}
     return {
         "scheduler": SCHEDULER,
+        "scheduler_state": _scheduler_public(ledger),
         "resume_command": RESUME_COMMAND,
         "roles": [dict(role) for role in ROLES],
         "may": list(MAY),
@@ -71,9 +93,31 @@ def run_cycle(ledger: ResearchLedger) -> dict[str, Any]:
     return _public(ledger, last=report, deduplicated=False)
 
 
-def status_contract(ledger: ResearchLedger) -> Contract:
+def _envelope_classification(data: dict[str, Any]) -> str:
+    last = data.get("last") or {}
+    kind = last.get("classification")
+    if kind in {"HISTORICAL", "SYNTHETIC", "MODEL_ESTIMATE", "DELAYED", "SNAPSHOT"}:
+        return str(kind)
+    return "SYNTHETIC"
+
+
+def status_contract(ledger: ResearchLedger, scheduler: dict[str, Any] | None = None) -> Contract:
     data = status(ledger)
-    return Contract.admit(State.AVAILABLE, data, source="research-organization", classification="SYNTHETIC",
+    if scheduler is not None:
+        data["scheduler_state"] = {
+            "desired": scheduler["desired"],
+            "cadence_seconds": scheduler["cadence_seconds"],
+            "candidates": scheduler["candidates"],
+            "reason": scheduler["reason"],
+            "lease_held": bool(scheduler.get("lease_held")),
+            "alive": bool(scheduler.get("alive")),
+            "rss_kb": scheduler.get("rss_kb"),
+            "cpu_seconds": scheduler.get("cpu_seconds"),
+            "db_bytes": scheduler.get("db_bytes"),
+        }
+        data["background_thread"] = bool(scheduler.get("alive"))
+    data["continuous_process"] = False
+    return Contract.admit(State.AVAILABLE, data, source="research-organization", classification=_envelope_classification(data),
                           as_of=None, scope="research-org", evidence_state="RESEARCH_OUTPUT",
                           readiness="RESEARCH_ONLY")
 
@@ -87,7 +131,9 @@ def cycle_contract(ledger: ResearchLedger) -> Contract:
 
 def tick_contract(ledger: ResearchLedger) -> Contract:
     from gig.research_org.scheduler import tick
-    return Contract.admit(State.AVAILABLE, tick(ledger), source="research-organization", classification="SYNTHETIC",
+    data = tick(ledger)
+    return Contract.admit(State.AVAILABLE, data, source="research-organization",
+                          classification=_envelope_classification(data),
                           as_of=None, scope="research-org", evidence_state="RESEARCH_OUTPUT",
                           readiness="RESEARCH_ONLY")
 

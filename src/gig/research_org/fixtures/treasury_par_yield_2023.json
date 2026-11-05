@@ -1,0 +1,13 @@
+{
+  "dataset_id": "us-treasury-daily-par-yield-2023",
+  "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=2023",
+  "catalog_url": "https://catalog.data.gov/dataset/interest-rate-statistics-daily-treasury-yield-curve-rates",
+  "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+  "license_note": "The catalog page JSON-LD license field on 2026-11-05T03:01:08Z. That page's dateModified was 2025-02-11.",
+  "sha256": "99f80b80cfeff0a93e339735d72672080d9209073b5fe814c1252e88d1428227",
+  "bytes": 284423,
+  "retrieved_at": "2026-11-05T03:01:08Z",
+  "coverage": "Daily par yields for calendar year 2023. Tenors are the Treasury CMT nodes in the file.",
+  "publication_time": "UNKNOWN",
+  "limits": "Interpolated constant-maturity yields, not transaction prices. The file has a calendar date and no publication clock."
+}
