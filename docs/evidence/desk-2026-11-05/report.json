@@ -1,0 +1,34 @@
+{
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "splitter widens the context column",
+      "passed": true,
+      "detail": {
+        "before": "906px 220px",
+        "after": "858px 268px"
+      }
+    },
+    {
+      "name": "command center has no horizontal overflow at 390px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "charts have no horizontal overflow at 390px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observatory hides the shared data controls",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observatory has no horizontal overflow at 390px",
+      "passed": true,
+      "detail": null
+    }
+  ]
+}

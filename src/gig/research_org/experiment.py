@@ -130,5 +130,24 @@ def run_seeded() -> tuple[str, dict[str, Any]]:
     report["orders_submitted"] = 0
     report["models_promoted"] = 0
     report["code_rewritten"] = False
+    report["strategy"] = "gig.research_org.experiment"
+    report["experiment_version"] = EXPERIMENT_VERSION
+    report["evidence_class"] = "INCONCLUSIVE" if report["verdict"] == "INCONCLUSIVE" else "REJECTED"
+    report["publication_time"] = "NOT_APPLICABLE"
+    report["reproduce"] = "python -m gig.research_org --compute lagged-sign-momentum-synthetic-v1"
+    report["lineage"] = {
+        "dataset": "authored-deterministic-returns-v1",
+        "strategy": "gig.research_org.experiment",
+        "strategy_version": EXPERIMENT_VERSION,
+        "model_version": None,
+        "point_in_time": "The position uses only the previous return.",
+        "costs": f"{COST_BPS} bp per position change",
+        "assumptions": "Authored draws. Not a market.",
+        "configuration": f"lagged sign, seed {SEED}, {N_OBS} observations",
+        "skeptic_verdict": report["verdict"],
+        "evidence_class": report["evidence_class"],
+        "reproduce": report["reproduce"],
+        "artifacts": "The research ledger stores the report when a tick records the run.",
+    }
     report["follow_up"] = "Repeat only on admitted observations with a point-in-time cutoff. Not authorized yet."
     return config_hash(config), report

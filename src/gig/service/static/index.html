@@ -6,11 +6,13 @@
   <meta name="color-scheme" content="dark light">
   <title>GIG Quant Terminal</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/os.css">
   <script src="/static/viz3d.js" defer></script>
   <script src="/static/models3d.js" defer></script>
   <script src="/static/intel.js" defer></script>
   <script src="/static/charts.js" defer></script>
   <script src="/static/observatory.js" defer></script>
+  <script src="/static/layout.js" defer></script>
   <script src="/static/palette.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
@@ -64,6 +66,7 @@
           <div class="chart-footer"><span id="chart-legend">Axes and units are supplied by the backend.</span><button class="text-button" id="chart-reset">Reset view</button></div>
           <p class="chart-instructions"><span id="motion-state">Camera paused</span> · Drag to rotate · Scroll to zoom · Arrow keys to navigate · 2D alternative available</p>
         </section>
+        <div class="split-handle" id="analysis-split" role="separator" aria-orientation="vertical" aria-label="Resize chart and research context" tabindex="0"></div>
         <section class="panel context-panel" aria-labelledby="context-title"><div class="panel-header"><div><p class="panel-kicker">EVIDENCE & SCOPE</p><h2 id="context-title">Research context</h2></div><button class="text-button" id="context-expand" aria-expanded="false" aria-controls="context-content">Show full provenance</button></div><div id="context-content" class="context-content"></div></section>
       </div>
       <section class="panel table-panel" aria-labelledby="table-title"><div class="panel-header"><div><p class="panel-kicker">DETAIL EXPLORER</p><h2 id="table-title">Underlying observations <span class="count-badge" id="row-count">0</span></h2></div><div class="table-actions"><div class="hidden" id="evidence-table-control"><label for="evidence-table-view">Evidence table</label><select id="evidence-table-view"></select></div><input id="table-search" type="search" placeholder="Filter observations…" aria-label="Filter observations"><button class="button" id="export-csv">Export CSV</button></div></div><div class="table-scroll" id="table-wrap" role="region" tabindex="0" aria-label="Scrollable underlying observations"><table id="observations-table"><caption class="sr-only">Underlying section observations. Null values are displayed as unknown.</caption><thead></thead><tbody></tbody></table></div><div class="table-empty" id="table-empty">No observations available.</div><div class="table-footer"><span id="table-summary">No rows loaded</span><span>Null ≠ zero · Synthetic ≠ observed</span></div></section>
@@ -142,7 +145,16 @@
         <div class="panel">
           <div class="panel-header"><div><p class="panel-kicker">RESEARCH ORGANIZATION</p><h2 id="observatory-title">Observatory</h2></div>
             <button class="button" id="observatory-run" type="button">Run next approved job</button></div>
-          <p class="observatory-lead">Two approved jobs, run one at a time from the backlog. The process does not stay running in the background. Both series are authored and synthetic, and a verdict cannot be a market claim.</p>
+          <p class="observatory-lead">Start runs the approved queue and one official Treasury study, then pauses. It does not stay up after the queue is empty, and it does not invent a further study.</p>
+          <div class="scheduler-controls" role="group" aria-label="Research scheduler">
+            <label for="scheduler-cadence">Cadence (seconds)</label>
+            <input id="scheduler-cadence" type="number" min="0.05" max="3600" step="0.05" value="5">
+            <button class="button" id="scheduler-start" type="button" data-scheduler="start">Start</button>
+            <button class="button" id="scheduler-pause" type="button" data-scheduler="pause">Pause</button>
+            <button class="button" id="scheduler-resume" type="button" data-scheduler="resume">Resume</button>
+            <button class="button" id="scheduler-stop" type="button" data-scheduler="stop">Stop</button>
+            <span id="scheduler-readout" class="scheduler-readout">Scheduler stopped</span>
+          </div>
           <form class="observatory-objective" id="observatory-objective">
             <label for="observatory-objective-text">Research objective</label>
             <input id="observatory-objective-text" maxlength="500" placeholder="State an objective. Missing data is reported, not invented.">
