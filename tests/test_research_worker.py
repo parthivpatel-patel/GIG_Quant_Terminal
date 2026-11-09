@@ -15,6 +15,33 @@ from gig.research_org.treasury_experiment import run_treasury
 
 
 class WorkerTests(unittest.TestCase):
+    def test_cpu_before_start_is_not_charged_to_the_worker(self) -> None:
+        with TemporaryDirectory() as directory, patch(
+            "gig.research_org.service.time.process_time", return_value=1000.0
+        ):
+            worker = ResearchWorker(ResearchLedger(Path(directory) / "org"))
+            self.assertEqual(worker.snapshot()["cpu_seconds"], 0.0)
+            worker.start(0.05)
+            worker.wait(30)
+            self.assertEqual(worker.ledger.count(), 3)
+            self.assertEqual(worker.snapshot()["cpu_seconds"], 0.0)
+
+    def test_cpu_budget_is_elapsed_and_survives_same_worker_restart(self) -> None:
+        with TemporaryDirectory() as directory, patch(
+            "gig.research_org.service.time.process_time", return_value=1000.0
+        ) as clock:
+            worker = ResearchWorker(ResearchLedger(Path(directory) / "org"), max_cpu_seconds=2.0)
+            worker.start(0.05)
+            worker.wait(30)
+            clock.return_value = 1002.0
+            self.assertIsNone(worker._budget_reason())
+            clock.return_value = 1002.001
+            self.assertEqual(worker._budget_reason(), "cpu budget")
+            worker.start(0.05)
+            worker.wait(5)
+            self.assertEqual(worker.snapshot()["reason"], "cpu budget")
+            self.assertAlmostEqual(worker.snapshot()["cpu_seconds"], 2.001)
+
     def test_treasury_result_is_historical_and_below_a_coin_flip(self) -> None:
         _, report = run_treasury()
         self.assertEqual(report["classification"], "HISTORICAL")

@@ -44,6 +44,10 @@ class ResearchWorker:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._lock = threading.Lock()
+        # Charge process CPU only after this worker's first explicit start.
+        # Keep the baseline across pause/resume and restarts of the same object;
+        # unrelated work before start must not exhaust a new worker's allowance.
+        self._cpu_started: float | None = None
 
     def start(self, cadence_seconds: float = 5.0) -> dict[str, Any]:
         cadence = _cadence(cadence_seconds)
@@ -51,6 +55,8 @@ class ResearchWorker:
             self.ledger.set_desired("RUNNING", cadence, reason=None)
             if self._thread is not None and self._thread.is_alive():
                 return self.snapshot()
+            if self._cpu_started is None:
+                self._cpu_started = time.process_time()
             self._stop.clear()
             self._thread = threading.Thread(target=self._loop, name="gig-research-worker", daemon=True)
             self._thread.start()
@@ -98,7 +104,7 @@ class ResearchWorker:
         state["alive"] = bool(self._thread and self._thread.is_alive())
         state["owner"] = self.owner
         state["rss_kb"] = _rss_kb()
-        state["cpu_seconds"] = round(time.process_time(), 6)
+        state["cpu_seconds"] = round(self._cpu_seconds(), 6)
         state["db_bytes"] = self.ledger.path.stat().st_size if self.ledger.path.is_file() else 0
         return state
 
@@ -106,11 +112,17 @@ class ResearchWorker:
         path = self.ledger.path
         if path.is_file() and path.stat().st_size > self.max_db_bytes:
             return "storage budget"
-        if time.process_time() > self.max_cpu_seconds:
+        if self._cpu_seconds() > self.max_cpu_seconds:
             return "cpu budget"
         if _rss_kb() > self.max_rss_kb:
             return "memory budget"
         return None
+
+    def _cpu_seconds(self) -> float:
+        """Conservative process-wide CPU since first start, including other threads."""
+        if self._cpu_started is None:
+            return 0.0
+        return max(0.0, time.process_time() - self._cpu_started)
 
     def _loop(self) -> None:
         completed = 0
