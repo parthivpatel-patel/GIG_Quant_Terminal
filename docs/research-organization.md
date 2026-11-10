@@ -1,5 +1,37 @@
 # Research organization
 
+## Multi-dataset extension
+
+PR #11 is merged at `a82a528f743fd61dffe095b18b386e68538f8337`.
+The subsequent PR #12 extends its finite template catalog without changing the
+worker's lease, resource or brokerage boundaries:
+
+| Approved objective | Dataset | Investigation |
+| --- | --- | --- |
+| `treasury-reversal-robustness-v1` | Official 2023 Treasury yields | Existing negative-parent reversal robustness; unchanged |
+| `ecb-fx-correlation-stability-v1` | ECB2023 USD/GBP/JPY reference levels | Purged covariance scoring versus training-only diagonal covariance |
+| `boc-usdcad-variance-calibration-v1` | BoC2023 indicative USD/CAD daily averages | Causal EWMA variance QLIKE versus training-only constant variance |
+
+Approve each objective separately through the same Director HTTP contract or
+the Observatory selector. Approval never starts compute. The existing default
+three-study queue is retained; approving all objectives demonstrates six total
+studies across a four-job budget pause and an explicit Resume. The Director
+prioritizes eligible plans using fixed code-registered priorities, checks source
+identity before execution and result publication, and refuses silent resubmission
+after source/method revisions, cancellation or exhausted retries. These remain
+exploratory methods, not an externally preregistered confirmatory study.
+
+The ECB and BoC reports use appropriate covariance/variance scores, not return
+MSE. Both remain inconclusive. BoC's EWMA underperformed its training-only
+baseline. Original Treasury and synthetic findings remain unchanged. Source
+publication/revision clocks are unknown; none of these reports grants tradable
+point-in-time eligibility, model promotion or portfolio authority.
+
+Market Flow separately reads pinned CFTC2023 weekly aggregate futures positions.
+It does not execute that snapshot as a strategy or infer actual trades, cash
+flows, options sweeps or dealer gamma. See the source-specific permissions and
+scope in `docs/integrations/CFTC_POSITIONING.md`.
+
 A local SQLite ledger, a bounded template-based Director, and one background worker. The worker starts only after an explicit start, or on the next process when the ledger still says `RUNNING`. It is not a language model, and it does not stay up after the approved queue is empty.
 
 Code: `src/gig/research_org/`. The Observatory reads `GET /api/v1/research-org/status`. `POST /api/v1/research-org/scheduler` takes `start`, `pause`, `resume`, or `stop`, and an optional `cadence_seconds` from 0.05 to 3600. `POST /api/v1/research-org/tick` still runs one queued job. `POST /api/v1/research-org/objective` stores an objective and does not invent a dataset.

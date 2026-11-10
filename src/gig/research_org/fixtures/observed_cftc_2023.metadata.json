@@ -1,0 +1,42 @@
+{
+  "provider": "CFTC",
+  "dataset_id": "gpe5-46if",
+  "dataset_name": "TFF - Futures Only",
+  "contract_market_code": "099741",
+  "source_url": "https://publicreporting.cftc.gov/resource/gpe5-46if.json?%24where=cftc_contract_market_code+%3D+%27099741%27+AND+report_date_as_yyyy_mm_dd+between+%272023-01-01T00%3A00%3A00%27+and+%272023-12-31T23%3A59%3A59%27&%24order=report_date_as_yyyy_mm_dd+ASC&%24limit=100",
+  "metadata_url": "https://publicreporting.cftc.gov/api/views/gpe5-46if.json",
+  "license_url": "https://www.cftc.gov/WebPolicy/index.htm",
+  "information_url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+  "attribution": "Source: U.S. Commodity Futures Trading Commission, Traders in Financial Futures \u2014 Futures Only. Derived ratios, changes and percentile calculations are GIG modifications, not CFTC forecasts.",
+  "source_authenticity": "OFFICIAL_HTTPS_FETCH",
+  "classification": "HISTORICAL",
+  "acquired_at": "2026-11-10T12:47:43.270673+00:00",
+  "raw_sha256": "2ab38909fcc2a860f0faac85132d3c2faacbab28adf9d19726513b9253208f23",
+  "raw_bytes": 166645,
+  "publication_time": "UNKNOWN",
+  "historical_knowledge": "UNKNOWN_NO_VINTAGES",
+  "redistribution": "PUBLIC_DOMAIN_GOVERNMENT_REPORT_WITH_CFTC_ACKNOWLEDGEMENT",
+  "access": "NO_TOKEN_REQUIRED_FOR_NONEXCESSIVE_PUBLIC_API_USE",
+  "cost": "ZERO_NO_CREDENTIALS",
+  "license_evidence": {
+    "url": "https://www.cftc.gov/WebPolicy/index.htm",
+    "http_status": 200,
+    "retrieved_at": "2026-11-10T12:44:15.966106+00:00",
+    "page_sha256": "485be930fde6863ed3d47e533d60afde84286d7daadc35415e5f58fd629f1392",
+    "quote": "Government information at the CFTC website is in the public domain. Public domain information may be freely distributed and copied, but it is requested that in any subsequent use the CFTC be given appropriate acknowledgement.",
+    "scope": "CFTC government aggregate report only. Third-party photographs, logos and contributions are not included."
+  },
+  "api_evidence": {
+    "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+    "http_status": 200,
+    "retrieved_at": "2026-11-10T12:44:16.019729+00:00",
+    "page_sha256": "071edfb991ad29af15cfea7146f72484a65cebb2e21c70bfe9381403a6e912ca",
+    "quote": "Currently, we are not providing tokens to use the Public Reporting APIs. People who are using the API are generally using it successfully without using a token. As long as you are not overusing the API, you should be able to use the API without a token."
+  },
+  "response": {
+    "status": 200,
+    "url": "https://publicreporting.cftc.gov/resource/gpe5-46if.json?%24where=cftc_contract_market_code+%3D+%27099741%27+AND+report_date_as_yyyy_mm_dd+between+%272023-01-01T00%3A00%3A00%27+and+%272023-12-31T23%3A59%3A59%27&%24order=report_date_as_yyyy_mm_dd+ASC&%24limit=100",
+    "acquired_at": "2026-11-10T12:47:43.270673+00:00",
+    "raw_sha256": "2ab38909fcc2a860f0faac85132d3c2faacbab28adf9d19726513b9253208f23"
+  }
+}

@@ -10,21 +10,23 @@ from typing import Any
 
 from gig.research_org.backlog import APPROVED, CANDIDATE, SEED
 from gig.research_org.cycle import status
-from gig.research_org.director import FOLLOWUP_JOB, propose
+from gig.research_org.director import admit_claim, admit_result, propose
 from gig.research_org.experiment import run_seeded
 from gig.research_org.futures_experiment import run_futures
 from gig.research_org.ledger import ResearchLedger
+from gig.research_org.template_catalog import TEMPLATES, run_boc_volatility, run_ecb_risk
 from gig.research_org.treasury_experiment import run_treasury
 from gig.research_org.treasury_followup import run_followup
 
 RUNNERS = {"lagged_sign": run_seeded, "futures_tsmom": run_futures, "treasury_yield": run_treasury,
-           "treasury_reversal": run_followup}
-RUNNER_BY_JOB = {job["job_id"]: job["runner"] for job in (*SEED, CANDIDATE, FOLLOWUP_JOB)}
+           "treasury_reversal": run_followup, "ecb_risk": run_ecb_risk,
+           "boc_volatility": run_boc_volatility}
+RUNNER_BY_JOB = {job["job_id"]: job["runner"] for job in (*SEED, CANDIDATE, *(row.job() for row in TEMPLATES))}
 MAX_ATTEMPTS = 3
 
 
 def propose_candidate(ledger: ResearchLedger) -> str:
-    """Queue the one approved historical dataset, once. Never invent a second study."""
+    """Finish the historical seed once, then plan explicitly approved templates."""
     if int(ledger.scheduler_state()["candidates"]) >= 1:
         return propose(ledger)
     pending = [row for row in ledger.jobs() if row["job_id"] == CANDIDATE["job_id"]]
@@ -89,6 +91,13 @@ def _tick_under_lease(ledger: ResearchLedger, owner: str) -> dict[str, Any]:
         payload["deduplicated"] = False
         return payload
     job_id, attempt = str(claimed["job_id"]), int(claimed["attempts"])
+    if not admit_claim(ledger, job_id):
+        ledger.complete_job(job_id, "FAILED", "dataset admission or planned identity changed",
+                            lease_owner=owner, attempt=attempt)
+        payload = status(ledger)
+        payload["tick"] = {"action": "failed", "job_id": job_id, "deduplicated": False,
+                           "error": "dataset admission or planned identity changed"}
+        return payload
     runner_name = claimed.get("runner") or RUNNER_BY_JOB.get(job_id)
     runner = RUNNERS.get(str(runner_name))
     if runner is None:
@@ -105,6 +114,13 @@ def _tick_under_lease(ledger: ResearchLedger, owner: str) -> dict[str, Any]:
         payload["tick"] = {"action": "failed", "job_id": job_id, "deduplicated": False,
                            "error": "experiment failed"}
         payload["deduplicated"] = False
+        return payload
+    if not admit_result(ledger, job_id, report):
+        ledger.complete_job(job_id, "FAILED", "result does not match approved dataset or research scope",
+                            lease_owner=owner, attempt=attempt)
+        payload = status(ledger)
+        payload["tick"] = {"action": "failed", "job_id": job_id, "deduplicated": False,
+                           "error": "result does not match approved dataset or research scope"}
         return payload
     last, deduplicated = ledger.finish_claim(job_id, digest, report, actor=str(runner_name),
                                             lease_owner=owner, attempt=attempt)
