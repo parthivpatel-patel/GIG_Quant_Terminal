@@ -93,6 +93,8 @@
       }
       truth(payload);
       renderWatchlist(); syncControls(); draw(); writeJSON(CURRENT_KEY, layoutOf());
+      if (state.revealComparison && state.compareData) $("chart-compare-wrap").scrollIntoView({ block: "nearest", behavior: "auto" });
+      state.revealComparison = false;
       if (state.data) say(`${state.data.symbol} ${state.timeframe}: ${state.data.bars.t.length} bars loaded`);
     } catch (error) {
       if (controller.signal.aborted && state.request !== controller) return;
@@ -104,6 +106,7 @@
   }
   function truth(payload) {
     if (!state.visible) return;
+    renderEvidence(payload);
     const badge = $("state-badge"); badge.textContent = payload.state; if (payload.state === "LOADING") badge.removeAttribute("data-state"); else badge.dataset.state = payload.state;
     const p = payload.provenance;
     if (p && !payload.data) { $("source-label").textContent = payload.state === "UNAVAILABLE" ? "charts · no admitted bars for this selection" : `charts · ${payload.state.toLowerCase()}`; $("asof-label").textContent = "As of —"; $("truth-notice").textContent = "Nothing is charted without admitted bars · Research only · No orders"; return; }
@@ -112,6 +115,36 @@
     $("asof-label").textContent = `As of ${p.as_of || "—"}`;
     const synthetic = p.classification === "SYNTHETIC";
     $("truth-notice").textContent = `${payload.state === "STALE" ? "STALE · latest admitted bar is older than the freshness policy. " : ""}${synthetic ? "SYNTHETIC · fictional instruments, not market observations" : "Admitted local bars · caller-asserted classification"} · Research only · No orders`;
+  }
+
+
+  function renderWindow() {
+    const target = $("chart-context-window"), view = visible();
+    if (!target) return;
+    target.textContent = view && state.data ? `${isoDate(state.data.bars.t[view.i0])} → ${isoDate(state.data.bars.t[view.i1 - 1])} / ${view.n} bars` : "No bars loaded";
+  }
+  function renderEvidence(payload) {
+    const data = payload.data, provenance = payload.provenance || {};
+    $("chart-context-symbol").textContent = data ? `${data.symbol} / ${state.timeframe}` : "Awaiting admitted instrument";
+    $("chart-context-classification").textContent = data ? `${payload.state} · ${provenance.classification || "UNKNOWN"}` : payload.state || "UNKNOWN";
+    const target = $("chart-evidence"); target.replaceChildren();
+    const dl = document.createElement("dl");
+    const rows = [["Provider / source", provenance.source || "UNKNOWN"], ["Classification", data ? provenance.classification || "UNKNOWN" : "UNAVAILABLE"],
+      ["Contract as of", provenance.as_of || "UNKNOWN"], ["Historical cutoff", $("replay-asof").value.trim() || "Current request; no historical cutoff selected"],
+      ["Scope", "Only admitted bars or an explicitly selected synthetic demonstration"],
+      ["Calculation", "Backend indicators; missing values are not interpolated"], ["Execution authority", "NONE / chart inspection does not create a signal or order"]];
+    rows.forEach(([key, value]) => { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = key; dd.textContent = value; dl.append(dt, dd); }); target.append(dl);
+    if (!data) $("chart-context-window").textContent = "No bars loaded";
+  }
+  function toggleFocus() {
+    const on = $("charts-panel").classList.toggle("chart-focus");
+    $("chart-focus-toggle").setAttribute("aria-pressed", String(on));
+    $("chart-focus-toggle").textContent = on ? "Show watchlist" : "Focus chart";
+    writeJSON("gig.chart.focus.v1", on); draw();
+  }
+  function toggleEvidence() {
+    const on = $("chart-evidence").classList.contains("hidden");
+    $("chart-evidence").classList.toggle("hidden", !on); $("chart-evidence-toggle").setAttribute("aria-expanded", String(on));
   }
 
   /* ---------- controls ---------- */
@@ -187,6 +220,7 @@
     if (state.lower !== "none") drawLower($("chart-lower"));
     if (state.compareData) drawPrice($("chart-compare-canvas"), state.compareData, false);
     readout(state.cursor);
+    renderWindow();
   }
   function alignedBars(data) {
     if (data === state.data) return { get: (i) => i };
@@ -358,6 +392,14 @@
     handle.addEventListener("keydown", (e) => { if (e.key === "ArrowUp") { set(state.lowerHeight + 16); e.preventDefault(); } else if (e.key === "ArrowDown") { set(state.lowerHeight - 16); e.preventDefault(); } });
   }
   function bind() {
+    $("chart-focus-toggle").addEventListener("click", toggleFocus);
+    $("chart-evidence-toggle").addEventListener("click", toggleEvidence);
+    if (readJSON("gig.chart.focus.v1", false)) toggleFocus();
+    $("charts-panel").addEventListener("keydown", (event) => {
+      if (!event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key.toLowerCase() === "w") { event.preventDefault(); toggleFocus(); }
+      if (event.key.toLowerCase() === "i") { event.preventDefault(); toggleEvidence(); }
+    });
     ["chart-price", "chart-lower", "chart-compare-canvas"].forEach((id) => bindCanvas($(id)));
     bindSplitter();
     document.querySelectorAll("[data-chart-timeframe]").forEach((b) => b.addEventListener("click", () => { state.timeframe = b.dataset.chartTimeframe; load(); }));
@@ -365,7 +407,7 @@
     document.querySelectorAll("[data-chart-overlay]").forEach((c) => c.addEventListener("change", () => { state.overlays = [...document.querySelectorAll("[data-chart-overlay]:checked")].map((x) => x.dataset.chartOverlay); draw(); writeJSON(CURRENT_KEY, layoutOf()); }));
     $("chart-lower-select").addEventListener("change", () => { state.lower = $("chart-lower-select").value; syncControls(); draw(); writeJSON(CURRENT_KEY, layoutOf()); });
     $("chart-symbol").addEventListener("change", () => setSymbol($("chart-symbol").value));
-    $("chart-compare").addEventListener("change", () => { state.compare = $("chart-compare").value; load({ keepRange: true }); });
+    $("chart-compare").addEventListener("change", () => { state.compare = $("chart-compare").value; state.revealComparison = Boolean(state.compare); load({ keepRange: true }); });
     $("charts-reset").addEventListener("click", () => { if (!state.data) return; const n = state.data.bars.t.length; state.range = [Math.max(0, n - 120), n]; state.cursor = null; draw(); });
     $("chart-layout-save").addEventListener("click", () => {
       const name = $("chart-layout-name").value.trim().slice(0, 60); if (!name) { say("Enter a layout name to save"); $("chart-layout-name").focus(); return; }

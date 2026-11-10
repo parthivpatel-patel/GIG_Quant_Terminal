@@ -1,0 +1,159 @@
+{
+  "browser": "Chromium",
+  "version": "151.0.7922.34",
+  "passed": 30,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "three distinct dataset objectives are visible",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no research runs before authorization",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "independent approval does not start compute",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "four-job resource budget is retained",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "six studies complete without per-job submissions",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "all approved objectives complete and deduplicate",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "original Treasury negative finding retained",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "new sources remain historical without economic claims",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved experiment comparison retains method-specific scores",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Laboratory rail resizes with keyboard",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "six findings survive page reload",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "52 observed weekly reports are available",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "latest official report identity is visible",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "historical positioning carries stale disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "weekly inspection uses real report dates",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observed aggregate positioning chart renders",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "authored model remains separate from observed positioning",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "charts retain explicit synthetic provenance",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "chart focus mode keyboard shortcut works",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observatory dark axe rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "market-flow dark axe rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "charts dark axe rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "observatory light axe rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "market-flow light axe rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "charts light axe rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "observatory mobile no page overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "market-flow mobile no page overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "charts mobile no page overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no external browser requests",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "limits": "Automated Chromium only; axe is not manual accessibility certification."
+}

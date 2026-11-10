@@ -3,7 +3,7 @@
 (() => {
   "use strict";
   const $ = (id) => document.getElementById(id);
-  const state = { started: false, visible: false, payload: null, busy: false };
+  const state = { started: false, visible: false, payload: null, busy: false, positioning: null, positionIndex: 0, positioningBusy: false };
   const node = (tag, className, text) => {
     const result = document.createElement(tag);
     if (className) result.className = className;
@@ -27,12 +27,20 @@
     const root = $("market-flow-panel"); root.classList.add("flow-desk");
     root.append(node("p", "flow-kicker", "GIG / Financial intelligence / Evidence first"),
       node("h2", null, "Market Flow Intelligence"),
-      node("p", "flow-note", "Observed flow is unavailable. Inspect source-access evidence, or run an explicitly authored European options scenario. Local model alerts do not identify institutional trades."));
+      node("p", "flow-note", "Inspect observed weekly CFTC futures positioning and explicit options model assumptions. Aggregate positions are not trades, sweeps, dark-pool activity or executable liquidity."));
+    const nav = node("div", "flow-workspace-nav");
+    [["Observed positioning", "flow-positioning-panel"], ["Authored options models", "flow-model-laboratory"]].forEach(([label, id]) => { const button = node("button", "text-button", label); button.type = "button"; button.setAttribute("aria-controls", id); button.addEventListener("click", () => { $(id).scrollIntoView({ block: "start", behavior: "auto" }); $(id).focus({ preventScroll: true }); }); nav.append(button); }); root.append(nav);
+    const positioning = node("section", "flow-positioning-panel"); positioning.id = "flow-positioning-panel"; positioning.tabIndex = -1; positioning.setAttribute("aria-labelledby", "flow-positioning-title");
+    const heading = node("div", "flow-positioning-heading"), title = node("div"); title.append(node("p", "flow-kicker", "01 / OBSERVED AGGREGATE POSITIONING"));
+    const h3 = node("h3", null, "Commitments, in context."); h3.id = "flow-positioning-title"; title.append(h3); heading.append(title);
+    const reload = node("button", "text-button", "Reload saved evidence"); reload.type = "button"; reload.id = "flow-positioning-refresh"; reload.addEventListener("click", loadPositioning); heading.append(reload); positioning.append(heading);
+    const status = node("p", "flow-note", "Loading admitted positioning evidence…"); status.id = "flow-positioning-status"; status.setAttribute("role", "status"); positioning.append(status);
+    const content = node("div"); content.id = "flow-positioning-content"; positioning.append(content); root.append(positioning);
     const grid = node("div", "flow-grid");
     const rail = node("div", "flow-rail");
     rail.append(node("h3", null, "Source admission register"));
     const registry = node("div"); registry.id = "flow-capabilities"; rail.append(registry);
-    const research = node("div");
+    const research = node("div"); research.id = "flow-model-laboratory"; research.tabIndex = -1;
     research.append(node("p", "flow-kicker", "Analyst-authored / Model estimate"), node("h3", null, "Scenario & threshold laboratory"),
       node("p", "flow-note", "Inputs are hypothetical, not an admitted market dataset or an OMS position. European cash settlement, one underlying and common expiry only."));
     const label = node("label", null, "Explicit authored assumptions (JSON)"); label.htmlFor = "flow-inputs";
@@ -52,9 +60,9 @@
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     actions.append(authored, evaluate, download); research.append(actions);
-    const status = node("p", "flow-status"); status.id = "flow-status"; status.setAttribute("role", "status"); status.setAttribute("aria-live", "polite");
+    const modelStatus = node("p", "flow-status"); modelStatus.id = "flow-status"; modelStatus.setAttribute("role", "status"); modelStatus.setAttribute("aria-live", "polite");
     const output = node("div"); output.id = "flow-output";
-    research.append(status, output); grid.append(rail, research); root.append(grid);
+    research.append(modelStatus, output); grid.append(rail, research); root.append(grid);
   }
 
   function truth(payload, failed = false) {
@@ -62,14 +70,14 @@
     const classification = payload?.provenance?.classification || "UNAVAILABLE";
     $("state-badge").textContent = failed ? "ERROR" : "AVAILABLE";
     $("state-badge").dataset.state = failed ? "ERROR" : "AVAILABLE";
-    $("source-label").textContent = failed ? "market-flow · request failed" : `market-flow · ${classification} · observed flow unavailable`;
-    $("asof-label").textContent = "No observed market timestamp";
-    $("truth-notice").textContent = "Hypothetical assumptions → model estimates · No options prints or dealer positioning · No orders";
+    $("source-label").textContent = failed ? "market-flow · request failed" : `market-flow · options ${classification} · weekly positioning ${state.positioning ? "HISTORICAL" : "UNAVAILABLE"}`;
+    $("asof-label").textContent = state.positioning ? `CFTC report ${state.positioning.freshness.latest_report_date} · historical sample, STALE for current use` : "No observed market timestamp";
+    $("truth-notice").textContent = "Observed weekly futures positions ≠ trade flow · Options scenarios are models · No options prints, dealer positioning or orders";
   }
 
-  function table(headers, rows, caption) {
+  function table(headers, rows, caption, tableClass = "flow-table") {
     const wrapper = node("div", "flow-table-wrap");
-    const t = node("table", "flow-table"); t.append(node("caption", null, caption));
+    const t = node("table", tableClass); t.append(node("caption", null, caption));
     const head = node("thead"), tr = node("tr");
     headers.forEach((value) => { const th = node("th", null, value); th.scope = "col"; tr.append(th); });
     head.append(tr); const body = node("tbody");
@@ -129,6 +137,76 @@
     output.append(node("p", "flow-note", `Evidence identity: ${a.inputs_sha256} · ${data.version}. Export retains inputs, methods, access limitations and canonical envelope hash.`));
   }
 
+
+  const CATEGORY_NAMES = { dealer: "Dealer / intermediary", asset_manager: "Asset manager / institutional", leveraged_money: "Leveraged funds", other_reportable: "Other reportable", nonreportable: "Nonreportable" };
+  const category = (row, id) => (row.categories || []).find((item) => item.id === id);
+  const percent = (value) => typeof value === "number" && Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "UNKNOWN";
+  function drawPositioning() {
+    const data = state.positioning;
+    if (!data) return;
+    const rows = data.rows, svg = $("flow-positioning-chart"); svg.replaceChildren();
+    const series = [["asset_manager", "Asset managers", "var(--accent)"], ["leveraged_money", "Leveraged funds", "#e1b66a"]];
+    const values = rows.flatMap((row) => series.map(([id]) => category(row, id)?.net)).filter(Number.isFinite);
+    if (!values.length) return;
+    const low = Math.min(0, ...values), high = Math.max(0, ...values), span = high - low || 1;
+    const x = (index) => 72 + index / Math.max(1, rows.length - 1) * 750, y = (value) => 225 - (value - low) / span * 185;
+    const make = (tag, attributes, text) => { const item = document.createElementNS("http://www.w3.org/2000/svg", tag); Object.entries(attributes).forEach(([key, value]) => item.setAttribute(key, String(value))); if (text !== undefined) item.textContent = text; svg.append(item); return item; };
+    make("line", { x1: 72, y1: y(0), x2: 822, y2: y(0), stroke: "var(--border)" });
+    [low, high].forEach((value) => make("text", { x: 4, y: y(value), fill: "currentColor", "font-size": 11 }, num(value)));
+    series.forEach(([id, label, color]) => {
+      let path = "", open = false;
+      rows.forEach((row, index) => { const value = category(row, id)?.net; if (!Number.isFinite(value)) { open = false; return; } path += `${open ? "L" : "M"}${x(index)},${y(value)} `; open = true; });
+      make("path", { d: path, fill: "none", stroke: color, "stroke-width": 2 });
+    });
+    make("line", { x1: x(state.positionIndex), x2: x(state.positionIndex), y1: 30, y2: 230, stroke: "var(--muted)", "stroke-dasharray": "3 4" });
+    make("text", { x: 72, y: 255, fill: "currentColor", "font-size": 11 }, rows[0].report_date);
+    make("text", { x: 740, y: 255, fill: "currentColor", "font-size": 11 }, rows[rows.length - 1].report_date);
+    const row = rows[state.positionIndex];
+    $("flow-positioning-cursor").value = String(state.positionIndex);
+    $("flow-positioning-date").textContent = `${row.report_date} / ${num(row.open_interest)} futures contracts open interest`;
+    $("flow-positioning-date").setAttribute("data-report-date", row.report_date);
+    const inspector = $("flow-positioning-inspector"); inspector.replaceChildren();
+    inspector.append(table(["Reported category", "Long", "Short", "Net", "Net / OI", "Weekly net change", "Prior-only percentile"],
+      (row.categories || []).map((item) => [CATEGORY_NAMES[item.id] || item.id, num(item.long), num(item.short), num(item.net), percent(item.net_share_of_open_interest), num(item.weekly_net_change), item.prior_only_percentile === null ? "UNKNOWN / insufficient history" : percent(item.prior_only_percentile)]),
+      `Reported positions at ${row.report_date} · contracts, not transaction flows`, "flow-positioning-table"));
+  }
+  function renderPositioning() {
+    const data = state.positioning, content = $("flow-positioning-content"); content.replaceChildren();
+    if (!data || !Array.isArray(data.rows) || !data.rows.length) return;
+    state.positionIndex = Math.max(0, Math.min(data.rows.length - 1, state.positionIndex));
+    const source = data.source || {}, instrument = data.instrument || {};
+    const banner = node("div", "flow-positioning-identity");
+    banner.append(node("strong", null, instrument.market_name || "CFTC reported instrument"), node("span", null, `Contract ${instrument.contract_market_code || "UNKNOWN"} / ${instrument.contract_units || "UNKNOWN units"}`), node("span", "flow-stale-tag", `${data.classification || "HISTORICAL"} · ${data.freshness?.state || "UNKNOWN"} for current use`)); content.append(banner);
+    const legend = node("div", "flow-positioning-legend"); legend.append(node("span", "asset", "Asset manager net contracts"), node("span", "leveraged", "Leveraged fund net contracts")); content.append(legend);
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.id = "flow-positioning-chart"; svg.setAttribute("viewBox", "0 0 850 275"); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Historical weekly CFTC net positions for asset managers and leveraged funds; exact selected report values are available in the table below."); content.append(svg);
+    const cursorLabel = node("label", "flow-positioning-range-label", "Inspect a reported week"); cursorLabel.htmlFor = "flow-positioning-cursor";
+    const cursor = node("input"); cursor.id = "flow-positioning-cursor"; cursor.type = "range"; cursor.min = "0"; cursor.max = String(data.rows.length - 1); cursor.step = "1";
+    cursor.addEventListener("input", () => { state.positionIndex = Number(cursor.value); drawPositioning(); });
+    const date = node("p", "flow-positioning-date"); date.id = "flow-positioning-date"; date.setAttribute("aria-live", "polite");
+    const inspector = node("div"); inspector.id = "flow-positioning-inspector"; content.append(cursorLabel, cursor, date, inspector);
+    const details = node("details", "flow-source-inspector"), summary = node("summary", null, "Inspect provider, permission and knowledge clocks"); details.append(summary);
+    const dl = node("dl");
+    [["Source", source.provider], ["Dataset", source.dataset_name || source.dataset_id], ["Acquired", source.acquired_at], ["Publication time", source.publication_time || "UNKNOWN"], ["Historical knowledge", source.historical_knowledge], ["Source SHA-256", source.raw_sha256], ["Permission evidence", source.license_url], ["Attribution", source.attribution]].forEach(([key, value]) => dl.append(node("dt", null, key), node("dd", null, value || "UNKNOWN"))); details.append(dl); content.append(details);
+    const notes = node("div", "flow-positioning-notes"); (data.notes || []).forEach((text) => notes.append(node("p", "flow-note", text))); content.append(notes);
+    svg.addEventListener("pointermove", (event) => { const box = svg.getBoundingClientRect(), axis = ((event.clientX - box.left) / box.width * 850 - 72) / 750; state.positionIndex = Math.max(0, Math.min(data.rows.length - 1, Math.round(axis * (data.rows.length - 1)))); drawPositioning(); });
+    drawPositioning();
+  }
+  async function loadPositioning() {
+    if (state.positioningBusy) return;
+    state.positioningBusy = true; $("flow-positioning-refresh").disabled = true;
+    $("flow-positioning-status").textContent = "Loading saved official positioning evidence. No provider request is made by this page.";
+    try {
+      const response = await fetch("/api/v1/market-flow/positioning", { headers: { Accept: "application/json" } });
+      const payload = await response.json();
+      if (!response.ok || !["AVAILABLE", "STALE"].includes(payload.state) || !payload.data || !Array.isArray(payload.data.rows) || !payload.data.rows.length) throw new Error("unavailable");
+      state.positioning = payload.data; state.positionIndex = payload.data.rows.length - 1; renderPositioning();
+      $("flow-positioning-status").textContent = `${payload.data.rows.length} historical weekly reports · publication and revision clocks remain UNKNOWN · not current positions or observed trade flow`;
+    } catch {
+      state.positioning = null; $("flow-positioning-content").replaceChildren();
+      $("flow-positioning-status").textContent = "UNAVAILABLE · Verified positioning evidence could not be loaded. No positions or trades have been fabricated.";
+    } finally { state.positioningBusy = false; $("flow-positioning-refresh").disabled = false; if (state.visible) truth(state.payload, !state.payload); }
+  }
+
   async function load(evaluate = false) {
     if (state.busy) return;
     state.busy = true; $("flow-evaluate").disabled = true;
@@ -151,9 +229,9 @@
   }
 
   window.GIGMarketFlow = {
-    show(on) { state.visible = on; $("market-flow-panel").classList.toggle("hidden", !on); if (!on) return; if (!state.started) { build(); state.started = true; load(); } else truth(state.payload, !state.payload); },
-    reload: () => load(),
+    show(on) { state.visible = on; $("market-flow-panel").classList.toggle("hidden", !on); if (!on) return; if (!state.started) { build(); state.started = true; load(); loadPositioning(); } else truth(state.payload, !state.payload); },
+    reload: () => { load(); loadPositioning(); },
     state: () => ({ visible: state.visible, busy: state.busy, analysis: Boolean(state.payload?.data?.analysis),
-      observedFlow: "UNAVAILABLE", identity: state.payload?.data?.analysis?.inputs_sha256 || null }),
+      observedFlow: "UNAVAILABLE", positioningAvailable: Boolean(state.positioning), positioningReports: state.positioning?.rows?.length || 0, positioningIndex: state.positionIndex, identity: state.payload?.data?.analysis?.inputs_sha256 || null }),
   };
 })();

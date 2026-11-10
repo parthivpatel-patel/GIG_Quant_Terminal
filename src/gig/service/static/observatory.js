@@ -5,7 +5,7 @@
   const $ = (id) => document.getElementById(id);
   const OBJECTIVE_ID = "treasury-reversal-robustness-v1";
   const state = { visible: false, started: false, payload: null, selected: null, followLatest: true,
-    traceStage: "source", timer: null, loading: false };
+    traceStage: "source", timer: null, loading: false, objective: OBJECTIVE_ID, comparison: [], sort: "newest", classification: "all" };
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -81,9 +81,9 @@
       { id: "source", label: "Source", status: r.classification || "UNKNOWN", rows: [
         ["Dataset", datasetName || line.dataset], ["Classification", r.classification], ["Source", typeof dataset === "object" ? dataset.source_url : null],
         ["Observation period", r.period ? `${known(r.period.start)} → ${known(r.period.end)}` : null],
-        ["Acquired", typeof dataset === "object" ? dataset.retrieved_at : null],
+        ["Acquired", typeof dataset === "object" ? dataset.retrieved_at || dataset.acquired_at : null],
         ["Publication clock", r.publication_time], ["Source hash", typeof dataset === "object" ? dataset.sha256 || line.sha256 : line.sha256],
-        ["License", typeof dataset === "object" ? dataset.license : null]] },
+        ["License", typeof dataset === "object" ? dataset.license || dataset.license_url : null]] },
       { id: "features", label: "Features", status: "INSPECT", rows: [
         ["Point-in-time boundary", line.point_in_time || (typeof dataset === "object" ? dataset.point_in_time : null)],
         ["Construction", r.method || r.training_boundary], ["Training boundary", r.training_boundary],
@@ -154,9 +154,16 @@
         ["Hit rate interval / IID reference", r.metrics.hit_rate_interval_95 && r.metrics.hit_rate_interval_95.map(num).join(" → ")],
         ["Paired block-bootstrap interval", r.metrics.bootstrap && r.metrics.bootstrap.interval_95 && r.metrics.bootstrap.interval_95.map(num).join(" → ")]);
     }
+    if (r.metrics && typeof r.metrics.model_mean_score === "number") {
+      rows.push(["Scoring rule", r.metrics.score_name], ["Score units", r.metrics.score_units],
+        ["Model mean score", num(r.metrics.model_mean_score)], ["Training-only baseline", num(r.metrics.baseline_mean_score)],
+        ["Paired score difference", num(r.metrics.mean_score_difference)],
+        ["Block uncertainty interval / difference", r.metrics.bootstrap_interval_95 && r.metrics.bootstrap_interval_95.map(num).join(" → ")],
+        ["Score interpretation", r.metrics.lower_score_is_better ? "Lower is better within this scoring rule only" : "Inspect declared scoring rule"]);
+    }
     finding.append(entries(rows));
     if (r.post_selection_reuse) finding.append(el("p", "observatory-reuse-warning", "EXPLORATORY / The parent inspected this archive already. Chronological folds do not create independent confirmation."));
-    if (r.metrics && Array.isArray(r.metrics.folds)) {
+    if (r.metrics && Array.isArray(r.metrics.folds) && r.metrics.folds.some((fold) => typeof fold.hits === "number")) {
       const comparison = el("section", "observatory-folds");
       comparison.append(el("h5", null, "Chronological fold comparison"), el("p", "muted", "Directional accuracy on observed yield changes. Not a return or profitability measure."));
       r.metrics.folds.forEach((fold, index) => {
@@ -175,6 +182,13 @@
       });
       finding.append(comparison);
     }
+    if (r.metrics && Array.isArray(r.metrics.folds) && typeof r.metrics.model_mean_score === "number") {
+      const table = el("table", "laboratory-fold-table"), caption = el("caption", null, `Chronological validation / ${known(r.metrics.score_name)}`);
+      const head = el("thead"), labels = el("tr"); ["Validation window", "Training / validation", "Model score", "Baseline score"].forEach((label) => { const th = el("th", null, label); th.scope = "col"; labels.append(th); }); head.append(labels);
+      const body = el("tbody");
+      r.metrics.folds.forEach((fold) => { const row = el("tr"); [ `${known(fold.validation_start)} → ${known(fold.validation_end)}`, `${known(fold.training_pairs)} / ${known(fold.validation_pairs)}`, num(fold.model_mean_score), num(fold.baseline_mean_score)].forEach((text) => row.append(el("td", null, text))); body.append(row); });
+      table.append(caption, head, body); const wrap = el("div", "table-scroll"); wrap.append(table); finding.append(wrap);
+    }
     if (r.lineage) {
       const provenance = el("details", "observatory-lineage"); provenance.append(el("summary", null, "Full lineage and reproduction"));
       provenance.append(entries([["Dataset", r.lineage.dataset], ["Strategy", r.lineage.strategy],
@@ -184,6 +198,7 @@
       if (r.reproduce) provenance.append(el("p", "observatory-reproduce", r.reproduce));
       finding.append(provenance);
     }
+    $("observatory-compare-selected").textContent = state.comparison.includes(identity(run)) ? "Included in comparison" : "Add to comparison";
     renderTimeline(run);
     if (state.payload) truth(state.payload, false);
   }
@@ -193,8 +208,10 @@
     const data = state.payload.data, query = $("observatory-filter").value.trim().toLowerCase();
     const matches = (data.runs || []).filter((run) => {
       const r = run.report;
-      return `${r.hypothesis_id} ${r.verdict} ${r.classification} ${known(r.dataset)}`.toLowerCase().includes(query);
+      return (state.classification === "all" || r.classification === state.classification) && `${r.hypothesis_id} ${r.verdict} ${r.classification} ${known(r.dataset)}`.toLowerCase().includes(query);
     });
+    if (state.sort !== "newest") matches.sort((a, b) => (state.sort === "dataset" ? known(a.report.dataset) : a.report.hypothesis_id).localeCompare(state.sort === "dataset" ? known(b.report.dataset) : b.report.hypothesis_id));
+    $("observatory-result-count").textContent = `${matches.length} of ${(data.runs || []).length} recorded findings`;
     if (!matches.length) history.append(el("p", "observatory-empty", query ? "No saved finding matches this filter." : "No recorded cycle."));
     matches.forEach((run) => {
       const r = run.report, p = el("p", "observatory-history-row"), button = el("button", "observatory-run-button");
@@ -216,14 +233,25 @@
     }
     $("director-policy").textContent = director.policy === "BOUNDED_APPROVED_TEMPLATES" ? "BOUNDED TEMPLATES" : known(director.policy);
     const rows = director.objectives || [];
+    const select = $("director-objective-select");
+    const signature = rows.map((row) => row.objective_id).join("|");
+    if (select.dataset.catalog !== signature) {
+      select.replaceChildren(...rows.map((row, index) => { const option = el("option", null, `${String(index + 1).padStart(2, "0")} / ${row.question || row.objective_id}`); option.value = row.objective_id; return option; }));
+      select.dataset.catalog = signature;
+    }
+    if (!rows.some((row) => row.objective_id === state.objective)) state.objective = rows[0] ? rows[0].objective_id : OBJECTIVE_ID;
+    select.value = state.objective;
     rows.forEach((objective) => {
-      const item = el("div", "director-objective");
+      const item = el("div", `director-objective${objective.objective_id === state.objective ? " selected" : ""}`);
+      if (objective.objective_id !== state.objective) return;
       item.append(el("span", "observatory-status-tag", objective.status), el("strong", null, objective.question || objective.objective_id),
-        el("span", "muted", objective.reason || objective.dataset_id || "Approval is limited to the registered template."));
+        el("span", "director-dataset", `Dataset / ${known(objective.dataset_id)}`), el("span", "muted", objective.reason || "Approval is limited to the registered template."));
+      if (objective.readiness) item.append(el("span", "director-readiness", `Admission / ${known(objective.readiness)}`));
+      if (objective.priority !== undefined) item.append(el("span", "director-readiness", `Registered priority / ${known(objective.priority)}`));
       objectives.append(item);
     });
     if (!rows.length) objectives.append(el("p", "muted", "No approved objective is recorded."));
-    const current = rows.find((row) => row.objective_id === OBJECTIVE_ID);
+    const current = rows.find((row) => row.objective_id === state.objective);
     approve.disabled = !!current && ["APPROVED", "COMPLETED"].includes(current.status);
     revoke.disabled = !current || current.status !== "APPROVED";
     const investigations = $("director-investigations"); investigations.replaceChildren();
@@ -267,7 +295,67 @@
     const objective = $("observatory-objective-result"); objective.replaceChildren();
     const latest = data.objective || (data.objectives || [])[0];
     if (latest) objective.append(el("p", null, `${latest.disposition} · ${latest.detail}`));
-    renderHistory(); renderFinding();
+    renderHistory(); renderFinding(); renderComparison();
+  }
+
+
+  function comparisonMetric(report) {
+    const metrics = report.metrics || {};
+    if (typeof metrics.model_mean_score === "number") return [`${known(metrics.score_name)} / ${known(metrics.score_units)}`, num(metrics.model_mean_score)];
+    if (typeof metrics.mean_qlike === "number") return ["Variance QLIKE / lower is better", num(metrics.mean_qlike)];
+    if (typeof metrics.qlike === "number") return ["Variance QLIKE / lower is better", num(metrics.qlike)];
+    if (typeof report.hit_rate === "number") return ["Directional accuracy / eligible pairs", num(report.hit_rate)];
+    if (typeof metrics.correlation_stability === "number") return ["Correlation stability diagnostic", num(metrics.correlation_stability)];
+    if (typeof report.sharpe_after_cost === "number") return ["Authored after-cost Sharpe / synthetic only", num(report.sharpe_after_cost)];
+    return ["Inspect method-specific report", "NO COMPARABLE SCORE"];
+  }
+
+  function renderComparison() {
+    const target = $("observatory-comparison"); target.replaceChildren();
+    const all = state.payload ? state.payload.data.runs || [] : [];
+    state.comparison = state.comparison.filter((id) => all.some((run) => identity(run) === id));
+    const runs = state.comparison.map((id) => all.find((run) => identity(run) === id));
+    if (!runs.length) { target.append(el("p", "observatory-empty", "Select a saved finding, then add it to comparison. Historical reference calculations and synthetic return experiments keep separate meanings.")); return; }
+    const table = el("table", "laboratory-comparison-table"), caption = el("caption", "sr-only", "Saved experiment comparison, with method-specific metrics and no trading approval");
+    const head = el("thead"), heading = el("tr");
+    heading.append(el("th", null, "Evidence dimension"));
+    runs.forEach((run) => { const th = el("th", null, run.report.hypothesis_id); th.scope = "col"; heading.append(th); }); head.append(heading);
+    const body = el("tbody");
+    const rows = [
+      ["Classification", (run) => run.report.classification],
+      ["Dataset", (run) => run.report.dataset && run.report.dataset.id || run.report.lineage && run.report.lineage.dataset || run.report.dataset],
+      ["Method", (run) => run.report.method || run.report.strategy],
+      ["Metric / units", (run) => comparisonMetric(run.report)[0]],
+      ["Recorded value", (run) => comparisonMetric(run.report)[1]],
+      ["Skeptic verdict", (run) => run.report.skeptic && run.report.skeptic.verdict || run.report.verdict],
+      ["Publication clock", (run) => run.report.publication_time],
+      ["Independent confirmation", (run) => run.report.independent_confirmation === undefined ? "NOT ESTABLISHED" : String(run.report.independent_confirmation)],
+      ["Economic claim", (run) => run.report.economic_claim],
+      ["Result identity", (run) => run.report.result_hash || identity(run)],
+    ];
+    rows.forEach(([label, value]) => { const row = el("tr"), th = el("th", null, label); th.scope = "row"; row.append(th); runs.forEach((run) => row.append(el("td", null, known(value(run))))); body.append(row); });
+    table.append(caption, head, body); target.append(table);
+  }
+
+  function bindResearchRail() {
+    const separator = $("observatory-rail-splitter"), grid = $("observatory-lab-grid");
+    const update = (value) => {
+      const width = Math.max(200, Math.min(420, Number(value) || 280));
+      grid.style.setProperty("--laboratory-rail", `${width}px`); separator.setAttribute("aria-valuenow", String(Math.round(width)));
+      try { localStorage.setItem("gig.laboratory.rail.v1", String(width)); } catch { /* local preference remains in this page */ }
+    };
+    let saved = 280; try { saved = localStorage.getItem("gig.laboratory.rail.v1"); } catch { /* default */ } update(saved);
+    separator.addEventListener("keydown", (event) => {
+      const width = Number(separator.getAttribute("aria-valuenow"));
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault(); update(event.key === "Home" ? 200 : event.key === "End" ? 420 : width + (event.key === "ArrowLeft" ? -16 : 16));
+    });
+    separator.addEventListener("pointerdown", (event) => {
+      event.preventDefault(); separator.setPointerCapture(event.pointerId);
+      const move = (moveEvent) => update(moveEvent.clientX - grid.getBoundingClientRect().left);
+      const stop = () => { separator.removeEventListener("pointermove", move); separator.removeEventListener("pointerup", stop); separator.removeEventListener("pointercancel", stop); };
+      separator.addEventListener("pointermove", move); separator.addEventListener("pointerup", stop); separator.addEventListener("pointercancel", stop);
+    });
   }
 
   function poll() {
@@ -335,7 +423,7 @@
     $("director-status").textContent = "Recording the approval decision…";
     try {
       const response = await fetch("/api/v1/research-org/director", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ action: actionName, objective_id: OBJECTIVE_ID }) });
+        body: JSON.stringify({ action: actionName, objective_id: state.objective }) });
       if (!response.ok) throw new Error("unavailable");
       await load();
       $("director-status").textContent = actionName === "approve" ? "Approval recorded. Start the worker separately to run approved investigations." : "Approval revoked. Inspect active work before starting another cycle.";
@@ -352,6 +440,12 @@
       $("observatory-run").addEventListener("click", tick);
       $("observatory-objective").addEventListener("submit", objective);
       $("observatory-filter").addEventListener("input", renderHistory);
+      $("observatory-sort").addEventListener("change", () => { state.sort = $("observatory-sort").value; renderHistory(); });
+      $("observatory-classification").addEventListener("change", () => { state.classification = $("observatory-classification").value; renderHistory(); });
+      $("director-objective-select").addEventListener("change", () => { state.objective = $("director-objective-select").value; if (state.payload) renderDirector(state.payload.data); });
+      $("observatory-compare-selected").addEventListener("click", () => { const run = selectedRun(); if (!run) return; const id = identity(run); if (!state.comparison.includes(id)) { if (state.comparison.length >= 3) state.comparison.shift(); state.comparison.push(id); } renderComparison(); renderFinding(); });
+      $("observatory-comparison-clear").addEventListener("click", () => { state.comparison = []; renderComparison(); renderFinding(); });
+      bindResearchRail();
       $("observatory-latest").addEventListener("click", () => { state.followLatest = true; if (state.payload) render(state.payload); });
       $("director-approve").addEventListener("click", () => director("approve"));
       $("director-revoke").addEventListener("click", () => director("revoke"));
