@@ -205,7 +205,7 @@ def main():
                     check("transport failure clears previous saved research rows",
                           page.locator("#state-badge").inner_text() == "ERROR" and page.locator("#observations-table tbody tr").count() == 0)
                     page.unroute("**/api/v1/terminal/*")
-                    check("all twelve sections retained plus Global Intelligence and Market Charts", page.locator("#section-nav a").count() == 15 and page.locator('#section-nav a[href="#global-intelligence"]').count() == 1 and page.locator('#section-nav a[href="#observatory"]').count() == 1 and page.locator('#section-nav a[href="#charts"]').count() == 1)
+                    check("all twelve sections retained plus Global Intelligence, Observatory, Market Charts and Market Flow", page.locator("#section-nav a").count() == 16 and page.locator('#section-nav a[href="#market-flow"]').count() == 1 and page.locator('#section-nav a[href="#global-intelligence"]').count() == 1 and page.locator('#section-nav a[href="#observatory"]').count() == 1 and page.locator('#section-nav a[href="#charts"]').count() == 1)
                     check("reduced-motion camera remains paused", page.locator("#orbit-toggle").get_attribute("aria-pressed") == "false")
                     check("no JavaScript exceptions", not errors, errors)
                     browser.close()

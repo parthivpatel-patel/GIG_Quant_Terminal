@@ -111,10 +111,11 @@ def main() -> int:
                 page.goto(url + "/#command-center", wait_until="networkidle")
                 page.wait_for_function("!document.getElementById('refresh').disabled")
                 links = page.locator("#section-nav a")
-                check("fifteen sections: the twelve originals, Global Intelligence, the Observatory and Market Charts",
-                      links.count() == 15 and [links.nth(i).get_attribute("href")[1:] for i in range(13)] == list(SECTIONS)
+                check("sixteen sections: twelve originals plus Global Intelligence, Observatory, Charts and Market Flow",
+                      links.count() == 16 and [links.nth(i).get_attribute("href")[1:] for i in range(13)] == list(SECTIONS)
                       and links.nth(13).get_attribute("href") == "#observatory"
-                      and links.nth(14).get_attribute("href") == "#charts")
+                      and links.nth(14).get_attribute("href") == "#charts"
+                      and links.nth(15).get_attribute("href") == "#market-flow")
                 lab_ready(page, "correlation-network")
                 shot(page, "01-command-center")
                 shot(page, "02-navigation", "aside.sidebar")
