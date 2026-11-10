@@ -29,3 +29,37 @@ The same bundle says access requires agreeing to those terms. No FINRA file was 
 A Market Flow screen needs a file this process can read under terms that allow the use. The SEC zips were blocked, and the FINRA application is copyrighted and gated. Building a chart from either source now would mean inventing the observations. No market-flow route or panel was added.
 
 The Treasury par-yield study in the research organization is a yield-curve question. It is not options flow and not off-exchange volume.
+
+## 2026-11-09 engineering continuation: authored scenario vertical
+
+The preceding provider findings remain historical access evidence dated
+2026-11-05, not a claim of a new provider connection or a new licensing review.
+No additional SEC, FINRA or congressional file was retrieved in this change.
+
+The initial Market Flow workspace now exposes a machine-readable source
+admission register and an explicit authored options scenario laboratory. The
+register distinguishes unavailable observed options flow, FINRA terms/access
+blockers, SEC access/contact blockers and unknown congressional-data eligibility.
+It records official source links, cost conditions, delay/coverage uncertainty and
+redistribution limitations without treating public website access as permission.
+
+The laboratory reuses `gig.options.portfolio_exposure` and `scenario_grid`, which
+reuse the existing European Black–Scholes kernel. Its only admitted inputs are
+explicit `USER_AUTHORED_ASSUMPTIONS`, classified `SYNTHETIC`, in USD for one
+underlying and a common expiry. It supports up to 32 signed hypothetical option
+legs, 41 spot scenarios, contract multipliers, documented Greek units,
+mark-to-model changes, terminal intrinsic payoff minus unfinanced model premium,
+and user-specified local risk thresholds. Threshold crossings are **modeled
+scenario alerts**, never unusual-options-activity observations. Short hypothetical
+legs do not establish funded-accounting support, collateral or borrowing rules.
+
+European cash settlement, ACT/365F, constant authored volatility/rates and omitted
+financing/transaction costs are explicit assumptions. Scenario losses cover only
+the supplied grid. A passing threshold is not a risk admission or execution
+approval. Dealer positioning, observed open interest, aggregate dealer gamma and
+observed flow remain unavailable or unknown, never filled with zero.
+
+The response carries canonical input/evidence identities and is exportable as
+JSON for deterministic local replay. It is stateless; it does **not** implement a
+durable market watchlist, asynchronous market monitoring or provider alerts.
+No broker connection, order path, external API or paid resource is introduced.

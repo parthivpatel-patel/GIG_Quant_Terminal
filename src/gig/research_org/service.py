@@ -8,6 +8,7 @@ after the one approved historical candidate.
 
 from __future__ import annotations
 
+import math
 import resource
 import threading
 import time
@@ -34,6 +35,13 @@ class ResearchWorker:
                  max_db_bytes: int = DEFAULT_MAX_DB_BYTES,
                  max_cpu_seconds: float = DEFAULT_MAX_CPU_SECONDS,
                  max_rss_kb: int = DEFAULT_MAX_RSS_KB):
+        for name, value in (("max_jobs", max_jobs), ("max_db_bytes", max_db_bytes),
+                            ("max_rss_kb", max_rss_kb)):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
+        for name, value in (("lease_seconds", lease_seconds), ("max_cpu_seconds", max_cpu_seconds)):
+            if not _positive_finite(value) or (name == "lease_seconds" and value > 3600):
+                raise ValueError(f"{name} must be positive and finite")
         self.ledger = ledger
         self.max_jobs = max_jobs
         self.lease_seconds = lease_seconds
@@ -91,7 +99,7 @@ class ResearchWorker:
         thread = self._thread
         if thread is not None and thread is not threading.current_thread():
             thread.join(timeout)
-        if self.ledger.path.is_file():
+        if self.ledger.path.is_file() and not (thread and thread.is_alive()):
             self.ledger.release_lease(self.owner)
 
     def wait(self, timeout: float | None = None) -> None:
@@ -145,7 +153,7 @@ class ResearchWorker:
             try:
                 if not any(row["status"] in {"QUEUED", "RUNNING"} for row in queue_view(self.ledger)):
                     propose_candidate(self.ledger)
-                result = tick(self.ledger, lease_owner=self.owner)
+                result = tick(self.ledger, lease_owner=self.owner, lease_seconds=self.lease_seconds)
             finally:
                 self.ledger.release_lease(self.owner)
             action = result["tick"]["action"]
@@ -175,7 +183,18 @@ class ResearchWorker:
         return False
 
 
+def _positive_finite(value: float) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value) and value > 0
+    except OverflowError:
+        return False
+
+
 def _cadence(value: float) -> float:
+    if not _positive_finite(value):
+        raise ValueError("cadence")
     number = float(value)
     if number < MIN_CADENCE or number > MAX_CADENCE:
         raise ValueError("cadence")

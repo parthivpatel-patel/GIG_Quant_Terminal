@@ -67,6 +67,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     integrations = CycleServices(workspace, finbert_dir=(finbert_dir if finbert_dir is not None
                                                        else get_settings().finbert_model_dir))
     workspace_write_lock = threading.Lock()
+    market_flow_slots = threading.BoundedSemaphore(2)
 
     class StrictJSONResponse(JSONResponse):
         def render(self, content: Any) -> bytes:
@@ -284,6 +285,70 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
     @app.get("/api/v1/research-org/status", response_model=EnvelopeSchema)
     def research_org_status() -> Any:
         return status_contract(research_ledger, public_scheduler(research_worker))
+
+    @app.get("/api/v1/research-org/director", response_model=EnvelopeSchema)
+    def research_director_status() -> Any:
+        from gig.research_org.director import status as director_status
+        return Contract.admit(State.AVAILABLE, director_status(research_ledger),
+                              source="research-director", classification="HISTORICAL",
+                              scope="research-org", evidence_state="RESEARCH_OUTPUT",
+                              readiness="RESEARCH_ONLY")
+
+    @app.get("/api/v1/market-flow", response_model=EnvelopeSchema)
+    def market_flow_status() -> Any:
+        from gig.service.market_flow import market_flow_contract
+        return market_flow_contract()
+
+    @app.post("/api/v1/market-flow", response_model=EnvelopeSchema)
+    async def market_flow_scenario(request: Request) -> Any:
+        from gig.service.market_flow import market_flow_contract
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not market_flow_slots.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            body = loads(await request.body())
+            if not isinstance(body, dict):
+                return failure("INVALID_REQUEST", 422)
+            return await run_in_threadpool(market_flow_contract, body)
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        except ValueError:
+            return failure("INVALID_REQUEST", 422)
+        finally:
+            market_flow_slots.release()
+
+    @app.post("/api/v1/research-org/director", response_model=EnvelopeSchema)
+    async def research_director_control(request: Request) -> Any:
+        from gig.research_org.director import approve
+        if request.headers.get("content-type", "").split(";", 1)[0].lower() != "application/json":
+            return failure("INVALID_REQUEST", 415)
+        origin = request.headers.get("origin")
+        if origin is not None and origin != f"{request.url.scheme}://{request.url.netloc}":
+            return failure("INVALID_REQUEST", 403)
+        if not workspace_write_lock.acquire(blocking=False):
+            return failure("INVALID_REQUEST", 429)
+        try:
+            body = loads(await request.body())
+            if not isinstance(body, dict) or set(body) != {"action", "objective_id"}:
+                return failure("INVALID_REQUEST", 422)
+            if (not isinstance(body["action"], str) or body["action"] not in {"approve", "revoke"}
+                    or not isinstance(body["objective_id"], str)):
+                return failure("INVALID_REQUEST", 422)
+            data = await run_in_threadpool(approve, research_ledger, body["objective_id"],
+                                          revoked=body["action"] == "revoke")
+            return Contract.admit(State.AVAILABLE, data, source="research-director",
+                                  classification="HISTORICAL", scope="research-org",
+                                  evidence_state="RESEARCH_OUTPUT", readiness="RESEARCH_ONLY")
+        except SerializationError:
+            return failure("INVALID_REQUEST", 400)
+        except ValueError:
+            return failure("INVALID_REQUEST", 422)
+        finally:
+            workspace_write_lock.release()
 
     @app.post("/api/v1/research-org/cycle", response_model=EnvelopeSchema)
     async def research_org_cycle(request: Request) -> Any:

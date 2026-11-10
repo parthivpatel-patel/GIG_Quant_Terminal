@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 import threading
 from collections.abc import Sequence
@@ -20,6 +21,8 @@ CREATE TABLE IF NOT EXISTS audit (
 CREATE TABLE IF NOT EXISTS jobs (
   job_id TEXT PRIMARY KEY, hypothesis_id TEXT NOT NULL, status TEXT NOT NULL,
   attempts INTEGER NOT NULL, error TEXT, seq INTEGER NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS job_claims (
+  job_id TEXT PRIMARY KEY, owner TEXT, attempt INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS objectives (
   id INTEGER PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL,
   disposition TEXT NOT NULL, detail TEXT NOT NULL);
@@ -28,8 +31,18 @@ CREATE TABLE IF NOT EXISTS scheduler (
   desired TEXT NOT NULL, cadence_seconds REAL NOT NULL,
   lease_owner TEXT, lease_until TEXT, candidates INTEGER NOT NULL,
   reason TEXT, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS director_objectives (
+  objective_id TEXT PRIMARY KEY, state TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS director_investigations (
+  hypothesis_id TEXT PRIMARY KEY, objective_id TEXT NOT NULL, parent_hypothesis_id TEXT NOT NULL,
+  priority INTEGER NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL);
 """
 MAX_RUNS = 200
+
+
+class LeaseLost(RuntimeError):
+    """The caller no longer owns the active research lease/claim."""
+
 
 
 class ResearchLedger:
@@ -146,21 +159,42 @@ class ResearchLedger:
                 db.close()
         return [dict(row) for row in rows]
 
-    def recover_and_claim(self, approved: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
-        """Return a crashed job to the queue, then claim the earliest queued job."""
+    def recover_and_claim(self, approved: Sequence[dict[str, Any]], *,
+                          lease_owner: str | None = None) -> dict[str, Any] | None:
+        """Claim atomically under the runtime lease, recovering only stale claims.
+
+        The ownerless form is retained for crash-fixture construction; it cannot
+        disturb a live runtime lease and never authorizes executing a runner.
+        """
         with self._lock:
-            now = datetime.now(UTC).isoformat()
             db = self._connect()
             try:
                 db.execute("BEGIN IMMEDIATE")
+                now = datetime.now(UTC).isoformat()
+                if lease_owner is None:
+                    live = db.execute("SELECT 1 FROM scheduler WHERE lease_until > ? AND lease_owner IS NOT NULL", (now,)).fetchone()
+                    if live is not None:
+                        db.commit()
+                        return None
+                else:
+                    _require_lease(db, lease_owner, now)
+                    live = db.execute(
+                        "SELECT 1 FROM jobs j JOIN job_claims c USING(job_id) "
+                        "WHERE j.status='RUNNING' AND c.owner=?", (lease_owner,)).fetchone()
+                    if live is not None:
+                        db.commit()
+                        return None
                 db.execute("UPDATE jobs SET status = 'QUEUED', updated_at = ? WHERE status = 'RUNNING'", (now,))
+                # A crash cannot reset persisted retry budgets.
+                db.execute("UPDATE jobs SET status='FAILED',error='attempt budget',updated_at=? "
+                           "WHERE status='QUEUED' AND attempts>=3", (now,))
                 for job in approved:
                     db.execute(
                         "INSERT OR IGNORE INTO jobs (job_id, hypothesis_id, status, attempts, error, seq, updated_at) "
                         "VALUES (?, ?, 'QUEUED', 0, NULL, ?, ?)",
                         (job["job_id"], job["hypothesis_id"], int(job["seq"]), now))
                 row = db.execute(
-                    "SELECT job_id, hypothesis_id, attempts, seq FROM jobs WHERE status = 'QUEUED' ORDER BY seq LIMIT 1"
+                    "SELECT job_id, hypothesis_id, attempts, seq FROM jobs WHERE status = 'QUEUED' ORDER BY seq,job_id LIMIT 1"
                 ).fetchone()
                 if row is None:
                     db.commit()
@@ -169,6 +203,9 @@ class ResearchLedger:
                 db.execute(
                     "UPDATE jobs SET status = 'RUNNING', attempts = ?, updated_at = ? WHERE job_id = ?",
                     (attempts, now, row["job_id"]))
+                db.execute("INSERT INTO job_claims VALUES (?,?,?) ON CONFLICT(job_id) "
+                           "DO UPDATE SET owner=excluded.owner,attempt=excluded.attempt",
+                           (row["job_id"], lease_owner, attempts))
                 match = next((item for item in approved if item["job_id"] == row["job_id"]), None)
                 runner = None if match is None else match.get("runner")
                 db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
@@ -179,18 +216,51 @@ class ResearchLedger:
         return {"job_id": row["job_id"], "hypothesis_id": row["hypothesis_id"],
                 "attempts": attempts, "runner": runner}
 
-    def complete_job(self, job_id: str, state: str, error: str | None) -> None:
+    def complete_job(self, job_id: str, state: str, error: str | None, *,
+                     lease_owner: str | None = None, attempt: int | None = None) -> None:
         if state not in {"DONE", "QUEUED", "FAILED", "CANCELLED"}:
             raise ValueError("job state")
         with self._lock:
-            now = datetime.now(UTC).isoformat()
             db = self._connect()
             try:
+                db.execute("BEGIN IMMEDIATE")
+                now = datetime.now(UTC).isoformat()
+                if lease_owner is not None:
+                    _require_claim(db, lease_owner, job_id, attempt, now)
+                elif db.execute("SELECT 1 FROM scheduler WHERE lease_until>? AND lease_owner IS NOT NULL", (now,)).fetchone():
+                    raise LeaseLost("active runtime lease")
                 db.execute("UPDATE jobs SET status = ?, error = ?, updated_at = ? WHERE job_id = ?",
                            (state, error, now, job_id))
                 db.execute("INSERT INTO audit (at, actor, action, detail) VALUES (?, ?, ?, ?)",
                            (now, "orchestrator", state.lower(), job_id))
                 db.commit()
+            finally:
+                db.close()
+
+    def finish_claim(self, job_id: str, config_hash: str, report: dict[str, Any], *,
+                     actor: str, lease_owner: str, attempt: int) -> tuple[dict[str, Any], bool]:
+        """Atomically commit a deduplicated report and finish its fenced claim."""
+        encoded = json.dumps(report, sort_keys=True, allow_nan=False)
+        with self._lock:
+            db = self._connect()
+            try:
+                db.execute("BEGIN IMMEDIATE")
+                now = datetime.now(UTC).isoformat()
+                _require_claim(db, lease_owner, job_id, attempt, now)
+                existing = db.execute("SELECT payload FROM runs WHERE config_hash=?", (config_hash,)).fetchone()
+                if existing is None:
+                    if db.execute("SELECT COUNT(*) FROM runs").fetchone()[0] >= MAX_RUNS:
+                        raise RuntimeError("research-org run budget is exhausted")
+                    db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?)",
+                               (config_hash, report["hypothesis_id"], config_hash, now, now, encoded))
+                    last, deduplicated = report, False
+                else:
+                    last, deduplicated = json.loads(existing[0]), True
+                db.execute("UPDATE jobs SET status='DONE',error=NULL,updated_at=? WHERE job_id=?", (now, job_id))
+                db.execute("INSERT INTO audit(at,actor,action,detail) VALUES (?,?,?,?)",
+                           (now, actor, "deduplicate" if deduplicated else "run", job_id))
+                db.commit()
+                return last, deduplicated
             finally:
                 db.close()
 
@@ -295,11 +365,12 @@ class ResearchLedger:
         return holder != owner
 
     def acquire_lease(self, owner: str, seconds: float) -> bool:
+        _validate_lease(owner, seconds)
         with self._lock:
-            now = datetime.now(UTC)
             db = self._connect()
             try:
                 db.execute("BEGIN IMMEDIATE")
+                now = datetime.now(UTC)
                 row = db.execute("SELECT lease_owner, lease_until FROM scheduler WHERE id = 1").fetchone()
                 if (row and row["lease_until"] and row["lease_owner"] not in {None, owner}
                         and row["lease_until"] > now.isoformat()):
@@ -309,7 +380,7 @@ class ResearchLedger:
                 if row is None:
                     db.execute(
                         "INSERT INTO scheduler (id, desired, cadence_seconds, lease_owner, lease_until, candidates, reason, updated_at) "
-                        "VALUES (1, 'RUNNING', 5, ?, ?, 0, NULL, ?)",
+                        "VALUES (1, 'STOPPED', 5, ?, ?, 0, NULL, ?)",
                         (owner, until, now.isoformat()))
                 else:
                     db.execute("UPDATE scheduler SET lease_owner = ?, lease_until = ?, updated_at = ? WHERE id = 1",
@@ -318,6 +389,23 @@ class ResearchLedger:
             finally:
                 db.close()
         return True
+
+    def renew_lease(self, owner: str, seconds: float) -> bool:
+        """Extend only a still-live lease; never revive an expired owner."""
+        _validate_lease(owner, seconds)
+        with self._lock:
+            db = self._connect()
+            try:
+                db.execute("BEGIN IMMEDIATE")
+                now = datetime.now(UTC)
+                cursor = db.execute(
+                    "UPDATE scheduler SET lease_until=?,updated_at=? "
+                    "WHERE id=1 AND lease_owner=? AND lease_until>?",
+                    ((now + timedelta(seconds=seconds)).isoformat(), now.isoformat(), owner, now.isoformat()))
+                db.commit()
+                return bool(cursor.rowcount)
+            finally:
+                db.close()
 
     def expire_lease(self) -> None:
         """Mark the lease as already over. Used to simulate a dead worker's clock."""
@@ -385,3 +473,25 @@ def _objectives(db: sqlite3.Connection) -> list[dict[str, Any]]:
     except sqlite3.OperationalError:
         return []
     return [dict(row) for row in rows]
+
+
+def _require_lease(db: sqlite3.Connection, owner: str, now: str) -> None:
+    if db.execute("SELECT 1 FROM scheduler WHERE id=1 AND lease_owner=? AND lease_until>?", (owner, now)).fetchone() is None:
+        raise LeaseLost("research lease expired or replaced")
+
+
+def _validate_lease(owner: str, seconds: float) -> None:
+    if (not isinstance(owner, str) or not owner or len(owner) > 200
+            or isinstance(seconds, bool) or not isinstance(seconds, (int, float))
+            or seconds <= 0 or seconds > 3600 or not math.isfinite(seconds)):
+        raise ValueError("research lease bounds")
+
+
+def _require_claim(db: sqlite3.Connection, owner: str, job_id: str,
+                   attempt: int | None, now: str) -> None:
+    _require_lease(db, owner, now)
+    row = db.execute("SELECT 1 FROM jobs j JOIN job_claims c USING(job_id) "
+                     "WHERE j.job_id=? AND j.status='RUNNING' AND c.owner=? AND c.attempt=? AND j.attempts=c.attempt",
+                     (job_id, owner, attempt)).fetchone()
+    if row is None:
+        raise LeaseLost("research claim replaced")

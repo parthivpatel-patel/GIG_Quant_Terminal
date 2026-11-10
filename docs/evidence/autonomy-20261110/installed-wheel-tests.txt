@@ -1,0 +1,5 @@
+........................................................................ [ 60%]
+........................................s......                          [100%]
+=========================== short test summary info ============================
+SKIPPED [1] gig-autonomy-work/tests/test_native_operations.py:22: optional C++ library not built
+118 passed, 1 skipped in 13.82s

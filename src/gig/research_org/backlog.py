@@ -36,8 +36,9 @@ def queue_view(ledger: ResearchLedger) -> list[dict[str, Any]]:
             "attempts": int(row["attempts"]) if row else 0,
             "error": row["error"] if row else None,
         })
-    extra = stored.get(CANDIDATE["job_id"])
-    if extra is not None:
+    for extra in stored.values():
+        if extra["job_id"] in {job["job_id"] for job in SEED}:
+            continue
         view.append({
             "job_id": extra["job_id"],
             "hypothesis_id": extra["hypothesis_id"],

@@ -124,13 +124,13 @@ def _match_prints(fills: list[dict[str, Any]], prints: list[dict[str, Any]], tol
             claims.setdefault(print_id, []).append(fill["fill_id"])
     by_id = {p["print_id"]: p for p in prints}
     for fill in fills:
-        candidates = fill.pop("_candidates")
-        if not candidates:
+        candidate_ids = fill.pop("_candidates")
+        if not candidate_ids:
             status, matched = "UNMATCHED", None
-        elif len(candidates) > 1 or len(claims[candidates[0]]) > 1:
+        elif len(candidate_ids) > 1 or len(claims[candidate_ids[0]]) > 1:
             status, matched = "AMBIGUOUS", None
         else:
-            matched = by_id[candidates[0]]
+            matched = by_id[candidate_ids[0]]
             status = "MATCHED" if matched["source"] != fill["source"] else "SAME_SOURCE_UNVERIFIED"
         fill["print_corroboration"] = status
         fill["matched_print_id"] = None if matched is None else matched["print_id"]

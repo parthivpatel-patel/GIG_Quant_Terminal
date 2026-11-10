@@ -55,6 +55,7 @@ def _scheduler_public(ledger: ResearchLedger) -> dict[str, Any]:
 
 def _public(ledger: ResearchLedger, *, last: dict[str, Any] | None = None, deduplicated: bool = False) -> dict[str, Any]:
     from gig.research_org.backlog import RESUME_COMMAND, queue_view
+    from gig.research_org.director import status as director_status
     stored = ledger.status()
     executed = {row["hypothesis_id"] for row in stored["runs"]}
     return {
@@ -67,6 +68,7 @@ def _public(ledger: ResearchLedger, *, last: dict[str, Any] | None = None, dedup
         "catalog": _catalog(executed),
         "backlog": queue_view(ledger),
         "objectives": stored.get("objectives", []),
+        "director": director_status(ledger),
         "run_count": stored["run_count"],
         "runs": stored["runs"],
         "audit": stored["audit"],

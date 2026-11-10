@@ -1,0 +1,51 @@
+/* Market Flow authored research desk. All financial values are labeled model estimates. */
+main[data-workspace="market-flow"] .view-controls { display:none !important; }
+main[data-workspace="market-flow"] #metrics,
+main[data-workspace="market-flow"] .analysis-grid,
+main[data-workspace="market-flow"] #workbench,
+main[data-workspace="market-flow"] #experiment-comparison,
+main[data-workspace="market-flow"] #depth-panel,
+main[data-workspace="market-flow"] #lab-panel { display:none !important; }
+.flow-desk{border-top:2px solid var(--accent);padding:24px 0;min-width:0}
+.flow-kicker{color:var(--accent);letter-spacing:.14em;font-size:11px;text-transform:uppercase}
+.flow-desk h2{font-size:clamp(24px,3vw,34px);margin:8px 0 12px;letter-spacing:-.035em}
+.flow-note{color:var(--muted);max-width:90ch;line-height:1.6;font-size:13px}
+.flow-grid{display:grid;grid-template-columns:minmax(270px,.85fr) minmax(0,1.5fr);gap:24px;align-items:start;margin-top:24px}
+.flow-rail{border-right:1px solid var(--border);padding-right:24px;min-width:0}
+.flow-editor{width:100%;box-sizing:border-box;min-height:330px;resize:vertical;font:12px/1.55 ui-monospace,monospace;padding:12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:0}
+.flow-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.flow-actions button{padding:8px 12px;min-height:36px}
+.flow-status{min-height:22px;font-size:12px;color:var(--muted)}
+.flow-table-wrap{overflow:auto;max-width:100%;margin-top:16px}
+.flow-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.flow-table th,.flow-table td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.flow-table th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.flow-table td:first-child{font-weight:600;min-width:120px}
+.flow-table caption{text-align:left;font-size:14px;font-weight:600;padding:12px}
+.flow-desk details{border-bottom:1px solid var(--border);padding:14px 0;font-size:12px;line-height:1.6}
+.flow-desk summary{cursor:pointer;font-weight:600}
+.flow-desk dl{display:grid;grid-template-columns:125px minmax(0,1fr);gap:8px}
+.flow-desk dt{color:var(--muted)}.flow-desk dd{margin:0;overflow-wrap:anywhere}
+.flow-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:20px 0}
+.flow-metric{padding:16px 10px}.flow-metric strong{display:block;font:500 24px ui-monospace,monospace}.flow-metric span{font-size:11px;color:var(--muted)}
+.flow-chart{width:100%;height:auto;display:block;min-height:170px}
+.flow-limit-breach{color:var(--red)}.flow-limit-ok{color:var(--green)}
+.flow-desk button:focus-visible,.flow-desk textarea:focus-visible,.flow-desk summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:900px){.flow-grid{grid-template-columns:1fr}.flow-rail{border-right:0;padding-right:0}.flow-editor{min-height:230px}.flow-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.flow-desk h2,.flow-desk h3 {font-family:"Helvetica Neue","Segoe UI",Arial,sans-serif;font-weight:600}
+.flow-desk a {color:var(--accent);text-underline-offset:3px}
+.flow-desk label {display:block;color:var(--subtle);font-size:12px;margin:16px 0 8px}
+.flow-desk h3 {font-size:17px;margin:10px 0 14px}
+.flow-desk button {border:1px solid var(--border);border-radius:0;background:var(--panel);color:var(--text);font-weight:600;cursor:pointer}
+.flow-desk button:hover {background:var(--row-hover)}
+.flow-desk button:disabled {opacity:.6;cursor:default}
+.flow-desk .primary-button {border-color:var(--accent);background:var(--accent-bg)}
+.flow-table tbody tr:hover {background:var(--row-hover)}
+.flow-table td:not(:first-child) {font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}
+.flow-table td {overflow-wrap:anywhere}
+.flow-desk .flow-rail {position:sticky;top:20px}
+:root[data-theme="light"] .flow-desk {background:var(--panel)}
+:root[data-theme="light"] .flow-chart {background:var(--panel-alt)}
+@media(max-width:600px) {.flow-desk{padding:18px 0}.flow-grid{gap:18px}.flow-desk .flow-rail{position:static}.flow-actions button{min-height:44px}.flow-table th,.flow-table td{padding:9px 8px}.flow-metric strong{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.flow-desk *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

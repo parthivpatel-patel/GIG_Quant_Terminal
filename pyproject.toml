@@ -60,6 +60,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "gig.store" = ["schema.sql"]
 "gig.service" = ["static/*", "viz_synthetic.json"]
+"gig.research_org" = ["fixtures/*.xml", "fixtures/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
