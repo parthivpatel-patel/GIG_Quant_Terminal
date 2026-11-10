@@ -16,6 +16,7 @@ from gig.research_org.futures_experiment import run_futures
 from gig.research_org.ledger import ResearchLedger
 from gig.research_org.scheduler import tick
 from gig.research_org.service import ResearchWorker
+from gig.research_org.template_catalog import run_boc_volatility, run_ecb_risk
 from gig.research_org.treasury_experiment import run_treasury
 from gig.research_org.treasury_followup import run_followup
 
@@ -24,6 +25,8 @@ _COMPUTE = {
     "lagged-sign-momentum-synthetic-v1": run_seeded,
     "treasury-10y-lagged-sign-2023": run_treasury,
     "treasury-10y-reversal-robustness-2023-v1": run_followup,
+    "ecb-fx-correlation-stability-2023-v1": run_ecb_risk,
+    "boc-usdcad-variance-calibration-2023-v1": run_boc_volatility,
 }
 
 

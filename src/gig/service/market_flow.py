@@ -50,7 +50,19 @@ def _fields(value: Any, keys: set[str]) -> None:
 
 def capability_register() -> list[dict[str, Any]]:
     """Detached access evidence, not inferred licensing or provider connectivity."""
+    from gig.data.cftc_positions import dataset_readiness
+    positioning_ready = dataset_readiness()["state"] == "READY"
     rows: list[dict[str, Any]] = [
+        {"id": "cftc_weekly_positioning", "name": "Observed CFTC weekly Euro FX futures positioning",
+         "state": "AVAILABLE" if positioning_ready else "UNAVAILABLE",
+         "classification": "HISTORICAL" if positioning_ready else "UNAVAILABLE", "provider": "U.S. CFTC",
+         "official_url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+         "cost": "$0 public API; pinned local research sample",
+         "access_terms": "CFTC government report in public domain; attribution and GIG modification disclosure retained",
+         "delay": "Weekly report dates; historical publication and revision clocks UNKNOWN",
+         "historical_coverage": "52 weekly Euro FX TFF futures-only observations in 2023",
+         "redistribution": "Government report reuse permitted by CFTC WebPolicy; third-party assets excluded",
+         "reason": "Observed aggregate positions, open interest and derived net-position changes. Historical and STALE for current-market use; not trades or fund flows."},
         {"id": "modeled_options_risk", "name": "Authored options scenarios and threshold alerts",
          "state": "AVAILABLE", "classification": "MODEL_ESTIMATE", "provider": "Local GIG European BSM kernel",
          "official_url": None, "cost": "$0 local CPU", "access_terms": "Repository MIT code; caller-authored assumptions only",

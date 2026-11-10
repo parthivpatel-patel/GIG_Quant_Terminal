@@ -63,3 +63,26 @@ The response carries canonical input/evidence identities and is exportable as
 JSON for deterministic local replay. It is stateless; it does **not** implement a
 durable market watchlist, asynchronous market monitoring or provider alerts.
 No broker connection, order path, external API or paid resource is introduced.
+
+## 2026-11-10: observed CFTC aggregate positioning
+
+A lawful zero-cost observed vertical is now admitted independently of the
+modeled-options laboratory: CFTC TFF Futures Only aggregate Euro FX positioning,
+dataset `gpe5-46if`, contract market `099741`, 52 official 2023 reports.
+[Source/access and numerical contracts](CFTC_POSITIONING.md) record the verified
+CFTC public-domain government-information policy and explicit no-token API FAQ,
+actual source acquisition, exact source hash and attribution. The dataset's
+license metadata itself is null; no license grant was inferred from that field.
+
+The snapshot displays exact long/short/net contracts, open interest, prior-only
+historical ranks and adjacent-report-week changes. It is **HISTORICAL / STALE**,
+not current positioning, individual transactions, executable liquidity or actual
+fund flows. Report-date labels are not publication timestamps; historical
+publication/revision clocks remain UNKNOWN and point-in-time trading admission
+is disabled. No provider request occurs when opening the workspace.
+
+This does not change the SEC contact/access blocker, FINRA terms blocker,
+options-print/OI entitlement gap or unknown congressional source eligibility.
+No options sweeps, dark-pool transactions, institutional prints or dealer gamma
+observations were manufactured. The existing authored options model remains
+separate, and all brokerage execution remains disabled.

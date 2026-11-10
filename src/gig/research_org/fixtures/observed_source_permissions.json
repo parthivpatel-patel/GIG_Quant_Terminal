@@ -1,0 +1,33 @@
+{
+  "evidence": [
+    {
+      "url": "https://www.ecb.europa.eu/services/using-our-site/disclaimer/html/index.en.html",
+      "status": 200,
+      "verified_at": "2026-11-10T12:43:17.922835+00:00",
+      "html_sha256": "323995004929b36c9081cf8a41466aa56a9ffeb42ff69c7e3904862e3447a28b",
+      "scope_summary": "The ECB permits reuse of information obtained directly from it subject to accurate reproduction, source attribution, free-source notice for sold content and disclosure of modifications."
+    },
+    {
+      "url": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
+      "status": 200,
+      "verified_at": "2026-11-10T12:44:06.110189+00:00",
+      "html_sha256": "7c54024afb9ee9d77208b5c12c78530ccf5b390ee966df4ed969a1ace1afafe2",
+      "scope_summary": "Rates are for information purposes only. Transactional use is strongly discouraged."
+    },
+    {
+      "url": "https://www.bankofcanada.ca/terms/",
+      "status": 200,
+      "verified_at": "2026-11-10T12:43:18.597676+00:00",
+      "html_sha256": "170ed4eab4409c1f6de5169d9d756e0d84daae93e69da13a61ca1d359a3bdaa2",
+      "scope_summary": "The Bank permits freely using, copying, distributing and transmitting website content with attribution, indication of changes, accuracy and a free-source notice for paid content. Exceptions cover banknotes, logos and third-party/licensed content."
+    },
+    {
+      "url": "https://www.bankofcanada.ca/rates/exchange/background-information-on-foreign-exchange-rates/",
+      "status": 200,
+      "verified_at": "2026-11-10T12:44:05.802802+00:00",
+      "html_sha256": "627df036432287b772360b290e7047aa549971715f8974fb5b090f5aa11e4cec",
+      "scope_summary": "Bank-published averages are indicative and not transaction-based; the Bank computes truncated means of aggregated financial-institution quotes. Underlying LSEG quotes are not acquired or redistributed."
+    }
+  ],
+  "review_scope": "Public central-bank reference observations only; not third-party tick data, logos or commercial endorsement."
+}

@@ -299,6 +299,14 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
         from gig.service.market_flow import market_flow_contract
         return market_flow_contract()
 
+    @app.get("/api/v1/market-flow/positioning", response_model=EnvelopeSchema)
+    def market_positioning(report_through: str | None = Query(None, max_length=10)) -> Any:
+        from gig.service.positioning import positioning_contract
+        try:
+            return positioning_contract(report_through=report_through)
+        except (ValueError, TypeError, OverflowError):
+            return failure("INVALID_REQUEST", 422)
+
     @app.post("/api/v1/market-flow", response_model=EnvelopeSchema)
     async def market_flow_scenario(request: Request) -> Any:
         from gig.service.market_flow import market_flow_contract

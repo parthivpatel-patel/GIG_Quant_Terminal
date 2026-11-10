@@ -1,0 +1,320 @@
+{
+  "pr": 11,
+  "head": "76e3fcc3d600bba7c39d9621bd667b6658e71fd4",
+  "merged_development_head": "a82a528f743fd61dffe095b18b386e68538f8337",
+  "base_branch": "development/gig-ui-redesign",
+  "unresolved_threads": 0,
+  "submitted_reviews": 0,
+  "base_branch_protected": false,
+  "repository_rulesets": 0,
+  "configured_checks": [
+    {
+      "name": "frontend",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/42750327966/job/129612259921"
+    },
+    {
+      "name": "backend (3.11)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/42750327966/job/129612259823"
+    },
+    {
+      "name": "backend (3.12)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/42750327966/job/129612259687"
+    },
+    {
+      "name": "backend (3.12)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/42750320921/job/129612237342"
+    },
+    {
+      "name": "frontend",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/42750320921/job/129612237266"
+    },
+    {
+      "name": "backend (3.11)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/42750320921/job/129612236927"
+    }
+  ],
+  "changed_files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "patch_characters": 1490,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/completion-matrix.md",
+      "patch_characters": 2618,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/backend-regression.txt",
+      "patch_characters": 27963,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/browser-report.json",
+      "patch_characters": 2830,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/focused-tests.txt",
+      "patch_characters": 199,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/installed-wheel-tests.txt",
+      "patch_characters": 390,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/modeled-options.png",
+      "patch_characters": 0,
+      "binary_or_empty_patch": true
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/mypy.txt",
+      "patch_characters": 58,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/node-smoke.txt",
+      "patch_characters": 10383,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/pyflakes.txt",
+      "patch_characters": 0,
+      "binary_or_empty_patch": true
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/research-mobile.png",
+      "patch_characters": 0,
+      "binary_or_empty_patch": true
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/research-operations.png",
+      "patch_characters": 0,
+      "binary_or_empty_patch": true
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/ruff.txt",
+      "patch_characters": 33,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/evidence/autonomy-20261110/validation.json",
+      "patch_characters": 32793,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/integrations/MARKET_FLOW_FEASIBILITY.md",
+      "patch_characters": 2748,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/research-organization.md",
+      "patch_characters": 6406,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "docs/research/treasury-reversal-followup.md",
+      "patch_characters": 3892,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "pyproject.toml",
+      "patch_characters": 259,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_autonomy.py",
+      "patch_characters": 7746,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_charts.py",
+      "patch_characters": 789,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_global_3d.py",
+      "patch_characters": 1250,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_redesign_check.py",
+      "patch_characters": 1364,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_review_capture.py",
+      "patch_characters": 746,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_sprint5.py",
+      "patch_characters": 1435,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_sprint6.py",
+      "patch_characters": 1447,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_sprint7.py",
+      "patch_characters": 1346,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/browser_sprint8.py",
+      "patch_characters": 1372,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "scripts/check_terminal.mjs",
+      "patch_characters": 816,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/execution/cost_evidence.py",
+      "patch_characters": 977,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/__main__.py",
+      "patch_characters": 487,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/backlog.py",
+      "patch_characters": 517,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/cycle.py",
+      "patch_characters": 843,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/director.py",
+      "patch_characters": 7688,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/ledger.py",
+      "patch_characters": 11977,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/scheduler.py",
+      "patch_characters": 6186,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/service.py",
+      "patch_characters": 2575,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/research_org/treasury_followup.py",
+      "patch_characters": 18790,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/app.py",
+      "patch_characters": 4537,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/market_flow.py",
+      "patch_characters": 12050,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/static/app.js",
+      "patch_characters": 3399,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/static/index.html",
+      "patch_characters": 12492,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/static/market_flow.css",
+      "patch_characters": 4508,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/static/market_flow.js",
+      "patch_characters": 12151,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/static/observatory.js",
+      "patch_characters": 34138,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "src/gig/service/static/os.css",
+      "patch_characters": 16717,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "tests/test_autonomy_http.py",
+      "patch_characters": 12093,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "tests/test_market_flow.py",
+      "patch_characters": 9059,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "tests/test_research_director.py",
+      "patch_characters": 5325,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "tests/test_research_followup.py",
+      "patch_characters": 8908,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "tests/test_research_leases.py",
+      "patch_characters": 10634,
+      "binary_or_empty_patch": false
+    },
+    {
+      "path": "tests/test_research_limits.py",
+      "patch_characters": 2096,
+      "binary_or_empty_patch": false
+    }
+  ],
+  "inspection_scope": [
+    "51-file complete PR diff inventory, implementation, tests, packaging, CI, documentation and persisted screenshot evidence",
+    "Runtime lease claims and fences, commit atomicity, retry/resource budgets and no-brokerage HTTP contracts",
+    "Observed Treasury statistical caveats and independent numerical reference implementation",
+    "Frontend text-only rendering, input classification, existing navigation and accessibility workflows"
+  ],
+  "disposition": "Merged through expected-head guarded GitHub operation after green checks and no unresolved reviews; source tree matches reviewed head",
+  "retained_limitations": [
+    "One approved Director template at this checkpoint",
+    "Historical publication/revision clocks unknown",
+    "Modeled options not observed flow",
+    "FinBERT noncommercial research-only",
+    "No physical ARM64 or Docker capacity acceptance",
+    "fully_funded_certified=false; T4_NOT_CERTIFIED; historical §139 UNSUPPLIED"
+  ]
+}
