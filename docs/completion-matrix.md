@@ -1,5 +1,31 @@
 # GIG engineering completion matrix
 
+## Multi-dataset research and observed positioning (2026-11-10)
+
+PR #11 was inspected with no unresolved reviews and six green CI checks, then
+merged into the development branch at `a82a528f743fd61dffe095b18b386e68538f8337`.
+Its 880-file source archive was independently downloaded and hash/mode verified.
+The next milestone is proposed separately in PR #12 on
+`development/gig-research-multidata`; no public launch is authorized.
+
+| Requirement | Disposition | Evidence and scope |
+| --- | --- | --- |
+| Multiple approved templates and distinct datasets | IMPLEMENTED / TESTED | Treasury reversal, ECB FX covariance and BoC USD/CAD variance; separate approval, fixed priorities, source/method fingerprints and revision gates |
+| Stronger research validation and Skeptic | IMPLEMENTED / INCONCLUSIVE | Purged chronology, covariance/QLIKE scoring, block uncertainty, local comparison correction and independent numerical implementations; no economic claim |
+| Lawful zero-cost data | VERIFIED for pinned sources | ECB255 dates, BoC248 dates and CFTC52 weekly reports; original artifacts, actual acquisition clocks, official terms, attribution and integrity checks retained |
+| Actual Market Flow analytics | IMPLEMENTED, bounded scope | Observed CFTC aggregate futures positions, open-interest identities, reporting-week net changes and prior-only percentiles; not trades, sweeps, cash flows or dealer positioning |
+| Strategy Laboratory / Observatory / Charts / Market Flow UX | IMPLEMENTED / TESTED | Persistent resizable research rail, method-aware saved comparisons, chart source/focus controls and interactive observed positioning; all16 sections and 3D modules retained |
+| Comprehensive regression | VERIFIED | 1,185 passed,9 FinBERT-asset skips,0 failures;82.83% combined statement/branch coverage (85.82% statements,74.49% branches) |
+| Installed wheel / numerical kernels | VERIFIED within x86 host scope | 121 passed,1 optional standalone C-ABI skip; compiled native extension and source kernels exercised; no ARM64 claim |
+| Browser and static checks | VERIFIED within automated scope | 30 new Chromium workflow checks,6 axe scans,3 mobile overflow checks;149 Node checks;Ruff,Pyflakes,mypy18 modules and compilation passed; suites overlap |
+| Remaining acceptance | BLOCKED / REMAINING | Fixed historical samples, unknown historical publication/revision clocks, no current feed or options-print entitlement; Docker capacity, physical Ampere and broader/manual accessibility acceptance unresolved |
+
+Exact source permissions and research results are in
+[multidata-observed.md](research/multidata-observed.md) and
+[CFTC_POSITIONING.md](integrations/CFTC_POSITIONING.md). Genuine screenshots and
+validation records are under `docs/evidence/multidata-20261110/`.
+`fully_funded_certified=false`; `T4_NOT_CERTIFIED`; historical §139 remains UNSUPPLIED.
+
 ## Recovered Research Director milestone (2026-11-09)
 
 This bounded milestone follows PR #10's verified merge at `ed8f0712` and is
