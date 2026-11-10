@@ -18,6 +18,7 @@
     { id: "global-intelligence", label: "Global Intelligence", icon: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18", description: "Hazards, geopolitical and delayed defense research with source, clocks, uncertainty and verification. Not a live or tactical feed." },
     { id: "observatory", label: "Research Observatory", icon: "M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8", description: "Scheduler, backlog, and skeptic verdicts. Synthetic jobs stay labelled synthetic. The Treasury study uses the official 2023 par-yield file." },
     { id: "charts", label: "Market Charts", icon: "M5 3v18M12 3v18M19 3v18M3 7h4v9H3zM10 5h4v6h-4zM17 9h4v8h-4z", description: "Candlestick, OHLC, line and area charts with volume and backend-computed indicators, on admitted bars or the labelled synthetic demo." },
+    { id: "market-flow", label: "Market Flow Intelligence", icon: "M3 17l4-8 5 6 4-10 5 6M3 21h18", description: "Source-access evidence and authored options scenarios. Observed options prints, sweeps and off-exchange activity are unavailable." },
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
@@ -147,13 +148,15 @@
     const intelligence = state.section.id === "global-intelligence";
     const charts = state.section.id === "charts";
     const observatory = state.section.id === "observatory";
-    $("content").dataset.workspace = intelligence ? "intel" : charts ? "charts" : observatory ? "observatory" : "terminal";
+    const marketFlow = state.section.id === "market-flow";
+    $("content").dataset.workspace = intelligence ? "intel" : charts ? "charts" : observatory ? "observatory" : marketFlow ? "market-flow" : "terminal";
     $("content").dataset.section = state.section.id;
     if (window.GIGIntel) window.GIGIntel.show(intelligence);
     if (window.GIGCharts) window.GIGCharts.show(charts);
     if (window.GIGObservatory) window.GIGObservatory.show(observatory);
+    if (window.GIGMarketFlow) window.GIGMarketFlow.show(marketFlow);
     if (window.GIGModels) window.GIGModels.show(state.section.id);
-    if (intelligence || charts || observatory) {
+    if (intelligence || charts || observatory || marketFlow) {
       if (state.request) state.request.abort();
       return;
     }
@@ -171,6 +174,7 @@
   }
   async function loadSection() {
     if (state.section.id === "charts") { if (window.GIGCharts) window.GIGCharts.reload(); return; }
+    if (state.section.id === "market-flow") { if (window.GIGMarketFlow) window.GIGMarketFlow.reload(); return; }
     if (state.section.id === "global-intelligence" || state.section.id === "observatory") return;
     $("universe-id").disabled = state.mode !== "local" || $("analysis-engine").value !== "provider";
     $("universe-control").classList.toggle("hidden", state.mode !== "local" || $("analysis-engine").value !== "provider");

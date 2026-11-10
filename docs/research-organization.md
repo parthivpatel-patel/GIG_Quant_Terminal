@@ -1,10 +1,10 @@
 # Research organization
 
-A local SQLite ledger and one background worker. The worker starts only after an explicit start, or on the next process when the ledger still says `RUNNING`. It is not a language model, and it does not stay up after the approved queue is empty.
+A local SQLite ledger, a bounded template-based Director, and one background worker. The worker starts only after an explicit start, or on the next process when the ledger still says `RUNNING`. It is not a language model, and it does not stay up after the approved queue is empty.
 
 Code: `src/gig/research_org/`. The Observatory reads `GET /api/v1/research-org/status`. `POST /api/v1/research-org/scheduler` takes `start`, `pause`, `resume`, or `stop`, and an optional `cadence_seconds` from 0.05 to 3600. `POST /api/v1/research-org/tick` still runs one queued job. `POST /api/v1/research-org/objective` stores an objective and does not invent a dataset.
 
-One start drains the queue. The process does not need a POST for each job. When the two synthetic jobs are done it queues the Treasury study once, runs it, and pauses with reason `approved backlog is empty`. A second start does not add another study. Pause holds the queue. Stop sets `STOPPED`. A shutdown that is not a stop leaves `RUNNING` on disk, releases the lease, and the next process continues the unfinished jobs. A live lease blocks a second caller. Three failed attempts mark the job `FAILED` and pause the worker with reason `failure escalation`. A repeated configuration returns the stored report.
+One start drains the queue. The process does not need a POST for each job. Without Director approval, the two synthetic jobs and the historical Treasury study run once. The worker then pauses with reason `approved backlog is empty`; another start does not invent work. A separately approved Director objective permits one registered follow-up after the Treasury finding. Pause holds the queue. Stop sets `STOPPED`. A shutdown that is not a stop leaves `RUNNING` on disk; its lease is released only once the running thread exits. The next process continues unfinished jobs after lease expiry. A live renewable lease blocks a second caller. Three failed attempts exhaust a job's durable retry budget. A repeated configuration returns the stored report.
 
 The worker dies with the server. It is not a 24-hour service, and it does not run while the machine is off.
 
@@ -18,6 +18,7 @@ Recompute one report without the ledger:
 python -m gig.research_org --compute lagged-sign-momentum-synthetic-v1
 python -m gig.research_org --compute futures-tsmom-authored-excess-v1
 python -m gig.research_org --compute treasury-10y-lagged-sign-2023
+python -m gig.research_org --compute treasury-10y-reversal-robustness-2023-v1
 ```
 
 ## Approved jobs
@@ -43,5 +44,59 @@ A job left `RUNNING` by a dead process returns to `QUEUED` on the next tick. A l
 Budgets on the worker: four jobs in one process, a 30-second lease, 8 MB for the ledger file, 120 seconds of process CPU time, and 2,000,000 KB of maximum resident set. Crossing one pauses the worker and runs no further job.
 
 ## Recovery checkpoint
+
+### Approved Director milestone
+
+PR #10 was verified green on Python 3.11, Python 3.12 and frontend CI, then merged
+into `development/gig-ui-redesign` at `ed8f0712d6fa3a5a5f4e01b6dee418f67b88be0a`.
+The subsequent milestone is proposed separately; it does not change main.
+
+`GET /api/v1/research-org/director` reads durable objectives, investigation plans,
+role outputs and negative/inconclusive memory. Explicitly approve the registered
+objective with `POST` to that path:
+
+```json
+{"action":"approve","objective_id":"treasury-reversal-robustness-v1"}
+```
+
+Approval does not start compute. Start the existing scheduler separately. After
+reviewing the negative parent, the Director prioritizes and atomically queues one
+nonduplicative falsification study. Objective and hypothesis identities, persisted
+attempts, unique plan rows and fenced result commits survive restarts. Revocation
+cancels queued follow-up work; an already running calculation is allowed to finish.
+Reapproval does not silently resubmit a cancelled or exhausted hypothesis.
+
+The observed follow-up remains **INCONCLUSIVE**: 61/115 reversal matches versus
+58/115 for a training-only baseline, exact binomial p=0.5760. It records purged
+chronological folds, paired bootstrap uncertainty, circular-shift diagnostics,
+declared-family Holm correction, and independently implemented Decimal reference
+checks. Reusing the parent archive is explicitly post-selection exploratory
+research. Publication and revision clocks remain unknown. No tradable return,
+allocation, profitable-alpha or model-promotion claim is supported. See
+[the experiment](research/treasury-reversal-followup.md).
+
+This milestone supports one bounded objective/template. It is not unrestricted
+hypothesis generation. Six specialist workflows produce actual source, prediction,
+baseline, skepticism, risk-admission and reproducibility outputs. Options and
+microstructure specialists report `BLOCKED_NO_DATASET`; their labels do not imply
+that unsupported research ran. The Orchestrator performs durable prioritization
+and deduplication. The Director pauses when approved work is exhausted.
+
+All ticks now acquire renewable leases. Result insertion and job completion share
+one fenced transaction. Stale owners cannot publish, including after expiry or
+replacement. Genuine lease loss may cause duplicate computation, but stale results
+cannot commit. CPU is conservative process-wide elapsed CPU since a worker object's
+first start; it is not a durable cross-process CPU quota. Job attempt limits and
+the single approved follow-up remain durable.
+
+The Observatory provides saved-finding selection, a six-stage evidence timeline,
+role outputs and explicit approval/compute controls. Market Flow Intelligence adds
+an honest source-access register and authored European options scenario research.
+It reuses the existing pricing kernels. Model threshold alerts are not observed
+institutional flow, dealer gamma, sweeps, open interest, or funded OMS positions.
+There is no connected market-flow feed, durable watchlist or unattended alert
+monitor. All brokerage execution remains disabled.
+
+### Earlier checkpoint
 
 `development/gig-ui-redesign` is `677fecce9a4542270c159351f247b8e248e237da` after PR #9. GitHub marked that pull request merged at `2026-11-05T03:14:46Z`. `main` was not moved. The check recorded before this backlog change is `docs/evidence/integration-2026-11-05/CHECKPOINT.md`.

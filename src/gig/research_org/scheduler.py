@@ -10,20 +10,23 @@ from typing import Any
 
 from gig.research_org.backlog import APPROVED, CANDIDATE, SEED
 from gig.research_org.cycle import status
+from gig.research_org.director import FOLLOWUP_JOB, propose
 from gig.research_org.experiment import run_seeded
 from gig.research_org.futures_experiment import run_futures
 from gig.research_org.ledger import ResearchLedger
 from gig.research_org.treasury_experiment import run_treasury
+from gig.research_org.treasury_followup import run_followup
 
-RUNNERS = {"lagged_sign": run_seeded, "futures_tsmom": run_futures, "treasury_yield": run_treasury}
-RUNNER_BY_JOB = {job["job_id"]: job["runner"] for job in (*SEED, CANDIDATE)}
+RUNNERS = {"lagged_sign": run_seeded, "futures_tsmom": run_futures, "treasury_yield": run_treasury,
+           "treasury_reversal": run_followup}
+RUNNER_BY_JOB = {job["job_id"]: job["runner"] for job in (*SEED, CANDIDATE, FOLLOWUP_JOB)}
 MAX_ATTEMPTS = 3
 
 
 def propose_candidate(ledger: ResearchLedger) -> str:
     """Queue the one approved historical dataset, once. Never invent a second study."""
     if int(ledger.scheduler_state()["candidates"]) >= 1:
-        return "already"
+        return propose(ledger)
     pending = [row for row in ledger.jobs() if row["job_id"] == CANDIDATE["job_id"]]
     if pending or ledger.find_hypothesis(CANDIDATE["hypothesis_id"]):
         ledger.mark_candidate()
@@ -33,50 +36,82 @@ def propose_candidate(ledger: ResearchLedger) -> str:
     return "added"
 
 
-def tick(ledger: ResearchLedger, *, lease_owner: str | None = None) -> dict[str, Any]:
-    if ledger.lease_blocks(lease_owner):
-        payload = status(ledger)
-        payload["tick"] = {"action": "busy", "job_id": None, "deduplicated": False}
-        payload["deduplicated"] = False
-        return payload
-    claimed = ledger.recover_and_claim(SEED)
+def tick(ledger: ResearchLedger, *, lease_owner: str | None = None,
+         lease_seconds: float = 30.0) -> dict[str, Any]:
+    """Execute one registered job under a renewable lease and fenced commit."""
+    import threading
+    import uuid
+
+    from gig.research_org.ledger import LeaseLost
+
+    owner = lease_owner or uuid.uuid4().hex
+    acquired = (ledger.acquire_lease(owner, lease_seconds) if lease_owner is None
+                else ledger.renew_lease(owner, lease_seconds))
+    if not acquired:
+        return _tick_busy(ledger)
+    done = threading.Event()
+    heartbeat = threading.Thread(target=_renew_tick_lease,
+                                 args=(ledger, owner, lease_seconds, done), daemon=True,
+                                 name="gig-research-lease")
+    heartbeat.start()
+    try:
+        return _tick_under_lease(ledger, owner)
+    except LeaseLost:
+        return _tick_busy(ledger)
+    finally:
+        done.set()
+        heartbeat.join()
+        ledger.release_lease(owner)
+
+
+def _renew_tick_lease(ledger: ResearchLedger, owner: str, seconds: float, done: Any) -> None:
+    while not done.wait(min(1.0, max(0.005, seconds / 3))):
+        try:
+            if not ledger.renew_lease(owner, seconds):
+                return
+        except Exception:
+            # Failure to renew is not permission to revive or commit a lease.
+            return
+
+
+def _tick_busy(ledger: ResearchLedger) -> dict[str, Any]:
+    payload = status(ledger)
+    payload["tick"] = {"action": "busy", "job_id": None, "deduplicated": False}
+    payload["deduplicated"] = False
+    return payload
+
+
+def _tick_under_lease(ledger: ResearchLedger, owner: str) -> dict[str, Any]:
+    claimed = ledger.recover_and_claim(SEED, lease_owner=owner)
     if claimed is None:
         payload = status(ledger)
         payload["tick"] = {"action": "idle", "job_id": None, "deduplicated": False}
         payload["deduplicated"] = False
         return payload
-    runner_name = claimed.get("runner") or RUNNER_BY_JOB.get(str(claimed["job_id"]))
+    job_id, attempt = str(claimed["job_id"]), int(claimed["attempts"])
+    runner_name = claimed.get("runner") or RUNNER_BY_JOB.get(job_id)
     runner = RUNNERS.get(str(runner_name))
     if runner is None:
-        ledger.complete_job(str(claimed["job_id"]), "FAILED", "unknown job")
+        ledger.complete_job(job_id, "FAILED", "unknown job", lease_owner=owner, attempt=attempt)
         payload = status(ledger)
-        payload["tick"] = {"action": "failed", "job_id": claimed["job_id"], "deduplicated": False}
+        payload["tick"] = {"action": "failed", "job_id": job_id, "deduplicated": False}
         return payload
     try:
         digest, report = runner()
     except Exception:
-        attempts = int(claimed["attempts"])
-        state = "FAILED" if attempts >= MAX_ATTEMPTS else "QUEUED"
-        ledger.complete_job(str(claimed["job_id"]), state, "experiment failed")
+        state = "FAILED" if attempt >= MAX_ATTEMPTS else "QUEUED"
+        ledger.complete_job(job_id, state, "experiment failed", lease_owner=owner, attempt=attempt)
         payload = status(ledger)
-        payload["tick"] = {"action": "failed", "job_id": claimed["job_id"], "deduplicated": False,
+        payload["tick"] = {"action": "failed", "job_id": job_id, "deduplicated": False,
                            "error": "experiment failed"}
         payload["deduplicated"] = False
         return payload
-    existing = ledger.find(digest)
-    if existing is None:
-        ledger.append(digest, report, actor=str(runner_name))
-        last = report
-        deduplicated = False
-    else:
-        ledger.note("orchestrator", "deduplicate", digest)
-        last = existing["report"]
-        deduplicated = True
-    ledger.complete_job(str(claimed["job_id"]), "DONE", None)
+    last, deduplicated = ledger.finish_claim(job_id, digest, report, actor=str(runner_name),
+                                            lease_owner=owner, attempt=attempt)
     payload = status(ledger)
     payload["last"] = last
     payload["deduplicated"] = deduplicated
-    payload["tick"] = {"action": "ran", "job_id": claimed["job_id"], "deduplicated": deduplicated}
+    payload["tick"] = {"action": "ran", "job_id": job_id, "deduplicated": deduplicated}
     return payload
 
 

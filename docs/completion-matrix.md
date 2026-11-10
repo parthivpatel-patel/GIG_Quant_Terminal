@@ -1,5 +1,24 @@
 # GIG engineering completion matrix
 
+## Recovered Research Director milestone (2026-11-09)
+
+This bounded milestone follows PR #10's verified merge at `ed8f0712` and is
+proposed on its own feature branch. It does not certify the full platform.
+
+| Capability | Disposition | Evidence / remaining boundary |
+| --- | --- | --- |
+| Approved Director objective and automatic follow-up | IMPLEMENTED / TESTED, bounded scope | One registered Treasury falsification template; durable deduplication, approval/revocation, role outputs and memory; server must be running |
+| Research lease and failure recovery | IMPLEMENTED / TESTED | Renewable leases, fenced atomic result/job commits, retry persistence, SQLite failure injection and competing-process tests |
+| Additional observed research | IMPLEMENTED / INCONCLUSIVE | Purged Treasury reversal 61/115 versus baseline58/115; reused archive, unknown publication/revision clocks; no economic claim |
+| Investigation timeline and Laboratory | IMPLEMENTED / TESTED | Saved findings, model-appropriate metrics and interactive evidence-to-disabled-execution timeline; existing 12 sections plus prior extensions retained |
+| Market Flow vertical | PARTIAL / TESTED | Authored European option scenarios, Greeks, payoff and model alerts; observed flow unavailable, no monitored watchlists or dealer-position assumption |
+| Regression / wheel / browser | VERIFIED for recorded scope | 1,110 backend passes,20optional skips,82.56%coverage;118installed-wheelpasses,1optionalC-ABI skip;22newChromiumchecks including dark/lightaxe,15legacyObservatorychecks,149Nodechecks; suites overlap |
+| Research Autonomy 3.0 beyond registered template | REMAINING | Further approved dataset/template coverage and specialized investigations; no unrestricted code generation or automatic model promotion |
+| Operations and certification | BLOCKED / UNVERIFIED | Docker store remains full; no container run attempted. Physical ARM64/Ampere unverified; FinBERT assets absent/research-only; fully_funded_certified=false,T4_NOT_CERTIFIED,§139UNSUPPLIED |
+
+See [research-organization.md](research-organization.md) and the milestone evidence
+under `docs/evidence/autonomy-20261110/` for exact validation scope and screenshots.
+
 Sprint 9 delivery: [sprint9-delivery.md](sprint9-delivery.md). Redesign, 3D lab and Global Intelligence:
 [global-intelligence.md](global-intelligence.md), [analytics-lab-3d.md](analytics-lab-3d.md); backend regression at
 `5ffd805` and again at `47e3180`: 1584 JUnit cases, 0 failed, 11 skipped, 81.89% branch coverage. Follow-up hardening on

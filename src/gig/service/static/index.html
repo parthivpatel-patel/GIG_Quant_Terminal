@@ -7,11 +7,13 @@
   <title>GIG Quant Terminal</title>
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/os.css">
+  <link rel="stylesheet" href="/static/market_flow.css">
   <script src="/static/viz3d.js" defer></script>
   <script src="/static/models3d.js" defer></script>
   <script src="/static/intel.js" defer></script>
   <script src="/static/charts.js" defer></script>
   <script src="/static/observatory.js" defer></script>
+  <script src="/static/market_flow.js" defer></script>
   <script src="/static/layout.js" defer></script>
   <script src="/static/palette.js" defer></script>
   <script src="/static/app.js" defer></script>
@@ -115,6 +117,7 @@
         <section class="panel" aria-labelledby="intel-coverage-title"><div class="panel-header"><div><p class="panel-kicker">COVERAGE &amp; PERMISSIONS</p><h3 id="intel-coverage-title">Source availability: hazards, maritime, aviation, satellite imagery</h3></div></div><div id="intel-coverage" class="intel-coverage"></div></section>
         <div class="sr-only" id="intel-live" aria-live="polite"></div>
       </section>
+      <section id="market-flow-panel" class="hidden" aria-label="Market Flow Intelligence"></section>
       <section class="charts hidden" id="charts-panel" aria-labelledby="charts-title">
         <div class="panel charts-shell">
           <div class="panel-header charts-header"><div><p class="panel-kicker">MARKET CHARTS</p><h2 id="charts-title">Price, volume and indicators</h2></div>
@@ -142,36 +145,60 @@
         <div class="sr-only" id="charts-live" aria-live="polite"></div>
       </section>
       <section class="observatory hidden" id="observatory-panel" aria-labelledby="observatory-title">
-        <div class="panel">
-          <div class="panel-header"><div><p class="panel-kicker">RESEARCH ORGANIZATION</p><h2 id="observatory-title">Observatory</h2></div>
-            <button class="button" id="observatory-run" type="button">Run next approved job</button></div>
-          <p class="observatory-lead">Start runs the approved queue and one official Treasury study, then pauses. It does not stay up after the queue is empty, and it does not invent a further study.</p>
-          <div class="scheduler-controls" role="group" aria-label="Research scheduler">
-            <label for="scheduler-cadence">Cadence (seconds)</label>
-            <input id="scheduler-cadence" type="number" min="0.05" max="3600" step="0.05" value="5">
-            <button class="button" id="scheduler-start" type="button" data-scheduler="start">Start</button>
-            <button class="button" id="scheduler-pause" type="button" data-scheduler="pause">Pause</button>
-            <button class="button" id="scheduler-resume" type="button" data-scheduler="resume">Resume</button>
-            <button class="button" id="scheduler-stop" type="button" data-scheduler="stop">Stop</button>
-            <span id="scheduler-readout" class="scheduler-readout">Scheduler stopped</span>
-          </div>
-          <form class="observatory-objective" id="observatory-objective">
-            <label for="observatory-objective-text">Research objective</label>
-            <input id="observatory-objective-text" maxlength="500" placeholder="State an objective. Missing data is reported, not invented.">
-            <button class="button" type="submit">Submit objective</button>
-          </form>
-          <p id="observatory-objective-result" class="observatory-status"></p>
-          <p id="observatory-status" class="observatory-status" role="status"></p>
-          <div class="observatory-grid">
-            <div><h3>Roles</h3><ul id="observatory-roles" class="observatory-roles"></ul>
-              <h3>Backlog</h3><ul id="observatory-backlog" class="observatory-backlog"></ul></div>
-            <div><h3>This organization must not</h3><ul id="observatory-bounds"></ul>
-              <h3>Latest finding</h3><div id="observatory-finding"></div>
-              <h3>Recorded cycles</h3><div id="observatory-history"></div></div>
-          </div>
-          <h3 class="observatory-sub">Strategy catalog</h3>
-          <div class="table-scroll"><table><caption class="sr-only">Strategies the organization knows about, and whether this cycle executed them.</caption><thead><tr><th>Strategy</th><th>Status</th><th>Note</th></tr></thead><tbody id="observatory-catalog"></tbody></table></div>
+        <header class="observatory-masthead">
+          <div><p class="panel-kicker">GIG / RESEARCH OPERATIONS</p><h2 id="observatory-title">Ideas. Evidence. <em>Judgment.</em></h2><p class="observatory-lead">A bounded research organization. Every finding keeps its source, its limitations and its skeptical review.</p></div>
+          <div class="observatory-seal"><span class="observatory-seal-mark" aria-hidden="true">R / O</span><span>RESEARCH ONLY<br>EXECUTION DISABLED</span></div>
+        </header>
+        <div class="observatory-telemetry" aria-label="Research operations status">
+          <div><span class="observatory-label">Worker</span><strong id="observatory-worker-state">UNKNOWN</strong><span id="observatory-worker-detail">Waiting for local service</span></div>
+          <div><span class="observatory-label">Durable findings</span><strong id="observatory-run-count">—</strong><span>Negative and inconclusive results retained</span></div>
+          <div><span class="observatory-label">CPU / ledger</span><strong id="observatory-budget">—</strong><span>CPU since worker start · local ledger size</span></div>
+          <div><span class="observatory-label">Trading authority</span><strong class="observatory-no-trading">NONE</strong><span>No orders · no model promotion</span></div>
         </div>
+        <div class="observatory-operations">
+          <section class="observatory-mission" aria-labelledby="observatory-mission-title">
+            <div class="observatory-section-head"><div><p class="panel-kicker">01 / RESEARCH DIRECTOR</p><h3 id="observatory-mission-title">An objective with boundaries.</h3></div><span class="observatory-status-tag" id="director-policy">AWAITING STATUS</span></div>
+            <p class="observatory-mission-copy">Investigate the Treasury yield finding with a bounded, nonduplicative robustness follow-up. Approval permits this registered template only; it does not start the worker or authorize trading.</p>
+            <div id="director-objectives" class="director-objectives"><p class="muted">Objective state is unknown until the ledger responds.</p></div>
+            <div class="observatory-director-actions"><button class="button" id="director-approve" type="button" disabled>Approve bounded follow-up</button><button class="text-button" id="director-revoke" type="button" disabled>Revoke approval</button></div>
+            <p id="director-status" class="observatory-inline-status" role="status"></p>
+            <details class="observatory-objective-disclosure" open><summary>Propose a different research objective</summary>
+              <form class="observatory-objective" id="observatory-objective">
+                <label for="observatory-objective-text">Research objective</label><input id="observatory-objective-text" maxlength="500" placeholder="Missing data is reported, never invented."><button class="button" type="submit">Submit objective</button>
+              </form><div id="observatory-objective-result" class="observatory-status"></div>
+            </details>
+          </section>
+          <section class="observatory-control" aria-labelledby="observatory-control-title">
+            <div class="observatory-section-head"><div><p class="panel-kicker">02 / AUTHORIZED COMPUTE</p><h3 id="observatory-control-title">Start deliberately. Stop safely.</h3></div></div>
+            <div class="scheduler-controls" role="group" aria-label="Research scheduler">
+              <div class="observatory-cadence"><label for="scheduler-cadence">Cadence / seconds</label><input id="scheduler-cadence" type="number" min="0.05" max="3600" step="0.05" value="5"></div>
+              <div class="scheduler-buttons"><button class="button primary" id="scheduler-start" type="button" data-scheduler="start">Start</button><button class="button" id="scheduler-pause" type="button" data-scheduler="pause">Pause</button><button class="button" id="scheduler-resume" type="button" data-scheduler="resume">Resume</button><button class="button" id="scheduler-stop" type="button" data-scheduler="stop">Stop</button></div>
+              <p id="scheduler-readout" class="scheduler-readout">Scheduler stopped</p>
+            </div>
+            <p class="observatory-scope-note">The worker runs only while its server is running. It pauses when approved investigations or resource budgets are exhausted. A browser tab is not a running research server.</p>
+            <div class="observatory-manual"><button class="text-button" id="observatory-run" type="button">Run next approved job <span aria-hidden="true">↗</span></button><span>One explicit cycle</span></div>
+            <p id="observatory-status" class="observatory-status" role="status"></p>
+          </section>
+        </div>
+        <section class="observatory-laboratory" aria-labelledby="observatory-lab-title">
+          <div class="observatory-section-head"><div><p class="panel-kicker">03 / STRATEGY LABORATORY</p><h3 id="observatory-lab-title">Follow the evidence.</h3></div><span class="observatory-status-tag">SAVED / REPRODUCIBLE</span></div>
+          <div class="observatory-lab-grid">
+            <aside class="observatory-run-list" aria-label="Saved research findings"><label for="observatory-filter">Find an investigation</label><input id="observatory-filter" type="search" placeholder="Hypothesis, source or verdict" autocomplete="off"><div id="observatory-history" aria-label="Recorded research cycles"></div><p class="observatory-list-note">Select a finding to inspect its evidence. Unknown values remain unknown.</p><h4>Approved backlog</h4><ul id="observatory-backlog" class="observatory-backlog"></ul></aside>
+            <div class="observatory-investigation">
+              <div class="observatory-finding-head"><span id="observatory-selected-kind" class="observatory-status-tag">NO FINDING SELECTED</span><button id="observatory-latest" class="text-button" type="button">Follow latest</button></div>
+              <h4 id="observatory-selected-title">An open question is a useful starting point.</h4>
+              <div id="observatory-finding"></div>
+              <section class="observatory-trace" aria-labelledby="observatory-trace-title"><div class="observatory-trace-head"><h4 id="observatory-trace-title">Investigation timeline</h4><span>Evidence → decision boundary</span></div><ol id="observatory-timeline" class="observatory-timeline"></ol><div id="observatory-trace-detail" class="observatory-trace-detail" role="region" aria-label="Selected investigation stage"></div></section>
+            </div>
+          </div>
+        </section>
+        <div class="observatory-support">
+          <details class="observatory-disclosure" open><summary>Specialist research organization <span>Nine roles · explicit capabilities</span></summary><ul id="observatory-roles" class="observatory-roles"></ul></details>
+          <details class="observatory-disclosure"><summary>Director memory and follow-ups <span>Durable, deduplicated investigations</span></summary><div id="director-investigations"></div><div id="director-memory"></div></details>
+          <details class="observatory-disclosure" open><summary>Strategy catalog <span>Implemented is not economically validated</span></summary><div class="table-scroll"><table><caption class="sr-only">Strategies the organization knows about and whether they have executed.</caption><thead><tr><th>Strategy</th><th>Status</th><th>Evidence boundary</th></tr></thead><tbody id="observatory-catalog"></tbody></table></div></details>
+          <details class="observatory-disclosure"><summary>Research safety contract <span>Authority stays bounded</span></summary><ul id="observatory-bounds"></ul></details>
+        </div>
+        <footer class="observatory-footer"><span>GIG QUANT TERMINAL / RESEARCH OPERATIONS</span><span>Evidence before conviction. T4_NOT_CERTIFIED.</span></footer>
       </section>
     </main>
   </div>

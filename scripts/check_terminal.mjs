@@ -169,8 +169,8 @@ checked("initial request uses local mode and renders explicit unavailable", () =
   assert.equal(tbody().children.length, 0);
   assert.match(get("error-panel").textContent, /DATA_UNAVAILABLE/);
   assert(!get("error-panel").classList.contains("hidden"));
-  assert.equal(document.querySelectorAll(".nav-link").length, 15);
-  assert.deepEqual(document.querySelectorAll(".nav-link").map((link) => link.hash.slice(1)), [...sections, "global-intelligence", "observatory", "charts"]);
+  assert.equal(document.querySelectorAll(".nav-link").length, 16);
+  assert.deepEqual(document.querySelectorAll(".nav-link").map((link) => link.hash.slice(1)), [...sections, "global-intelligence", "observatory", "charts", "market-flow"]);
 });
 for (const section of sections) {
   location.hash = `#${section}`;

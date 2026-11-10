@@ -81,3 +81,188 @@ main[data-workspace="observatory"] #observatory-panel { border-top: 2px solid va
   }
 }
 @keyframes desk-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Research Operations: a document-oriented analytical desk, not a card grid.
+   Scope keeps the existing charts, other workspaces and 3D controls unchanged. */
+#observatory-panel {
+  --obs-surface: #0a0c0f;
+  --obs-highlight: #10141a;
+  --obs-rule: #29313a;
+  --obs-ink: #f0f1f3;
+  --obs-note: #a6afbd;
+  --obs-accent: #d6e5a0;
+  color: var(--obs-ink);
+  background: var(--obs-surface);
+  border: 1px solid var(--obs-rule);
+  border-top: 2px solid var(--obs-accent) !important;
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+:root[data-theme="light"] #observatory-panel {
+  --obs-surface: #fff;
+  --obs-highlight: #f4f6f1;
+  --obs-rule: #cfd5db;
+  --obs-ink: #18232d;
+  --obs-note: #526270;
+  --obs-accent: #456124;
+}
+#observatory-panel .panel-kicker { color: var(--obs-accent); font-size: 10px; letter-spacing: .13em; }
+#observatory-panel .muted { color: var(--obs-note); }
+.observatory-masthead { display: flex; justify-content: space-between; align-items: center; gap: 32px; padding: 28px 28px 24px; }
+#observatory-title { margin: 8px 0 10px; font: 400 clamp(30px, 3.6vw, 48px)/1.1 Georgia, "Iowan Old Style", serif; letter-spacing: -.035em; }
+#observatory-title em { font-weight: 400; color: var(--obs-accent); }
+#observatory-panel .observatory-lead { margin: 0; max-width: 650px; color: var(--obs-note); font-size: 13px; line-height: 1.6; }
+.observatory-seal { display: flex; align-items: center; gap: 14px; flex: 0 0 auto; color: var(--obs-note); font-size: 9px; letter-spacing: .12em; line-height: 1.8; }
+.observatory-seal-mark { font: 400 24px Georgia, serif; color: var(--obs-accent); border: 1px solid var(--obs-rule); padding: 15px 12px; }
+.observatory-telemetry { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--obs-rule); border-bottom: 1px solid var(--obs-rule); }
+.observatory-telemetry > div { display: flex; flex-direction: column; gap: 5px; padding: 16px 24px; border-right: 1px solid var(--obs-rule); min-width: 0; }
+.observatory-telemetry > div:last-child { border-right: 0; }
+.observatory-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--obs-note); }
+.observatory-telemetry strong { font: 500 22px/1.3 "SFMono-Regular", Consolas, monospace; letter-spacing: -.04em; overflow-wrap: anywhere; }
+.observatory-telemetry > div > span:last-child { font-size: 11px; color: var(--obs-note); }
+.observatory-telemetry .observatory-no-trading { color: var(--obs-accent); }
+.observatory-operations { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); border-bottom: 1px solid var(--obs-rule); }
+.observatory-mission, .observatory-control { padding: 22px 24px; min-width: 0; }
+.observatory-mission { border-right: 1px solid var(--obs-rule); }
+.observatory-section-head { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+#observatory-panel .observatory-section-head h3 { margin: 6px 0 12px; font-size: 20px; font-weight: 500; letter-spacing: -.03em; line-height: 1.3; }
+.observatory-status-tag { display: inline-block; font: 10px/1.5 "SFMono-Regular", Consolas, monospace; letter-spacing: .025em; color: var(--obs-accent); white-space: normal; overflow-wrap: anywhere; }
+.observatory-mission-copy { margin: 0 0 14px; color: var(--obs-note); font-size: 12px; line-height: 1.7; }
+.director-objective { display: grid; gap: 5px; padding: 12px 0; border-top: 1px solid var(--obs-rule); overflow-wrap: anywhere; }
+.director-objective strong { font-size: 13px; font-weight: 500; }
+.director-objective .muted { font-size: 11px; }
+.observatory-director-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; }
+#observatory-panel .button { border-color: var(--obs-rule); background: var(--obs-highlight); color: var(--obs-ink); min-height: 36px; }
+#observatory-panel .button.primary, #director-approve:not(:disabled) { background: var(--obs-accent); color: var(--obs-surface); border-color: var(--obs-accent); }
+#observatory-panel .text-button { color: var(--obs-accent); min-height: 32px; }
+#observatory-panel button:focus-visible, #observatory-panel input:focus-visible, #observatory-panel summary:focus-visible { outline: 2px solid var(--obs-accent); outline-offset: 3px; }
+#observatory-panel .observatory-inline-status { font-size: 11px; color: var(--obs-note); margin: 8px 0 0; min-height: 0; }
+.observatory-objective-disclosure { margin-top: 12px; }
+.observatory-objective-disclosure > summary { color: var(--obs-note); font-size: 11px; cursor: pointer; }
+#observatory-panel .observatory-objective { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; margin: 12px 0 0; }
+#observatory-panel .observatory-objective label { grid-column: 1 / -1; font-size: 11px; color: var(--obs-note); }
+#observatory-panel .observatory-objective input { min-width: 0; width: 100%; }
+#observatory-panel .scheduler-controls { display: block; margin: 4px 0 0; }
+.observatory-cadence { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+.observatory-cadence label { color: var(--obs-note); font-size: 11px; }
+#observatory-panel input { background: var(--obs-surface); color: var(--obs-ink); border: 1px solid var(--obs-rule); padding: 8px 10px; border-radius: 2px; min-height: 36px; }
+.scheduler-buttons { display: flex; flex-wrap: wrap; gap: 7px; }
+#observatory-panel .scheduler-readout { font: 11px/1.6 "SFMono-Regular", Consolas, monospace; color: var(--obs-accent); padding: 10px 0; margin: 10px 0 0; border-top: 1px solid var(--obs-rule); overflow-wrap: anywhere; }
+.observatory-scope-note { margin: 0 0 12px; color: var(--obs-note); font-size: 11px; line-height: 1.6; }
+.observatory-manual { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; border-top: 1px solid var(--obs-rule); padding-top: 7px; gap: 6px; }
+.observatory-manual > span { color: var(--obs-note); font-size: 10px; }
+#observatory-panel .observatory-status { margin: 5px 0 0; font-size: 11px; color: var(--obs-note); min-height: 0; }
+#observatory-panel .observatory-status:empty { display: none; }
+.observatory-laboratory > .observatory-section-head { padding: 24px 24px 10px; }
+.observatory-lab-grid { display: grid; grid-template-columns: minmax(200px, 27%) minmax(0, 1fr); border-top: 1px solid var(--obs-rule); }
+.observatory-run-list { background: var(--obs-highlight); border-right: 1px solid var(--obs-rule); padding: 18px 14px; min-width: 0; }
+.observatory-run-list > label { display: block; font-size: 11px; margin-bottom: 7px; color: var(--obs-note); }
+#observatory-filter { width: 100%; }
+#observatory-history { margin-top: 12px; max-height: 410px; overflow-y: auto; }
+#observatory-panel .observatory-history-row { margin: 0; }
+.observatory-run-button { width: 100%; text-align: left; background: transparent; color: var(--obs-ink); border: 0; border-left: 2px solid transparent; border-bottom: 1px solid var(--obs-rule); display: grid; gap: 5px; padding: 12px 10px; }
+.observatory-run-button:hover { background: var(--obs-surface); }
+.observatory-run-button[aria-pressed="true"] { border-left-color: var(--obs-accent); background: var(--obs-surface); }
+.observatory-run-button strong { font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
+.observatory-run-class { font: 9px "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; color: var(--obs-note); }
+.observatory-run-verdict { color: var(--obs-accent); font: 10px "SFMono-Regular", Consolas, monospace; }
+.observatory-list-note, .observatory-empty { font-size: 11px; color: var(--obs-note); padding: 6px 0; line-height: 1.6; }
+.observatory-run-list h4 { margin: 22px 0 10px; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--obs-note); }
+#observatory-panel .observatory-backlog { padding: 0; list-style: none; }
+.observatory-backlog li { display: grid; gap: 3px; padding: 7px 0; font-size: 11px; border-bottom: 1px solid var(--obs-rule); overflow-wrap: anywhere; }
+.observatory-backlog li span { color: var(--obs-note); }
+.observatory-backlog li strong { font: 10px "SFMono-Regular", Consolas, monospace; font-weight: 400; }
+.observatory-investigation { padding: 18px 24px 24px; min-width: 0; }
+.observatory-finding-head { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+#observatory-selected-title { font: 400 clamp(20px, 2.2vw, 28px)/1.3 Georgia, "Iowan Old Style", serif; margin: 12px 0 16px; letter-spacing: -.02em; overflow-wrap: anywhere; }
+#observatory-panel .observatory-verdict { font: 11px "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; color: var(--obs-accent); margin: 0 0 9px; }
+.observatory-interpretation { font-size: 12px; color: var(--obs-note); line-height: 1.75; margin-top: 0; }
+#observatory-panel .observatory-metrics { display: grid; grid-template-columns: minmax(100px, .5fr) minmax(0, 1fr); gap: 7px 18px; margin: 12px 0; font-size: 11px; line-height: 1.6; }
+#observatory-panel .observatory-metrics dt { color: var(--obs-note); }
+#observatory-panel .observatory-metrics dd { margin: 0; min-width: 0; overflow-wrap: anywhere; white-space: pre-line; }
+#observatory-finding > .observatory-metrics { padding: 12px 0; border-top: 1px solid var(--obs-rule); border-bottom: 1px solid var(--obs-rule); }
+#observatory-panel .observatory-spark { width: 100%; max-width: 600px; height: 100px; margin: 14px 0; color: var(--obs-accent); border-bottom: 1px solid var(--obs-rule); }
+.observatory-lineage { margin: 14px 0 20px; }
+.observatory-lineage > summary { font-size: 11px; color: var(--obs-accent); cursor: pointer; }
+#observatory-panel .observatory-reproduce { font: 11px/1.6 "SFMono-Regular", Consolas, monospace; overflow-wrap: anywhere; }
+.observatory-trace { margin-top: 24px; }
+.observatory-trace-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 12px; }
+.observatory-trace-head h4 { margin: 0; font-size: 12px; font-weight: 500; }
+.observatory-trace-head span { color: var(--obs-note); font-size: 10px; }
+.observatory-timeline { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--obs-rule); border-bottom: 1px solid var(--obs-rule); }
+.observatory-timeline li { min-width: 0; }
+.observatory-trace-step { display: grid; gap: 5px; width: 100%; min-height: 94px; background: transparent; color: var(--obs-ink); text-align: left; padding: 10px 7px; border: 0; border-right: 1px solid var(--obs-rule); border-top: 2px solid transparent; overflow-wrap: anywhere; }
+.observatory-timeline li:last-child button { border-right: 0; }
+.observatory-trace-step[aria-pressed="true"] { border-top-color: var(--obs-accent); background: var(--obs-highlight); }
+.observatory-step-number { font: 10px "SFMono-Regular", Consolas, monospace; color: var(--obs-note); }
+.observatory-trace-step strong { font-size: 11px; font-weight: 500; }
+.observatory-step-status { font: 10px/1.5 "SFMono-Regular", Consolas, monospace; color: var(--obs-accent); }
+.observatory-trace-detail { background: var(--obs-highlight); padding: 14px 16px; min-height: 120px; }
+.observatory-trace-detail h5 { margin: 0 0 10px; color: var(--obs-accent); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; font-weight: 500; }
+.observatory-support { border-top: 1px solid var(--obs-rule); }
+.observatory-disclosure { padding: 0 24px; border-bottom: 1px solid var(--obs-rule); }
+.observatory-disclosure > summary { padding: 16px 0; font-size: 12px; cursor: pointer; }
+.observatory-disclosure > summary > span { margin-left: 12px; font-size: 10px; color: var(--obs-note); }
+#observatory-panel .observatory-roles { margin-bottom: 18px; }
+#observatory-panel .observatory-role { grid-template-columns: minmax(210px, .8fr) minmax(0, 1.5fr); gap: 20px; padding: 12px 0; border-color: var(--obs-rule); font-size: 12px; }
+.observatory-role-name { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.observatory-role-name strong { font-size: 12px; font-weight: 500; }
+.observatory-role-state { font: 9px/1.6 "SFMono-Regular", Consolas, monospace; color: var(--obs-accent); }
+.observatory-role > span { color: var(--obs-note); }
+#director-investigations .observatory-metrics { border-top: 1px solid var(--obs-rule); padding-top: 12px; }
+#director-memory { font-size: 11px; color: var(--obs-note); overflow-wrap: anywhere; }
+#observatory-bounds { columns: 2; padding-left: 18px; padding-bottom: 10px; font-size: 12px; color: var(--obs-note); }
+.observatory-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 14px 24px; font-size: 9px; letter-spacing: .055em; color: var(--obs-note); }
+@media (max-width: 1180px) {
+  .observatory-operations { grid-template-columns: 1fr; }
+  .observatory-mission { border-right: 0; border-bottom: 1px solid var(--obs-rule); }
+  .observatory-seal { display: none; }
+  .observatory-lab-grid { grid-template-columns: minmax(180px, 28%) minmax(0, 1fr); }
+  .observatory-timeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .observatory-timeline li:nth-child(-n+3) { border-bottom: 1px solid var(--obs-rule); }
+}
+@media (max-width: 800px) {
+  .observatory-masthead { padding: 24px 18px; }
+  .observatory-telemetry { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .observatory-telemetry > div { padding: 14px 18px; }
+  .observatory-telemetry > div:nth-child(2) { border-right: 0; }
+  .observatory-telemetry > div:nth-child(-n+2) { border-bottom: 1px solid var(--obs-rule); }
+  .observatory-mission, .observatory-control, .observatory-investigation { padding: 20px 18px; }
+  .observatory-laboratory > .observatory-section-head { padding: 20px 18px 10px; }
+  .observatory-lab-grid { grid-template-columns: 1fr; }
+  .observatory-run-list { border-right: 0; border-bottom: 1px solid var(--obs-rule); padding: 18px; }
+  #observatory-history { max-height: 250px; }
+  .observatory-run-list h4, .observatory-run-list .observatory-backlog { display: none; }
+  #observatory-panel .observatory-role { grid-template-columns: 1fr; gap: 6px; }
+  .observatory-disclosure { padding: 0 18px; }
+  .observatory-disclosure > summary > span { display: block; margin: 4px 0 0 16px; }
+  .observatory-footer { padding: 14px 18px; }
+}
+@media (max-width: 480px) {
+  .observatory-telemetry strong { font-size: 19px; }
+  #observatory-panel .observatory-section-head { flex-wrap: wrap; gap: 0; }
+  #observatory-panel .observatory-objective { grid-template-columns: minmax(0, 1fr); }
+  #observatory-panel .button { min-height: 44px; }
+  .scheduler-buttons { gap: 5px; }
+  .scheduler-buttons .button { flex: 1 0 42%; justify-content: center; }
+  .observatory-telemetry > div { padding: 12px; }
+  #observatory-panel .observatory-metrics { grid-template-columns: minmax(84px, .6fr) minmax(0, 1fr); gap: 7px 12px; }
+  #observatory-bounds { columns: 1; }
+  .observatory-finding-head { align-items: start; }
+}
+
+.observatory-reuse-warning { border-left: 2px solid var(--obs-accent); padding: 4px 0 4px 12px; color: var(--obs-note); font-size: 11px; line-height: 1.6; }
+.observatory-folds { margin: 18px 0; }
+.observatory-folds h5 { font-size: 12px; font-weight: 500; margin: 0 0 4px; }
+.observatory-folds > p { font-size: 11px; margin: 0 0 12px; }
+.observatory-fold { border-top: 1px solid var(--obs-rule); padding: 10px 0; }
+.observatory-fold-label { display: block; color: var(--obs-note); font: 10px/1.6 "SFMono-Regular", Consolas, monospace; margin-bottom: 7px; }
+.observatory-fold-bar { display: grid; grid-template-columns: 110px minmax(30px, 1fr) 104px; align-items: center; gap: 10px; margin: 5px 0; font-size: 10px; }
+.observatory-fold-bar > span:first-child { color: var(--obs-note); }
+.observatory-fold-track { display: block; height: 5px; background: var(--obs-highlight); }
+.observatory-fold-fill { height: 5px; display: block; background: var(--obs-accent); }
+.observatory-fold-fill.baseline { background: var(--obs-note); }
+.observatory-fold-bar strong { font: 10px "SFMono-Regular", Consolas, monospace; font-weight: 400; text-align: right; }
+@media (max-width: 480px) { .observatory-fold-bar { grid-template-columns: 82px minmax(20px, 1fr) 90px; gap: 6px; } }
+
+.observatory-source-caption { font: 10px/1.6 "SFMono-Regular", Consolas, monospace; color: var(--obs-note); overflow-wrap: anywhere; }
