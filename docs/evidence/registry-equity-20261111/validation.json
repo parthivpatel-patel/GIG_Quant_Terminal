@@ -1,5 +1,4 @@
 {
-  "source_commit": "f749380fb8162eb8b7b2cb1d30f90ef139a12c60",
   "source_sha256": {
     ".github/workflows/ci.yml": "55bace9d62e309482d3118d9a1981404ea7d86547e8a1a808ee871736e488395",
     "pyproject.toml": "b81721947e1bcca047f19b400aaaba5ca0438d9164f52ec24bd23e38478afe70",
@@ -323,7 +322,7 @@
     "tests/test_research_director.py": "7e5120548d9c652580dc3da6d1dc8180183b2155c33d338c28cb6d82a358ee3c",
     "tests/test_research_followup.py": "7e1bfc6b3aec4299ed7e693a5a4d59f93da8fb6201f338e0bf8b9498f31b76e1",
     "tests/test_research_foundation.py": "8e42f7be16a55c49b82b8059c836bafa8f8c6d8189e424820b0c2676483bd46f",
-    "tests/test_research_leases.py": "dfefcb24defc0245792552fe688c06727a9bdad165ff24890340f93b7ba8eb28",
+    "tests/test_research_leases.py": "358a789dd42d61d8df3f0f4ec77605d00f817a34e9a3cd59869beaae22162104",
     "tests/test_research_limits.py": "564eacd64c16d7cff1922e34fc9dd8e0359edb5bb233172cc8f8e7ae03e61fe9",
     "tests/test_research_org.py": "673f9ed9d8879afc8613cc0cf224f1cbff2f28782e1de22fc7c37c9faafc0ee7",
     "tests/test_research_scheduler.py": "e66a4bda41837b7c08af492abe77168a239b8b01fbeed1022bdae07a5f8b3060",
@@ -474,5 +473,8 @@
     "max_absolute_error": 1.280568540096283e-09,
     "reference": "NumPy least-squares vs installed C++ categorical projection",
     "scope": "x86_64; not physical ARM64"
-  }
+  },
+  "runtime_implementation_commit": "f749380fb8162eb8b7b2cb1d30f90ef139a12c60",
+  "previous_full_regression_commit": "c5112cf02bd09b32c395ee01ef232cb79759b948",
+  "lease_test_correction": "See lease-repair.json. Current hash manifest includes the corrected test; original full-regression logs are scoped to c5112cf. Final-head complete CI results are linked in PR #13. Runtime/UI/native/package inputs remain unchanged."
 }

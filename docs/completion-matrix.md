@@ -19,6 +19,12 @@ public application launch.
 | Browser / static | VERIFIED automated scope |47 new Chromium checks,8 axe scans,8 responsive checks; retained suites28/37/15/35/22/30/105allpass (overlap).149 Node smoke checks. Ruff,Pyflakes,mypy 22 modules,compilation pass. Genuine screenshots retained. |
 | Remaining research / acceptance | PARTIAL / BLOCKED | Registry remains finite and code-reviewed; no arbitrary hypothesis execution. Cash-equity permanent IDs, corporate actions, historical membership/publication vintages unavailable. No licensed observed options/print feed. Container capacity, physical ARM64, cross-browser and full/manual accessibility acceptance remain open. |
 
+A subsequent CI run exposed a scheduling assumption in the existing 90ms lease
+test. Its deterministic clock/heartbeat correction passes75stress cases and41focused
+tests without changing runtime safety. Original full-regression artifacts are scoped
+to `c5112cf`; final-head CI results are recorded in PR #13 and the delivery report
+explains the test-only overlay.
+
 Exact methods, source rights and negative results: [equity-registry.md](research/equity-registry.md).
 Release tests, hashes and screenshots: [delivery report](research/equity-registry-delivery.md)
 and `docs/evidence/registry-equity-20261111/validation.json`.

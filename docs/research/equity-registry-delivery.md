@@ -3,7 +3,8 @@
 Feature branch: `development/gig-research-equity-registry`, PR[#13](https://github.com/parthivpatel-patel/GIG_Quant_Terminal/pull/13),
 base `development/gig-ui-redesign` at `1f9a3e1cfa7363db242e4d3a9f3fb8802acc9a13`.
 The frozen implementation is commit `f749380fb8162eb8b7b2cb1d30f90ef139a12c60`;
-subsequent release commits contain documentation/evidence only. Validation records
+later commits add release evidence and a deterministic lease-test correction.
+The runtime worker, expiry and fencing controls are unchanged. Validation records
 hash every tracked source, test, script and CI/config input. The final publication
 SHA is the PR's current head; this avoids a self-referential commit hash in a file.
 
@@ -43,11 +44,11 @@ Skeptic findings and provenance-to-disabled-execution timeline. The original
 sixteen sections and analytical3Dmodules remain. Splitter ARIA state and keyboard
 access to the catalogue were repaired after actual browser checks found defects.
 
-## Frozen-source verification
+## Frozen runtime and regression snapshots
 
 Evidence directory: `docs/evidence/registry-equity-20261111/`.
 
-- Full backend: **1,235 passed, 9 skipped, 0 failures**, 485.66 seconds. The nine skips
+- Previous full backend snapshot at `c5112cf`: **1,235 passed, 9 skipped, 0 failures**, 485.66 seconds. The nine skips
   require actual pinned FinBERT assets/runtime, which are not provisioned or
   redistributed. No DuckDB, CPU sequence-model or observed-data test is blocked.
 - Combined statement/branch coverage: **82.99%** (85.96% statements, 74.69% branches); exact counts are in
@@ -81,6 +82,24 @@ The screenshots show real saved results and accurately unavailable states,
 not generated illustrations. Automated axe does not establish complete WCAG
 conformance; manual accessibility, Firefox/Safari and broader device acceptance
 remain incomplete.
+
+## CI lease-test correction
+
+A Python 3.12 push-CI run at `c5112cf` failed one existing lease test while the
+Python 3.11 and frontend jobs passed. The test used a 90ms lease and a fixed
+sleep, assuming the host would schedule heartbeat threads before expiry. That
+assumption is invalid on a loaded runner. Runtime expiry and fencing correctly
+remained strict; no safety grace period or ownership bypass was introduced.
+
+The test now advances a logical lease clock only after observing an actual
+persisted heartbeat renewal. It still crosses the original expiry boundary,
+checks concurrent callers and shutdown, and adds exact-expiry rejection of
+renewal and stale commits. Seventy-five stress cases (25 repetitions of three
+cases) and the focused 41-test suite pass. `lease-repair.json` pins the changed
+test and the earlier CI failure. The final-head full rerun and its exact counts
+are recorded in PR #13; original regression artifacts retain their source scope.
+UI, installed-wheel and numerical evidence remain valid because their inputs did
+not change. The current hash manifest includes the test correction.
 
 ## Recovery, restrictions and remaining work
 
