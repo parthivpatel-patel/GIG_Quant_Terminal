@@ -1,0 +1,62 @@
+{
+  "architecture": "x86_64",
+  "backends": {
+    "native": {
+      "kernel_heap_allocations": 0,
+      "p50_ms": 4.384767,
+      "p95_ms": 4.5615375,
+      "p99_ms": 4.5974195,
+      "raw_latency_ms": [
+        4.60639,
+        4.516685,
+        4.437696,
+        4.429784,
+        4.34716,
+        4.351857,
+        4.355223,
+        4.323104,
+        4.351667,
+        4.399979,
+        4.384767
+      ],
+      "throughput_samples_per_second": 45612457.85693972,
+      "tracked_peak_bytes": 4803244
+    },
+    "numpy": {
+      "kernel_heap_allocations": "unmeasured",
+      "p50_ms": 151.121579,
+      "p95_ms": 203.1293875,
+      "p99_ms": 222.9874159,
+      "raw_latency_ms": [
+        151.121579,
+        119.299797,
+        178.306852,
+        138.801604,
+        163.265565,
+        105.236052,
+        227.951923,
+        113.34575,
+        153.585592,
+        131.059432,
+        171.954256
+      ],
+      "throughput_samples_per_second": 1323437.7335350632,
+      "tracked_peak_bytes": 20994149
+    }
+  },
+  "limitations": [
+    "ARM64 not exercised on this host",
+    "allocation tracing excludes untracked native allocator activity",
+    "RSS high-water mark includes both backends and warmup",
+    "single-thread CPU benchmark; no economic-performance inference"
+  ],
+  "max_absolute_parity_error": 6.938893903907228e-18,
+  "numpy": "2.3.5",
+  "p50_speed_ratio_numpy_over_native": 34.465133267058434,
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "process_peak_rss_bytes": 71778304,
+  "repeats": 11,
+  "samples": 200000,
+  "seed": 107,
+  "window": 252
+}

@@ -1,0 +1,94 @@
+{
+  "state": "PASS",
+  "native_extension": "/tmp/gig-m13-installed-final/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "independent_reference": "NumPy least-squares versus C++ categorical group projection",
+  "cases": [
+    {
+      "names": 24,
+      "dates": 19,
+      "offset": 0.0,
+      "demean": true,
+      "max_abs_error": 9.992007221626409e-16
+    },
+    {
+      "names": 24,
+      "dates": 19,
+      "offset": 0.0,
+      "demean": false,
+      "max_abs_error": 9.992007221626409e-16
+    },
+    {
+      "names": 24,
+      "dates": 19,
+      "offset": 1000000.0,
+      "demean": true,
+      "max_abs_error": 3.7696934462871923e-10
+    },
+    {
+      "names": 24,
+      "dates": 19,
+      "offset": 1000000.0,
+      "demean": false,
+      "max_abs_error": 1.280568540096283e-09
+    },
+    {
+      "names": 64,
+      "dates": 19,
+      "offset": 0.0,
+      "demean": true,
+      "max_abs_error": 4.440892098500626e-16
+    },
+    {
+      "names": 64,
+      "dates": 19,
+      "offset": 0.0,
+      "demean": false,
+      "max_abs_error": 6.661338147750939e-16
+    },
+    {
+      "names": 64,
+      "dates": 19,
+      "offset": 1000000.0,
+      "demean": true,
+      "max_abs_error": 2.522047015673934e-10
+    },
+    {
+      "names": 64,
+      "dates": 19,
+      "offset": 1000000.0,
+      "demean": false,
+      "max_abs_error": 6.984919309616089e-10
+    },
+    {
+      "names": 151,
+      "dates": 19,
+      "offset": 0.0,
+      "demean": true,
+      "max_abs_error": 8.881784197001252e-16
+    },
+    {
+      "names": 151,
+      "dates": 19,
+      "offset": 0.0,
+      "demean": false,
+      "max_abs_error": 8.881784197001252e-16
+    },
+    {
+      "names": 151,
+      "dates": 19,
+      "offset": 1000000.0,
+      "demean": true,
+      "max_abs_error": 2.587050573765737e-10
+    },
+    {
+      "names": 151,
+      "dates": 19,
+      "offset": 1000000.0,
+      "demean": false,
+      "max_abs_error": 8.87666828930378e-10
+    }
+  ],
+  "synthetic_numeric_fixture": true,
+  "scope": "Installed x86_64 wheel, no silent Python substitution; finite masks, missing baseline group and both demean settings",
+  "physical_arm64": false
+}

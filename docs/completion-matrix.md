@@ -1,5 +1,29 @@
 # GIG engineering completion matrix
 
+## Approved equity investigations and connected workspaces (2026-11-11)
+
+PR #12 is merged at `1f9a3e1cfa7363db242e4d3a9f3fb8802acc9a13`.
+The next milestone is PR #13 on `development/gig-research-equity-registry`,
+targeting `development/gig-ui-redesign`. Main and the quantitative branch remain
+unchanged. This is a bounded research extension, not autonomous production or a
+public application launch.
+
+| Requirement | Disposition | Evidence and scope |
+| --- | --- | --- |
+| Registry and memory-informed selection | IMPLEMENTED / TESTED | Five immutable approved investigations, four datasets, transparent score components and saved report hashes; explicit per-objective approval, checkpointed queue order and source/version deduplication. Runtime code/template generation remains disabled. |
+| Useful observed equity research | IMPLEMENTED / INCONCLUSIVE | Existing permitted UCI archive extended to125 observations/five labels, two distinct purged range/log-volume diagnostics, training-only median benchmarks, weekly-block uncertainty and separate Decimal Skeptic. Both models are worse than their baselines; no economic claim. |
+| Official equity-market positioning | IMPLEMENTED / HISTORICAL |52 official CFTC E-mini S&P 500 weekly futures-only reports, exact contract/count conservation and source/permission evidence. Aggregate derivatives positions, not cash-equity prices, options prints or executed flows. |
+| Research-to-decision traceability and UX | IMPLEMENTED / TESTED | Persistent Investigation Desk across Command Center, Laboratory/Observatory, Charts and Market Flow; ranked agenda, source limits, saved fold/uncertainty evidence, keyboard splitter/catalogue, offline risk boundary.16 sections and six 3Dmodules retained. |
+| New adversarial and recovery tests | IMPLEMENTED / TESTED | Concurrent planning, transaction failure rollback, invalid numerics, source tampering, future-data perturbation, separate approvals, fenced identity and restart/deduplication tests. Existing worker safety suite retained. |
+| Full backend / native / wheel | VERIFIED x86 host scope |1,235 passed,9 FinBERT-asset skips,0 failures;82.99% combinedcoverage. Final independently installed wheel147 passed/1 optional C-ABI skip, plus5 factor tests;217 packaged source/data/UI bytes match. x86C++20 pybind and standalone builds,200,000sample rolling parity. |
+| Browser / static | VERIFIED automated scope |47 new Chromium checks,8 axe scans,8 responsive checks; retained suites28/37/15/35/22/30/105allpass (overlap).149 Node smoke checks. Ruff,Pyflakes,mypy 22 modules,compilation pass. Genuine screenshots retained. |
+| Remaining research / acceptance | PARTIAL / BLOCKED | Registry remains finite and code-reviewed; no arbitrary hypothesis execution. Cash-equity permanent IDs, corporate actions, historical membership/publication vintages unavailable. No licensed observed options/print feed. Container capacity, physical ARM64, cross-browser and full/manual accessibility acceptance remain open. |
+
+Exact methods, source rights and negative results: [equity-registry.md](research/equity-registry.md).
+Release tests, hashes and screenshots: [delivery report](research/equity-registry-delivery.md)
+and `docs/evidence/registry-equity-20261111/validation.json`.
+`fully_funded_certified=false`; `T4_NOT_CERTIFIED`; historical §139 UNSUPPLIED.
+
 ## Multi-dataset research and observed positioning (2026-11-10)
 
 PR #11 was inspected with no unresolved reviews and six green CI checks, then

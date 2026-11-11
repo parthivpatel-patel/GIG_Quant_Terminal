@@ -1,0 +1,487 @@
+{
+  "url": "http://127.0.0.1:46697",
+  "checks": [
+    {
+      "defect": 1,
+      "name": "GI replaces the previous section's provenance",
+      "passed": true,
+      "detail": {
+        "before": "deterministic-synthetic-v1 \u00b7 SYNTHETIC",
+        "state-badge": "UNAVAILABLE",
+        "source-label": "global-intelligence \u00b7 NASA EONET UNAVAILABLE \u00b7 USGS EARTHQUAKES UNAVAILABLE",
+        "asof-label": "As of 2026-11-11T13:16:57.425442Z",
+        "truth-notice": "Delayed public sources and cited reports \u00b7 Not a live or tactical feed \u00b7 Research only"
+      }
+    },
+    {
+      "defect": 1,
+      "name": "GI truth strip never claims LIVE",
+      "passed": true,
+      "detail": {
+        "state-badge": "UNAVAILABLE",
+        "source-label": "global-intelligence \u00b7 NASA EONET UNAVAILABLE \u00b7 USGS EARTHQUAKES UNAVAILABLE",
+        "asof-label": "As of 2026-11-11T13:16:57.425442Z",
+        "truth-notice": "Delayed public sources and cited reports \u00b7 Not a live or tactical feed \u00b7 Research only"
+      }
+    },
+    {
+      "defect": 1,
+      "name": "leaving GI restores the section's own provenance",
+      "passed": true,
+      "detail": "deterministic-synthetic-v1 \u00b7 SYNTHETIC"
+    },
+    {
+      "defect": 3,
+      "name": "command-center 3d: chart labels do not overlap",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "defect": 3,
+      "name": "command-center 3d: titles and both end ticks placed for every axis",
+      "passed": true,
+      "detail": [
+        "20-day momentum",
+        "5-day reversal",
+        "60-day volatility",
+        "2.226304",
+        "1.757704",
+        "1.497033",
+        "-1.471112",
+        "-1.151979",
+        "-1.494137",
+        "SYN012",
+        "SYN005",
+        "SYN007",
+        "SYN008",
+        "SYN006",
+        "SYN001",
+        "SYN009",
+        "SYN002",
+        "SYN010",
+        "SYN004",
+        "SYN003",
+        "SYN011"
+      ]
+    },
+    {
+      "defect": 3,
+      "name": "command-center 2d: chart labels do not overlap",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "defect": 3,
+      "name": "command-center 2d: titles and both end ticks placed for every axis",
+      "passed": true,
+      "detail": [
+        "20-day momentum",
+        "60-day volatility",
+        "2.226304",
+        "1.497033",
+        "-1.471112",
+        "-1.494137",
+        "SYN012",
+        "SYN005",
+        "SYN008",
+        "SYN007",
+        "SYN006",
+        "SYN001",
+        "SYN009",
+        "SYN002",
+        "SYN003",
+        "SYN010",
+        "SYN004",
+        "SYN011"
+      ]
+    },
+    {
+      "defect": 3,
+      "name": "risk 3d: chart labels do not overlap",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "defect": 3,
+      "name": "risk 3d: titles and both end ticks placed for every axis",
+      "passed": true,
+      "detail": [
+        "Spot shock",
+        "Volatility shock",
+        "Model P&L",
+        "0.2",
+        "0.1",
+        "16,866.58",
+        "-0.2",
+        "-0.05",
+        "-5,576.546"
+      ]
+    },
+    {
+      "defect": 3,
+      "name": "risk 2d: chart labels do not overlap",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "defect": 3,
+      "name": "risk 2d: titles and both end ticks placed for every axis",
+      "passed": true,
+      "detail": [
+        "Spot shock",
+        "Model P&L",
+        "0.2",
+        "16,866.58",
+        "-0.2",
+        "-5,576.546"
+      ]
+    },
+    {
+      "defect": 8,
+      "name": "risk metric labels are humanized",
+      "passed": true,
+      "detail": [
+        "Confidence",
+        "Historical ES (95%)",
+        "Historical VaR (95%)",
+        "Holding period",
+        "Synthetic NAV"
+      ]
+    },
+    {
+      "defect": 8,
+      "name": "five risk metric cards share one row at 1920px",
+      "passed": true,
+      "detail": [
+        -924,
+        -924,
+        -924,
+        -924,
+        -924
+      ]
+    },
+    {
+      "defect": 8,
+      "name": "model metric labels are humanized",
+      "passed": true,
+      "detail": [
+        "Economic Validation",
+        "Kalman log-likelihood",
+        "Smoother uses future data"
+      ]
+    },
+    {
+      "defect": 2,
+      "name": "risk legend min/max equal the payload P&L extremes",
+      "passed": true,
+      "detail": {
+        "shown": [
+          "-12,317.292",
+          "73,346.67"
+        ],
+        "lo": -12317.292345038915,
+        "hi": 73346.66991748849,
+        "low": "-12,317.292",
+        "high": "73,346.67"
+      }
+    },
+    {
+      "defect": 2,
+      "name": "risk legend marks zero inside the range",
+      "passed": true,
+      "detail": 1
+    },
+    {
+      "defect": 4,
+      "name": "vol-surface: vertical-axis minimum tick placed",
+      "passed": true,
+      "detail": [
+        {
+          "box": [
+            506.5100870875867,
+            279.87594549300456,
+            530.3500834254774,
+            291.87594549300456
+          ],
+          "text": "0.15",
+          "axis": "z",
+          "at": -1
+        },
+        {
+          "box": [
+            479.904511984328,
+            188.46998265862797,
+            503.7445083222186,
+            200.46998265862797
+          ],
+          "text": "0.25",
+          "axis": "z",
+          "at": 0
+        },
+        {
+          "box": [
+            443.46944151432626,
+            63.2938613260372,
+            467.3094378522169,
+            75.2938613260372
+          ],
+          "text": "0.34",
+          "axis": "z",
+          "at": 1
+        }
+      ]
+    },
+    {
+      "defect": 4,
+      "name": "vol-surface: 3D labels do not overlap",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "defect": 4,
+      "name": "order-book: vertical-axis minimum tick placed",
+      "passed": true,
+      "detail": [
+        {
+          "box": [
+            513.5700846461805,
+            279.87594549300456,
+            523.2900858668836,
+            291.87594549300456
+          ],
+          "text": "0",
+          "axis": "z",
+          "at": -1
+        },
+        {
+          "box": [
+            477.04451137397643,
+            188.46998265862797,
+            506.6045089325702,
+            200.46998265862797
+          ],
+          "text": "809.5",
+          "axis": "z",
+          "at": 0
+        },
+        {
+          "box": [
+            440.6094409039747,
+            63.2938613260372,
+            470.16943846256845,
+            75.2938613260372
+          ],
+          "text": "1,619",
+          "axis": "z",
+          "at": 1
+        }
+      ]
+    },
+    {
+      "defect": 4,
+      "name": "order-book: 3D labels do not overlap",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "defect": 5,
+      "name": "correlation nodes do not overlap on screen",
+      "passed": true,
+      "detail": {
+        "nodes": [
+          "SYN011",
+          "SYN007",
+          "SYN004",
+          "SYN008",
+          "SYN005",
+          "SYN012",
+          "SYN002",
+          "SYN003",
+          "SYN006",
+          "SYN010",
+          "SYN001",
+          "SYN009"
+        ],
+        "overlapping": []
+      }
+    },
+    {
+      "defect": 5,
+      "name": "SYN002 is drawn as its own marker",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "defect": 5,
+      "name": "no label covers another node's marker",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "defect": 5,
+      "name": "correlation nodes stay separated after rotation",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "defect": 6,
+      "name": "acquired events are available to select",
+      "passed": true,
+      "detail": {
+        "visible_events": 6,
+        "geolocated": 6
+      }
+    },
+    {
+      "defect": 6,
+      "name": "selecting an event turns the globe to centre it",
+      "passed": true,
+      "detail": {
+        "event": "Authored demonstration: wildfire complex",
+        "lat": 38.8,
+        "lon": -121.2,
+        "offset": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "defect": 7,
+      "name": "flat map leaves no empty band above or below",
+      "passed": true,
+      "detail": {
+        "width": 1224,
+        "height": 518,
+        "mapTop": -30,
+        "mapBottom": 548,
+        "lonSpan": 360,
+        "centre": null
+      }
+    },
+    {
+      "defect": 7,
+      "name": "flat map reaches both canvas edges (no letterbox)",
+      "passed": true,
+      "detail": {
+        "left": [
+          11,
+          15,
+          22
+        ],
+        "right": [
+          11,
+          15,
+          22
+        ]
+      }
+    },
+    {
+      "defect": 7,
+      "name": "default flat-map centre shows at least as many events as a Greenwich centre",
+      "passed": true,
+      "detail": {
+        "centre": 0,
+        "shown": 6,
+        "greenwich": 6,
+        "total": 6,
+        "span": 360
+      }
+    },
+    {
+      "defect": 7,
+      "name": "dragged to the antimeridian, the Pacific is contiguous",
+      "passed": true,
+      "detail": {
+        "centre": -180,
+        "gap": 3.400000000000091,
+        "mid": 612,
+        "width": 1224
+      }
+    },
+    {
+      "defect": 7,
+      "name": "panning cannot open an empty band",
+      "passed": true,
+      "detail": {
+        "width": 1224,
+        "height": 518,
+        "mapTop": 0,
+        "mapBottom": 578,
+        "lonSpan": 360,
+        "centre": null
+      }
+    },
+    {
+      "defect": 7,
+      "name": "zooming out cannot open an empty band",
+      "passed": true,
+      "detail": {
+        "width": 1224,
+        "height": 518,
+        "mapTop": 0,
+        "mapBottom": 578,
+        "lonSpan": 360,
+        "centre": null
+      }
+    },
+    {
+      "defect": 6,
+      "name": "selecting an edge event on the flat map brings it into view",
+      "passed": true,
+      "detail": {
+        "x": 139.92000000000053,
+        "y": 157.08,
+        "visible": true
+      }
+    },
+    {
+      "defect": 6,
+      "name": "reduced motion centres the globe without animating",
+      "passed": true,
+      "detail": {
+        "view": "globe",
+        "asOf": null,
+        "events": 6,
+        "selected": "DEMO:DEMO-1",
+        "lon0": 140.5,
+        "lat0": 35.5,
+        "flatLon": 0,
+        "zoom": 1,
+        "focusing": false
+      }
+    },
+    {
+      "defect": 9,
+      "name": "point-in-time placeholder fits the mobile input",
+      "passed": true,
+      "detail": {
+        "placeholder": "Now, or ISO time with zone",
+        "text": 187.83984375,
+        "room": 252
+      }
+    },
+    {
+      "defect": 8,
+      "name": "mobile metric grid leaves no lone half-width card",
+      "passed": true,
+      "detail": [
+        310,
+        310,
+        310,
+        310,
+        310
+      ]
+    },
+    {
+      "defect": 9,
+      "name": "no horizontal overflow at 390px",
+      "passed": true,
+      "detail": null
+    }
+  ],
+  "javascript_errors": [],
+  "blocked_external_requests": [],
+  "passed": 37,
+  "failed": 0
+}

@@ -1,0 +1,355 @@
+{
+  "url": "isolated-local-server",
+  "checks": [
+    {
+      "name": "navigation retains all sections and adds Market Flow",
+      "passed": true,
+      "detail": [
+        "#command-center",
+        "#markets",
+        "#signals",
+        "#portfolio",
+        "#risk",
+        "#models",
+        "#news",
+        "#stat-arb",
+        "#options",
+        "#execution",
+        "#research",
+        "#operations",
+        "#global-intelligence",
+        "#observatory",
+        "#charts",
+        "#market-flow"
+      ]
+    },
+    {
+      "name": "local mode without admitted bars is UNAVAILABLE and says why",
+      "passed": true,
+      "detail": "UNAVAILABLE"
+    },
+    {
+      "name": "unavailable chart claims no source or classification",
+      "passed": true,
+      "detail": "charts \u00b7 no admitted bars for this selection"
+    },
+    {
+      "name": "synthetic demo loads 504 labelled daily bars, last 120 visible",
+      "passed": true,
+      "detail": {
+        "state": {
+          "symbol": "SYN001",
+          "timeframe": "1D",
+          "type": "candles",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "lower": "rsi14",
+          "compare": null,
+          "range": [
+            384,
+            504
+          ],
+          "cursor": null,
+          "bars": 504,
+          "lowerHeight": 150,
+          "classification": "SYNTHETIC",
+          "payloadState": "AVAILABLE"
+        },
+        "strip": "charts \u00b7 deterministic-synthetic-ohlcv-v1 \u00b7 SYNTHETIC"
+      }
+    },
+    {
+      "name": "truth notice says fictional, not market observations",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "crosshair reads the bar under the pointer from the payload",
+      "passed": true,
+      "detail": {
+        "cursor": 444,
+        "readout": "SYN001 \u00b7 2026-07-09\nO 49.18\nH 49.83\nL 49.18\nC 49.43\nVol 406.1K\nSMA 20 47.99\nSMA 50 48.06\nRSI 61.68",
+        "expected_close": "49.43"
+      }
+    },
+    {
+      "name": "readout shows the backend RSI value at the cursor",
+      "passed": true,
+      "detail": {
+        "rsi": 61.679386,
+        "readout": "SYN001 \u00b7 2026-07-09\nO 49.18\nH 49.83\nL 49.18\nC 49.43\nVol 406.1K\nSMA 20 47.99\nSMA 50 48.06\nRSI 61.68"
+      }
+    },
+    {
+      "name": "candles, OHLC, line and area render differently",
+      "passed": true,
+      "detail": {
+        "candles": 1801473045,
+        "ohlc": 3213471535,
+        "line": 4051660944,
+        "area": 44245909
+      }
+    },
+    {
+      "name": "Bollinger and VWAP overlays draw",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "RSI, MACD, ATR and realized volatility panes render",
+      "passed": true,
+      "detail": {
+        "macd": 3671834937,
+        "atr14": 4211814645,
+        "rv20": 2829410544,
+        "rsi14": 2314737963
+      }
+    },
+    {
+      "name": "wheel zoom narrows the visible range around the pointer",
+      "passed": true,
+      "detail": [
+        392,
+        496
+      ]
+    },
+    {
+      "name": "dragging right pans to earlier bars",
+      "passed": true,
+      "detail": {
+        "zoomed": [
+          392,
+          496
+        ],
+        "panned": [
+          362,
+          466
+        ]
+      }
+    },
+    {
+      "name": "keyboard: 0 resets, arrows move the crosshair",
+      "passed": true,
+      "detail": {
+        "symbol": "SYN001",
+        "timeframe": "1D",
+        "type": "candles",
+        "overlays": [
+          "sma20",
+          "sma50",
+          "bb",
+          "vwap20"
+        ],
+        "lower": "rsi14",
+        "compare": null,
+        "range": [
+          384,
+          504
+        ],
+        "cursor": 501,
+        "bars": 504,
+        "lowerHeight": 150,
+        "classification": "SYNTHETIC",
+        "payloadState": "AVAILABLE"
+      }
+    },
+    {
+      "name": "keyboard crosshair is announced",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "comparison pane shares the time axis and crosshair",
+      "passed": true,
+      "detail": {
+        "cursor": 414,
+        "readout": "SYN001 \u00b7 2026-05-28\nO 48.22\nH 48.75\nL 47.57\nC 47.67\nVol 608.6K\nSMA 20 48.42\nSMA 50 48.33\nBB up 49.96\nBB low 46.89\nVWAP 20 48.41\nMACD -0.07\nSignal -0.02\nSYN005 103.16"
+      }
+    },
+    {
+      "name": "indicator pane resizes by drag and keyboard",
+      "passed": true,
+      "detail": 214
+    },
+    {
+      "name": "weekly timeframe aggregates to 102 bars",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved layout restores type, timeframe, indicators and comparison",
+      "passed": true,
+      "detail": {
+        "symbol": "SYN001",
+        "timeframe": "1D",
+        "type": "area",
+        "overlays": [
+          "sma20",
+          "sma50",
+          "bb",
+          "vwap20"
+        ],
+        "lower": "macd",
+        "compare": "SYN005",
+        "range": [
+          384,
+          504
+        ],
+        "cursor": null,
+        "bars": 504,
+        "lowerHeight": 198,
+        "classification": "SYNTHETIC",
+        "payloadState": "AVAILABLE"
+      }
+    },
+    {
+      "name": "layouts persist across reloads",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "palette searches instruments",
+      "passed": true,
+      "detail": [
+        {
+          "kind": "Instrument",
+          "label": "SYN007"
+        }
+      ]
+    },
+    {
+      "name": "choosing an instrument opens it in the chart and closes the palette",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "palette navigates to sections",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "palette offers no order command",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Escape closes the palette",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "navigation collapses to icons",
+      "passed": true,
+      "detail": 72
+    },
+    {
+      "name": "collapsed navigation persists",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "navigation expands again",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "labelled fixture bars admitted through the workspace API",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "admitted bars chart as known at the cutoff, with their own label",
+      "passed": true,
+      "detail": {
+        "state": {
+          "symbol": "ADMITTED.A",
+          "timeframe": "1D",
+          "type": "candles",
+          "overlays": [
+            "sma20",
+            "sma50"
+          ],
+          "lower": "rsi14",
+          "compare": null,
+          "range": [
+            0,
+            80
+          ],
+          "cursor": null,
+          "bars": 80,
+          "lowerHeight": 150,
+          "classification": "SYNTHETIC",
+          "payloadState": "AVAILABLE"
+        },
+        "strip": "charts \u00b7 local-admitted:browser-acceptance-fixture \u00b7 SYNTHETIC"
+      }
+    },
+    {
+      "name": "an earlier cutoff hides later bars",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "bars older than the freshness policy are shown as STALE",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no horizontal overflow at 390px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "price pane renders at 390px",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "charts with palette open, dark: axe WCAG A/AA automated rules",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "charts with palette open, light: axe WCAG A/AA automated rules",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "javascript_errors": [],
+  "blocked_external_requests": [],
+  "screenshots": [
+    "22-charts-local-unavailable.png",
+    "20-charts-candles-synthetic.png",
+    "21-charts-compare-macd.png",
+    "24-command-palette.png",
+    "25-nav-collapsed-charts.png",
+    "23-charts-local-admitted.png",
+    "26-mobile-charts.png"
+  ],
+  "accessibility": [
+    {
+      "section": "charts+palette",
+      "theme": "dark",
+      "violations": [],
+      "passes": 32
+    },
+    {
+      "section": "charts+palette",
+      "theme": "light",
+      "violations": [],
+      "passes": 32
+    }
+  ],
+  "axe_asset": {
+    "name": "axe-core",
+    "version": "4.10.3",
+    "license": "MPL-2.0",
+    "script_sha256": "880970c081707360e64f34cea25ff91892f5bc95675b0776925b9709dd8a68bb"
+  },
+  "broker_connections": 0,
+  "orders_submitted": 0,
+  "passed": 35,
+  "failed": 0
+}
