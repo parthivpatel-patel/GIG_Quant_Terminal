@@ -11,6 +11,7 @@ import argparse
 import json
 from pathlib import Path
 
+from gig.research_org.equity_experiments import run_equity_range, run_equity_volume
 from gig.research_org.experiment import run_seeded
 from gig.research_org.futures_experiment import run_futures
 from gig.research_org.ledger import ResearchLedger
@@ -21,6 +22,8 @@ from gig.research_org.treasury_experiment import run_treasury
 from gig.research_org.treasury_followup import run_followup
 
 _COMPUTE = {
+    "uci-equity-weekly-range-persistence-2011-v1": run_equity_range,
+    "uci-equity-weekly-volume-persistence-2011-v1": run_equity_volume,
     "futures-tsmom-authored-excess-v1": run_futures,
     "lagged-sign-momentum-synthetic-v1": run_seeded,
     "treasury-10y-lagged-sign-2023": run_treasury,

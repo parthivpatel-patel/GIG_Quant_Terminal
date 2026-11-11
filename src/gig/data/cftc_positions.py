@@ -10,6 +10,7 @@ import json
 import re
 import urllib.parse
 import urllib.request
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,22 @@ SOURCE_URL = "https://publicreporting.cftc.gov/resource/gpe5-46if.json?" + urlli
 FIXTURE = Path(__file__).parents[1] / "research_org/fixtures/observed_cftc_2023.json"
 PROVENANCE = FIXTURE.with_name("observed_cftc_2023.metadata.json")
 MAX_BYTES = 500_000
+
+
+@dataclass(frozen=True)
+class ContractIdentity:
+    """Code-reviewed report identity, including exact source units."""
+    code: str
+    market: str
+    units: str
+    commodity_code: str
+
+
+EURO_FX = ContractIdentity(CONTRACT_CODE, MARKET, UNITS, "099")
+SP500_EMINI = ContractIdentity("13874A", "E-MINI S&P 500 - CHICAGO MERCANTILE EXCHANGE",
+                              "($50 X S&P 500 INDEX)", "138")
+SUPPORTED_IDENTITIES = (EURO_FX, SP500_EMINI)
+
 CATEGORIES = (
     ("dealer", "dealer_positions_long_all", "dealer_positions_short_all", "dealer_positions_spread_all"),
     ("asset_manager", "asset_mgr_positions_long", "asset_mgr_positions_short", "asset_mgr_positions_spread"),
@@ -56,7 +73,9 @@ def canonical_date(value: Any) -> date:
     return parsed
 
 
-def normalize_rows(rows: Any) -> list[dict[str, Any]]:
+def normalize_rows(rows: Any, *, identity: ContractIdentity = EURO_FX) -> list[dict[str, Any]]:
+    if identity not in SUPPORTED_IDENTITIES:
+        raise ValueError("unregistered CFTC contract identity")
     if not isinstance(rows, list) or not 1 <= len(rows) <= 100:
         raise ValueError("bounded CFTC observation list required")
     result: list[dict[str, Any]] = []
@@ -72,17 +91,17 @@ def normalize_rows(rows: Any) -> list[dict[str, Any]]:
         report_week = observed.isocalendar().week
         if raw.get("yyyy_report_week_ww") != f"2023 Report Week {report_week:02}":
             raise ValueError("inconsistent CFTC reporting week identity")
-        identity = raw.get("id")
-        if (raw.get("cftc_contract_market_code") != CONTRACT_CODE or raw.get("market_and_exchange_names") != MARKET
-                or raw.get("contract_units") != UNITS or raw.get("futonly_or_combined") != "FutOnly"
+        report_identity = raw.get("id")
+        if (raw.get("cftc_contract_market_code") != identity.code or raw.get("market_and_exchange_names") != identity.market
+                or raw.get("contract_units") != identity.units or raw.get("futonly_or_combined") != "FutOnly"
                 or not isinstance(raw.get("cftc_market_code"), str) or raw["cftc_market_code"].strip() != "CME"
-                or not isinstance(raw.get("cftc_commodity_code"), str) or raw["cftc_commodity_code"].strip() != "099"
-                or identity != observed.strftime("%y%m%d") + CONTRACT_CODE + "F"):
+                or not isinstance(raw.get("cftc_commodity_code"), str) or raw["cftc_commodity_code"].strip() != identity.commodity_code
+                or report_identity != observed.strftime("%y%m%d") + identity.code + "F"):
             raise ValueError("unsupported or inconsistent official contract identity")
-        if observed in seen or identity in identities:
+        if observed in seen or report_identity in identities:
             raise ValueError("duplicate CFTC report identity")
         seen.add(observed)
-        identities.add(identity)
+        identities.add(report_identity)
         oi = _integer(raw.get("open_interest_all"))
         categories: list[dict[str, Any]] = []
         for category, long_key, short_key, spread_key in CATEGORIES:
@@ -98,7 +117,7 @@ def normalize_rows(rows: Any) -> list[dict[str, Any]]:
                 or report_long + categories[-1]["long"] != oi
                 or report_short + categories[-1]["short"] != oi):
             raise ValueError("CFTC open-interest conservation failed")
-        result.append({"report_id": identity, "report_date": observed.isoformat(), "report_week": report_week, "open_interest": oi,
+        result.append({"report_id": report_identity, "report_date": observed.isoformat(), "report_week": report_week, "open_interest": oi,
                        "observation_time": None, "publication_time": "UNKNOWN", "categories": categories})
     return sorted(result, key=lambda row: row["report_date"])
 

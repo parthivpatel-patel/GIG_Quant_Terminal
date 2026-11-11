@@ -1,0 +1,35 @@
+{
+  "suites_overlap": true,
+  "results": {
+    "focused": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "103",
+      "time": "18.157",
+      "timestamp": "2026-11-11T13:10:58.671113+00:00",
+      "hostname": "8e631d8e4874"
+    },
+    "registry-http": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "31",
+      "time": "20.825",
+      "timestamp": "2026-11-11T13:12:23.926812+00:00",
+      "hostname": "8e631d8e4874"
+    },
+    "equity-positioning-tests": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "68",
+      "time": "1.017",
+      "timestamp": "2026-11-11T13:09:43.852885+00:00",
+      "hostname": "8e631d8e4874"
+    }
+  }
+}
