@@ -1,6 +1,6 @@
 {
   "source_sha256": {
-    ".github/workflows/ci.yml": "55bace9d62e309482d3118d9a1981404ea7d86547e8a1a808ee871736e488395",
+    ".github/workflows/ci.yml": "c03e05835b01ee45e0bc7b7f586a33d560cf30e2b8830d11468514f3b2db6146",
     "pyproject.toml": "b81721947e1bcca047f19b400aaaba5ca0438d9164f52ec24bd23e38478afe70",
     "scripts/ab_construction.py": "b943c05684a66d3daee83c89851545690bfec74d68042469291075e7514affaa",
     "scripts/benchmark_native.py": "f4b4370af86e7c6017b36f2426f6d11e42cd42cf126c169aa83b47ea96e96d10",
@@ -360,19 +360,19 @@
     "errors": "0",
     "failures": "0",
     "skipped": "9",
-    "tests": "1245",
-    "time": "440.776",
-    "timestamp": "2026-11-11T13:42:37.226352+00:00",
+    "tests": "1246",
+    "time": "427.725",
+    "timestamp": "2026-11-11T14:08:49.971393+00:00",
     "hostname": "8e631d8e4874"
   },
   "coverage": {
-    "covered_lines": 17836,
-    "num_statements": 20750,
-    "percent_covered": 82.98204527712724,
+    "covered_lines": 17837,
+    "num_statements": 20751,
+    "percent_covered": 82.98264911471455,
     "percent_covered_display": "83",
     "missing_lines": 2914,
     "excluded_lines": 11,
-    "percent_statements_covered": 85.9566265060241,
+    "percent_statements_covered": 85.95730326249337,
     "percent_statements_covered_display": "86",
     "num_branches": 7432,
     "num_partial_branches": 1430,
@@ -474,8 +474,9 @@
     "reference": "NumPy least-squares vs installed C++ categorical projection",
     "scope": "x86_64; not physical ARM64"
   },
-  "previous_full_regression_commit": "7f3f382051003050cb6b83fbbccd23f8025b8e97",
+  "previous_full_regression_commit": "e7d89396ec65042af03d52506ba394bb9ab6bf17",
   "lease_test_correction": "See lease-repair.json. Current hash manifest includes the corrected test; original full-regression logs are scoped to c5112cf. Final-head complete CI results are linked in PR #13. Runtime/UI/native/package inputs remain unchanged.",
   "scientific_experiment_commit": "f749380fb8162eb8b7b2cb1d30f90ef139a12c60",
-  "catalogue_metadata_correction": "Registered investigations explicitly declare their actual implementation module; the previous fallback mislabeled equity methods. Scientific calculations/data/results/UI and all safety controls are unchanged. Current full CI logs are linked in PR #13."
+  "catalogue_metadata_correction": "Registered investigations explicitly declare their actual implementation module; the previous fallback mislabeled equity methods. Scientific calculations/data/results/UI and all safety controls are unchanged. Current full CI logs are linked in PR #13.",
+  "ci_runner_correction": "Pin standard free public Ubuntu24.04 runner after verified ubuntu-latest26.04 migration and repeated security.ubuntu.com DNS failure during redundant font install. Use preinstalled Chrome runtime libraries, download Playwright browser, keep every real browser suite required."
 }

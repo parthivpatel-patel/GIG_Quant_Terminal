@@ -121,6 +121,23 @@ mypy22modules pass. Complete current-head Python3.11/3.12 and frontend CI result
 are recorded in PR #13; the current source manifest includes every correction.
 Original earlier regression artifacts keep their original source scope.
 
+## Final application regression and CI runner correction
+
+The exact application head `e7d8939` passes **1,237 backend tests,9 FinBERT skips,
+0 failures** locally in427.73seconds; full logs are retained in
+`final-application-regression.txt` and XML. Python3.11 and3.12 CI each pass
+**1,235 tests,11 skips** (the same9FinBERT plus2legacy ECB acquisition-store
+checks), with82.92%combinedcoverage. Those clean-runner skips do not affect the
+new packaged equity/positioning studies. Suites overlap.
+
+Frontend CI failed before application tests while APT could not resolve
+`security.ubuntu.com` for font packages. GitHub's official runner manifest confirms
+the November2026 migration of `ubuntu-latest` to26.04 and that the standard free
+Ubuntu24.04 image already includes Chrome/Chromium runtime libraries. The workflow
+now pins24.04, downloads Playwright's Chromium, and retains every actual browser
+suite. No host DNS/security control is altered and no test is skipped or converted
+to a DOM-only substitute. Final-head CI results are recorded in PR #13.
+
 ## Recovery, restrictions and remaining work
 
 The original full filesystem and its older checkout were left intact. Its 19 surviving

@@ -32,6 +32,12 @@ passed/9skipped/0failures,82.98%coverage. Current catalogue passes42focused chec
 and164installed-wheel tests with1optional C-ABI skip. Full final-head CI results
 are recorded in PR #13.
 
+Final application head `e7d8939`:1,237local backend passes,9FinBERT skips,0failures;
+Python3.11/3.12 CI:1,235passes/11skips each,82.92%coverage. Frontend installation
+failed on Ubuntu26.04 APT DNS before browser tests. CI now pins the documented
+Ubuntu24.04 runner with preinstalled Chrome runtime; all browser suites remain
+required. Final check runs are recorded on PR #13.
+
 Exact methods, source rights and negative results: [equity-registry.md](research/equity-registry.md).
 Release tests, hashes and screenshots: [delivery report](research/equity-registry-delivery.md)
 and `docs/evidence/registry-equity-20261111/validation.json`.
