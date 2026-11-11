@@ -99,7 +99,7 @@
         ["Placebo draws", r.placebo_draws || (r.metrics && r.metrics.placebo && r.metrics.placebo.draws)],
         ["Multiple testing", r.multiple_testing ? `${r.multiple_testing.method}; ${r.multiple_testing.family_size} declared local comparisons. ${known(r.multiple_testing.limits)}` : r.n_trials === undefined ? null : `${r.n_trials} declared trial(s); inspect experiment correction details`],
         ["Independent checks", r.skeptic && r.skeptic.checks ? Object.entries(r.skeptic.checks).map(([key, passed]) => `${key.replaceAll("_", " ")}: ${passed ? "PASS" : "FAIL"}`).join("\n") : null],
-        ["Review independence", r.skeptic && r.skeptic.independence],
+        ["Review independence", r.skeptic && (r.skeptic.independence || r.skeptic.review_independence)],
         ["Failure conditions", Array.isArray(r.failure_conditions) ? r.failure_conditions.join("\n") : null],
         ["Economic claim", r.economic_claim || "No economic validation established by this view"]] },
       { id: "risk", label: "Risk gate", status: "NOT APPROVED", rows: [
@@ -148,6 +148,8 @@
         ["Placebo median Sharpe", num(r.placebo_sharpe_median)], ["Deflated Sharpe", num(r.deflated_sharpe)]);
     }
     rows.push(["Orders submitted", r.orders_submitted]);
+    if (r.design_status) rows.push(["Research design", r.design_status]);
+    if (typeof r.independent_confirmation === "boolean") rows.push(["Independent confirmation", r.independent_confirmation ? "Established by the reported evidence" : "NOT ESTABLISHED"]);
     if (r.metrics && typeof r.metrics.baseline_hit_rate === "number") {
       rows.push(["Training-only baseline hit rate", num(r.metrics.baseline_hit_rate)],
         ["Accuracy difference", num(r.metrics.accuracy_difference)],
@@ -160,6 +162,9 @@
         ["Paired score difference", num(r.metrics.mean_score_difference)],
         ["Block uncertainty interval / difference", r.metrics.bootstrap_interval_95 && r.metrics.bootstrap_interval_95.map(num).join(" → ")],
         ["Score interpretation", r.metrics.lower_score_is_better ? "Lower is better within this scoring rule only" : "Inspect declared scoring rule"]);
+      if (typeof r.metrics.diagnostic_p_value === "number") rows.push(["Exploratory diagnostic p-value", num(r.metrics.diagnostic_p_value)]);
+      if (typeof r.metrics.bonferroni_two_question_p_value === "number") rows.push(["Two-question Bonferroni diagnostic", num(r.metrics.bonferroni_two_question_p_value)]);
+      if (r.metrics.bootstrap && r.metrics.bootstrap.limits) rows.push(["Uncertainty limits", r.metrics.bootstrap.limits]);
     }
     finding.append(entries(rows));
     if (r.post_selection_reuse) finding.append(el("p", "observatory-reuse-warning", "EXPLORATORY / The parent inspected this archive already. Chronological folds do not create independent confirmation."));
@@ -186,7 +191,7 @@
       const table = el("table", "laboratory-fold-table"), caption = el("caption", null, `Chronological validation / ${known(r.metrics.score_name)}`);
       const head = el("thead"), labels = el("tr"); ["Validation window", "Training / validation", "Model score", "Baseline score"].forEach((label) => { const th = el("th", null, label); th.scope = "col"; labels.append(th); }); head.append(labels);
       const body = el("tbody");
-      r.metrics.folds.forEach((fold) => { const row = el("tr"); [ `${known(fold.validation_start)} → ${known(fold.validation_end)}`, `${known(fold.training_pairs)} / ${known(fold.validation_pairs)}`, num(fold.model_mean_score), num(fold.baseline_mean_score)].forEach((text) => row.append(el("td", null, text))); body.append(row); });
+      r.metrics.folds.forEach((fold) => { const row = el("tr"); [ `${known(fold.validation_start)} → ${known(fold.validation_end)}`, `${known(fold.training_pairs)} / ${known(fold.validation_pairs)}${fold.sample_unit ? " " + fold.sample_unit : ""}`, num(fold.model_mean_score), num(fold.baseline_mean_score)].forEach((text) => row.append(el("td", null, text))); body.append(row); });
       table.append(caption, head, body); const wrap = el("div", "table-scroll"); wrap.append(table); finding.append(wrap);
     }
     if (r.lineage) {
@@ -247,7 +252,12 @@
       item.append(el("span", "observatory-status-tag", objective.status), el("strong", null, objective.question || objective.objective_id),
         el("span", "director-dataset", `Dataset / ${known(objective.dataset_id)}`), el("span", "muted", objective.reason || "Approval is limited to the registered template."));
       if (objective.readiness) item.append(el("span", "director-readiness", `Admission / ${known(objective.readiness)}`));
-      if (objective.priority !== undefined) item.append(el("span", "director-readiness", `Registered priority / ${known(objective.priority)}`));
+      if (objective.priority !== undefined) item.append(el("span", "director-readiness", `Registered priority / ${known(objective.priority)} · Selection score / ${known(objective.selection_score)}`));
+      if (objective.selection_reason) item.append(el("p", "director-selection-reason", objective.selection_reason));
+      if (objective.selection_components) {
+        const parts = Object.entries(objective.selection_components).map(([key, value]) => `${key.replaceAll("_", " ")} ${known(value)}`).join(" / ");
+        item.append(el("p", "observatory-source-caption", parts));
+      }
       objectives.append(item);
     });
     if (!rows.length) objectives.append(el("p", "muted", "No approved objective is recorded."));
@@ -269,6 +279,7 @@
     const data = payload.data, runs = data.runs || [];
     if (state.followLatest || !runs.some((run) => identity(run) === state.selected)) state.selected = runs[0] ? identity(runs[0]) : null;
     renderDirector(data);
+    window.dispatchEvent(new CustomEvent("gig:research-state", { detail: data }));
     const roles = $("observatory-roles"); roles.replaceChildren();
     (data.roles || []).forEach((role) => {
       const row = el("li", "observatory-role"), activity = data.director && (data.director.roles || []).find((item) => item.id === role.id);
@@ -442,7 +453,7 @@
       $("observatory-filter").addEventListener("input", renderHistory);
       $("observatory-sort").addEventListener("change", () => { state.sort = $("observatory-sort").value; renderHistory(); });
       $("observatory-classification").addEventListener("change", () => { state.classification = $("observatory-classification").value; renderHistory(); });
-      $("director-objective-select").addEventListener("change", () => { state.objective = $("director-objective-select").value; if (state.payload) renderDirector(state.payload.data); });
+      $("director-objective-select").addEventListener("change", () => { state.objective = $("director-objective-select").value; if (state.payload) renderDirector(state.payload.data); window.dispatchEvent(new CustomEvent("gig:research-focus", { detail: state.objective })); });
       $("observatory-compare-selected").addEventListener("click", () => { const run = selectedRun(); if (!run) return; const id = identity(run); if (!state.comparison.includes(id)) { if (state.comparison.length >= 3) state.comparison.shift(); state.comparison.push(id); } renderComparison(); renderFinding(); });
       $("observatory-comparison-clear").addEventListener("click", () => { state.comparison = []; renderComparison(); renderFinding(); });
       bindResearchRail();
@@ -455,5 +466,7 @@
     load();
   }
 
-  window.GIGObservatory = { show, state: () => (state.payload ? state.payload.data : null) };
+  window.GIGObservatory = { show, state: () => (state.payload ? state.payload.data : null),
+    focusObjective(id) { state.objective = id; if (state.payload) renderDirector(state.payload.data); },
+  };
 })();

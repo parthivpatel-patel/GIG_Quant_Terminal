@@ -103,7 +103,7 @@ def _series(document: dict[str, Any], kind: str) -> tuple[list[str], dict[str, n
 
 def evaluate(document: dict[str, Any], kind: str) -> dict[str, Any]:
     dates, values = _series(document, kind)
-    rows = []
+    rows: list[dict[str, Any]] = []
     for fold, (start, end) in enumerate(WINDOWS):
         for label in LABELS:
             series = values[label]
@@ -140,7 +140,11 @@ def evaluate(document: dict[str, Any], kind: str) -> dict[str, Any]:
                           "limits": "Only 15 held-out weeks; descriptive uncertainty, not independent confirmation."},
             "folds": [{"fold": f, "training_weeks": start - 1, "purge_weeks": 1,
                        "training_last_target_date": dates[start - 2], "validation_start": dates[start],
-                       "validation_end": dates[end - 1]} for f, (start, end) in enumerate(WINDOWS)]}
+                       "validation_end": dates[end - 1], "training_pairs": len(LABELS) * (start - 1),
+                       "validation_pairs": len(LABELS) * (end - start), "sample_unit": "source-label weeks",
+                       "model_mean_score": statistics.mean(r["model_score"] for r in rows if r["fold"] == f),
+                       "baseline_mean_score": statistics.mean(r["baseline_score"] for r in rows if r["fold"] == f)}
+                      for f, (start, end) in enumerate(WINDOWS)]}
 
 
 def challenge(document: dict[str, Any], metrics: dict[str, Any], kind: str) -> dict[str, Any]:
@@ -169,6 +173,17 @@ def challenge(document: dict[str, Any], metrics: dict[str, Any], kind: str) -> d
             checks["independent_numeric_reference"] &= (isinstance(val, (int, float)) and not isinstance(val, bool)
                                                        and math.isclose(val, reference[key], rel_tol=1e-10, abs_tol=1e-12))
         checks["purged_temporal_boundary"] &= actual.get("last_training_target_date", "") < actual.get("feature_date", "") < actual.get("observation_date", "")
+    checks["independent_fold_metadata"] = len(metrics.get("folds", [])) == len(WINDOWS)
+    for fold, ((start, end), summary) in enumerate(zip(WINDOWS, metrics.get("folds", []), strict=False)):
+        checks["independent_fold_metadata"] &= (summary.get("fold") == fold
+            and summary.get("training_pairs") == len(LABELS) * (start - 1)
+            and summary.get("validation_pairs") == len(LABELS) * (end - start)
+            and summary.get("purge_weeks") == 1
+            and summary.get("training_last_target_date") == expected[fold * 25]["last_training_target_date"])
+        for key, column in (("model_mean_score", "model_score"), ("baseline_mean_score", "baseline_score")):
+            val = summary.get(key)
+            ref = statistics.mean(r[column] for r in expected if r["fold"] == fold)
+            checks["independent_fold_metadata"] &= isinstance(val, (int, float)) and math.isclose(val, ref, rel_tol=1e-10, abs_tol=1e-12)
     for key, column in (("model_mean_score", "model_score"), ("baseline_mean_score", "baseline_score")):
         expected_mean = math.fsum(r[column] for r in expected) / len(expected)
         val = metrics.get(key)

@@ -46,10 +46,10 @@ def main() -> int:
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(url + "/#observatory", wait_until="networkidle")
-        page.wait_for_function("GIGObservatory.state()?.director?.objectives.length === 3")
+        page.wait_for_function("GIGObservatory.state()?.director?.objectives.length === 5")
         check(
-            "three distinct dataset objectives are visible",
-            page.locator("#director-objective-select option").count() == 3,
+            "five registered objectives across four datasets are visible",
+            page.locator("#director-objective-select option").count() == 5,
         )
         check(
             "no research runs before authorization",
@@ -86,7 +86,7 @@ def main() -> int:
         check(
             "all approved objectives complete and deduplicate",
             len(data["director"]["investigations"]) == 3
-            and all(r["status"] == "COMPLETED" for r in data["director"]["objectives"]),
+            and all(r["status"] == "COMPLETED" for r in data["director"]["objectives"] if r["objective_id"] in OBJECTIVES),
         )
         reports = {r["hypothesis_id"]: r["report"] for r in data["runs"]}
         check(

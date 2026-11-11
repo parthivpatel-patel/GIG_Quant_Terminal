@@ -190,3 +190,30 @@ def test_new_approved_studies_resume_after_budget_and_restart_without_duplicates
     third.start(.05)
     third.wait(20)
     assert third.ledger.count() == before
+
+
+def test_planning_transaction_rolls_back_plan_when_job_admission_fails(tmp_path):
+    import sqlite3
+    from contextlib import closing
+    ledger = ResearchLedger(tmp_path)
+    director.approve(ledger, EQUITY[0].objective_id)
+    with closing(ledger._connect()) as db, db:
+        db.execute("CREATE TRIGGER reject_job BEFORE INSERT ON jobs BEGIN SELECT RAISE(ABORT, 'injected'); END")
+    with pytest.raises(sqlite3.IntegrityError, match='injected'):
+        director.propose(ledger)
+    assert not ledger.jobs() and not director.status(ledger)['investigations']
+    with closing(ledger._connect()) as db, db:
+        db.execute('DROP TRIGGER reject_job')
+    assert director.propose(ledger) == 'added'
+    assert len(ledger.jobs()) == len(director.status(ledger)['investigations']) == 1
+
+
+def test_new_plans_cannot_use_unfingerprinted_legacy_treasury_exception(tmp_path):
+    from contextlib import closing
+    ledger = ResearchLedger(tmp_path)
+    director.approve(ledger, EQUITY[0].objective_id)
+    director.propose(ledger)
+    assert director.admit_claim(ledger, EQUITY[0].job_id)
+    with closing(ledger._connect()) as db, db:
+        db.execute('UPDATE director_investigations SET reason=?', ('legacy reason without identity',))
+    assert not director.admit_claim(ledger, EQUITY[0].job_id)

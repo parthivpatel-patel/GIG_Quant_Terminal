@@ -926,7 +926,12 @@
             "purge_weeks": 1,
             "training_last_target_date": "2011-03-04",
             "validation_start": "2011-03-18",
-            "validation_end": "2011-04-15"
+            "validation_end": "2011-04-15",
+            "training_pairs": 45,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.015520628602031798,
+            "baseline_mean_score": 0.012762416558499922
           },
           {
             "fold": 1,
@@ -934,7 +939,12 @@
             "purge_weeks": 1,
             "training_last_target_date": "2011-04-08",
             "validation_start": "2011-04-21",
-            "validation_end": "2011-05-20"
+            "validation_end": "2011-05-20",
+            "training_pairs": 70,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.014643150635181809,
+            "baseline_mean_score": 0.009486660196159126
           },
           {
             "fold": 2,
@@ -942,7 +952,12 @@
             "purge_weeks": 1,
             "training_last_target_date": "2011-05-13",
             "validation_start": "2011-05-27",
-            "validation_end": "2011-06-24"
+            "validation_end": "2011-06-24",
+            "training_pairs": 95,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.02754346172465383,
+            "baseline_mean_score": 0.016338853695602413
           }
         ]
       },
@@ -951,7 +966,8 @@
         "checks": {
           "independent_numeric_reference": true,
           "purged_temporal_boundary": true,
-          "complete_fixed_panel": true
+          "complete_fixed_panel": true,
+          "independent_fold_metadata": true
         },
         "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
         "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
@@ -1022,7 +1038,8 @@
             "checks": {
               "independent_numeric_reference": true,
               "purged_temporal_boundary": true,
-              "complete_fixed_panel": true
+              "complete_fixed_panel": true,
+              "independent_fold_metadata": true
             },
             "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
             "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
@@ -1050,7 +1067,7 @@
         "evidence_class": "INCONCLUSIVE",
         "artifacts": "Packaged UCI source fixture and saved immutable ledger report."
       },
-      "result_hash": "e74a0e16ecd395009beeea235fb3f576c69b1143b674c3d05fe5e29b4098e9e3"
+      "result_hash": "ea33f9f8ce606080002a3a9f48b6bc588f132156f4ed2b2130acc5c66db44d0e"
     }
   },
   "uci-equity-weekly-volume-persistence-2011-v1": {
@@ -1980,7 +1997,12 @@
             "purge_weeks": 1,
             "training_last_target_date": "2011-03-04",
             "validation_start": "2011-03-18",
-            "validation_end": "2011-04-15"
+            "validation_end": "2011-04-15",
+            "training_pairs": 45,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.2552685625579593,
+            "baseline_mean_score": 0.21932892656184522
           },
           {
             "fold": 1,
@@ -1988,7 +2010,12 @@
             "purge_weeks": 1,
             "training_last_target_date": "2011-04-08",
             "validation_start": "2011-04-21",
-            "validation_end": "2011-05-20"
+            "validation_end": "2011-05-20",
+            "training_pairs": 70,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.3752535703242208,
+            "baseline_mean_score": 0.26035953627552305
           },
           {
             "fold": 2,
@@ -1996,7 +2023,12 @@
             "purge_weeks": 1,
             "training_last_target_date": "2011-05-13",
             "validation_start": "2011-05-27",
-            "validation_end": "2011-06-24"
+            "validation_end": "2011-06-24",
+            "training_pairs": 95,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.1879681349809799,
+            "baseline_mean_score": 0.19836223213354245
           }
         ]
       },
@@ -2005,7 +2037,8 @@
         "checks": {
           "independent_numeric_reference": true,
           "purged_temporal_boundary": true,
-          "complete_fixed_panel": true
+          "complete_fixed_panel": true,
+          "independent_fold_metadata": true
         },
         "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
         "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
@@ -2076,7 +2109,8 @@
             "checks": {
               "independent_numeric_reference": true,
               "purged_temporal_boundary": true,
-              "complete_fixed_panel": true
+              "complete_fixed_panel": true,
+              "independent_fold_metadata": true
             },
             "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
             "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
@@ -2104,7 +2138,7 @@
         "evidence_class": "INCONCLUSIVE",
         "artifacts": "Packaged UCI source fixture and saved immutable ledger report."
       },
-      "result_hash": "c02bdbee1ef3a1786b8556b874150acb6983f487827730bc784276b9ecbe7ed1"
+      "result_hash": "807196baa799e98147feb17a42f103cde1e43cceb2fd2fb68dfa2fb416e3b7cc"
     }
   }
 }

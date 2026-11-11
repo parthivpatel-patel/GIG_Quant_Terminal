@@ -5,12 +5,16 @@
   const grid = document.getElementById("analysis-grid");
   if (!handle || !grid) return;
   const key = "gig-context-width";
-  const saved = Number(localStorage.getItem(key));
-  if (Number.isFinite(saved)) grid.style.setProperty("--context-w", `${Math.min(520, Math.max(220, saved))}px`);
+  let saved = null;
+  try { saved = localStorage.getItem(key); } catch { /* Optional UI preference. */ }
+  const initial = saved !== null && Number.isFinite(Number(saved)) ? Math.min(520, Math.max(220, Number(saved))) : 320;
+  grid.style.setProperty("--context-w", `${initial}px`);
+  handle.setAttribute("aria-valuenow", String(Math.round(initial)));
 
   function setWidth(px) {
     const width = Math.min(520, Math.max(220, px));
     grid.style.setProperty("--context-w", `${width}px`);
+    handle.setAttribute("aria-valuenow", String(Math.round(width)));
     try { localStorage.setItem(key, String(Math.round(width))); } catch (error) { /* private mode */ }
   }
   handle.addEventListener("pointerdown", (event) => {
