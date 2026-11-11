@@ -25,6 +25,13 @@ tests without changing runtime safety. Original full-regression artifacts are sc
 to `c5112cf`; final-head CI results are recorded in PR #13 and the delivery report
 explains the test-only overlay.
 
+The read-only catalogue now declares the actual module for each registered
+method, correcting the inherited equity module label. Models,results,data,UI
+and worker controls are unchanged. Last complete local regression at `7f3f382`:1,236
+passed/9skipped/0failures,82.98%coverage. Current catalogue passes42focused checks
+and164installed-wheel tests with1optional C-ABI skip. Full final-head CI results
+are recorded in PR #13.
+
 Exact methods, source rights and negative results: [equity-registry.md](research/equity-registry.md).
 Release tests, hashes and screenshots: [delivery report](research/equity-registry-delivery.md)
 and `docs/evidence/registry-equity-20261111/validation.json`.

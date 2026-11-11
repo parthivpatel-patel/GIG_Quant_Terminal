@@ -2,9 +2,10 @@
 
 Feature branch: `development/gig-research-equity-registry`, PR[#13](https://github.com/parthivpatel-patel/GIG_Quant_Terminal/pull/13),
 base `development/gig-ui-redesign` at `1f9a3e1cfa7363db242e4d3a9f3fb8802acc9a13`.
-The frozen implementation is commit `f749380fb8162eb8b7b2cb1d30f90ef139a12c60`;
-later commits add release evidence and a deterministic lease-test correction.
-The runtime worker, expiry and fencing controls are unchanged. Validation records
+The scientific experiment/UI implementation is commit `f749380fb8162eb8b7b2cb1d30f90ef139a12c60`;
+later commits add release evidence, a deterministic lease-test correction and
+explicit registered catalogue module metadata.
+Worker, expiry and fencing controls and scientific results are unchanged. Validation records
 hash every tracked source, test, script and CI/config input. The final publication
 SHA is the PR's current head; this avoids a self-referential commit hash in a file.
 
@@ -100,6 +101,25 @@ test and the earlier CI failure. The final-head full rerun and its exact counts
 are recorded in PR #13; original regression artifacts retain their source scope.
 UI, installed-wheel and numerical evidence remain valid because their inputs did
 not change. The current hash manifest includes the test correction.
+
+## Final catalogue metadata correction and acceptance
+
+The expanded registry initially inherited the reference-study module path for
+its two equity methods in the read-only catalogue. Their actual runners and
+saved reports already identified `gig.research_org.equity_experiments` correctly.
+Each registered method now declares its implementation module explicitly; a
+regression check verifies the new catalogue paths. No calculation, model output,
+source identity, approval or worker control changed.
+
+The last complete local regression before this metadata correction, at `7f3f382`,
+is **1,236 passed,9 skipped,0 failures**, with **82.98% combined coverage**.
+Its full output is preserved as `pre-catalogue-regression.txt` and XML. The
+corrected catalogue passes42focused checks; its rebuilt independently installed
+wheel passes **164 tests,1 optional standalone C-ABI skip**. All217packaged
+source/data/UI files match current source. Ruff,Pyflakes,compilation and configured
+mypy22modules pass. Complete current-head Python3.11/3.12 and frontend CI results
+are recorded in PR #13; the current source manifest includes every correction.
+Original earlier regression artifacts keep their original source scope.
 
 ## Recovery, restrictions and remaining work
 

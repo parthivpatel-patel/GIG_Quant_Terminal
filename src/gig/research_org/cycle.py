@@ -43,7 +43,7 @@ def _catalog(executed: set[str]) -> list[dict[str, Any]]:
     for template in investigations():
         rows.append({
             "id": template.hypothesis_id, "name": template.question,
-            "module": "gig.research_org.treasury_followup" if template.parent else "gig.research_org.observed_experiments",
+            "module": template.module,
             "status": "EXECUTED_ON_ADMITTED_HISTORICAL_ARCHIVE" if template.hypothesis_id in executed else "OBJECTIVE_APPROVAL_REQUIRED",
             "note": f"Registered method {template.method} v{template.method_version}; dataset {template.dataset_id}. Separate objective approval required; no trade or model promotion.",
         })

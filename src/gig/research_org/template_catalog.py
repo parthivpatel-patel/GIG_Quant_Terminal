@@ -30,6 +30,7 @@ class ResearchTemplate:
     parent: str | None = None
     family: str = "reference-risk"
     estimated_cost_units: int = 3
+    module: str = "gig.research_org.observed_experiments"
 
     def job(self) -> dict[str, Any]:
         return {"seq": self.seq, "job_id": self.job_id,
@@ -41,7 +42,7 @@ TEMPLATES = (
         "treasury-reversal-robustness-v1", "treasury-10y-reversal-robustness-2023-v1",
         "us-treasury-daily-par-yield-2023", "job-treasury-reversal-robustness-v1", "treasury_reversal",
         "Challenge the negative Treasury persistence finding with purged reversal robustness.",
-        "purged-reversal-training-majority", 1, 100, 3, TREASURY_PARENT),
+        "purged-reversal-training-majority", 1, 100, 3, TREASURY_PARENT, module="gig.research_org.treasury_followup"),
     ResearchTemplate(
         "ecb-fx-correlation-stability-v1", "ecb-fx-correlation-stability-2023-v1",
         "ecb-reference-fx-2023-usd-gbp-jpy", "job-ecb-fx-correlation-stability-v1", "ecb_risk",
@@ -61,11 +62,11 @@ _EQUITY = (
     ResearchTemplate("uci-equity-range-persistence-v1", "uci-equity-weekly-range-persistence-2011-v1",
         "uci-dow-jones-weekly-2011", "job-uci-equity-range-v1", "equity_range",
         "Does lagged source weekly range beat a purged training-only median on five equity labels?",
-        "weekly-range-persistence-mae", 1, 85, 6, family="equity-archive", estimated_cost_units=2),
+        "weekly-range-persistence-mae", 1, 85, 6, family="equity-archive", estimated_cost_units=2, module="gig.research_org.equity_experiments"),
     ResearchTemplate("uci-equity-volume-persistence-v1", "uci-equity-weekly-volume-persistence-2011-v1",
         "uci-dow-jones-weekly-2011", "job-uci-equity-volume-v1", "equity_volume",
         "Does lagged source log-volume beat a purged training-only median on five equity labels?",
-        "weekly-log-volume-persistence-mae", 1, 75, 7, family="equity-archive", estimated_cost_units=2),
+        "weekly-log-volume-persistence-mae", 1, 75, 7, family="equity-archive", estimated_cost_units=2, module="gig.research_org.equity_experiments"),
 )
 
 

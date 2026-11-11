@@ -217,3 +217,13 @@ def test_new_plans_cannot_use_unfingerprinted_legacy_treasury_exception(tmp_path
     with closing(ledger._connect()) as db, db:
         db.execute('UPDATE director_investigations SET reason=?', ('legacy reason without identity',))
     assert not director.admit_claim(ledger, EQUITY[0].job_id)
+
+
+
+def test_research_catalog_points_to_each_actual_registered_method_module():
+    from gig.research_org.cycle import _catalog
+    rows = {r["id"]: r for r in _catalog(set())}
+    for template in investigations():
+        assert rows[template.hypothesis_id]["module"] == template.module
+    for template in EQUITY:
+        assert rows[template.hypothesis_id]["module"] == "gig.research_org.equity_experiments"
