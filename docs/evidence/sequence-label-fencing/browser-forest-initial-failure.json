@@ -1,0 +1,112 @@
+{
+  "checks": [
+    {
+      "name": "pipeline-bars is admitted only on explicit action",
+      "passed": true
+    },
+    {
+      "name": "pipeline-universe is admitted only on explicit action",
+      "passed": true
+    },
+    {
+      "name": "research-dataset is admitted only on explicit action",
+      "passed": true
+    },
+    {
+      "name": "rf actual CPU training is available",
+      "passed": true
+    },
+    {
+      "name": "rf never receives allocation approval",
+      "passed": true
+    },
+    {
+      "name": "rf uncertainty limits remain visible",
+      "passed": true
+    },
+    {
+      "name": "rf saved inference does not retrain",
+      "passed": true
+    },
+    {
+      "name": "rf allocator explicitly rejects research-only output",
+      "passed": true
+    },
+    {
+      "name": "rf exact saved inference survives reload",
+      "passed": true
+    },
+    {
+      "name": "xt actual CPU training is available",
+      "passed": true
+    },
+    {
+      "name": "xt never receives allocation approval",
+      "passed": true
+    },
+    {
+      "name": "xt uncertainty limits remain visible",
+      "passed": true
+    },
+    {
+      "name": "xt saved inference does not retrain",
+      "passed": true
+    },
+    {
+      "name": "xt allocator explicitly rejects research-only output",
+      "passed": true
+    },
+    {
+      "name": "xt exact saved inference survives reload",
+      "passed": true
+    },
+    {
+      "name": "Models labels derived estimates and synthetic inputs",
+      "passed": false
+    },
+    {
+      "name": "dark automated accessibility",
+      "passed": true
+    },
+    {
+      "name": "light automated accessibility",
+      "passed": true
+    },
+    {
+      "name": "320px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "375px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "768px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "1440px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "sixteen existing navigation sections retained",
+      "passed": true
+    },
+    {
+      "name": "zero JavaScript errors",
+      "passed": true
+    },
+    {
+      "name": "zero external browser requests",
+      "passed": true
+    }
+  ],
+  "passed": 24,
+  "failed": 1,
+  "chromium_version": "151.0.7922.173",
+  "javascript_errors": [],
+  "external_requests": [],
+  "classification": "AUTHORED_SYNTHETIC_RESEARCH_ONLY",
+  "orders_submitted": 0,
+  "formal_accessibility_certified": false
+}

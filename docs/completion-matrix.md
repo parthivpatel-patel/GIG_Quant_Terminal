@@ -310,3 +310,8 @@ Feature-only warm-up labels cannot affect fitted identities or predictions.
 See [reproduction and acceptance](evidence/sequence-label-fencing/README.md).
 This adds no model family:9implemented,31planned. Certification and external
 operational/data-rights blockers are unchanged.
+
+Frozen-source BiLSTM repair acceptance:1,270passed/9optional FinBERT skips/0failures,
+83.13%coverage; isolated wheel84passed/1optional standalone C-ABI skip. The
+forest browser navigation wait was corrected without removing assertions; two
+25/25runs and financial24/24 pass. Initial failed browser report is preserved.
