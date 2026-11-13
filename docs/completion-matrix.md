@@ -11,9 +11,10 @@ Family09 adds actual CPU Random Forest and ExtraTrees, one family with two
 variants, bounded purged fits and audited JSON inference. Nine families are
 implemented;31remain planned. Portfolio/ensemble admission stays false.
 See [the family contract](ml/FORESTS.md) and [batch2 evidence](evidence/ml-batch2/).
-Focused numerical/PIT/restart/HTTP and actual browser checks pass; complete
-regression, installed-wheel and final-head CI are recorded on the batch PR
-as they finish. No observed-market alpha or institutional certification is claimed.
+Full regression:1,254passed,9FinBERT skips,0failures;83.10%coverage. Independent
+installed wheel109passed/1optional C-ABI skip;219packaged files match. Focused21
+and Chromium25 checks pass. Configured static checks and native parity pass.
+Exact final-head CI and independent recovery are recorded on PR15. No observed-market alpha or institutional certification is claimed.
 
 
 ## PR #13 integrated; first ML expansion batch (2026-11-13)
