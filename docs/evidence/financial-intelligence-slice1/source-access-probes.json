@@ -1,0 +1,25 @@
+{
+  "probes": [
+    {
+      "source_url": "https://www.federalreserve.gov/aboutthefed/contact-copyright.htm",
+      "acquired_at": "2026-11-13T21:12:00.451889+00:00",
+      "error": "HTTPError",
+      "detail": "HTTP Error 403: Forbidden"
+    },
+    {
+      "source_url": "https://www.federalreserve.gov/disclaimer.htm",
+      "acquired_at": "2026-11-13T21:12:00.360721+00:00",
+      "error": "HTTPError",
+      "detail": "HTTP Error 403: Forbidden"
+    },
+    {
+      "source_url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20231101a.htm",
+      "acquired_at": "2026-11-13T21:12:00.237409+00:00",
+      "error": "HTTPError",
+      "detail": "HTTP Error 403: Forbidden"
+    }
+  ],
+  "sec_requests": 0,
+  "sec_contact_identity_used": false,
+  "restriction_bypasses": 0
+}

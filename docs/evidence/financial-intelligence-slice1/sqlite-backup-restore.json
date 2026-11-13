@@ -1,0 +1,14 @@
+{
+  "state": "PASS",
+  "sqlite_integrity_check": "ok",
+  "restored_replay_wire_sha256": "a9dcbcc9c58ebff010154cb8afe393c15bcfa24e2a8421959f36cb1e19a82038",
+  "snapshot_id": "0f36d3f95e7015f98ddd249c70c28772227554cdaf80cbe389614979e8924dae",
+  "row_counts": {
+    "documents": 1,
+    "passages": 250,
+    "snapshots": 1
+  },
+  "backup_sha256": "820414ef76f37999d2bd74dba5181040c7798e64703537c82a2515eb60ac0db9",
+  "runtime_backup_scope": "task-owned local SQLite backup restored; not uploaded to Git or independently backed up externally",
+  "orders_created": 0
+}

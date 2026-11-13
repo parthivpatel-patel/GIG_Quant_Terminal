@@ -51,6 +51,8 @@ jobs:
         run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py src/gig/service/viz.py src/gig/research_org/director.py src/gig/research_org/treasury_followup.py src/gig/research_org/template_catalog.py src/gig/research_org/observed_experiments.py src/gig/service/market_flow.py src/gig/data/cftc_positions.py src/gig/service/positioning.py src/gig/research_org/equity_experiments.py src/gig/data/equity_positioning.py src/gig/service/equity_positioning.py
       - name: Gaussian-process typed numerical boundary
         run: mypy --follow-imports=silent --ignore-missing-imports src/gig/ml/gaussian_process.py src/gig/ml/forests.py
+      - name: Financial Intelligence typed boundary
+        run: mypy --follow-imports=silent --ignore-missing-imports src/gig/financial_intelligence src/gig/service/financial_workspace.py
       - name: Tests
         run: python -m pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
 
@@ -103,6 +105,8 @@ jobs:
         run: python scripts/browser_registry.py --evidence-dir /tmp/ci-browser-registry --axe /tmp/axe/package/axe.min.js
       - name: Chromium persisted Gaussian-process research and allocation boundary
         run: python scripts/browser_gaussian_process.py --evidence-dir /tmp/ci-browser-gp --axe /tmp/axe/package/axe.min.js
+      - name: Chromium cited financial document retrieval and replay
+        run: python scripts/browser_financial_intelligence.py --evidence-dir /tmp/ci-browser-financial --axe /tmp/axe/package/axe.min.js
       - name: Chromium bounded Random Forest and ExtraTrees research
         run: python scripts/browser_forests.py --evidence-dir /tmp/ci-browser-forests --axe /tmp/axe/package/axe.min.js
       - uses: actions/upload-artifact@v4
@@ -119,4 +123,5 @@ jobs:
             /tmp/ci-browser-multidata
             /tmp/ci-browser-registry
             /tmp/ci-browser-gp
+            /tmp/ci-browser-financial
             /tmp/ci-browser-forests

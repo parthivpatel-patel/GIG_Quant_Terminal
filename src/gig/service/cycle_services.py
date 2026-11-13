@@ -70,6 +70,10 @@ class CycleServices:
         from gig.service.portfolio_workspace import PortfolioWorkspace
         return PortfolioWorkspace(self.workspace.base_dir)
 
+    def financial_intelligence(self, payload: dict[str, Any]) -> Contract:
+        from gig.service.financial_workspace import FinancialIntelligenceWorkspace
+        return FinancialIntelligenceWorkspace(self.workspace.base_dir).run(payload)
+
     def research_dataset(self, payload: dict[str, Any]) -> Contract:
         return self._datasets().build(payload)
 
