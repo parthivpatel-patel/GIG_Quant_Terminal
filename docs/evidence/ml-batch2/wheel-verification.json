@@ -1,0 +1,7 @@
+{
+  "state": "PASS",
+  "source_files_verified": 219,
+  "package_import": "/tmp/gig-forests-installed/gig/__init__.py",
+  "native_extension": "/tmp/gig-forests-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "wheel_sha256": "c5f0025411f7b1a5233630c12ef35e09c538c29fa690aa74397ff2927d1759e4"
+}

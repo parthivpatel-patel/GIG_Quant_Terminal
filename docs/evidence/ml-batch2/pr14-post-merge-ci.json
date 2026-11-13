@@ -1,0 +1,23 @@
+[
+  {
+    "id": 132171630912,
+    "name": "backend (3.12)",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43508310125/job/132171630912"
+  },
+  {
+    "id": 132171630681,
+    "name": "frontend",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43508310125/job/132171630681"
+  },
+  {
+    "id": 132171630323,
+    "name": "backend (3.11)",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43508310125/job/132171630323"
+  }
+]
