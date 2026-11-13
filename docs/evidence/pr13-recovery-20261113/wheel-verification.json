@@ -1,0 +1,8 @@
+{
+  "state": "PASS",
+  "wheel_sha256": "a2f14eeb6329276bc64ba270a3ca0aaa70d6e6a4016bdaf942413f75e0365ec5",
+  "package_import": "/tmp/gig-pr13-installed/gig/__init__.py",
+  "native_extension": "/tmp/gig-pr13-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "source_files_verified": 217,
+  "scope": "Independent x86_64 CPython3.12 target install; no source-tree import; standalone C-ABI intentionally not packaged"
+}

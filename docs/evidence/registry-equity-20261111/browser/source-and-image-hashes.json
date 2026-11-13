@@ -1,0 +1,28 @@
+{
+  "ui_and_harness_sha256": {
+    "scripts/browser_registry.py": "3a9db3716f985138a3fd5404a018cf16d1530b65d21d6207c7a1683984b41ad1",
+    "src/gig/service/static/app.js": "195c03759245873ae0c0b3208ddecb7ef5fd0a6e54f6bd0369af6c6d15cdddb0",
+    "src/gig/service/static/charts.js": "fe0c91f64b6176b14059f99c881b5b654f2c64a3a6cd4d313b7fc16f5ac9f0e4",
+    "src/gig/service/static/index.html": "dc273155aa6a05abcca8e0c338e3eefa2898920823f8d1d0db860248b3168a67",
+    "src/gig/service/static/intel.js": "72f9913b4e23cd91291e601d5c543cb15873ff0a3368b844ee48f470b5ced203",
+    "src/gig/service/static/layout.js": "d6ab5013044fdf8d9c185e12d05f9e96ceac5bd7ef0eb01cffea846b040be3e7",
+    "src/gig/service/static/market_flow.css": "aac7b6e0552ec62510f84199441db77e969bbee9f229e6499625f9bf642e5c06",
+    "src/gig/service/static/market_flow.js": "cb99751ac0544bb6a507ba3edea564032e63a0ddfb4e15ab7f0995a47cf585ae",
+    "src/gig/service/static/models3d.js": "e8e60816a1fb04ab7215316c2a386f4028b348b04b22668dfa99c88b426812b9",
+    "src/gig/service/static/observatory.js": "74cf237fffacffef640b88ee2f0f7e5aa3bf60eba5b78632d7a748a85de344a0",
+    "src/gig/service/static/os.css": "479d6c5d9aac8d7f8a5d355fe730e08ab4b9ffb2584b0f1f46f418d10976dbb8",
+    "src/gig/service/static/palette.js": "52d2a62658c00c196f01fd9aded33b49760a81f97669ca6b381633870b7ed2b3",
+    "src/gig/service/static/research_workspace.css": "6f012bc38f53ba428a3e13902bb7c3c5c40a35aa7e7b897ff624f0bf7fcc0999",
+    "src/gig/service/static/research_workspace.js": "f9d8fd7d63b13dddfe4fa820ba181e0d18d306bc41122c42dcda0587bf9ced00",
+    "src/gig/service/static/styles.css": "48c42a64ed614af616d15f43372b32883508afd01c8af6bb96ef993e35f408bb",
+    "src/gig/service/static/viz3d.js": "512af926dedff52f55fc59843a64585fc5b204886289e246c143509d665743dd"
+  },
+  "screenshot_sha256": {
+    "command-center-workspace.png": "f88ff4f5e0c521d8abd90ecae463087d791a1bfccddb0a8dad9cc55081626b3a",
+    "command-center.png": "d8bf23d557d0db0956dfa3a6e392a0492ffbcfff0d1528057e3ee39a1741dc7b",
+    "equity-positioning.png": "bfa6c4eb2cd6797cd3ee4fa4eb35822a435123fe3a2d47c0958c6ea845b9ba64",
+    "market-charts.png": "ad7b3fb009836703d82202027de9b93b9ead9b2ea7ffd0f5a70316d80682a727",
+    "research-mobile.png": "28124ef84892bc69a00d0e2a2646bffffd6cc9b83e140cd174284aaf463f5824",
+    "strategy-laboratory.png": "dc90e9109ae6ea036f75df46c64ead85141900436ea2fed02e5bbc54fbb53956"
+  }
+}

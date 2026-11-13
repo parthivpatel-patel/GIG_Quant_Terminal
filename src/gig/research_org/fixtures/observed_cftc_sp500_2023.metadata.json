@@ -1,0 +1,51 @@
+{
+  "provider": "CFTC",
+  "dataset_id": "cftc-tff-sp500-emini-2023",
+  "provider_dataset_id": "gpe5-46if",
+  "dataset_name": "TFF - Futures Only",
+  "contract_market_code": "13874A",
+  "market": "E-MINI S&P 500 - CHICAGO MERCANTILE EXCHANGE",
+  "contract_units": "($50 X S&P 500 INDEX)",
+  "source_url": "https://publicreporting.cftc.gov/resource/gpe5-46if.json?%24where=cftc_contract_market_code+%3D+%2713874A%27+AND+report_date_as_yyyy_mm_dd+between+%272023-01-01T00%3A00%3A00%27+and+%272023-12-31T23%3A59%3A59%27&%24order=report_date_as_yyyy_mm_dd+ASC&%24limit=100",
+  "metadata_url": "https://publicreporting.cftc.gov/api/views/gpe5-46if.json",
+  "license_url": "https://www.cftc.gov/WebPolicy/index.htm",
+  "information_url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+  "attribution": "Source: U.S. Commodity Futures Trading Commission, Traders in Financial Futures \u2014 Futures Only. Derived ratios, changes and historical percentiles are GIG calculations, not CFTC forecasts.",
+  "source_authenticity": "OFFICIAL_HTTPS_FETCH",
+  "classification": "HISTORICAL",
+  "acquired_at": "2026-11-11T13:06:18.210685+00:00",
+  "raw_sha256": "cdd469e84c79d21759cf858a246500123ffb90f82b1491480fe74f698d003eaf",
+  "raw_bytes": 162849,
+  "publication_time": "UNKNOWN",
+  "historical_knowledge": "UNKNOWN_NO_VINTAGES",
+  "redistribution": "PUBLIC_DOMAIN_GOVERNMENT_REPORT_WITH_CFTC_ACKNOWLEDGEMENT",
+  "access": "NO_TOKEN_REQUIRED_FOR_NONEXCESSIVE_PUBLIC_API_USE",
+  "cost": "ZERO_NO_CREDENTIALS",
+  "license_evidence": {
+    "url": "https://www.cftc.gov/WebPolicy/index.htm",
+    "http_status": 200,
+    "acquired_at": "2026-11-11T13:06:18.411500+00:00",
+    "sha256": "b8595b0619703c2227a045acb6814b61282100f595c4178559c19176964d97a6",
+    "bytes": 46958,
+    "quote": "Government information at the CFTC website is in the public domain. Public domain information may be freely distributed and copied, but it is requested that in any subsequent use the CFTC be given appropriate acknowledgement.",
+    "scope": "CFTC government aggregate report only. Third-party photographs, logos and contributions are not included."
+  },
+  "api_evidence": {
+    "url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+    "http_status": 200,
+    "acquired_at": "2026-11-11T13:06:18.535913+00:00",
+    "sha256": "a489dae84621aa8900b3a89397fb15236985a2c6562a4fa64f6e66c3eda1d73c",
+    "bytes": 82323,
+    "quote": "Currently, we are not providing tokens to use the Public Reporting APIs. People who are using the API are generally using it successfully without using a token. As long as you are not overusing the API, you should be able to use the API without a token."
+  },
+  "response": {
+    "url": "https://publicreporting.cftc.gov/resource/gpe5-46if.json?%24where=cftc_contract_market_code+%3D+%2713874A%27+AND+report_date_as_yyyy_mm_dd+between+%272023-01-01T00%3A00%3A00%27+and+%272023-12-31T23%3A59%3A59%27&%24order=report_date_as_yyyy_mm_dd+ASC&%24limit=100",
+    "http_status": 200,
+    "acquired_at": "2026-11-11T13:06:18.210685+00:00",
+    "sha256": "cdd469e84c79d21759cf858a246500123ffb90f82b1491480fe74f698d003eaf",
+    "bytes": 162849
+  },
+  "point_in_time_backtest_eligible": false,
+  "equity_cash_quotes_available": false,
+  "corporate_actions_scope": "AGGREGATE_FUTURES_POSITIONS_NOT_CASH_EQUITY_TOTAL_RETURN_DATA"
+}

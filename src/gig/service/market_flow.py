@@ -52,7 +52,19 @@ def capability_register() -> list[dict[str, Any]]:
     """Detached access evidence, not inferred licensing or provider connectivity."""
     from gig.data.cftc_positions import dataset_readiness
     positioning_ready = dataset_readiness()["state"] == "READY"
+    from gig.data.equity_positioning import dataset_readiness as equity_readiness
+    equity_ready = equity_readiness()["state"] == "AVAILABLE"
     rows: list[dict[str, Any]] = [
+        {"id": "cftc_equity_positioning", "name": "Observed CFTC E-mini S&P 500 futures positioning",
+         "state": "AVAILABLE" if equity_ready else "UNAVAILABLE",
+         "classification": "HISTORICAL" if equity_ready else "UNAVAILABLE", "provider": "U.S. CFTC",
+         "official_url": "https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm",
+         "cost": "$0 public API; pinned local research sample",
+         "access_terms": "CFTC public-domain government report; attribution and GIG transformations retained",
+         "delay": "Weekly report dates; historical publication clocks UNKNOWN",
+         "historical_coverage": "52 weekly E-mini S&P 500 TFF futures-only reports in 2023",
+         "redistribution": "Government report reuse permitted by CFTC WebPolicy; third-party assets excluded",
+         "reason": "Historical equity-index futures aggregate positions. STALE for current use; no stock prices, executed trades, options prints or fund flows."},
         {"id": "cftc_weekly_positioning", "name": "Observed CFTC weekly Euro FX futures positioning",
          "state": "AVAILABLE" if positioning_ready else "UNAVAILABLE",
          "classification": "HISTORICAL" if positioning_ready else "UNAVAILABLE", "provider": "U.S. CFTC",

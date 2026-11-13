@@ -1,0 +1,32 @@
+{
+  "previous_release_commit": "c5112cf02bd09b32c395ee01ef232cb79759b948",
+  "failed_ci_job": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43029275357/job/130551954517",
+  "failed_test": "ResearchLeaseTests.test_long_runner_renews_and_concurrent_tick_does_not_duplicate",
+  "previous_ci_result": {
+    "failed": 1,
+    "passed": 1232,
+    "skipped": 11,
+    "subtests_passed": 673
+  },
+  "cause": "A 90ms wall-clock lease test assumed scheduling/renewal remained live after a fixed sleep. Expired ownership correctly allowed reclaim; the test then timed out its blocked replacement runner.",
+  "repair": "Use a controlled test-only lease clock, advance only after actual heartbeat renewal is acknowledged in persisted lease_until, retain live-owner/concurrent-tick and shutdown checks beyond original expiry. Add exact-expiry stale-owner fencing test.",
+  "runtime_safety_changes": false,
+  "focused_suite": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "41",
+    "time": "15.374",
+    "timestamp": "2026-11-11T13:42:41.969558+00:00",
+    "hostname": "8e631d8e4874"
+  },
+  "stress": {
+    "passed": 75,
+    "failed": 0,
+    "runs_per_case": 25,
+    "cases": 3
+  },
+  "changed_test_sha256": "358a789dd42d61d8df3f0f4ec77605d00f817a34e9a3cd59869beaae22162104",
+  "final_full_regression": "Rerun in progress locally and on the final GitHub head; exact final results are recorded in PR #13."
+}

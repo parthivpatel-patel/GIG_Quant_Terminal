@@ -1,0 +1,84 @@
+{
+  "verified_source_commit": "5b8cf871a7551d747953d726fd643fb76b3243fe",
+  "verification_date": "2026-11-13",
+  "base_branch": "development/gig-ui-redesign",
+  "base_commit": "1f9a3e1cfa7363db242e4d3a9f3fb8802acc9a13",
+  "all_six_checks_success": true,
+  "checks": [
+    {
+      "name": "backend (3.12)",
+      "id": 130580404775,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43037532075/job/130580404775"
+    },
+    {
+      "name": "backend (3.11)",
+      "id": 130580404308,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43037532075/job/130580404308"
+    },
+    {
+      "name": "frontend",
+      "id": 130580403773,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43037532075/job/130580403773"
+    },
+    {
+      "name": "frontend",
+      "id": 130580365325,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43037523957/job/130580365325"
+    },
+    {
+      "name": "backend (3.12)",
+      "id": 130580365092,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43037523957/job/130580365092"
+    },
+    {
+      "name": "backend (3.11)",
+      "id": 130580364641,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43037523957/job/130580364641"
+    }
+  ],
+  "summaries": [
+    {
+      "job_id": 130580404775,
+      "summary": [
+        "2026-11-11T14:20:53.0019291Z Image: ubuntu-24.04",
+        "2026-11-11T14:20:53.0019808Z Version: 20261101.360.1",
+        "2026-11-11T14:32:52.4752196Z Required test coverage of 70.0% reached. Total coverage: 82.92%",
+        "2026-11-11T14:32:53.7489161Z 1235 passed, 11 skipped, 673 subtests passed in 617.64s (0:10:17)"
+      ]
+    },
+    {
+      "job_id": 130580404308,
+      "summary": [
+        "2026-11-11T14:20:56.5848714Z Image: ubuntu-24.04",
+        "2026-11-11T14:20:56.5849242Z Version: 20261101.360.1",
+        "2026-11-11T14:31:23.3438415Z Required test coverage of 70.0% reached. Total coverage: 82.92%",
+        "2026-11-11T14:31:23.3452850Z 1235 passed, 11 skipped, 673 subtests passed in 532.91s (0:08:52)"
+      ]
+    },
+    {
+      "job_id": 130580403773,
+      "summary": [
+        "2026-11-11T14:20:51.9737502Z Image: ubuntu-24.04",
+        "2026-11-11T14:20:51.9738089Z Version: 20261101.360.1",
+        "2026-11-11T14:23:53.3716408Z {\"passed\": 47, \"failed\": 0, \"browser\": \"158.0.8127.18\", \"report\": \"/tmp/ci-browser-registry/report.json\"}"
+      ]
+    }
+  ],
+  "reviews": [],
+  "unresolved_threads": [],
+  "rulesets": [],
+  "skip_scope": "Per backend runtime: nine FinBERT assets/runtime plus two legacy ECB acquisition-store checks. New packaged equity/positioning studies execute. Counts from repeated contexts overlap.",
+  "frontend_fix": "Already published: standard free ubuntu-24.04 runner, Playwright Chromium installed without redundant privileged APT/fonts; every real browser and axe check retained."
+}

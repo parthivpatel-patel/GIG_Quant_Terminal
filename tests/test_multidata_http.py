@@ -20,8 +20,9 @@ def test_registered_datasets_and_positioning_are_offline_read_only(tmp_path):
                 director = (await client.get('/api/v1/research-org/director')).json()
                 assert director['state'] == 'AVAILABLE'
                 objectives = director['data']['objectives']
-                assert [row['objective_id'] for row in objectives] == list(OBJECTIVES)
-                assert len({row['dataset_id'] for row in objectives}) == 3
+                assert [row['objective_id'] for row in objectives[:3]] == list(OBJECTIVES)
+                assert len(objectives) == 5
+                assert len({row['dataset_id'] for row in objectives}) == 4
                 assert all(row['dataset_state'] == 'AVAILABLE' for row in objectives)
                 assert director['data']['memory'] == []
                 positions = (await client.get('/api/v1/market-flow/positioning')).json()
@@ -68,7 +69,8 @@ def test_approved_distinct_research_resumes_after_budget_and_restart(tmp_path):
             await client.post('/api/v1/research-org/scheduler', json={'action': 'resume'})
             completed = await poll(client, 6)
             assert completed['scheduler_state']['reason'] == 'approved backlog is empty'
-            assert all(r['status'] == 'COMPLETED' for r in completed['director']['objectives'])
+            assert all(r['status'] == 'COMPLETED' for r in completed['director']['objectives'] if r['objective_id'] in OBJECTIVES)
+            assert all(r['status'] == 'NOT_APPROVED' for r in completed['director']['objectives'] if r['objective_id'] not in OBJECTIVES)
             reports = {r['hypothesis_id']: r['report'] for r in completed['runs']}
             parent = reports['treasury-10y-lagged-sign-2023']
             followup = reports['treasury-10y-reversal-robustness-2023-v1']

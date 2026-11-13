@@ -1,0 +1,119 @@
+{
+  "browser": "Chromium",
+  "version": "151.0.7922.34",
+  "passed": 22,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "all sixteen sections retained",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "approval does not start compute",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "durable bounded objective approved",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "one start automatically executes parent and follow-up",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "director completed exactly one investigation",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "actual inconclusive observed result displayed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no trading or promotion",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved findings filter is functional",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "six analytical timeline stages",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "skeptic timeline is interactive",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved result reload preserves exact report",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "mobile has no horizontal page overflow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Market Flow explicitly discloses missing observations",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "loading authored assumptions does not calculate results",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "explicit local model renders scenario curve and table",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "model alert is distinguished from observed activity",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observatory dark automated axe accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "market-flow dark automated axe accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "observatory light automated axe accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "market-flow light automated axe accessibility",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no JavaScript errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no external browser requests",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "limits": "Headless Chromium only; automated axe is not complete accessibility certification."
+}

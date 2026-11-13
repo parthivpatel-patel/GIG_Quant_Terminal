@@ -3,7 +3,7 @@
 (() => {
   "use strict";
   const $ = (id) => document.getElementById(id);
-  const state = { started: false, visible: false, payload: null, busy: false, positioning: null, positionIndex: 0, positioningBusy: false };
+  const state = { started: false, visible: false, payload: null, busy: false, positioning: null, positionIndex: 0, positioningBusy: false, positionMarket: "euro-fx" };
   const node = (tag, className, text) => {
     const result = document.createElement(tag);
     if (className) result.className = className;
@@ -34,6 +34,12 @@
     const heading = node("div", "flow-positioning-heading"), title = node("div"); title.append(node("p", "flow-kicker", "01 / OBSERVED AGGREGATE POSITIONING"));
     const h3 = node("h3", null, "Commitments, in context."); h3.id = "flow-positioning-title"; title.append(h3); heading.append(title);
     const reload = node("button", "text-button", "Reload saved evidence"); reload.type = "button"; reload.id = "flow-positioning-refresh"; reload.addEventListener("click", loadPositioning); heading.append(reload); positioning.append(heading);
+    const scope = node("div", "flow-market-scope");
+    const scopeLabel = node("label", null, "Official reported market"); scopeLabel.htmlFor = "flow-positioning-market";
+    const market = node("select"); market.id = "flow-positioning-market";
+    [["euro-fx", "Euro FX / currency futures"], ["equity-index", "E-mini S&P 500 / equity-index futures"]].forEach(([value, label]) => { const option = node("option", null, label); option.value = value; market.append(option); });
+    market.addEventListener("change", () => { state.positionMarket = market.value; loadPositioning(); });
+    scope.append(scopeLabel, market, node("p", "flow-note", "Distinct official contract identities. These reports describe weekly positions, not cash equities, transaction flow or options activity.")); positioning.append(scope);
     const status = node("p", "flow-note", "Loading admitted positioning evidence…"); status.id = "flow-positioning-status"; status.setAttribute("role", "status"); positioning.append(status);
     const content = node("div"); content.id = "flow-positioning-content"; positioning.append(content); root.append(positioning);
     const grid = node("div", "flow-grid");
@@ -193,10 +199,12 @@
   }
   async function loadPositioning() {
     if (state.positioningBusy) return;
-    state.positioningBusy = true; $("flow-positioning-refresh").disabled = true;
+    state.positioningBusy = true; $("flow-positioning-refresh").disabled = true; $("flow-positioning-market").disabled = true;
+    state.positioning = null; $("flow-positioning-content").replaceChildren();
     $("flow-positioning-status").textContent = "Loading saved official positioning evidence. No provider request is made by this page.";
     try {
-      const response = await fetch("/api/v1/market-flow/positioning", { headers: { Accept: "application/json" } });
+      const endpoint = state.positionMarket === "equity-index" ? "/api/v1/market-flow/equity-positioning" : "/api/v1/market-flow/positioning";
+      const response = await fetch(endpoint, { headers: { Accept: "application/json" } });
       const payload = await response.json();
       if (!response.ok || !["AVAILABLE", "STALE"].includes(payload.state) || !payload.data || !Array.isArray(payload.data.rows) || !payload.data.rows.length) throw new Error("unavailable");
       state.positioning = payload.data; state.positionIndex = payload.data.rows.length - 1; renderPositioning();
@@ -204,7 +212,7 @@
     } catch {
       state.positioning = null; $("flow-positioning-content").replaceChildren();
       $("flow-positioning-status").textContent = "UNAVAILABLE · Verified positioning evidence could not be loaded. No positions or trades have been fabricated.";
-    } finally { state.positioningBusy = false; $("flow-positioning-refresh").disabled = false; if (state.visible) truth(state.payload, !state.payload); }
+    } finally { state.positioningBusy = false; $("flow-positioning-refresh").disabled = false; $("flow-positioning-market").disabled = false; if (state.visible) truth(state.payload, !state.payload); }
   }
 
   async function load(evaluate = false) {
@@ -232,6 +240,6 @@
     show(on) { state.visible = on; $("market-flow-panel").classList.toggle("hidden", !on); if (!on) return; if (!state.started) { build(); state.started = true; load(); loadPositioning(); } else truth(state.payload, !state.payload); },
     reload: () => { load(); loadPositioning(); },
     state: () => ({ visible: state.visible, busy: state.busy, analysis: Boolean(state.payload?.data?.analysis),
-      observedFlow: "UNAVAILABLE", positioningAvailable: Boolean(state.positioning), positioningReports: state.positioning?.rows?.length || 0, positioningIndex: state.positionIndex, identity: state.payload?.data?.analysis?.inputs_sha256 || null }),
+      observedFlow: "UNAVAILABLE", positioningMarket: state.positionMarket, positioningAvailable: Boolean(state.positioning), positioningReports: state.positioning?.rows?.length || 0, positioningIndex: state.positionIndex, identity: state.payload?.data?.analysis?.inputs_sha256 || null }),
   };
 })();

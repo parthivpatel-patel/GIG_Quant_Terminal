@@ -6,7 +6,9 @@ import sqlite3
 import threading
 import time
 import unittest
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from queue import Queue
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
@@ -24,6 +26,22 @@ def _process_tick(directory: str, output: object) -> None:
 def _report() -> dict:
     return {"hypothesis_id": SEED[0]["hypothesis_id"], "verdict": "INCONCLUSIVE",
             "classification": "SYNTHETIC", "economic_claim": "NONE"}
+
+
+class _LeaseClock:
+    """Test-only logical lease time; actual scheduler heartbeats still run."""
+    def __init__(self):
+        self.value = datetime.now(UTC)
+        self.lock = threading.Lock()
+
+    def now(self, tz):
+        with self.lock:
+            return self.value.astimezone(tz)
+
+    def advance(self, seconds):
+        with self.lock:
+            self.value += timedelta(seconds=seconds)
+            return self.value
 
 
 class ResearchLeaseTests(unittest.TestCase):
@@ -79,56 +97,107 @@ class ResearchLeaseTests(unittest.TestCase):
             ledger = ResearchLedger(Path(directory))
             entered, release = threading.Event(), threading.Event()
             outcomes = []
+            clock, renewals = _LeaseClock(), Queue()
+            real_renew = ledger.renew_lease
+
+            def observed_renew(owner, seconds):
+                result = real_renew(owner, seconds)
+                if result:
+                    renewals.put(ledger.scheduler_state()["lease_until"])
+                return result
 
             def bounded_runner():
                 entered.set()
-                if not release.wait(3):
+                if not release.wait(10):
                     raise RuntimeError("test runner timeout")
                 return "test-hash", _report()
 
-            with patch.dict("gig.research_org.scheduler.RUNNERS", {"lagged_sign": bounded_runner}):
+            with (patch("gig.research_org.ledger.datetime", clock),
+                  patch.object(ledger, "renew_lease", side_effect=observed_renew),
+                  patch.dict("gig.research_org.scheduler.RUNNERS", {"lagged_sign": bounded_runner})):
+                initial = clock.now(UTC)
                 first = threading.Thread(target=lambda: outcomes.append(tick(ledger, lease_seconds=0.09)))
                 first.start()
                 try:
-                    self.assertTrue(entered.wait(2))
-                    time.sleep(0.3)
+                    self.assertTrue(entered.wait(5))
+                    # Advance the lease clock only after each real heartbeat
+                    # acknowledges renewal. CI thread scheduling is not a clock.
+                    for _ in range(3):
+                        target = clock.advance(0.06)
+                        while renewals.get(timeout=5) < (target + timedelta(seconds=0.09)).isoformat():
+                            pass
+                    self.assertGreater(clock.now(UTC), initial + timedelta(seconds=0.09))
                     self.assertEqual(tick(ResearchLedger(Path(directory)))["tick"]["action"], "busy")
                     self.assertEqual(ledger.count(), 0)
                     self.assertEqual(ledger.jobs()[0]["attempts"], 1)
                 finally:
                     release.set()
-                    first.join(3)
-            self.assertFalse(first.is_alive())
-            self.assertEqual(outcomes[0]["tick"]["action"], "ran")
-            self.assertEqual(ledger.count(), 1)
+                    first.join(10)
+                self.assertFalse(first.is_alive())
+                self.assertEqual(outcomes[0]["tick"]["action"], "ran")
+                self.assertEqual(ledger.count(), 1)
 
     def test_shutdown_timeout_keeps_live_job_lease_until_runner_finishes(self) -> None:
         with TemporaryDirectory() as directory:
             ledger = ResearchLedger(Path(directory))
             entered, release = threading.Event(), threading.Event()
+            clock, renewals = _LeaseClock(), Queue()
+            real_renew = ledger.renew_lease
+
+            def observed_renew(owner, seconds):
+                result = real_renew(owner, seconds)
+                if result:
+                    renewals.put(ledger.scheduler_state()["lease_until"])
+                return result
 
             def bounded_runner():
                 entered.set()
-                if not release.wait(3):
+                if not release.wait(10):
                     raise RuntimeError("test runner timeout")
                 return "test-hash", _report()
 
             worker = ResearchWorker(ledger, lease_seconds=0.09)
-            with patch.dict("gig.research_org.scheduler.RUNNERS", {"lagged_sign": bounded_runner}):
+            with (patch("gig.research_org.ledger.datetime", clock),
+                  patch.object(ledger, "renew_lease", side_effect=observed_renew),
+                  patch.dict("gig.research_org.scheduler.RUNNERS", {"lagged_sign": bounded_runner})):
                 worker.start(0.05)
                 try:
-                    self.assertTrue(entered.wait(2))
+                    self.assertTrue(entered.wait(5))
                     worker.shutdown(timeout=0.001)
-                    time.sleep(0.2)
+                    for _ in range(3):
+                        target = clock.advance(0.06)
+                        while renewals.get(timeout=5) < (target + timedelta(seconds=0.09)).isoformat():
+                            pass
                     self.assertTrue(worker.snapshot()["alive"])
                     self.assertTrue(ResearchLedger(Path(directory)).lease_blocks(None))
                     self.assertEqual(tick(ResearchLedger(Path(directory)))["tick"]["action"], "busy")
                 finally:
                     release.set()
-                    worker.wait(3)
-            self.assertEqual(ledger.count(), 1)
-            self.assertFalse(worker.snapshot()["alive"])
-            self.assertFalse(ledger.lease_blocks(None))
+                    worker.wait(10)
+                self.assertEqual(ledger.count(), 1)
+                self.assertFalse(worker.snapshot()["alive"])
+                self.assertFalse(ledger.lease_blocks(None))
+
+    def test_missed_heartbeat_at_exact_expiry_cannot_revive_or_commit(self) -> None:
+        with TemporaryDirectory() as directory:
+            ledger = ResearchLedger(Path(directory))
+            clock = _LeaseClock()
+            with patch("gig.research_org.ledger.datetime", clock):
+                self.assertTrue(ledger.acquire_lease("old", 0.09))
+                old = ledger.recover_and_claim(SEED, lease_owner="old")
+                clock.advance(0.09)
+                self.assertFalse(ledger.renew_lease("old", 0.09))
+                self.assertFalse(ledger.lease_blocks(None))
+                self.assertTrue(ledger.acquire_lease("new", 30))
+                current = ledger.recover_and_claim(SEED, lease_owner="new")
+                self.assertEqual(current["attempts"], old["attempts"] + 1)
+                with self.assertRaises(LeaseLost):
+                    ledger.finish_claim(old["job_id"], "stale", _report(), actor="test",
+                                        lease_owner="old", attempt=old["attempts"])
+                self.assertEqual(ledger.count(), 0)
+                ledger.finish_claim(current["job_id"], "current", _report(), actor="test",
+                                    lease_owner="new", attempt=current["attempts"])
+                self.assertEqual(ledger.count(), 1)
 
     def test_expired_and_replaced_owner_cannot_commit_or_change_job(self) -> None:
         with TemporaryDirectory() as directory:

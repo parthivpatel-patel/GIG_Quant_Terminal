@@ -39,12 +39,12 @@ def _catalog(executed: set[str]) -> list[dict[str, Any]]:
             "The scheduler queues it once after the two synthetic jobs."
         ),
     })
-    from gig.research_org.template_catalog import TEMPLATES
-    for template in TEMPLATES:
+    from gig.research_org.template_catalog import investigations
+    for template in investigations():
         rows.append({
             "id": template.hypothesis_id, "name": template.question,
-            "module": "gig.research_org.treasury_followup" if template.parent else "gig.research_org.observed_experiments",
-            "status": "EXECUTED_ON_OFFICIAL_REFERENCE" if template.hypothesis_id in executed else "OBJECTIVE_APPROVAL_REQUIRED",
+            "module": template.module,
+            "status": "EXECUTED_ON_ADMITTED_HISTORICAL_ARCHIVE" if template.hypothesis_id in executed else "OBJECTIVE_APPROVAL_REQUIRED",
             "note": f"Registered method {template.method} v{template.method_version}; dataset {template.dataset_id}. Separate objective approval required; no trade or model promotion.",
         })
     return rows

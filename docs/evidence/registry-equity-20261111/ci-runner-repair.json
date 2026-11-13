@@ -1,0 +1,16 @@
+{
+  "verified_at": "2026-11-11T14:20:24.227187+00:00",
+  "official_manifest_url": "https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md",
+  "official_manifest_image_version": "20261101.360.1",
+  "official_manifest_browsers": [
+    "Google Chrome 156.0.8078.79",
+    "Chromium 156.0.8078.0"
+  ],
+  "migration_notice": "https://github.com/actions/runner-images/issues/14748",
+  "observed_ci_failure": "Playwright install --with-deps failed before browser tests: security.ubuntu.com DNS failure while installing fonts on Ubuntu26.04/resolute",
+  "failed_job_url": "https://github.com/parthivpatel-patel/GIG_Quant_Terminal/actions/runs/43034011761/job/130568019685",
+  "repair": "Pin both jobs to free public ubuntu-24.04. Install Playwright Chromium without redundant APT/font installation. All actual browser launch, workflow, a11y and responsive checks remain required. No host DNS or security setting is changed.",
+  "cost": "$0 standard GitHub-hosted runner on public repository",
+  "physical_arm64_validation": false,
+  "current_full_ci": "See PR #13 final-head check runs."
+}

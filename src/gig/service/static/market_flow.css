@@ -91,3 +91,10 @@ main[data-workspace="market-flow"] > .page-footer { display:none; }
 .flow-desk .flow-table-wrap { min-width:0; width:100%; box-sizing:border-box; }
 .flow-desk svg,.flow-desk textarea { max-width:100%; }
 @media(max-width:900px) { .flow-grid { grid-template-columns:minmax(0,1fr); } }
+
+.flow-market-scope { display:grid; grid-template-columns:170px minmax(220px,1fr); align-items:center; gap:8px 18px; padding:15px 0; border-bottom:1px solid var(--border); }
+.flow-desk .flow-market-scope label { margin:0; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+.flow-market-scope select { min-height:42px; background:var(--input); color:var(--text); border:1px solid var(--border); padding:8px 12px; font-size:12px; min-width:0; max-width:100%; }
+.flow-market-scope p { grid-column:2; font-size:10px; margin:0; }
+.flow-market-scope select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media(max-width:650px) { .flow-market-scope { grid-template-columns:minmax(0,1fr); gap:8px; }.flow-market-scope p { grid-column:1; } }

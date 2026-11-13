@@ -11,17 +11,18 @@ from typing import Any
 from gig.research_org.backlog import APPROVED, CANDIDATE, SEED
 from gig.research_org.cycle import status
 from gig.research_org.director import admit_claim, admit_result, propose
+from gig.research_org.equity_experiments import run_equity_range, run_equity_volume
 from gig.research_org.experiment import run_seeded
 from gig.research_org.futures_experiment import run_futures
 from gig.research_org.ledger import ResearchLedger
-from gig.research_org.template_catalog import TEMPLATES, run_boc_volatility, run_ecb_risk
+from gig.research_org.template_catalog import investigations, run_boc_volatility, run_ecb_risk
 from gig.research_org.treasury_experiment import run_treasury
 from gig.research_org.treasury_followup import run_followup
 
 RUNNERS = {"lagged_sign": run_seeded, "futures_tsmom": run_futures, "treasury_yield": run_treasury,
            "treasury_reversal": run_followup, "ecb_risk": run_ecb_risk,
-           "boc_volatility": run_boc_volatility}
-RUNNER_BY_JOB = {job["job_id"]: job["runner"] for job in (*SEED, CANDIDATE, *(row.job() for row in TEMPLATES))}
+           "boc_volatility": run_boc_volatility, "equity_range": run_equity_range, "equity_volume": run_equity_volume}
+RUNNER_BY_JOB = {job["job_id"]: job["runner"] for job in (*SEED, CANDIDATE, *(row.job() for row in investigations()))}
 MAX_ATTEMPTS = 3
 
 

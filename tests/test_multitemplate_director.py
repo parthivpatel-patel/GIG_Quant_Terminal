@@ -46,9 +46,9 @@ def _finish_seeds(ledger):
 def test_catalog_distinguishes_three_templates_and_datasets_without_mutation(tmp_path):
     ledger = ResearchLedger(tmp_path / "org")
     data = director.status(ledger)
-    assert data["version"] == 2 and data["template_count"] == 3
-    assert len({r["dataset_id"] for r in data["objectives"]}) == 3
-    assert len({r["method"] for r in data["objectives"]}) == 3
+    assert data["version"] == 3 and data["template_count"] == 5
+    assert len({r["dataset_id"] for r in data["objectives"]}) == 4
+    assert len({r["method"] for r in data["objectives"]}) == 5
     assert data["objectives"][0]["objective_id"] == director.OBJECTIVE_ID
     assert all(r["status"] == "NOT_APPROVED" for r in data["objectives"])
     assert not ledger.path.exists()
@@ -60,7 +60,7 @@ def test_each_registered_objective_requires_its_own_durable_approval(tmp_path):
     with patch.object(director, "dataset_readiness", side_effect=_ready):
         director.approve(ledger, ECB.objective_id)
         data = director.status(ResearchLedger(tmp_path))
-    assert [r["status"] for r in data["objectives"]] == ["NOT_APPROVED", "APPROVED", "NOT_APPROVED"]
+    assert [r["status"] for r in data["objectives"]] == ["NOT_APPROVED", "APPROVED", "NOT_APPROVED", "NOT_APPROVED", "NOT_APPROVED"]
     assert ledger.count() == 0 and ledger.scheduler_state()["desired"] == "STOPPED"
     with pytest.raises(ValueError):
         director.approve(ledger, "arbitrary-unbounded-hypothesis")
@@ -171,7 +171,7 @@ def test_two_approved_investigations_preserve_worker_budget_and_resume(tmp_path)
         again.wait(20)
         assert json.dumps(director.status(ResearchLedger(tmp_path)), sort_keys=True) == before
     assert calls == [ECB.hypothesis_id, BOC.hypothesis_id]
-    assert [r["status"] for r in data["objectives"]] == ["NOT_APPROVED", "COMPLETED", "COMPLETED"]
+    assert [r["status"] for r in data["objectives"]] == ["NOT_APPROVED", "COMPLETED", "COMPLETED", "NOT_APPROVED", "NOT_APPROVED"]
     quant = next(r for r in data["roles"] if r["id"] == "quant")
     assert quant["workflow_count"] == 2
     assert len(data["memory"]) == 5

@@ -1,0 +1,87 @@
+{
+  "passed": 15,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "observatory replaces the truth strip",
+      "passed": true,
+      "detail": [
+        "AVAILABLE",
+        "research-organization \u00b7 SYNTHETIC \u00b7 0 recorded runs",
+        "",
+        "No job has run",
+        "Synthetic jobs are labelled synthetic \u00b7 Treasury study is historical \u00b7 No orders"
+      ]
+    },
+    {
+      "name": "nine roles are listed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "shared data controls are hidden",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "scheduler controls are present",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "registered strategies are not marked executed",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "options-flow objective is blocked",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "first job records an inconclusive finding",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "first job shows dataset lineage",
+      "passed": true,
+      "detail": "INCONCLUSIVE\n\nInconclusive: the series is authored and synthetic, so the numbers are not a market result. A positive verdict is not available for this classification.\n\nSource / authored-deterministic-returns-v1\n\nEvidence class\nINCONCLUSIVE\n"
+    },
+    {
+      "name": "second job records the futures experiment",
+      "passed": true,
+      "detail": "INCONCLUSIVE\n\nInconclusive. The after-cost total return on this authored series is negative. The series is synthetic noise, so the number is not a futures-market result and cannot be a positive verdict.\n\nSource / authored-futures-excess-v1\n\nEvidence class\nINCONCLUSIVE\nObservation"
+    },
+    {
+      "name": "futures equity curve is drawn",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "futures strategy is marked executed and the others are not",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reload keeps both cycles",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "a further tick finds an empty queue",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no JavaScript errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no external requests",
+      "passed": true,
+      "detail": []
+    }
+  ]
+}

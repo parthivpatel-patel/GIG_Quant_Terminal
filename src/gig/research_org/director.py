@@ -19,6 +19,7 @@ from gig.research_org.template_catalog import (
     ResearchTemplate,
     dataset_readiness,
     find_template,
+    investigations,
     selection_identity,
 )
 
@@ -90,10 +91,32 @@ def _plan_detail(raw: str) -> dict[str, Any]:
     return {"reason": raw, "selection_identity": None, "dataset_sha256": None}
 
 
+def selection(template: ResearchTemplate, reports: list[dict[str, Any]]) -> dict[str, Any]:
+    """Transparent bounded research-memory ranking, never a performance optimizer.
+
+    Novel datasets and registered falsification are prioritized. Repeated work
+    on a dataset loses novelty; no p-value or profitable-result preference.
+    Only saved reports are evidence; pending/running work does not count.
+    """
+    related = [r for r in reports if isinstance(r.get("dataset"), dict)
+               and r["dataset"].get("id") == template.dataset_id]
+    parent = next((r for r in reports if r.get("hypothesis_id") == template.parent), None)
+    parts = {"base": template.priority, "unanswered_dataset": 20 if not related else 0,
+             "negative_challenge": 15 if parent and _dependency(template, reports)[0] == "READY" else 0,
+             "unresolved_review": -min(30, 10 * len(related)),
+             "cost_penalty": -2 * template.estimated_cost_units}
+    score = sum(parts.values())
+    memory = [{"hypothesis_id": r["hypothesis_id"], "verdict": r.get("verdict", "UNKNOWN"),
+               "report_hash": _report_hash(r)} for r in reports
+              if r in related or r is parent]
+    return {"selection_score": score, "selection_components": parts, "memory_evidence": memory,
+            "selection_reason": "Declared importance + dataset novelty + registered falsification - repeated-dataset saturation - estimated compute. Saved outcomes are retained regardless of sign."}
+
+
 def propose(ledger: ResearchLedger) -> str:
     """Checkpoint all eligible approved investigations, in declared priority order.
 
-    Priorities are registered before results are observed. Rejections, exhausted
+    Base priorities are declared; dataset novelty and reviewed parent evidence inform selection. Rejections, exhausted
     attempts, cancellation and data revision never silently generate another run.
     """
     objectives, _, reports = _rows(ledger)
@@ -101,7 +124,8 @@ def propose(ledger: ResearchLedger) -> str:
     if not approved:
         return "not-approved"
     added, outcomes = 0, []
-    for template in sorted(TEMPLATES, key=lambda row: (-row.priority, row.objective_id)):
+    ranked = sorted(investigations(), key=lambda row: (-selection(row, reports)["selection_score"], row.objective_id))
+    for template in ranked:
         if template.objective_id not in approved:
             continue
         if any(r["hypothesis_id"] == template.hypothesis_id for r in reports):
@@ -118,7 +142,7 @@ def propose(ledger: ResearchLedger) -> str:
             continue
         planned = {"reason": reason, "selection_identity": identity,
                    "dataset_sha256": dataset["sha256"], "method": template.method,
-                   "method_version": template.method_version}
+                   "method_version": template.method_version, **selection(template, reports)}
         now = datetime.now(UTC).isoformat()
         with ledger._lock, closing(ledger._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
@@ -137,7 +161,7 @@ def propose(ledger: ResearchLedger) -> str:
                 outcomes.append("already-planned")
                 continue
             db.execute("INSERT OR IGNORE INTO jobs VALUES (?,?, 'QUEUED',0,NULL,?,?)",
-                       (template.job_id, template.hypothesis_id, template.seq, now))
+                       (template.job_id, template.hypothesis_id, 1000 - planned["selection_score"], now))
             db.execute("INSERT INTO audit(at,actor,action,detail) VALUES (?,?,?,?)",
                        (now, "director", "automatic-followup" if template.parent else "approved-investigation",
                         template.hypothesis_id))
@@ -157,7 +181,7 @@ def _report_hash(report: dict[str, Any]) -> str:
 
 def admit_claim(ledger: ResearchLedger, job_id: str) -> bool:
     """Recheck local admission at execution, without changing the lease protocol."""
-    template = next((row for row in TEMPLATES if row.job_id == job_id), None)
+    template = next((row for row in investigations() if row.job_id == job_id), None)
     if template is None:
         return True
     _, plans, _ = _rows(ledger)
@@ -169,12 +193,12 @@ def admit_claim(ledger: ResearchLedger, job_id: str) -> bool:
     stored = _plan_detail(plan["reason"]).get("selection_identity")
     # The old Treasury-only plan schema did not store an identity. Its runner
     # still enforces the original pinned source hash; retain restart compatibility.
-    return current is not None and (stored is None or stored == current)
+    return current is not None and (stored == current or (stored is None and template.objective_id == OBJECTIVE_ID))
 
 
 def admit_result(ledger: ResearchLedger, job_id: str, report: dict[str, Any]) -> bool:
     """A completed run must still match the approved source and safe output scope."""
-    template = next((row for row in TEMPLATES if row.job_id == job_id), None)
+    template = next((row for row in investigations() if row.job_id == job_id), None)
     if template is None:
         return True
     if not admit_claim(ledger, job_id):
@@ -225,7 +249,7 @@ def status(ledger: ResearchLedger) -> dict[str, Any]:
     plans_by_id = {row["hypothesis_id"]: row for row in plans}
     catalog = []
     datasets: dict[str, dict[str, Any]] = {}
-    for template in TEMPLATES:
+    for template in investigations():
         dataset = datasets.setdefault(template.dataset_id, dataset_readiness(template.dataset_id))
         approval = approvals.get(template.objective_id, "NOT_APPROVED")
         complete = template.hypothesis_id in report_by_id
@@ -244,27 +268,29 @@ def status(ledger: ResearchLedger) -> dict[str, Any]:
             "approval_state": approval, "dataset_id": template.dataset_id, "dataset": dataset,
             "dataset_state": dataset["state"], "method": template.method,
             "method_version": template.method_version, "priority": template.priority,
+            "family": template.family, "estimated_cost_units": template.estimated_cost_units,
+            **selection(template, reports),
             "parent_hypothesis_id": template.parent, "eligibility": dependency,
             "selection_identity": identity, "job_status": jobs.get(template.hypothesis_id, {}).get("status"),
             "reason": reason + " One registered investigation per objective; approval does not start compute.",
         })
-    investigations = []
+    planned_investigations = []
     for plan in plans:
         report = report_by_id.get(plan["hypothesis_id"])
-        investigations.append({**plan, **_plan_detail(plan["reason"]),
+        planned_investigations.append({**plan, **_plan_detail(plan["reason"]),
                                "status": jobs.get(plan["hypothesis_id"], {}).get("status", "UNKNOWN"),
                                "report_hash": _report_hash(report) if report else None})
     return {
-        "policy": "BOUNDED_APPROVED_TEMPLATES", "version": 2,
+        "policy": "BOUNDED_APPROVED_TEMPLATES", "version": 3,
         "objectives": catalog, "datasets": list(datasets.values()),
-        "investigations": investigations,
+        "investigations": planned_investigations,
         "memory": [{"hypothesis_id": r["hypothesis_id"], "verdict": r["verdict"],
                     "classification": r.get("classification", "UNKNOWN"),
                     "economic_claim": r.get("economic_claim", "UNKNOWN"),
                     "dataset": r.get("dataset"), "report_hash": _report_hash(r)} for r in reports],
         "roles": _roles(reports, bool(plans)),
-        "selection_policy": "Fixed preregistered priority; explicit approval, valid dataset and dependency gates; one persisted plan per hypothesis version.",
-        "template_count": len(TEMPLATES), "max_followups_per_objective": 1,
+        "selection_policy": "Memory-informed bounded ranking; explicit per-investigation approval, source/version gates and durable deduplication. Scores are checkpointed at planning; queued jobs are never silently reordered.",
+        "template_count": len(investigations()), "max_followups_per_objective": 1,
         "max_investigations_per_objective": 1, "max_attempts_per_job": 3,
         "server_required": True, "code_generation": False, "network_acquisition": False,
         "brokerage_execution": "DISABLED", "models_promoted": 0,

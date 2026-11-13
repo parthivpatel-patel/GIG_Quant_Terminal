@@ -1,0 +1,2144 @@
+{
+  "uci-equity-weekly-range-persistence-2011-v1": {
+    "config_hash": "5ab9cf0bb1d54400",
+    "report": {
+      "hypothesis_id": "uci-equity-weekly-range-persistence-2011-v1",
+      "question": "Does lagged weekly range beat a purged training-median baseline on the selected UCI archive panel?",
+      "strategy": "gig.research_org.equity_experiments",
+      "experiment_version": 1,
+      "classification": "HISTORICAL",
+      "verdict": "INCONCLUSIVE",
+      "evidence_class": "INCONCLUSIVE",
+      "economic_claim": "NONE",
+      "n_obs": 125,
+      "dataset": {
+        "dataset_id": "uci-dow-jones-weekly-2011",
+        "state": "AVAILABLE",
+        "sha256": "cf77b64c2afbb3decfeb629d42cb2096f32632e9ca8e5904c74822a0fa8f2d17",
+        "source_sha256": "08ad8e30915f071b46f6f5bef2b1ccdfe70aacfa31aee116117048ad2adec0bf",
+        "provider": "UCI_DOW_JONES_WEEKLY_2011",
+        "source_url": "https://archive.ics.uci.edu/static/public/312/dow+jones+index.zip",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "Source: Michael Brown, Dow Jones Index [Dataset], UCI Machine Learning Repository, 2013, DOI 10.24432/C5788V. CC BY 4.0. Brown, M. S., Pelosi, M. and Dirska, H. (2013), Dynamic-radius Species-conserving Genetic Algorithm for the Financial Forecasting of Dow Jones Index Stocks, LNAI 7988, 27-41. GIG parses selected weekly observations and excludes future-label/dividend columns; these changes are not UCI or exchange outputs.",
+        "acquired_at": "2026-11-03T19:42:02.239687+00:00",
+        "publication_time": "UNKNOWN",
+        "revision_knowledge_time": "UNKNOWN",
+        "classification": "HISTORICAL",
+        "corporate_actions_state": "UNAVAILABLE",
+        "price_adjustment_basis_state": "UNKNOWN",
+        "point_in_time_backtest_eligible": false,
+        "funded_allocation_eligible": false,
+        "observation_count": 125,
+        "reason": "CC BY 4.0 source weekly equity aggregates; retrospective diagnostics only, not adjusted or PIT-admitted returns.",
+        "id": "uci-dow-jones-weekly-2011",
+        "information_url": "https://archive.ics.uci.edu/dataset/312/dow+jones+index",
+        "source_acquired_at": "2026-11-03T19:42:02.239687+00:00",
+        "observation_semantics": "SOURCE_REPORTED_WEEKLY_AGGREGATES"
+      },
+      "configuration": {
+        "hypothesis_id": "uci-equity-weekly-range-persistence-2011-v1",
+        "dataset": "uci-dow-jones-weekly-2011",
+        "fixture_sha256": "cf77b64c2afbb3decfeb629d42cb2096f32632e9ca8e5904c74822a0fa8f2d17",
+        "method_version": 1,
+        "labels": [
+          "AA",
+          "IBM",
+          "KO",
+          "MSFT",
+          "XOM"
+        ],
+        "windows": [
+          [
+            10,
+            15
+          ],
+          [
+            15,
+            20
+          ],
+          [
+            20,
+            25
+          ]
+        ],
+        "kind": "range",
+        "bootstrap_seed": 113,
+        "bootstrap_draws": 512,
+        "bootstrap_block_weeks": 3,
+        "multiple_testing_family": [
+          "uci-equity-weekly-range-persistence-2011-v1",
+          "uci-equity-weekly-volume-persistence-2011-v1"
+        ]
+      },
+      "metrics": {
+        "score_name": "Mean absolute weekly range error",
+        "score_units": "fraction of source weekly opening level",
+        "model_mean_score": 0.019235746987289144,
+        "baseline_mean_score": 0.012862643483420488,
+        "lower_score_is_better": true,
+        "prediction_rows": [
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.08021712907117008,
+            "baseline_prediction": 0.05103969754253308,
+            "model_score": 0.023790796782768825,
+            "baseline_score": 0.005386634745868174
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.05642633228840126,
+            "baseline_prediction": 0.05103969754253308,
+            "model_score": 0.0034027275406585747,
+            "baseline_score": 0.008789362286526749
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.05982905982905983,
+            "baseline_prediction": 0.05103969754253308,
+            "model_score": 0.014294909216100112,
+            "baseline_score": 0.005505546929573363
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.04553415061295972,
+            "baseline_prediction": 0.05103969754253308,
+            "model_score": 0.014741394737212497,
+            "baseline_score": 0.009235847807639135
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.06027554535017222,
+            "baseline_prediction": 0.05103969754253308,
+            "model_score": 0.03994593859224196,
+            "baseline_score": 0.04918178639988109
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.05488861386138614,
+            "baseline_prediction": 0.030179847253017984,
+            "model_score": 0.008836876334692288,
+            "baseline_score": 0.03354564294306044
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.06372549019607843,
+            "baseline_prediction": 0.030179847253017984,
+            "model_score": 0.027757461776895476,
+            "baseline_score": 0.005788181166164967
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.03596802841918295,
+            "baseline_prediction": 0.030179847253017984,
+            "model_score": 0.01553965154658174,
+            "baseline_score": 0.009751470380416773
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.02042837687260121,
+            "baseline_prediction": 0.030179847253017984,
+            "model_score": 0.010758020468270839,
+            "baseline_score": 0.02050949084868761
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.009670356404330373,
+            "baseline_prediction": 0.030179847253017984,
+            "model_score": 0.01504819474593884,
+            "baseline_score": 0.005461296102748772
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.0209736680955297,
+            "baseline_prediction": 0.025513478818998715,
+            "model_score": 0.030627202280597125,
+            "baseline_score": 0.02608739155712811
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.051600870376126824,
+            "baseline_prediction": 0.025513478818998715,
+            "model_score": 0.014534499395610433,
+            "baseline_score": 0.011552892161517676
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.03706637098051639,
+            "baseline_prediction": 0.025513478818998715,
+            "model_score": 0.0005103161360480238,
+            "baseline_score": 0.0120632082975657
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.037576687116564415,
+            "baseline_prediction": 0.025513478818998715,
+            "model_score": 0.023295223266519786,
+            "baseline_score": 0.011232014968954086
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.01428146385004463,
+            "baseline_prediction": 0.025513478818998715,
+            "model_score": 0.01635050641017842,
+            "baseline_score": 0.005118491441224334
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.035208572522005356,
+            "baseline_prediction": 0.028308823529411765,
+            "model_score": 0.007160984166892252,
+            "baseline_score": 0.014060733159485844
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.04236955668889761,
+            "baseline_prediction": 0.028308823529411765,
+            "model_score": 0.010598309667452017,
+            "baseline_score": 0.003462423492033826
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.03177124702144559,
+            "baseline_prediction": 0.028308823529411765,
+            "model_score": 0.015403359258390252,
+            "baseline_score": 0.011940935766356426
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.01636788776305534,
+            "baseline_prediction": 0.028308823529411765,
+            "model_score": 0.018995569997259,
+            "baseline_score": 0.0070546342309025754
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.03536345776031434,
+            "baseline_prediction": 0.028308823529411765,
+            "model_score": 0.008928256634492836,
+            "baseline_score": 0.01598289086539541
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.06966449207828518,
+            "baseline_prediction": 0.03505298707348317,
+            "model_score": 0.022646003037021557,
+            "baseline_score": 0.01196550196778045
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.04701848904126362,
+            "baseline_prediction": 0.03505298707348317,
+            "model_score": 0.021734502232908914,
+            "baseline_score": 0.009769000265128464
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.025283986808354707,
+            "baseline_prediction": 0.03505298707348317,
+            "model_score": 0.0025004157673667315,
+            "baseline_score": 0.007268584497761733
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.02778440257572144,
+            "baseline_prediction": 0.03505298707348317,
+            "model_score": 0.0022681433780001,
+            "baseline_score": 0.009536727875761833
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 0.02551625919772134,
+            "baseline_prediction": 0.03505298707348317,
+            "model_score": 0.018346451680696346,
+            "baseline_score": 0.008809723804934513
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.10022148394241417,
+            "baseline_prediction": 0.0579223949684737,
+            "model_score": 0.033595567071998525,
+            "baseline_score": 0.00870352190194195
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.06662591687041565,
+            "baseline_prediction": 0.0579223949684737,
+            "model_score": 0.03238742808647232,
+            "baseline_score": 0.023683906184530368
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.03423848878394333,
+            "baseline_prediction": 0.0579223949684737,
+            "model_score": 0.031192895118778145,
+            "baseline_score": 0.0075089889342477775
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.06543138390272148,
+            "baseline_prediction": 0.0579223949684737,
+            "model_score": 0.01473208320342078,
+            "baseline_score": 0.007223094269173003
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.050699300699300696,
+            "baseline_prediction": 0.0579223949684737,
+            "model_score": 0.009888934594816948,
+            "baseline_score": 0.002665840325643945
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.024718551150269212,
+            "baseline_prediction": 0.031076962814624173,
+            "model_score": 0.012271244768098134,
+            "baseline_score": 0.005912833103743173
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.036989795918367346,
+            "baseline_prediction": 0.031076962814624173,
+            "model_score": 0.00257285586468408,
+            "baseline_score": 0.003339977239059093
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.034416940053683266,
+            "baseline_prediction": 0.031076962814624173,
+            "model_score": 0.0006768952841820497,
+            "baseline_score": 0.004016872523241143
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.035093835337865316,
+            "baseline_prediction": 0.031076962814624173,
+            "model_score": 0.005697790442087656,
+            "baseline_score": 0.0016809179188465133
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.02939604489577766,
+            "baseline_prediction": 0.031076962814624173,
+            "model_score": 0.0006580436002120264,
+            "baseline_score": 0.0023389615190585397
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.03063197026022305,
+            "baseline_prediction": 0.0284182634861707,
+            "model_score": 0.009764721481179094,
+            "baseline_score": 0.007551014707126744
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.020867248779043956,
+            "baseline_prediction": 0.0284182634861707,
+            "model_score": 0.011067997725738975,
+            "baseline_score": 0.003516983018612231
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.03193524650478293,
+            "baseline_prediction": 0.0284182634861707,
+            "model_score": 0.009355553470544443,
+            "baseline_score": 0.005838570451932212
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.02257969303423849,
+            "baseline_prediction": 0.0284182634861707,
+            "model_score": 0.006436160989093848,
+            "baseline_score": 0.0005975905371616366
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.029015854023332337,
+            "baseline_prediction": 0.0284182634861707,
+            "model_score": 0.011394708648882996,
+            "baseline_score": 0.01079711811172136
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.044291714394807176,
+            "baseline_prediction": 0.03348990977172547,
+            "model_score": 0.006704301541447806,
+            "baseline_score": 0.01750610616452951
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.05099601593625498,
+            "baseline_prediction": 0.03348990977172547,
+            "model_score": 0.00886313899332248,
+            "baseline_score": 0.026369245157851988
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.05985915492957746,
+            "baseline_prediction": 0.03348990977172547,
+            "model_score": 0.030175269039060884,
+            "baseline_score": 0.003806023881208896
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.029683885890516577,
+            "baseline_prediction": 0.03348990977172547,
+            "model_score": 0.009463400931188852,
+            "baseline_score": 0.005657377049979956
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.03914728682170543,
+            "baseline_prediction": 0.03348990977172547,
+            "model_score": 0.0062947227191413255,
+            "baseline_score": 0.0006373456691613696
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.043862710878417685,
+            "baseline_prediction": 0.03285476266316589,
+            "model_score": 0.003303695089576543,
+            "baseline_score": 0.014311643304828335
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.04716640596799423,
+            "baseline_prediction": 0.03285476266316589,
+            "model_score": 0.022713978108450827,
+            "baseline_score": 0.008402334803622492
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.0244524278595434,
+            "baseline_prediction": 0.03285476266316589,
+            "model_score": 0.049781397339094514,
+            "baseline_score": 0.04137906253547202
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.07423382519863791,
+            "baseline_prediction": 0.03285476266316589,
+            "model_score": 0.021950967711588165,
+            "baseline_score": 0.019428094823883857
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 0.05228285748704975,
+            "baseline_prediction": 0.03285476266316589,
+            "model_score": 0.015135014056483806,
+            "baseline_score": 0.004293080767400051
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.060588235294117644,
+            "baseline_prediction": 0.05941845764854614,
+            "model_score": 0.01986141825151113,
+            "baseline_score": 0.018691640605939627
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.040726817042606514,
+            "baseline_prediction": 0.05941845764854614,
+            "model_score": 0.022632417864745555,
+            "baseline_score": 0.0039407772588059276
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.06335923490735207,
+            "baseline_prediction": 0.05941845764854614,
+            "model_score": 0.009339134404839508,
+            "baseline_score": 0.0053983571460335805
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.05402010050251256,
+            "baseline_prediction": 0.05941845764854614,
+            "model_score": 0.005495923042287965,
+            "baseline_score": 9.756589625438405e-05
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.059516023544800525,
+            "baseline_prediction": 0.05941845764854614,
+            "model_score": 0.011376955323638471,
+            "baseline_score": 0.011474521219892855
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.028738001295565634,
+            "baseline_prediction": 0.03197407837623036,
+            "model_score": 0.012714262423162072,
+            "baseline_score": 0.0159503395038268
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.016023738872403562,
+            "baseline_prediction": 0.03197407837623036,
+            "model_score": 0.018172414060391502,
+            "baseline_score": 0.0022220745565647015
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.034196152932795064,
+            "baseline_prediction": 0.03197407837623036,
+            "model_score": 0.015441600857048522,
+            "baseline_score": 0.01321952630048382
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.01875455207574654,
+            "baseline_prediction": 0.03197407837623036,
+            "model_score": 0.0030163065961094533,
+            "baseline_score": 0.010203219704374367
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.021770858671855995,
+            "baseline_prediction": 0.03197407837623036,
+            "model_score": 0.0021007303884106668,
+            "baseline_score": 0.012303950092785034
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.01762114537444934,
+            "baseline_prediction": 0.029015854023332337,
+            "model_score": 0.006050995474788712,
+            "baseline_score": 0.005343713174094284
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.023672140849238053,
+            "baseline_prediction": 0.029015854023332337,
+            "model_score": 0.006653523925186807,
+            "baseline_score": 0.001309810751092523
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.03032566477442486,
+            "baseline_prediction": 0.029015854023332337,
+            "model_score": 0.015163573509806558,
+            "baseline_score": 0.01647338426089908
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.04548923828423142,
+            "baseline_prediction": 0.029015854023332337,
+            "model_score": 0.021065275150590864,
+            "baseline_score": 0.004591890889691783
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.024423963133640553,
+            "baseline_prediction": 0.029015854023332337,
+            "model_score": 0.012137150527060072,
+            "baseline_score": 0.007545259637368289
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.032852564102564104,
+            "baseline_prediction": 0.03536345776031434,
+            "model_score": 0.008452681663648202,
+            "baseline_score": 0.005941788005897966
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.041305245766212306,
+            "baseline_prediction": 0.03536345776031434,
+            "model_score": 0.009175523464556926,
+            "baseline_score": 0.015117311470454892
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.05048076923076923,
+            "baseline_prediction": 0.03536345776031434,
+            "model_score": 0.027049806887672997,
+            "baseline_score": 0.011932495417218105
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.023430962343096235,
+            "baseline_prediction": 0.03536345776031434,
+            "model_score": 0.20355516628237663,
+            "baseline_score": 0.19162267086515855
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.22698612862547288,
+            "baseline_prediction": 0.03536345776031434,
+            "model_score": 0.1980246060768589,
+            "baseline_score": 0.006401935211700356
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.037147843430565944,
+            "baseline_prediction": 0.04024390243902439,
+            "model_score": 0.005235602094240836,
+            "baseline_score": 0.008331661102699284
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.03191224133632511,
+            "baseline_prediction": 0.04024390243902439,
+            "model_score": 0.010955193822176336,
+            "baseline_score": 0.002623532719477052
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.042867435158501443,
+            "baseline_prediction": 0.04024390243902439,
+            "model_score": 0.016301266864914392,
+            "baseline_score": 0.01367773414543734
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.02656616829358705,
+            "baseline_prediction": 0.04024390243902439,
+            "model_score": 0.004558831706412948,
+            "baseline_score": 0.009118902439024391
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 0.031125,
+            "baseline_prediction": 0.04024390243902439,
+            "model_score": 0.024056182453909725,
+            "baseline_score": 0.014937280014885333
+          }
+        ],
+        "validation_weeks": 15,
+        "panel_observations": 75,
+        "mean_score_difference": 0.006373103503868658,
+        "bootstrap_interval_95": [
+          0.0029436054607334177,
+          0.010917363622485675
+        ],
+        "diagnostic_p_value": 0.003898635477582846,
+        "bonferroni_two_question_p_value": 0.007797270955165692,
+        "bootstrap": {
+          "method": "circular moving blocks over weekly cross-sectional mean loss differences",
+          "draws": 512,
+          "block_weeks": 3,
+          "seed": 113,
+          "limits": "Only 15 held-out weeks; descriptive uncertainty, not independent confirmation."
+        },
+        "folds": [
+          {
+            "fold": 0,
+            "training_weeks": 9,
+            "purge_weeks": 1,
+            "training_last_target_date": "2011-03-04",
+            "validation_start": "2011-03-18",
+            "validation_end": "2011-04-15",
+            "training_pairs": 45,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.015520628602031798,
+            "baseline_mean_score": 0.012762416558499922
+          },
+          {
+            "fold": 1,
+            "training_weeks": 14,
+            "purge_weeks": 1,
+            "training_last_target_date": "2011-04-08",
+            "validation_start": "2011-04-21",
+            "validation_end": "2011-05-20",
+            "training_pairs": 70,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.014643150635181809,
+            "baseline_mean_score": 0.009486660196159126
+          },
+          {
+            "fold": 2,
+            "training_weeks": 19,
+            "purge_weeks": 1,
+            "training_last_target_date": "2011-05-13",
+            "validation_start": "2011-05-27",
+            "validation_end": "2011-06-24",
+            "training_pairs": 95,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.02754346172465383,
+            "baseline_mean_score": 0.016338853695602413
+          }
+        ]
+      },
+      "skeptic": {
+        "verdict": "INCONCLUSIVE",
+        "checks": {
+          "independent_numeric_reference": true,
+          "purged_temporal_boundary": true,
+          "complete_fixed_panel": true,
+          "independent_fold_metadata": true
+        },
+        "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
+        "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
+        "economic_claim": "NONE",
+        "allocation_eligibility": "UNAVAILABLE"
+      },
+      "independent_confirmation": false,
+      "design_status": "EXPLORATORY_NOT_PREREGISTERED; fixed five-label software research sample, not an investment universe.",
+      "period": {
+        "start": "2011-01-07",
+        "end": "2011-06-24"
+      },
+      "method": "Mean absolute weekly range error",
+      "training_boundary": "One purged week; expanding training-only median; lag feature from completed source week.",
+      "interpretation": "Retrospective range error 0.019236 versus 0.012863; lower is better. Small selected archive panel, no economic claim.",
+      "multiple_testing": {
+        "method": "Bonferroni",
+        "family_size": 2,
+        "scope": "Two fixed UCI questions, not all historical research."
+      },
+      "lookahead_detected": false,
+      "missingness": {
+        "source_rows": 750,
+        "selected_rows": 125,
+        "selected_labels": 5,
+        "observed_week_dates": 25,
+        "per_label_rows": {
+          "AA": 25,
+          "IBM": 25,
+          "KO": 25,
+          "MSFT": 25,
+          "XOM": 25
+        },
+        "imputed_values": 0,
+        "source_auxiliary_missing_cells": 60,
+        "source_missing_auxiliary_values_not_imputed": true
+      },
+      "quarantined_future_columns": [
+        "next_weeks_open",
+        "next_weeks_close",
+        "percent_change_next_weeks_price",
+        "days_to_next_dividend",
+        "percent_return_next_dividend"
+      ],
+      "publication_time": "UNKNOWN",
+      "revision_knowledge_time": "UNKNOWN",
+      "allocation_eligibility": "UNAVAILABLE",
+      "total_return": null,
+      "sharpe_after_cost": null,
+      "max_drawdown": null,
+      "orders_submitted": 0,
+      "models_promoted": 0,
+      "code_rewritten": false,
+      "failure_conditions": [
+        "Corporate actions and adjustment basis unavailable.",
+        "Historical publication and membership evidence unavailable.",
+        "Only five source labels and 25 weeks; no survivorship-free universe."
+      ],
+      "role_outputs": {
+        "quant": {
+          "state": "COMPLETED",
+          "output": "Two fixed purged chronological persistence diagnostics with training-only median and weekly block uncertainty."
+        },
+        "skeptic": {
+          "state": "COMPLETED",
+          "output": {
+            "verdict": "INCONCLUSIVE",
+            "checks": {
+              "independent_numeric_reference": true,
+              "purged_temporal_boundary": true,
+              "complete_fixed_panel": true,
+              "independent_fold_metadata": true
+            },
+            "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
+            "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
+            "economic_claim": "NONE",
+            "allocation_eligibility": "UNAVAILABLE"
+          }
+        },
+        "risk": {
+          "state": "COMPLETED",
+          "output": "Rejected allocation eligibility: unknown actions, identities and knowledge clocks."
+        },
+        "developer": {
+          "state": "COMPLETED",
+          "output": "Verified pinned licensed archive, future-label quarantine and deterministic source/config/result hashes."
+        }
+      },
+      "reproduce": "python -m gig.research_org --compute uci-equity-weekly-range-persistence-2011-v1",
+      "lineage": {
+        "dataset": "uci-dow-jones-weekly-2011",
+        "sha256": "cf77b64c2afbb3decfeb629d42cb2096f32632e9ca8e5904c74822a0fa8f2d17",
+        "source_sha256": "08ad8e30915f071b46f6f5bef2b1ccdfe70aacfa31aee116117048ad2adec0bf",
+        "model_version": "weekly-range-persistence-v1",
+        "point_in_time": "UNKNOWN publication/revision clocks; chronological archive diagnostic only",
+        "skeptic_verdict": "INCONCLUSIVE",
+        "evidence_class": "INCONCLUSIVE",
+        "artifacts": "Packaged UCI source fixture and saved immutable ledger report."
+      },
+      "result_hash": "ea33f9f8ce606080002a3a9f48b6bc588f132156f4ed2b2130acc5c66db44d0e"
+    }
+  },
+  "uci-equity-weekly-volume-persistence-2011-v1": {
+    "config_hash": "93856943f2cee252",
+    "report": {
+      "hypothesis_id": "uci-equity-weekly-volume-persistence-2011-v1",
+      "question": "Does lagged weekly volume beat a purged training-median baseline on the selected UCI archive panel?",
+      "strategy": "gig.research_org.equity_experiments",
+      "experiment_version": 1,
+      "classification": "HISTORICAL",
+      "verdict": "INCONCLUSIVE",
+      "evidence_class": "INCONCLUSIVE",
+      "economic_claim": "NONE",
+      "n_obs": 125,
+      "dataset": {
+        "dataset_id": "uci-dow-jones-weekly-2011",
+        "state": "AVAILABLE",
+        "sha256": "cf77b64c2afbb3decfeb629d42cb2096f32632e9ca8e5904c74822a0fa8f2d17",
+        "source_sha256": "08ad8e30915f071b46f6f5bef2b1ccdfe70aacfa31aee116117048ad2adec0bf",
+        "provider": "UCI_DOW_JONES_WEEKLY_2011",
+        "source_url": "https://archive.ics.uci.edu/static/public/312/dow+jones+index.zip",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "Source: Michael Brown, Dow Jones Index [Dataset], UCI Machine Learning Repository, 2013, DOI 10.24432/C5788V. CC BY 4.0. Brown, M. S., Pelosi, M. and Dirska, H. (2013), Dynamic-radius Species-conserving Genetic Algorithm for the Financial Forecasting of Dow Jones Index Stocks, LNAI 7988, 27-41. GIG parses selected weekly observations and excludes future-label/dividend columns; these changes are not UCI or exchange outputs.",
+        "acquired_at": "2026-11-03T19:42:02.239687+00:00",
+        "publication_time": "UNKNOWN",
+        "revision_knowledge_time": "UNKNOWN",
+        "classification": "HISTORICAL",
+        "corporate_actions_state": "UNAVAILABLE",
+        "price_adjustment_basis_state": "UNKNOWN",
+        "point_in_time_backtest_eligible": false,
+        "funded_allocation_eligible": false,
+        "observation_count": 125,
+        "reason": "CC BY 4.0 source weekly equity aggregates; retrospective diagnostics only, not adjusted or PIT-admitted returns.",
+        "id": "uci-dow-jones-weekly-2011",
+        "information_url": "https://archive.ics.uci.edu/dataset/312/dow+jones+index",
+        "source_acquired_at": "2026-11-03T19:42:02.239687+00:00",
+        "observation_semantics": "SOURCE_REPORTED_WEEKLY_AGGREGATES"
+      },
+      "configuration": {
+        "hypothesis_id": "uci-equity-weekly-volume-persistence-2011-v1",
+        "dataset": "uci-dow-jones-weekly-2011",
+        "fixture_sha256": "cf77b64c2afbb3decfeb629d42cb2096f32632e9ca8e5904c74822a0fa8f2d17",
+        "method_version": 1,
+        "labels": [
+          "AA",
+          "IBM",
+          "KO",
+          "MSFT",
+          "XOM"
+        ],
+        "windows": [
+          [
+            10,
+            15
+          ],
+          [
+            15,
+            20
+          ],
+          [
+            20,
+            25
+          ]
+        ],
+        "kind": "volume",
+        "bootstrap_seed": 113,
+        "bootstrap_draws": 512,
+        "bootstrap_block_weeks": 3,
+        "multiple_testing_family": [
+          "uci-equity-weekly-range-persistence-2011-v1",
+          "uci-equity-weekly-volume-persistence-2011-v1"
+        ]
+      },
+      "metrics": {
+        "score_name": "Mean absolute log-volume error",
+        "score_units": "natural-log source volume",
+        "model_mean_score": 0.27283008928772,
+        "baseline_mean_score": 0.2260168983236369,
+        "lower_score_is_better": true,
+        "prediction_rows": [
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.554621970083662,
+            "baseline_prediction": 18.74586446868399,
+            "model_score": 0.13129665937564994,
+            "baseline_score": 0.05994583922467811
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.685918629459312,
+            "baseline_prediction": 18.74586446868399,
+            "model_score": 0.31075429825306955,
+            "baseline_score": 0.37070013747774766
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.375164331206243,
+            "baseline_prediction": 18.74586446868399,
+            "model_score": 0.07818102773093827,
+            "baseline_score": 0.2925191097468094
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.45334535893718,
+            "baseline_prediction": 18.74586446868399,
+            "model_score": 0.22381331279161998,
+            "baseline_score": 0.06870579695518941
+          },
+          {
+            "fold": 0,
+            "source_label": "AA",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.6771586717288,
+            "baseline_prediction": 18.74586446868399,
+            "model_score": 0.4999308183352227,
+            "baseline_score": 0.43122502138003327
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.253356662148224,
+            "baseline_prediction": 16.972206379537155,
+            "model_score": 0.2957146318114212,
+            "baseline_score": 0.5768649144224902
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.549071293959646,
+            "baseline_prediction": 16.972206379537155,
+            "model_score": 0.49952866942468077,
+            "baseline_score": 0.07733624499780944
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.049542624534965,
+            "baseline_prediction": 16.972206379537155,
+            "model_score": 0.2852899381927898,
+            "baseline_score": 0.20795369319498036
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 16.764252686342175,
+            "baseline_prediction": 16.972206379537155,
+            "model_score": 0.0799681547751625,
+            "baseline_score": 0.28792184797014286
+          },
+          {
+            "fold": 0,
+            "source_label": "IBM",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 16.684284531567013,
+            "baseline_prediction": 16.972206379537155,
+            "model_score": 0.2305695214858723,
+            "baseline_score": 0.05735232648427058
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.6123480736906,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.28986043554105834,
+            "baseline_score": 0.5031627351659793
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.90220850923166,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.6903980761695365,
+            "baseline_score": 0.1872353410035572
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.211810433062123,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.27405798334840625,
+            "baseline_score": 0.08682264234484904
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.48586841641053,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.2038576540494219,
+            "baseline_score": 0.11703501170457287
+          },
+          {
+            "fold": 0,
+            "source_label": "KO",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 17.282010762361107,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.2371562796310691,
+            "baseline_score": 0.12012126792649624
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 19.420574278220496,
+            "baseline_prediction": 19.430216881815394,
+            "model_score": 0.3330428814858486,
+            "baseline_score": 0.3234002778909506
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 19.753617159706344,
+            "baseline_prediction": 19.430216881815394,
+            "model_score": 0.5556998831642197,
+            "baseline_score": 0.2322996052732691
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 19.197917276542125,
+            "baseline_prediction": 19.430216881815394,
+            "model_score": 0.17111072234107993,
+            "baseline_score": 0.06118888293218916
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 19.369027998883205,
+            "baseline_prediction": 19.430216881815394,
+            "model_score": 0.010044162070173002,
+            "baseline_score": 0.05114472086201616
+          },
+          {
+            "fold": 0,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 19.379072160953378,
+            "baseline_prediction": 19.430216881815394,
+            "model_score": 0.1268149904069631,
+            "baseline_score": 0.17795971126897925
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-03-18",
+            "feature_date": "2011-03-11",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.34517980514784,
+            "baseline_prediction": 18.437940267751287,
+            "model_score": 0.28992058729516756,
+            "baseline_score": 0.19716012469172028
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-03-25",
+            "feature_date": "2011-03-18",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.635100392443007,
+            "baseline_prediction": 18.437940267751287,
+            "model_score": 0.3963670832769637,
+            "baseline_score": 0.1992069585852434
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-04-01",
+            "feature_date": "2011-03-25",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.238733309166044,
+            "baseline_prediction": 18.437940267751287,
+            "model_score": 0.07205087903829721,
+            "baseline_score": 0.2712578376235406
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-04-08",
+            "feature_date": "2011-04-01",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.166682430127747,
+            "baseline_prediction": 18.437940267751287,
+            "model_score": 0.026157617875295358,
+            "baseline_score": 0.29741545549883597
+          },
+          {
+            "fold": 0,
+            "source_label": "XOM",
+            "observation_date": "2011-04-15",
+            "feature_date": "2011-04-08",
+            "last_training_target_date": "2011-03-04",
+            "prediction": 18.14052481225245,
+            "baseline_prediction": 18.437940267751287,
+            "model_score": 0.07012779607905628,
+            "baseline_score": 0.2272876594197797
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 19.177089490064024,
+            "baseline_prediction": 18.681538650594057,
+            "model_score": 0.9161621971899656,
+            "baseline_score": 0.4206113577199986
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.260927292874058,
+            "baseline_prediction": 18.681538650594057,
+            "model_score": 0.06359375553764579,
+            "baseline_score": 0.3570176021823528
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.324521048411704,
+            "baseline_prediction": 18.681538650594057,
+            "model_score": 0.907327923429964,
+            "baseline_score": 0.5503103212476113
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 19.231848971841668,
+            "baseline_prediction": 18.681538650594057,
+            "model_score": 0.7011418373749834,
+            "baseline_score": 0.1508315161273721
+          },
+          {
+            "fold": 1,
+            "source_label": "AA",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.530707134466684,
+            "baseline_prediction": 18.681538650594057,
+            "model_score": 0.05786669977747749,
+            "baseline_score": 0.09296481634989462
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 16.914854053052885,
+            "baseline_prediction": 17.010783306304926,
+            "model_score": 0.0645531350100903,
+            "baseline_score": 0.03137611824195119
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 16.979407188062975,
+            "baseline_prediction": 17.010783306304926,
+            "model_score": 0.12561005734961483,
+            "baseline_score": 0.09423393910766364
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 17.10501724541259,
+            "baseline_prediction": 17.010783306304926,
+            "model_score": 0.09422461306642305,
+            "baseline_score": 0.1884585521740867
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 17.199241858479013,
+            "baseline_prediction": 17.010783306304926,
+            "model_score": 0.22649546026936562,
+            "baseline_score": 0.03803690809527893
+          },
+          {
+            "fold": 1,
+            "source_label": "IBM",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 16.972746398209647,
+            "baseline_prediction": 17.010783306304926,
+            "model_score": 0.10192397844665635,
+            "baseline_score": 0.06388707035137742
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 17.519167041992176,
+            "baseline_prediction": 17.442457095238105,
+            "model_score": 0.7163964991697434,
+            "baseline_score": 0.6396865524156716
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 16.802770542822433,
+            "baseline_prediction": 17.442457095238105,
+            "model_score": 0.810549319752262,
+            "baseline_score": 0.17086276733659034
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 17.613319862574695,
+            "baseline_prediction": 17.442457095238105,
+            "model_score": 0.27299226467176396,
+            "baseline_score": 0.10212949733517362
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 17.34032759790293,
+            "baseline_prediction": 17.442457095238105,
+            "model_score": 0.05389479698169097,
+            "baseline_score": 0.1560242943168646
+          },
+          {
+            "fold": 1,
+            "source_label": "KO",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 17.28643280092124,
+            "baseline_prediction": 17.442457095238105,
+            "model_score": 0.01093510199112302,
+            "baseline_score": 0.14508919232574158
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 19.252257170546414,
+            "baseline_prediction": 19.399823219586935,
+            "model_score": 0.3706942654906058,
+            "baseline_score": 0.5182603145311262
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.88156290505581,
+            "baseline_prediction": 19.399823219586935,
+            "model_score": 1.2527174118487494,
+            "baseline_score": 0.7344570973176232
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 20.134280316904558,
+            "baseline_prediction": 19.399823219586935,
+            "model_score": 0.47043634920105504,
+            "baseline_score": 0.26402074811656817
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 19.663843967703503,
+            "baseline_prediction": 19.399823219586935,
+            "model_score": 0.09785503489585068,
+            "baseline_score": 0.36187578301241885
+          },
+          {
+            "fold": 1,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 19.761699002599354,
+            "baseline_prediction": 19.399823219586935,
+            "model_score": 0.20490807656610244,
+            "baseline_score": 0.1569677064463164
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-04-21",
+            "feature_date": "2011-04-15",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.210652608331507,
+            "baseline_prediction": 18.385848522824556,
+            "model_score": 0.6251733287223189,
+            "baseline_score": 0.8003692432153677
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-04-29",
+            "feature_date": "2011-04-21",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 17.58547927960919,
+            "baseline_prediction": 18.385848522824556,
+            "model_score": 0.631822157235586,
+            "baseline_score": 0.16854708597978174
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-05-06",
+            "feature_date": "2011-04-29",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.217301436844775,
+            "baseline_prediction": 18.385848522824556,
+            "model_score": 0.33270310018724913,
+            "baseline_score": 0.1641560142074674
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-05-13",
+            "feature_date": "2011-05-06",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.550004537032024,
+            "baseline_prediction": 18.385848522824556,
+            "model_score": 0.13254798520545563,
+            "baseline_score": 0.03160802900201176
+          },
+          {
+            "fold": 1,
+            "source_label": "XOM",
+            "observation_date": "2011-05-20",
+            "feature_date": "2011-05-13",
+            "last_training_target_date": "2011-04-08",
+            "prediction": 18.417456551826568,
+            "baseline_prediction": 18.385848522824556,
+            "model_score": 0.13881390873377697,
+            "baseline_score": 0.10720587973176521
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.588573834244162,
+            "baseline_prediction": 18.6771586717288,
+            "model_score": 0.42618903560369503,
+            "baseline_score": 0.514773873088334
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.162384798640467,
+            "baseline_prediction": 18.6771586717288,
+            "model_score": 0.0010890785035364559,
+            "baseline_score": 0.5158629515918705
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.16129572013693,
+            "baseline_prediction": 18.6771586717288,
+            "model_score": 0.207786103781757,
+            "baseline_score": 0.30807684781011346
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.369081823918687,
+            "baseline_prediction": 18.6771586717288,
+            "model_score": 0.15842052478080149,
+            "baseline_score": 0.14965632302931198
+          },
+          {
+            "fold": 2,
+            "source_label": "AA",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.52750234869949,
+            "baseline_prediction": 18.6771586717288,
+            "model_score": 0.1126011039238648,
+            "baseline_score": 0.2622574269531768
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 17.074670376656304,
+            "baseline_prediction": 16.979407188062975,
+            "model_score": 0.291119296903549,
+            "baseline_score": 0.19585610831022038
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 16.783551079752755,
+            "baseline_prediction": 16.979407188062975,
+            "model_score": 0.18255526318223758,
+            "baseline_score": 0.013300845127982797
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 16.966106342934992,
+            "baseline_prediction": 16.979407188062975,
+            "model_score": 0.12307036252758863,
+            "baseline_score": 0.13637120765557142
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 16.843035980407404,
+            "baseline_prediction": 16.979407188062975,
+            "model_score": 0.3531299086168005,
+            "baseline_score": 0.21675870096122907
+          },
+          {
+            "fold": 2,
+            "source_label": "IBM",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 17.196165889024204,
+            "baseline_prediction": 16.979407188062975,
+            "model_score": 0.2458332540089927,
+            "baseline_score": 0.02907455304776363
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 17.297367902912363,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.22119467917364233,
+            "baseline_score": 0.3228725503269594
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 17.07617322373872,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.1795118096246,
+            "baseline_score": 0.14336074070235938
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 17.25568503336332,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.024996906873077762,
+            "baseline_score": 0.16835764757543714
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 17.230688126490243,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.35054537351869186,
+            "baseline_score": 0.18218772594325472
+          },
+          {
+            "fold": 2,
+            "source_label": "KO",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 17.581233500008935,
+            "baseline_prediction": 17.39904577406568,
+            "model_score": 0.14242484441229308,
+            "baseline_score": 0.3246125703555478
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 19.55679092603325,
+            "baseline_prediction": 19.420574278220496,
+            "model_score": 0.37850549460243244,
+            "baseline_score": 0.24228884678967688
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 19.17828543143082,
+            "baseline_prediction": 19.420574278220496,
+            "model_score": 0.14425469154282666,
+            "baseline_score": 0.09803415524685022
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 19.322540122973646,
+            "baseline_prediction": 19.420574278220496,
+            "model_score": 0.06761477432600671,
+            "baseline_score": 0.16564892957285693
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 19.25492534864764,
+            "baseline_prediction": 19.420574278220496,
+            "model_score": 0.1969099407162176,
+            "baseline_score": 0.03126101114336066
+          },
+          {
+            "fold": 2,
+            "source_label": "MSFT",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 19.451835289363856,
+            "baseline_prediction": 19.420574278220496,
+            "model_score": 0.09768357217733481,
+            "baseline_score": 0.12894458332069547
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-05-27",
+            "feature_date": "2011-05-20",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.27864264309279,
+            "baseline_prediction": 18.351604604713035,
+            "model_score": 0.24023520323504144,
+            "baseline_score": 0.3131971648552856
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-03",
+            "feature_date": "2011-05-27",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.03840743985775,
+            "baseline_prediction": 18.351604604713035,
+            "model_score": 0.1416821115764222,
+            "baseline_score": 0.1715150532788634
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-10",
+            "feature_date": "2011-06-03",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.180089551434172,
+            "baseline_prediction": 18.351604604713035,
+            "model_score": 0.16134064766749034,
+            "baseline_score": 0.01017440561137306
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-17",
+            "feature_date": "2011-06-10",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.341430199101662,
+            "baseline_prediction": 18.351604604713035,
+            "model_score": 0.08445099901761566,
+            "baseline_score": 0.0742765934062426
+          },
+          {
+            "fold": 2,
+            "source_label": "XOM",
+            "observation_date": "2011-06-24",
+            "feature_date": "2011-06-17",
+            "last_training_target_date": "2011-05-13",
+            "prediction": 18.425881198119278,
+            "baseline_prediction": 18.351604604713035,
+            "model_score": 0.1660583942279814,
+            "baseline_score": 0.240334987634224
+          }
+        ],
+        "validation_weeks": 15,
+        "panel_observations": 75,
+        "mean_score_difference": 0.04681319096408311,
+        "bootstrap_interval_95": [
+          -0.004886339495178754,
+          0.09909196024092036
+        ],
+        "diagnostic_p_value": 0.08966861598440545,
+        "bonferroni_two_question_p_value": 0.1793372319688109,
+        "bootstrap": {
+          "method": "circular moving blocks over weekly cross-sectional mean loss differences",
+          "draws": 512,
+          "block_weeks": 3,
+          "seed": 113,
+          "limits": "Only 15 held-out weeks; descriptive uncertainty, not independent confirmation."
+        },
+        "folds": [
+          {
+            "fold": 0,
+            "training_weeks": 9,
+            "purge_weeks": 1,
+            "training_last_target_date": "2011-03-04",
+            "validation_start": "2011-03-18",
+            "validation_end": "2011-04-15",
+            "training_pairs": 45,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.2552685625579593,
+            "baseline_mean_score": 0.21932892656184522
+          },
+          {
+            "fold": 1,
+            "training_weeks": 14,
+            "purge_weeks": 1,
+            "training_last_target_date": "2011-04-08",
+            "validation_start": "2011-04-21",
+            "validation_end": "2011-05-20",
+            "training_pairs": 70,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.3752535703242208,
+            "baseline_mean_score": 0.26035953627552305
+          },
+          {
+            "fold": 2,
+            "training_weeks": 19,
+            "purge_weeks": 1,
+            "training_last_target_date": "2011-05-13",
+            "validation_start": "2011-05-27",
+            "validation_end": "2011-06-24",
+            "training_pairs": 95,
+            "validation_pairs": 25,
+            "sample_unit": "source-label weeks",
+            "model_mean_score": 0.1879681349809799,
+            "baseline_mean_score": 0.19836223213354245
+          }
+        ]
+      },
+      "skeptic": {
+        "verdict": "INCONCLUSIVE",
+        "checks": {
+          "independent_numeric_reference": true,
+          "purged_temporal_boundary": true,
+          "complete_fixed_panel": true,
+          "independent_fold_metadata": true
+        },
+        "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
+        "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
+        "economic_claim": "NONE",
+        "allocation_eligibility": "UNAVAILABLE"
+      },
+      "independent_confirmation": false,
+      "design_status": "EXPLORATORY_NOT_PREREGISTERED; fixed five-label software research sample, not an investment universe.",
+      "period": {
+        "start": "2011-01-07",
+        "end": "2011-06-24"
+      },
+      "method": "Mean absolute log-volume error",
+      "training_boundary": "One purged week; expanding training-only median; lag feature from completed source week.",
+      "interpretation": "Retrospective volume error 0.272830 versus 0.226017; lower is better. Small selected archive panel, no economic claim.",
+      "multiple_testing": {
+        "method": "Bonferroni",
+        "family_size": 2,
+        "scope": "Two fixed UCI questions, not all historical research."
+      },
+      "lookahead_detected": false,
+      "missingness": {
+        "source_rows": 750,
+        "selected_rows": 125,
+        "selected_labels": 5,
+        "observed_week_dates": 25,
+        "per_label_rows": {
+          "AA": 25,
+          "IBM": 25,
+          "KO": 25,
+          "MSFT": 25,
+          "XOM": 25
+        },
+        "imputed_values": 0,
+        "source_auxiliary_missing_cells": 60,
+        "source_missing_auxiliary_values_not_imputed": true
+      },
+      "quarantined_future_columns": [
+        "next_weeks_open",
+        "next_weeks_close",
+        "percent_change_next_weeks_price",
+        "days_to_next_dividend",
+        "percent_return_next_dividend"
+      ],
+      "publication_time": "UNKNOWN",
+      "revision_knowledge_time": "UNKNOWN",
+      "allocation_eligibility": "UNAVAILABLE",
+      "total_return": null,
+      "sharpe_after_cost": null,
+      "max_drawdown": null,
+      "orders_submitted": 0,
+      "models_promoted": 0,
+      "code_rewritten": false,
+      "failure_conditions": [
+        "Corporate actions and adjustment basis unavailable.",
+        "Historical publication and membership evidence unavailable.",
+        "Only five source labels and 25 weeks; no survivorship-free universe."
+      ],
+      "role_outputs": {
+        "quant": {
+          "state": "COMPLETED",
+          "output": "Two fixed purged chronological persistence diagnostics with training-only median and weekly block uncertainty."
+        },
+        "skeptic": {
+          "state": "COMPLETED",
+          "output": {
+            "verdict": "INCONCLUSIVE",
+            "checks": {
+              "independent_numeric_reference": true,
+              "purged_temporal_boundary": true,
+              "complete_fixed_panel": true,
+              "independent_fold_metadata": true
+            },
+            "review_independence": "Separate Decimal transforms and Python median/loss reference; same source, not independent economic confirmation.",
+            "reason": "Small retrospective selected panel; unknown adjustment, historical universe and publication clocks. No return or alpha claim.",
+            "economic_claim": "NONE",
+            "allocation_eligibility": "UNAVAILABLE"
+          }
+        },
+        "risk": {
+          "state": "COMPLETED",
+          "output": "Rejected allocation eligibility: unknown actions, identities and knowledge clocks."
+        },
+        "developer": {
+          "state": "COMPLETED",
+          "output": "Verified pinned licensed archive, future-label quarantine and deterministic source/config/result hashes."
+        }
+      },
+      "reproduce": "python -m gig.research_org --compute uci-equity-weekly-volume-persistence-2011-v1",
+      "lineage": {
+        "dataset": "uci-dow-jones-weekly-2011",
+        "sha256": "cf77b64c2afbb3decfeb629d42cb2096f32632e9ca8e5904c74822a0fa8f2d17",
+        "source_sha256": "08ad8e30915f071b46f6f5bef2b1ccdfe70aacfa31aee116117048ad2adec0bf",
+        "model_version": "weekly-volume-persistence-v1",
+        "point_in_time": "UNKNOWN publication/revision clocks; chronological archive diagnostic only",
+        "skeptic_verdict": "INCONCLUSIVE",
+        "evidence_class": "INCONCLUSIVE",
+        "artifacts": "Packaged UCI source fixture and saved immutable ledger report."
+      },
+      "result_hash": "807196baa799e98147feb17a42f103cde1e43cceb2fd2fb68dfa2fb416e3b7cc"
+    }
+  }
+}

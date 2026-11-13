@@ -17,6 +17,8 @@
   <script src="/static/layout.js" defer></script>
   <script src="/static/palette.js" defer></script>
   <script src="/static/app.js" defer></script>
+  <link rel="stylesheet" href="/static/research_workspace.css">
+  <script src="/static/research_workspace.js" defer></script>
 </head>
 <body>
   <a class="skip-link" id="skip-link" href="#content">Skip to analysis</a>
@@ -68,7 +70,7 @@
           <div class="chart-footer"><span id="chart-legend">Axes and units are supplied by the backend.</span><button class="text-button" id="chart-reset">Reset view</button></div>
           <p class="chart-instructions"><span id="motion-state">Camera paused</span> · Drag to rotate · Scroll to zoom · Arrow keys to navigate · 2D alternative available</p>
         </section>
-        <div class="split-handle" id="analysis-split" role="separator" aria-orientation="vertical" aria-label="Resize chart and research context" tabindex="0"></div>
+        <div class="split-handle" id="analysis-split" role="separator" aria-valuemin="220" aria-valuemax="520" aria-valuenow="320" aria-orientation="vertical" aria-label="Resize chart and research context" tabindex="0"></div>
         <section class="panel context-panel" aria-labelledby="context-title"><div class="panel-header"><div><p class="panel-kicker">EVIDENCE & SCOPE</p><h2 id="context-title">Research context</h2></div><button class="text-button" id="context-expand" aria-expanded="false" aria-controls="context-content">Show full provenance</button></div><div id="context-content" class="context-content"></div></section>
       </div>
       <section class="panel table-panel" aria-labelledby="table-title"><div class="panel-header"><div><p class="panel-kicker">DETAIL EXPLORER</p><h2 id="table-title">Underlying observations <span class="count-badge" id="row-count">0</span></h2></div><div class="table-actions"><div class="hidden" id="evidence-table-control"><label for="evidence-table-view">Evidence table</label><select id="evidence-table-view"></select></div><input id="table-search" type="search" placeholder="Filter observations…" aria-label="Filter observations"><button class="button" id="export-csv">Export CSV</button></div></div><div class="table-scroll" id="table-wrap" role="region" tabindex="0" aria-label="Scrollable underlying observations"><table id="observations-table"><caption class="sr-only">Underlying section observations. Null values are displayed as unknown.</caption><thead></thead><tbody></tbody></table></div><div class="table-empty" id="table-empty">No observations available.</div><div class="table-footer"><span id="table-summary">No rows loaded</span><span>Null ≠ zero · Synthetic ≠ observed</span></div></section>
@@ -198,7 +200,7 @@
         <div class="observatory-support">
           <details class="observatory-disclosure" open><summary>Specialist research organization <span>Nine roles · explicit capabilities</span></summary><ul id="observatory-roles" class="observatory-roles"></ul></details>
           <details class="observatory-disclosure"><summary>Director memory and follow-ups <span>Durable, deduplicated investigations</span></summary><div id="director-investigations"></div><div id="director-memory"></div></details>
-          <details class="observatory-disclosure" open><summary>Strategy catalog <span>Implemented is not economically validated</span></summary><div class="table-scroll"><table><caption class="sr-only">Strategies the organization knows about and whether they have executed.</caption><thead><tr><th>Strategy</th><th>Status</th><th>Evidence boundary</th></tr></thead><tbody id="observatory-catalog"></tbody></table></div></details>
+          <details class="observatory-disclosure" open><summary>Strategy catalog <span>Implemented is not economically validated</span></summary><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable strategy catalog"><table><caption class="sr-only">Strategies the organization knows about and whether they have executed.</caption><thead><tr><th>Strategy</th><th>Status</th><th>Evidence boundary</th></tr></thead><tbody id="observatory-catalog"></tbody></table></div></details>
           <details class="observatory-disclosure"><summary>Research safety contract <span>Authority stays bounded</span></summary><ul id="observatory-bounds"></ul></details>
         </div>
         <footer class="observatory-footer"><span>GIG QUANT TERMINAL / RESEARCH OPERATIONS</span><span>Evidence before conviction. T4_NOT_CERTIFIED.</span></footer>

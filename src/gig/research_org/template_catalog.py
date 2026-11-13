@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any
 
 from gig.research_org.treasury_experiment import FIXTURE, PROVENANCE
@@ -27,6 +28,9 @@ class ResearchTemplate:
     priority: int
     seq: int
     parent: str | None = None
+    family: str = "reference-risk"
+    estimated_cost_units: int = 3
+    module: str = "gig.research_org.observed_experiments"
 
     def job(self) -> dict[str, Any]:
         return {"seq": self.seq, "job_id": self.job_id,
@@ -38,7 +42,7 @@ TEMPLATES = (
         "treasury-reversal-robustness-v1", "treasury-10y-reversal-robustness-2023-v1",
         "us-treasury-daily-par-yield-2023", "job-treasury-reversal-robustness-v1", "treasury_reversal",
         "Challenge the negative Treasury persistence finding with purged reversal robustness.",
-        "purged-reversal-training-majority", 1, 100, 3, TREASURY_PARENT),
+        "purged-reversal-training-majority", 1, 100, 3, TREASURY_PARENT, module="gig.research_org.treasury_followup"),
     ResearchTemplate(
         "ecb-fx-correlation-stability-v1", "ecb-fx-correlation-stability-2023-v1",
         "ecb-reference-fx-2023-usd-gbp-jpy", "job-ecb-fx-correlation-stability-v1", "ecb_risk",
@@ -52,8 +56,42 @@ TEMPLATES = (
 )
 
 
+# Legacy tuple remains stable for older callers. The immutable registry is the
+# execution allowlist; adding a method requires reviewed code and a new identity.
+_EQUITY = (
+    ResearchTemplate("uci-equity-range-persistence-v1", "uci-equity-weekly-range-persistence-2011-v1",
+        "uci-dow-jones-weekly-2011", "job-uci-equity-range-v1", "equity_range",
+        "Does lagged source weekly range beat a purged training-only median on five equity labels?",
+        "weekly-range-persistence-mae", 1, 85, 6, family="equity-archive", estimated_cost_units=2, module="gig.research_org.equity_experiments"),
+    ResearchTemplate("uci-equity-volume-persistence-v1", "uci-equity-weekly-volume-persistence-2011-v1",
+        "uci-dow-jones-weekly-2011", "job-uci-equity-volume-v1", "equity_volume",
+        "Does lagged source log-volume beat a purged training-only median on five equity labels?",
+        "weekly-log-volume-persistence-mae", 1, 75, 7, family="equity-archive", estimated_cost_units=2, module="gig.research_org.equity_experiments"),
+)
+
+
+def build_registry(templates: tuple[ResearchTemplate, ...]):
+    """Validate code-owned identities; never load executable templates from input."""
+    for attr in ("objective_id", "hypothesis_id", "job_id", "seq"):
+        if len({getattr(row, attr) for row in templates}) != len(templates):
+            raise ValueError("duplicate research registry identity")
+    methods = {(row.dataset_id, row.method, row.method_version) for row in templates}
+    if len(methods) != len(templates):
+        raise ValueError("duplicate research investigation")
+    if any(row.method_version < 1 or not 1 <= row.estimated_cost_units <= 10 for row in templates):
+        raise ValueError("bounded versioned research method required")
+    return MappingProxyType({row.objective_id: row for row in templates})
+
+
+REGISTRY = build_registry(TEMPLATES + _EQUITY)
+
+
+def investigations() -> tuple[ResearchTemplate, ...]:
+    return tuple(REGISTRY.values())
+
+
 def find_template(objective_id: str) -> ResearchTemplate:
-    match = next((row for row in TEMPLATES if row.objective_id == objective_id), None)
+    match = REGISTRY.get(objective_id)
     if match is None:
         raise ValueError("unregistered research objective")
     return match
@@ -73,7 +111,10 @@ def dataset_readiness(dataset_id: str) -> dict[str, Any]:
                     "publication_time": "UNKNOWN", "revision_knowledge_time": "UNKNOWN"}
         except (OSError, ValueError, KeyError, TypeError):
             return {"dataset_id": dataset_id, "state": "ERROR", "reason": "Pinned Treasury evidence is unavailable or invalid.", "sha256": None}
-    if dataset_id not in {row.dataset_id for row in TEMPLATES}:
+    if dataset_id == "uci-dow-jones-weekly-2011":
+        from gig.research_org.equity_experiments import dataset_readiness as equity_readiness
+        return equity_readiness()
+    if dataset_id not in {row.dataset_id for row in investigations()}:
         return {"dataset_id": dataset_id, "state": "UNAVAILABLE", "reason": "Dataset is not registered.", "sha256": None}
     try:
         from gig.research_org.observed_experiments import dataset_readiness as observed_readiness
