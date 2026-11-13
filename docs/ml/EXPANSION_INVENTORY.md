@@ -5,6 +5,11 @@ Post-merge Python 3.11, Python 3.12 and frontend CI all passed before this inven
 was prepared. This is a research implementation inventory, not a claim of forty
 trained, economically validated or approved trading models.
 
+Implementation update: family 08 is now implemented in the first bounded batch;
+see [its contract and limitations](GAUSSIAN_PROCESS.md). Seven pre-existing plus
+one new family means eight implemented families and 32 planned additions, not
+forty trained models. The original 7+33 inventory below is retained.
+
 ## Seven existing primary families
 
 | ID | Family | Actual implementation and evidence | Limitation |

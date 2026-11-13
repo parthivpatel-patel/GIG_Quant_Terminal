@@ -1,5 +1,26 @@
 # GIG engineering completion matrix
 
+## PR #13 integrated; first ML expansion batch (2026-11-13)
+
+PR #13 is COMPLETE at merge `53405c066d5ef63573c0a570ad781d7f66cdbae2`.
+All three post-merge checks passed in Actions run `43433467105`: Python 3.11,
+Python 3.12 and frontend. Both backends report 1,235 passed,11 skipped,673
+subtests and 82.92% combined coverage. The merged tree exactly equals the
+verified PR head `25148d2b79e179a3dd265715b80e8417185edefc`.
+
+Independent codeload restoration verified all 990 tracked file hashes/modes;
+62 focused tests pass from that restored source. Archive SHA-256:
+`c48cee3fc3a957cfd793ca5d34d1e620b2740bbe455fe38afa8fc31267c58516`.
+Git recovery bundle verified with prerequisite base `1f9a3e1`; source is also
+recoverable from GitHub. Main and protected quantitative refs remain unchanged.
+
+Only after this gate passed, `development/gig-ml-expansion-batch1` added the
+[40-family inventory](ml/EXPANSION_INVENTORY.md) and the first bounded
+[Gaussian-process adapter](ml/GAUSSIAN_PROCESS.md). Current batch acceptance
+results are recorded below as they complete; earlier evidence retains its exact
+source scope. No production approval, observed-market alpha or certification is
+implied.
+
 ## PR #13 recovered release acceptance (2026-11-13)
 
 Verified feature checkpoint: `5b8cf871a7551d747953d726fd643fb76b3243fe` on

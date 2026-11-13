@@ -34,6 +34,7 @@ KINDS = {
     "hmm": "NEXT_OBSERVATION_RETURN_ESTIMATE",
     "garch": "NEXT_OBSERVATION_VARIANCE",
     "kalman": "FILTERED_RETURN_STATE",
+    "gaussian_process": "FORWARD_RETURN_ESTIMATE",
 }
 
 
@@ -66,7 +67,7 @@ def configuration(payload: dict[str, Any]) -> dict[str, Any]:
     if set(payload) & ({"sequence_length", "hidden_size", "epochs", "states", "iterations"} - options):
         raise ValueError("settings do not belong to selected model")
     config = {"model": model,
-              "min_train": integer(payload.get("min_train", 40), 20, 800, "min_train"),
+              "min_train": integer(payload.get("min_train", 40), 20, 128 if model == "gaussian_process" else 800, "min_train"),
               "test_size": integer(payload.get("test_size", 10), 1, 200, "test_size"),
               "embargo": integer(payload.get("embargo", 1), 0, 100, "embargo"),
               "seed": integer(payload.get("seed", 42), 0, 2**31 - 1, "seed")}
@@ -377,6 +378,9 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
         models, predictions, folds = _ranking(dataset, rows, names, config)
     elif config["model"] == "bilstm":
         models, predictions, folds = _sequence(dataset, rows, config)
+    elif config["model"] == "gaussian_process":
+        from gig.research.gaussian_process import fit_persisted_gp
+        models, predictions, folds = fit_persisted_gp(dataset, rows, names, config)
     else:
         models, predictions, folds = _state_models(dataset, rows, config)
     if len(models) > 64:
@@ -428,6 +432,12 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
             import lightgbm as lgb
             prediction = lgb.Booster(model_str=estimator["booster_text"]).predict(x, num_threads=1)
         output = [dict(row, prediction=float(value)) for row, value in zip(own, prediction, strict=True)]
+    elif kind == "gaussian_process":
+        from gig.ml.gaussian_process import predict_gaussian_process
+        from gig.research.gaussian_process import uncertainty
+        values, spread = predict_gaussian_process(estimator, [[r["features"][n] for n in names] for r in own], names)
+        output = [dict(row, prediction=float(value), uncertainty=uncertainty(sd))
+                  for row, value, sd in zip(own, values, spread, strict=True)]
     elif kind == "bilstm":
         own = [r for r in own if r["timestamp"] not in state["excluded_window_timestamps"]]
         values = predict_sequence(estimator, [{k: r[k] for k in ("timestamp", "available_at", "features")} for r in own])

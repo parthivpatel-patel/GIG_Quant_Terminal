@@ -22,7 +22,7 @@
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
-  Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
+  Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-gpr": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
   workspaceActions["workspace-options-overlay"] = "options-overlay";
   workspaceActions["workspace-options-overlay-replay"] = "options-overlay-replay";
@@ -760,6 +760,7 @@
   examples["workspace-pipeline-bars"] = { source: "authored-pipeline-workbench-v1", classification: "SYNTHETIC", corporate_action_policy: "RAW", currency: "USD", rows: Array.from({ length: 80 }, (_, index) => pipelineSymbols.map((instrument_id, instrument) => { const close = (100 + instrument * 30) * Math.exp(.001 * index + .018 * Math.sin(index / (3 + instrument)) + .007 * Math.cos(index * 1.73 + instrument)); return { instrument_id, timestamp: pipelineStamp(index), available_at: pipelineStamp(index), open: close, high: close, low: close, close, volume: 1000 + 7 * index + instrument }; })).flat() };
   examples["workspace-pipeline-universe"] = { universe_id: "authored-pipeline-universe-v1", source: "authored-universe-workbench-v1", effective_at: "2026-11-01T00:00:00Z", available_at: "2026-11-01T00:00:00Z", members: pipelineSymbols.map(instrument_id => ({ instrument_id, symbol: instrument_id, calendar: "XNYS", currency: "USD" })) };
   examples["workspace-research-dataset"] = { source: "authored-pipeline-workbench-v1", classification: "SYNTHETIC", currency: "USD", universe_id: "authored-pipeline-universe-v1", start: pipelineStamp(0), end: pipelineStamp(79), as_of: pipelineStamp(79), decision_delay_seconds: 0, horizon: 1, lookback: 5, adjustment: "RAW" };
+  examples["workspace-research-gpr"] = { dataset_id: "0".repeat(64), model: "gaussian_process", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-model"] = { dataset_id: "0".repeat(64), model: "ridge", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-predict"] = { run_id: "0".repeat(64), dataset_id: "0".repeat(64) };
   examples["workspace-research-allocate"] = { run_id: "0".repeat(64), now: pipelineStamp(79), initial_cash: "100000", n_long: 1, n_short: 1, gross_leverage: .2, max_name_weight: .1, lot_size: "1", price_tick: "0.01", max_age_seconds: 3600, annualization: 98280, metadata: pipelineMetadata, limits: pipelineLimits, commission_bps: 5, slippage_bps: 5 };
@@ -852,7 +853,7 @@
     if (kind === "workspace-observed-evaluation-replay" && workflowReferences.observed_evaluation_id) example.evaluation_id = workflowReferences.observed_evaluation_id;
     if (kind === "workspace-observed-replay" && workflowReferences.observed_report_id) example.report_id = workflowReferences.observed_report_id;
 
-    if (["workspace-research-model", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
+    if (["workspace-research-model", "workspace-research-gpr", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (["workspace-research-predict", "workspace-research-allocate"].includes(kind) && workflowReferences.run_id) example.run_id = workflowReferences.run_id;
     if (kind === "workspace-pairs-research" && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (kind === "workspace-pairs-replay" && workflowReferences.pair_run_id) example.run_id = workflowReferences.pair_run_id;
@@ -880,7 +881,7 @@
     if (kind === "workspace-finbert") $("run-analysis").textContent = "Analyze with local licensed model";
     if (kind === "workspace-execution-engine") $("run-analysis").textContent = "Prepare offline intent";
     if (kind === "workspace-research-dataset") $("run-analysis").textContent = "Build persisted dataset";
-    if (kind === "workspace-research-model") $("run-analysis").textContent = "Run saved-data research";
+    if (["workspace-research-model", "workspace-research-gpr"].includes(kind)) $("run-analysis").textContent = "Run saved-data research";
     if (kind === "workspace-research-predict") $("run-analysis").textContent = "Replay saved model";
     if (kind === "workspace-research-allocate") $("run-analysis").textContent = "Construct offline targets";
     if (kind === "workspace-research-prepare") $("run-analysis").textContent = "Prepare offline target intents";
@@ -935,6 +936,7 @@
       "workspace-pipeline-bars": "Explicitly admit 160 authored SYNTHETIC minute bars for two instruments. The example is not provider-observed data. This setup action does not run a model or prepare an order.",
       "workspace-pipeline-universe": "Save the authored SYNTHETIC universe known before all fixture decisions. Use this with the pipeline bars setup, then build a persisted dataset.",
       "workspace-research-dataset": "Build a research dataset from persisted source observations and decision-time universe/revisions. No rows are generated by this action. Missing or unavailable knowledge fails explicitly; a later correction cannot rewrite an earlier feature decision.",
+      "workspace-research-gpr": "Fixed-RBF Gaussian process research on a saved admitted dataset. CPU only; at most 128 training rows and 16 total fits. Train-only scaling and purged labels; posterior spread is assumption-dependent, not calibrated confidence. No allocation or trading approval.",
       "workspace-research-model": "Train real CPU research on a saved admitted dataset with purged chronological folds. Available choices include ridge, LightGBM ranking, BiLSTM, HMM, GARCH and Kalman. Source classification and uncertainty remain explicit; research results are not approved signals.",
       "workspace-research-predict": "Reload a saved model/run and admitted dataset by hash. IDs come from this session's last successful research actions, or can be edited explicitly. Zero placeholders are unavailable, not trained models.",
       "workspace-research-allocate": "Construct modeled offline targets from saved research scores, admitted marks and explicit limits. Worst-case asynchronous fills must fit the policy. This does not prepare, dispatch or fill an order.",

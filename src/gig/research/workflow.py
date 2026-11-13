@@ -47,6 +47,10 @@ def model_capabilities() -> dict[str, dict[str, Any]]:
     dependencies = {"lightgbm": _exists("lightgbm"), "torch": _exists("torch"),
                     "transformers": _exists("transformers")}
     return {
+        "gaussian_process": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
+                             "implemented": True, "trained": False, "trading_approved": False,
+                             "dependency_available": _exists("sklearn"),
+                             "reason": "Bounded fixed-RBF CPU model in the persisted-dataset workspace; posterior spread is not calibrated confidence"},
         "ridge": {"state": "AVAILABLE", "implemented": True, "trained": False,
                   "trading_approved": False, "dependency_available": True},
         "lightgbm": {"state": "AVAILABLE" if dependencies["lightgbm"] else "UNAVAILABLE",
