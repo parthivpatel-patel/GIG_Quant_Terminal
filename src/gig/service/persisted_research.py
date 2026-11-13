@@ -16,6 +16,7 @@ from gig.research.model_pipeline import (
     identity,
     saved_predict,
     sha256,
+    validate_sequence_knowledge,
 )
 from gig.service.contracts import Contract, State
 from gig.service.serialization import dumps, loads, public_error
@@ -135,7 +136,8 @@ class PersistedResearchWorkspace:
         if dataset["as_of"] != artifact["as_of"] or dataset["classification"] != artifact["input_classification"]:
             raise ValueError("persisted research provenance differs from admitted dataset")
         for model_id in artifact["model_ids"]:
-            self._model(model_id)
+            model = self._model(model_id)
+            validate_sequence_knowledge(model, dataset)
         for row in artifact["rows"]:
             if row["model_id"] not in artifact["model_ids"]:
                 raise ValueError("prediction references an unregistered model")

@@ -300,3 +300,13 @@ These are conditional targets, not guarantees of data availability, hardware,
 profitable results or certification. Reforecast from actual delivered checkpoints
 and the external blockers above. Feature completion, operational acceptance,
 economic validation and institutional certification remain separate milestones.
+
+## BiLSTM label-knowledge correctness repair (2026-11-13)
+
+The persisted sequence adapter now rejects supervised outcomes with no revision
+knowable strictly before the fold cutoff. Older saved runs are rechecked against
+their original admitted dataset before reuse; immutable artifacts remain intact.
+Feature-only warm-up labels cannot affect fitted identities or predictions.
+See [reproduction and acceptance](evidence/sequence-label-fencing/README.md).
+This adds no model family:9implemented,31planned. Certification and external
+operational/data-rights blockers are unchanged.
