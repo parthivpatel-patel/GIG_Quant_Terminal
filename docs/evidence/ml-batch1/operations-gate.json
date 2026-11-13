@@ -1,0 +1,14 @@
+{
+  "gate": {
+    "driver": "PREVIOUS_VFS_BLOCKER_CURRENT_FILESYSTEM_MEASUREMENT",
+    "free_bytes": 0,
+    "minimum_free_bytes": 3221225472,
+    "abort_reserve_bytes": 536870912,
+    "state": "BLOCKED_STORAGE",
+    "estimate": "Reduced VFS layers: ~0.7 GiB builder, ~0.7 GiB runtime, ~0.7 GiB test container, plus transient work and >=0.5 GiB reserve"
+  },
+  "measured_path": "/workspace",
+  "docker_commands_executed": 0,
+  "container_acceptance": "BLOCKED_STORAGE_NOT_SUBSTITUTED_WITH_HOST_CHECKS",
+  "arm64_hardware_acceptance": "UNVERIFIED"
+}

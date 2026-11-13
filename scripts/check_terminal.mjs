@@ -443,7 +443,7 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
 });
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
-  "research-model": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-model": "research-model", "research-gpr": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
   "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
   "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
   "schedule-twap": "execution-engine", "advance-clock": "execution-engine",

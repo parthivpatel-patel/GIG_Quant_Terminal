@@ -1,0 +1,12 @@
+{
+  "state": "PASS",
+  "merge_head": "53405c066d5ef63573c0a570ad781d7f66cdbae2",
+  "first_process_runs": 4,
+  "second_process_runs": 5,
+  "equity_report_hashes": {
+    "uci-equity-weekly-volume-persistence-2011-v1": "807196baa799e98147feb17a42f103cde1e43cceb2fd2fb68dfa2fb416e3b7cc",
+    "uci-equity-weekly-range-persistence-2011-v1": "ea33f9f8ce606080002a3a9f48b6bc588f132156f4ed2b2130acc5c66db44d0e"
+  },
+  "orders_submitted": 0,
+  "duplicate_plans": false
+}

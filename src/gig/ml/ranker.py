@@ -122,7 +122,7 @@ def _fit_lightgbm(x_tr: pd.DataFrame, y_tr: pd.Series, x_te: pd.DataFrame) -> np
         "label_gain": list(range(5)),
     }
     booster = lgb.train(params, train, num_boost_round=80)
-    return booster.predict(x_te.to_numpy(dtype=float))
+    return np.asarray(booster.predict(x_te.to_numpy(dtype=float)), dtype=float)
 
 
 def _fit_sklearn(x_tr: pd.DataFrame, y_tr: pd.Series, x_te: pd.DataFrame) -> np.ndarray:

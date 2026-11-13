@@ -1,0 +1,13 @@
+{
+  "state": "PASS",
+  "process_boundary": "source seed process exited; independent installed-wheel inference process",
+  "request": {
+    "dataset_id": "0a051b5a88ebf195b25720e94df20228981b177b665d8567cf049970e30d7eeb",
+    "run_id": "81a8e1347d6454ab968606b5b0200b555b836ec840a635b088d49b127f6422fb"
+  },
+  "prediction_sha256": "adb9c290244b6567b5fe7672734aedad09eb5363a206d50643be6d0acf2e1607",
+  "training_performed": false,
+  "orders_created": 0,
+  "classification": "SYNTHETIC_INPUT_MODEL_ESTIMATE",
+  "package_import": "/tmp/gig-ml-final-installed/gig/__init__.py"
+}

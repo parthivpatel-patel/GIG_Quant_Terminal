@@ -119,8 +119,8 @@ class Contract:
             as_of = aware_timestamp(as_of).isoformat()
         if state == State.STALE and as_of is None:
             raise ValueError("stale data requires its original timestamp")
-        meta = ProvenanceSchema(source=source, classification=classification,
-                                as_of=as_of, **provenance)
+        meta = ProvenanceSchema.model_validate({"source": source, "classification": classification,
+                                                "as_of": as_of, **provenance})
         if state == State.AVAILABLE and classification in ("UNKNOWN", "UNAVAILABLE"):
             raise ValueError("available data requires a known classification")
         body = {"schema_version": "1", "state": state.value, "data": data,
