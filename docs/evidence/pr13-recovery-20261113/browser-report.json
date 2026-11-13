@@ -1,0 +1,261 @@
+{
+  "browser": {
+    "name": "Chromium",
+    "version": "151.0.7922.173",
+    "executable": "/usr/bin/chromium",
+    "physical_arm64": false
+  },
+  "checks": [
+    {
+      "name": "five approved investigation choices render in the Command Center",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "all sixteen existing navigation sections remain",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "investigation context selects the equity range study",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "source uncertainty remains explicit",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "selection preview conveys approval boundary",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Command Center splitter reports its actual keyboard-adjusted width",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Research Observatory receives the same investigation context",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "focusing an investigation does not approve or compute",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "separate equity approvals do not start compute",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "four-job process budget remains enforced",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "two approved equity studies run automatically and persist",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "observed equity findings retain inconclusive results and no economic claims",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "negative model comparison retained: uci-equity-weekly-volume-persistence-2011-v1",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "negative model comparison retained: uci-equity-weekly-range-persistence-2011-v1",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Strategy Laboratory exposes actual scoring and uncertainty",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "saved findings survive reload without duplicated runs",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "selected research context survives reload",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "official equity-index futures positioning is distinct from currency futures",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "positioning retains historical stale disclosure",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "equity positioning chart draws actual report series",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "keyboard report cursor selects actual first date",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "authored options remain separated from observed equity positioning",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "unavailable positioning clears previous observed chart",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "positioning recovers by reloading verified saved evidence",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "shared research context never reclassifies chart observations",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: dark/command-center",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: dark/observatory",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: dark/charts",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: dark/market-flow",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: light/command-center",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: light/observatory",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: light/charts",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "axe WCAG2A/AA automated scan: light/market-flow",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no page overflow at 390px/command-center",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no page overflow at 390px/observatory",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no page overflow at 390px/charts",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no page overflow at 390px/market-flow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no page overflow at 768px/command-center",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no page overflow at 768px/observatory",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no page overflow at 768px/charts",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no page overflow at 768px/market-flow",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "unavailable research memory clears apparent selection success",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "research memory recovers without automatic approval",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "authored hostile response text is rendered without HTML execution",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "reduced motion preference remains active",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "no uncaught browser JavaScript errors",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "no external browser requests",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "passed": 47,
+  "failed": 0,
+  "errors": [],
+  "blocked_requests": [],
+  "screenshots": [
+    "command-center-workspace.png",
+    "command-center.png",
+    "strategy-laboratory.png",
+    "equity-positioning.png",
+    "market-charts.png",
+    "research-mobile.png"
+  ],
+  "limitations": [
+    "Automated Chromium and axe checks do not establish full accessibility conformance, Firefox/Safari compatibility or physical ARM64 acceptance.",
+    "Browser replay verifies persisted service results; worker process restart and lease safety require backend recovery tests."
+  ]
+}

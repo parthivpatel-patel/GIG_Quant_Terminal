@@ -1,0 +1,11 @@
+{
+  "head": "5b8cf871a7551d747953d726fd643fb76b3243fe",
+  "source_manifest_verified": 353,
+  "archive_url": "https://codeload.github.com/parthivpatel-patel/GIG_Quant_Terminal/tar.gz/5b8cf871a7551d747953d726fd643fb76b3243fe",
+  "archive_sha256": "accf4789356905dc8df9f6c325bd7784a70de9f4d566a699edad6aad83b3e68f",
+  "files_and_modes_verified": 978,
+  "restored_directory": "/tmp/gig-pr13-recovery/restored-source/GIG_Quant_Terminal-5b8cf871a7551d747953d726fd643fb76b3243fe",
+  "state": "PASS",
+  "external_provider": "GitHub",
+  "other_external_provider_verified": false
+}

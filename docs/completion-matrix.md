@@ -1,5 +1,30 @@
 # GIG engineering completion matrix
 
+## PR #13 recovered release acceptance (2026-11-13)
+
+Verified feature checkpoint: `5b8cf871a7551d747953d726fd643fb76b3243fe` on
+`development/gig-research-equity-registry`. PR #13 targets
+`development/gig-ui-redesign`; main and the quantitative branch are unchanged.
+The interrupted frontend correction was already published and all six PR/push
+checks are green. Final evidence-only commit checks and the merge/post-merge
+results are recorded on PR #13 before this release is treated as integrated.
+
+| Requirement | Verified result and limit |
+| --- | --- |
+| Ubuntu/Playwright correction | Standard free Ubuntu 24.04 runners; bundled Playwright Chromium download without redundant APT/fonts. No browser, axe, responsive or security check removed. Both frontend contexts passed. |
+| Full clean-runner regressions | Python 3.11 and 3.12 each: 1,235 passed,11 skipped,673 passing subtests;82.92%combinedcoverage. Skips:9FinBERT assets/runtime,2legacy ECB acquisition-store checks. Suites overlap. |
+| Fresh installed-wheel acceptance |164passed,1optional standalone C-ABI skip. Native pybind imported from independent installation;217packaged source/data/UI files match source bytes. |
+| Fresh browser acceptance |47actual Chromium151.0.7922.173 checks;8axe scans and8responsive checks,0failures. Original CI Chromium158.0.8127.18 completed all retained suites and47new checks. Automated accessibility only. |
+| Worker and risk safety |62focused lease, stale-owner, registry, HTTP and provider checks pass. The corrected clock-driven expiry tests remain intact; runtime controls are unchanged. |
+| Independent recovery |Published archive restored:978tracked file hashes and executable modes match; archive SHA256accf4789356905dc8df9f6c325bd7784a70de9f4d566a699edad6aad83b3e68f.353source/test/script/config hashes verified. Older19local changes separately preserved. |
+| Research and licensing |UCI studies remain retrospective/INCONCLUSIVE and worse than training-only baselines. CFTC data are historical aggregate futures positions. FinBERT remains noncommercial research-only; no restricted weights in archives. |
+| Remaining acceptance |No PIT-admitted cash-equity universe/actions/vintages or observed options-print entitlement. Docker store full; physical ARM64/Ampere, Firefox/Safari and full manual accessibility unverified. fully_funded_certified=false;T4_NOT_CERTIFIED;§139UNSUPPLIED. |
+
+Evidence: `docs/evidence/pr13-recovery-20261113/` and
+[the original delivery report](research/equity-registry-delivery.md). Counts across
+local, installed-wheel, repeated CI and browser suites are not added together.
+No ML expansion is started before verified PR #13 merge and post-merge CI.
+
 ## Approved equity investigations and connected workspaces (2026-11-11)
 
 PR #12 is merged at `1f9a3e1cfa7363db242e4d3a9f3fb8802acc9a13`.
