@@ -315,3 +315,9 @@ Frozen-source BiLSTM repair acceptance:1,270passed/9optional FinBERT skips/0fail
 83.13%coverage; isolated wheel84passed/1optional standalone C-ABI skip. The
 forest browser navigation wait was corrected without removing assertions; two
 25/25runs and financial24/24 pass. Initial failed browser report is preserved.
+
+Saved allocation follow-up: original model/signal/pair lineage and dataset are
+revalidated before cached portfolio/risk views or OMS preparation, including old
+plans. Reproduced bypass and27focused passes are recorded in
+[evidence/sequence-lineage-fencing](evidence/sequence-lineage-fencing/README.md).
+Historical artifacts/fills are preserved; no certification claim is added.

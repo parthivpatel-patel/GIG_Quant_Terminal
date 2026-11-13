@@ -11,10 +11,12 @@ from unittest.mock import patch
 import httpx
 
 from gig.research.model_pipeline import configuration, fit_dataset, identity
+from gig.service.allocation_workspace import ResearchAllocationWorkspace
 from gig.service.app import create_app
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
 from gig.service.persisted_research import PersistedResearchWorkspace
 from test_persisted_data import seed_persisted_fixture
+from test_persisted_flow_http import allocation_request, seed_flow
 
 
 class SequenceKnowledgeTests(unittest.TestCase):
@@ -69,6 +71,32 @@ class SequenceKnowledgeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "knowledge"):
                 workspace.load(result["data"]["run_id"])
             self.assertEqual(files, {p: p.read_bytes() for p in files})
+
+
+    def test_legacy_allocation_rechecks_source_before_view_or_oms_preparation(self):
+        # A separate authored microsecond fixture supports the OMS precision
+        # boundary; no source timestamp is silently truncated by the service.
+        request = seed_flow(self.base)
+        dataset = PersistedDatasetWorkspace(self.base).build(request).to_dict()["data"]
+        for row in dataset["rows"]:
+            row["label_vintages"] = [{"target": row["target"], "label_end": row["label_end"], "knowledge_at": dataset["as_of"]}]
+        dataset["dataset_id"] = identity({k: v for k, v in dataset.items() if k != "dataset_id"})
+        with patch.object(PersistedResearchWorkspace, "_dataset", return_value=dataset):
+            with patch("gig.research.model_pipeline._training_vintage", side_effect=lambda row, _: row):
+                run = PersistedResearchWorkspace(self.base).run({**self.request, "dataset_id": dataset["dataset_id"]}).to_dict()["data"]
+                with patch.object(PersistedDatasetWorkspace, "load", return_value=dataset):
+                    allocation = ResearchAllocationWorkspace(self.base).build(allocation_request(run["run_id"], dataset["as_of"])).to_dict()
+            self.assertEqual(allocation["state"], "AVAILABLE")
+            allocation_id = allocation["data"]["allocation_id"]
+            preserved = {p: p.read_bytes() for p in (self.base/"allocations").rglob("*.json")}
+            reopened = ResearchAllocationWorkspace(self.base)
+            for operation in (lambda: reopened.load(allocation_id),
+                              lambda: reopened.section("risk", dataset["as_of"], 60),
+                              lambda: reopened.prepare({"allocation_id": allocation_id, "now": dataset["as_of"]})):
+                with self.subTest(operation=operation), self.assertRaisesRegex(ValueError, "knowledge"):
+                    operation()
+            self.assertFalse((self.base/"execution-engine").exists())
+            self.assertEqual(preserved, {p: p.read_bytes() for p in preserved})
 
 
 class SequenceKnowledgeHTTPTests(unittest.IsolatedAsyncioTestCase):
