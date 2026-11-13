@@ -1,0 +1,10 @@
+{
+  "state": "PASS",
+  "method": "source seed process exited; independent installed-wheel process replay",
+  "snapshot_id": "0f36d3f95e7015f98ddd249c70c28772227554cdaf80cbe389614979e8924dae",
+  "wire_sha256": "a9dcbcc9c58ebff010154cb8afe393c15bcfa24e2a8421959f36cb1e19a82038",
+  "classification": "HISTORICAL",
+  "package_import": "/tmp/gig-combined-installed/gig/__init__.py",
+  "model_invocations": 0,
+  "orders_created": 0
+}

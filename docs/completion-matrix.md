@@ -14,9 +14,13 @@ immutable saved-search replay, and four explicit existing-workbench actions.
 Semantic/generative retrieval and monitoring remain UNAVAILABLE/not running.
 No document enters a market-data or execution pipeline.
 
-Focused12 and API-contract69 tests pass; actual Chromium24 and154Node checks
-pass, including keyboard access to scrolling evidence. Full regression, final
-wheel/recovery and exact final-head CI are recorded on the slice PR when complete.
+Final combined acceptance after reconciling PR15:1,266passed,9FinBERT skips,
+0failures;83.12%coverage. Installed native wheel107passed/1optionalC-ABI skip;
+224packaged files match. Chromium24financial/25forest/20GP and157Node checks
+pass, including keyboard access to scrolling evidence. Typed/static/native
+checks, process replay and local SQLite backup/restore pass. Exact final-head
+CI/source recovery are recorded on PR16. Runtime databases are not in Git and
+no independent external runtime backup is claimed.
 EDGAR remains blocked pending a genuine approved contact identity; Federal
 Reserve endpoints returned403 and were not bypassed. Source/archive rights and
 historical knowledge limits remain explicit.
@@ -34,7 +38,11 @@ See [the family contract](ml/FORESTS.md) and [batch2 evidence](evidence/ml-batch
 Full regression:1,254passed,9FinBERT skips,0failures;83.10%coverage. Independent
 installed wheel109passed/1optional C-ABI skip;219packaged files match. Focused21
 and Chromium25 checks pass. Configured static checks and native parity pass.
-Exact final-head CI and independent recovery are recorded on PR15. No observed-market alpha or institutional certification is claimed.
+PR15 merged43ef707 after all6final-head checks passed; clean CI backends each
+1,252passed,11skipped,729subtests,83.04%coverage. Post-merge CI is green.
+Independent recovery verified1,047archive file hashes/modes and restored366
+source/test/config files;18forest/lease tests pass from restored source.
+Exact URLs/hashes are recorded on PR15. No observed-market alpha or institutional certification is claimed.
 
 
 ## PR #13 integrated; first ML expansion batch (2026-11-13)

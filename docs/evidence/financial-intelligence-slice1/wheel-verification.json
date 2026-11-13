@@ -1,0 +1,7 @@
+{
+  "state": "PASS",
+  "packaged_files_matched": 224,
+  "package_import": "/tmp/gig-combined-installed/gig/__init__.py",
+  "native_extension": "/tmp/gig-combined-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "wheel_sha256": "724adf1f8d8185f5b485e8edf0d4d2b072cef06cf56c92199f1d46159ff8edc7"
+}
