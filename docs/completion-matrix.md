@@ -321,3 +321,11 @@ revalidated before cached portfolio/risk views or OMS preparation, including old
 plans. Reproduced bypass and27focused passes are recorded in
 [evidence/sequence-lineage-fencing](evidence/sequence-lineage-fencing/README.md).
 Historical artifacts/fills are preserved; no certification claim is added.
+
+Final research-lineage acceptance (source `536abba3`): **1,271 passed, 9 optional
+FinBERT skips, 0 failures; 83.13% coverage**. Isolated current wheel:81 passed and
+1 optional local C-ABI skip;224 packaged files match. Current Chromium workflows:
+forests25/25, financial24/24. Detailed logs, source hashes/modes and genuine
+screenshots are in `docs/evidence/sequence-lineage-fencing/`. Nine model families
+remain implemented;31 additions remain planned. External acceptance and licensing
+limits above are unchanged.
