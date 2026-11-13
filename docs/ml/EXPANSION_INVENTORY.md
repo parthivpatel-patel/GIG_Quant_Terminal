@@ -5,10 +5,11 @@ Post-merge Python 3.11, Python 3.12 and frontend CI all passed before this inven
 was prepared. This is a research implementation inventory, not a claim of forty
 trained, economically validated or approved trading models.
 
-Implementation update: family 08 is now implemented in the first bounded batch;
-see [its contract and limitations](GAUSSIAN_PROCESS.md). Seven pre-existing plus
-one new family means eight implemented families and 32 planned additions, not
-forty trained models. The original 7+33 inventory below is retained.
+Implementation update: families08(Gaussian process) and09(Random Forest /
+ExtraTrees) are implemented in bounded CPU batches. There are nine implemented
+families and31planned additions. RF and ExtraTrees are two actually fitted
+variants of one family, not two independent statistical hypotheses. See
+[Gaussian process](GAUSSIAN_PROCESS.md) and [forests](FORESTS.md).
 
 ## Seven existing primary families
 
@@ -39,7 +40,7 @@ inventory never registers executable code or starts training.
 | ID | Family / grouped variants | Candidate CPU implementation | Admission or licensing gate |
 | --- | --- | --- | --- |
 | 08 | Gaussian process regression | scikit-learn fixed RBF, no optimizer | First batch; BSD-3-Clause verified locally; bounded matrix work, no pretrained weights |
-| 09 | Random forest / ExtraTrees | scikit-learn | Bounded tree count/depth; variance across trees is not calibrated confidence |
+| 09 | Random forest / ExtraTrees | IMPLEMENTED: actual sklearn, JSON tree replay |16trees/depth4,256training rows,16total fits; descriptive disagreement, no allocation approval |
 | 10 | Support vector machines / SVR | scikit-learn | Explicit kernel and quadratic resource limits |
 | 11 | Nearest-neighbor models | scikit-learn | Training-only scaling; bounded retained observations |
 | 12 | Bayesian linear / ARD regression | scikit-learn | Posterior assumptions and OOS interval calibration |
@@ -83,7 +84,7 @@ Implement only family 08 initially: fixed-kernel Gaussian process regression,
 actual scikit-learn CPU training, bounded dimensions/fits, purged persisted-data
 integration, saved non-executable JSON state, model-specific uncertainty and
 independent numerical references. No optimizer, downloads, broker connections,
-orders or automatic model promotion. The 32 later additions remain planned.
+orders or automatic model promotion. Family09 is now implemented in batch2;31later additions remain planned.
 
 Every family must preserve acquisition/revision knowledge, feature availability,
 purged label selection, source classification, training-only preprocessing,

@@ -443,7 +443,7 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
 });
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
-  "research-model": "research-model", "research-gpr": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
   "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
   "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
   "schedule-twap": "execution-engine", "advance-clock": "execution-engine",
@@ -475,7 +475,10 @@ checked("successful persisted dataset identity fills the next explicit model req
   assert.equal(JSON.parse(get("analytics-input").value).dataset_id, datasetId);
   assert.match(get("workflow-identities").textContent, new RegExp(datasetId));
 });
-await successfulPipeline("research-model", { run_id: runId });
+await successfulPipeline("research-model", { run_id: runId, dataset_id: datasetId });
+get("analytics-kind").value = "workspace-research-predict";
+await get("analytics-kind").dispatch("change");
+checked("saved dataset returned by a manual model run fills inference", () => assert.equal(JSON.parse(get("analytics-input").value).dataset_id, datasetId));
 get("analytics-kind").value = "workspace-research-allocate";
 await get("analytics-kind").dispatch("change");
 checked("successful research identity fills allocation without automatically preparing an order", () => assert.equal(JSON.parse(get("analytics-input").value).run_id, runId));
