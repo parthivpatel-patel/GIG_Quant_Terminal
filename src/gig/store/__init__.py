@@ -427,7 +427,7 @@ class Store:
             except Exception:
                 return 0
         try:
-            n = self.con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-            return int(n or 0)
+            count_row = self.con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
+            return int(count_row[0] or 0) if count_row is not None else 0
         except Exception:
             return 0
