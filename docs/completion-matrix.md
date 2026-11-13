@@ -1,5 +1,27 @@
 # GIG engineering completion matrix
 
+## Financial Intelligence first vertical slice (2026-11-13)
+
+[The16-capability implementation matrix](financial-intelligence/IMPLEMENTATION_MATRIX.md)
+maps implemented, partial, planned and blocked capabilities. This is an original
+bounded document engine, not a claim of AlphaSense parity. It retains the
+existing219-section tracker and §139UNSUPPLIED.
+
+Implemented: pinned permitted Treasury XML/original-byte citations, authored
+UTF-8 protocol admission, atomic SQLite revisions, temporal corpus selection,
+original BM25, explicit minimal tenor synonyms, extractive quoted answers,
+immutable saved-search replay, and four explicit existing-workbench actions.
+Semantic/generative retrieval and monitoring remain UNAVAILABLE/not running.
+No document enters a market-data or execution pipeline.
+
+Focused12 and API-contract69 tests pass; actual Chromium24 and154Node checks
+pass, including keyboard access to scrolling evidence. Full regression, final
+wheel/recovery and exact final-head CI are recorded on the slice PR when complete.
+EDGAR remains blocked pending a genuine approved contact identity; Federal
+Reserve endpoints returned403 and were not bypassed. Source/archive rights and
+historical knowledge limits remain explicit.
+
+
 ## PR #13 integrated; first ML expansion batch (2026-11-13)
 
 PR #13 is COMPLETE at merge `53405c066d5ef63573c0a570ad781d7f66cdbae2`.

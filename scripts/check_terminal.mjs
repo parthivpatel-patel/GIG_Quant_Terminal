@@ -74,6 +74,10 @@ class Element {
     assert(found, `Missing query target ${selector}`);
     return found;
   }
+  querySelectorAll(selector) {
+    assert.match(selector, /^[a-z]+$/i, "DOM stub supports descendant tag selectors only");
+    return walk(this).slice(1).filter((node) => node.tagName === selector);
+  }
   click() {
     if (this.download) clickedDownloads.push(this);
     return this.dispatch("click");
@@ -441,6 +445,15 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
+const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay"];
+for (const kind of financialActions) {
+  get("analytics-kind").value = "workspace-" + kind;
+  const before = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, before, "Financial selection cannot submit automatically");
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`${kind} uses bounded local financial contract`, () => assert.equal(calls.at(-1).url, "/api/v1/workspace/financial-intelligence"));
+}
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
   "research-model": "research-model", "research-gpr": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",

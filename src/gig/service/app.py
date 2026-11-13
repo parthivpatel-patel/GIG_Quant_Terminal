@@ -198,6 +198,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
                    "train-sequence": integrations.train_sequence,
                    "predict-sequence": integrations.predict_sequence,
                    "finbert": integrations.analyze_finbert, "execution-engine": integrations.execution,
+                   "financial-intelligence": integrations.financial_intelligence,
                    "research-dataset": integrations.research_dataset, "research-model": integrations.research_model,
                    "research-predict": integrations.research_predict, "research-allocate": integrations.research_allocate,
                    "research-prepare": integrations.research_prepare, "portfolio-accounting": integrations.portfolio_accounting,

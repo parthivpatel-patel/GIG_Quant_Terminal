@@ -24,6 +24,7 @@
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-gpr": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
+  Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence" });
   workspaceActions["workspace-options-overlay"] = "options-overlay";
   workspaceActions["workspace-options-overlay-replay"] = "options-overlay-replay";
   Object.assign(workspaceActions, { "workspace-economic-research": "economic-research", "workspace-economic-replay": "economic-replay", "workspace-microstructure-admit": "microstructure-admit", "workspace-microstructure-research": "microstructure-research", "workspace-microstructure-replay": "microstructure-replay", "workspace-funded-risk": "funded-risk", "workspace-funded-risk-replay": "funded-risk-replay" });
@@ -36,7 +37,7 @@
   workspaceActions["workspace-lifecycle-dividend-cancel"] = "funded-lifecycle";
   workspaceActions["workspace-funded-factor-risk"] = "funded-risk";
   for (const operation of ["fetch", "admit", "replay"]) workspaceActions["workspace-equity-" + operation] = "equity-reference";
-  const workflowReferences = { equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
+  const workflowReferences = { financial_snapshot_id: null, equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
   const comparisonResults = [];
 
   workspaceActions["workspace-depth"] = "depth";
@@ -760,6 +761,10 @@
   examples["workspace-pipeline-bars"] = { source: "authored-pipeline-workbench-v1", classification: "SYNTHETIC", corporate_action_policy: "RAW", currency: "USD", rows: Array.from({ length: 80 }, (_, index) => pipelineSymbols.map((instrument_id, instrument) => { const close = (100 + instrument * 30) * Math.exp(.001 * index + .018 * Math.sin(index / (3 + instrument)) + .007 * Math.cos(index * 1.73 + instrument)); return { instrument_id, timestamp: pipelineStamp(index), available_at: pipelineStamp(index), open: close, high: close, low: close, close, volume: 1000 + 7 * index + instrument }; })).flat() };
   examples["workspace-pipeline-universe"] = { universe_id: "authored-pipeline-universe-v1", source: "authored-universe-workbench-v1", effective_at: "2026-11-01T00:00:00Z", available_at: "2026-11-01T00:00:00Z", members: pipelineSymbols.map(instrument_id => ({ instrument_id, symbol: instrument_id, calendar: "XNYS", currency: "USD" })) };
   examples["workspace-research-dataset"] = { source: "authored-pipeline-workbench-v1", classification: "SYNTHETIC", currency: "USD", universe_id: "authored-pipeline-universe-v1", start: pipelineStamp(0), end: pipelineStamp(79), as_of: pipelineStamp(79), decision_delay_seconds: 0, horizon: 1, lookback: 5, adjustment: "RAW" };
+  examples["workspace-financial-reference"] = { operation: "ingest-reference" };
+  examples["workspace-financial-search"] = { operation: "search", query: "10-year Treasury yield 2023-01-03", as_of: new Date().toISOString(), limit: 3, expand: true };
+  examples["workspace-financial-answer"] = { ...examples["workspace-financial-search"], operation: "answer" };
+  examples["workspace-financial-replay"] = { operation: "replay", snapshot_id: "0".repeat(64) };
   examples["workspace-research-gpr"] = { dataset_id: "0".repeat(64), model: "gaussian_process", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-model"] = { dataset_id: "0".repeat(64), model: "ridge", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-predict"] = { run_id: "0".repeat(64), dataset_id: "0".repeat(64) };
@@ -843,6 +848,8 @@
   function loadExample() {
     const kind = $("analytics-kind").value;
     const example = JSON.parse(JSON.stringify(examples[kind]));
+    if (["workspace-financial-search", "workspace-financial-answer"].includes(kind)) example.as_of = new Date().toISOString();
+    if (kind === "workspace-financial-replay" && workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
     if (["workspace-lifecycle-apply", "workspace-lifecycle-accrue"].includes(kind) && workflowReferences.lifecycle_action_hash) example.action_hash = workflowReferences.lifecycle_action_hash;
     if (kind === "workspace-lifecycle-replay" && workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id;
     if (kind === "workspace-statement-reconcile") { if (workflowReferences.statement_hash) example.statement_hash = workflowReferences.statement_hash; if (workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id; }
@@ -936,6 +943,10 @@
       "workspace-pipeline-bars": "Explicitly admit 160 authored SYNTHETIC minute bars for two instruments. The example is not provider-observed data. This setup action does not run a model or prepare an order.",
       "workspace-pipeline-universe": "Save the authored SYNTHETIC universe known before all fixture decisions. Use this with the pipeline bars setup, then build a persisted dataset.",
       "workspace-research-dataset": "Build a research dataset from persisted source observations and decision-time universe/revisions. No rows are generated by this action. Missing or unavailable knowledge fails explicitly; a later correction cannot rewrite an earlier feature decision.",
+      "workspace-financial-reference": "Explicitly ingest the pinned CC0 Treasury XML document already packaged with GIG. Original source bytes and acquisition provenance are retained. No network, SEC identity, price feed, embeddings or language model is activated.",
+      "workspace-financial-search": "Bounded financial-document BM25 research with optional authored terminology expansion. Only documents known by the explicit cutoff enter corpus statistics. Results retain exact source-byte citations. Relevance is not financial confidence; semantic retrieval is UNAVAILABLE.",
+      "workspace-financial-answer": "Extractive source passage only, with original XML or text citations. This is not generative financial analysis. No match returns an unavailable answer; historical publication times remain UNKNOWN.",
+      "workspace-financial-replay": "Replay a saved financial search by hash against its original pinned corpus and cutoff. New document revisions cannot change old results. No monitoring or autonomous provider connection is running.",
       "workspace-research-gpr": "Fixed-RBF Gaussian process research on a saved admitted dataset. CPU only; at most 128 training rows and 16 total fits. Train-only scaling and purged labels; posterior spread is assumption-dependent, not calibrated confidence. No allocation or trading approval.",
       "workspace-research-model": "Train real CPU research on a saved admitted dataset with purged chronological folds. Available choices include ridge, LightGBM ranking, BiLSTM, HMM, GARCH and Kalman. Source classification and uncertainty remain explicit; research results are not approved signals.",
       "workspace-research-predict": "Reload a saved model/run and admitted dataset by hash. IDs come from this session's last successful research actions, or can be edited explicitly. Zero placeholders are unavailable, not trained models.",
@@ -1017,11 +1028,12 @@
         if (action === "microstructure-admit" && identity(result.data.snapshot_id)) workflowReferences.microstructure_snapshot_id = result.data.snapshot_id;
         if (action === "microstructure-research" && identity(result.data.report_id)) workflowReferences.microstructure_report_id = result.data.report_id;
         if (action === "funded-risk" && identity(result.data.report_id)) workflowReferences.funded_risk_id = result.data.report_id;
+        if (action === "financial-intelligence" && identity(result.data.snapshot_id)) workflowReferences.financial_snapshot_id = result.data.snapshot_id;
         rememberExperiment(action, result);
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
         if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
-        $("workflow-identities").textContent = ["equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+        $("workflow-identities").textContent = ["financial_snapshot_id", "equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();
@@ -1032,6 +1044,11 @@
     const data = result.data;
     if (!["AVAILABLE", "STALE"].includes(result.state) || !isObject(data)) return;
     const entries = [];
+    if (typeof data.corpus_identity === "string") {
+      entries.push(["Retrieval", "BM25 lexical · source citations"], ["Corpus", data.corpus_identity], ["Source scope", data.classification], ["Answer state", data.answer_state], ["Answer mode", data.answer_kind], ["Semantic / generative", `${data.semantic_state} / ${data.generative_state}`]);
+      if (typeof data.answer === "string") entries.push(["Exact normalized source passage", data.answer]);
+      if (Array.isArray(data.rows) && data.rows.length) entries.push(["Citation", data.rows[0].passage_id], ["Source URL", data.rows[0].source_url], ["Original-byte range", `${data.rows[0].source_start}–${data.rows[0].source_end}`]);
+    }
     if (isObject(data.account)) {
       for (const [key, label] of [["cash", "Book cash · USD"], ["available_cash", "Available cash · USD"], ["dividend_receivable", "Dividend receivable · USD"], ["dividend_income", "Recognized dividend income · USD"], ["nav", "Modeled NAV · USD"], ["dividend_accrual_state", "Dividend evidence state"]]) {
         if (Object.hasOwn(data.account, key)) entries.push([label, data.account[key]]);
@@ -1052,6 +1069,9 @@
     }));
     $("analysis-summary-note").textContent = isObject(data.account) ? "SIMULATED supported-scope account. A dividend receivable is not available cash. Unknown valuation remains unknown; funding is not independently certified." : "Saved research diagnostics. Output units, missing folds and uncertainty remain explicit. No profitability, calibrated trading confidence or trading approval is established.";
     $("analysis-summary").classList.remove("hidden");
+    $("analysis-summary-values").querySelectorAll("dd").forEach(value => {
+      if (value.scrollHeight > value.clientHeight + 1 || value.scrollWidth > value.clientWidth + 1) value.tabIndex = 0;
+    });
   }
   function rememberExperiment(action, result) {
     if (!["research-model", "pairs-research", "options-research", "research-signals", "economic-research", "microstructure-research"].includes(action)) return;
