@@ -75,8 +75,17 @@ def main():
             page.locator("#run-analysis").click()
         page.wait_for_function("!document.getElementById('run-analysis').disabled")
         check("explicit saved identities replay after page reload", exchange.value.json() == responses["research-predict"])
-        # Return to the saved GP model example for a readable genuine capture.
+        # Inspect actual saved models under the declared historical cutoff.
+        page.locator("#replay-asof").fill(responses["research-dataset"]["provenance"]["as_of"])
+        page.locator("#replay-asof").press("Tab")
+        page.wait_for_function("!document.getElementById('refresh').disabled")
+        page.locator("#analysis-engine").select_option("persisted")
+        page.wait_for_function("!document.getElementById('refresh').disabled")
+        page.locator('#section-nav a[href="#models"]').click()
+        page.wait_for_function("!document.getElementById('refresh').disabled && document.getElementById('state-badge').textContent === 'AVAILABLE'")
+        check("Models renders saved GP with source classification", "MODEL_ESTIMATE" in page.locator("#source-label").inner_text() and "SYNTHETIC INPUTS" in page.locator("#truth-notice").inner_text())
         page.locator("#analytics-kind").select_option("workspace-research-gpr")
+        page.locator("#analytics-input").fill(json.dumps({"dataset_id": responses["research-dataset"]["data"]["dataset_id"], "model": "gaussian_process", "min_train": 20, "test_size": 10, "embargo": 1, "seed": 17}, indent=2))
         for theme in ("dark", "light"):
             page.evaluate("theme=>document.documentElement.dataset.theme=theme", arg=theme)
             if args.axe:
