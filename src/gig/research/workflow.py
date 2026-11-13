@@ -47,6 +47,10 @@ def model_capabilities() -> dict[str, dict[str, Any]]:
     dependencies = {"lightgbm": _exists("lightgbm"), "torch": _exists("torch"),
                     "transformers": _exists("transformers")}
     return {
+        "random_forest_extratrees": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
+                                    "implemented": True, "trained": False, "trading_approved": False,
+                                    "dependency_available": _exists("sklearn"),
+                                    "reason": "Two bounded CPU forest variants in persisted research; tree spread is not calibrated confidence"},
         "gaussian_process": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
                              "implemented": True, "trained": False, "trading_approved": False,
                              "dependency_available": _exists("sklearn"),

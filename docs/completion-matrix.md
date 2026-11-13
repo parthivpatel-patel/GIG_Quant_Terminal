@@ -1,5 +1,22 @@
 # GIG engineering completion matrix
 
+## PR14 integrated and family09 CPU forest batch (2026-11-13)
+
+PR14 is COMPLETE at `cfa36ac098dc2d0975cd31a762c434445a29c4a5`. Merge tree
+exactly equals reviewed645519b. All three post-merge jobs passed in run43508310125;
+each backend1,245passed,11skipped,693subtests,82.98%coverage. Fresh21GP/lease and
+20Chromium checks pass. Original archives and protected branches are preserved.
+
+Family09 adds actual CPU Random Forest and ExtraTrees, one family with two
+variants, bounded purged fits and audited JSON inference. Nine families are
+implemented;31remain planned. Portfolio/ensemble admission stays false.
+See [the family contract](ml/FORESTS.md) and [batch2 evidence](evidence/ml-batch2/).
+Full regression:1,254passed,9FinBERT skips,0failures;83.10%coverage. Independent
+installed wheel109passed/1optional C-ABI skip;219packaged files match. Focused21
+and Chromium25 checks pass. Configured static checks and native parity pass.
+Exact final-head CI and independent recovery are recorded on PR15. No observed-market alpha or institutional certification is claimed.
+
+
 ## PR #13 integrated; first ML expansion batch (2026-11-13)
 
 PR #13 is COMPLETE at merge `53405c066d5ef63573c0a570ad781d7f66cdbae2`.
