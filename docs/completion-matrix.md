@@ -21,6 +21,25 @@ results are recorded below as they complete; earlier evidence retains its exact
 source scope. No production approval, observed-market alpha or certification is
 implied.
 
+### First ML batch acceptance
+
+| Capability | Verified result and limit |
+| --- | --- |
+| Forty-family inventory | Seven existing families identified; Gaussian process implemented as family08;32 additions remain planned. No automatic model or objective approval. |
+| Persisted Gaussian process | Actual sklearn CPU fit, fixed RBF/no optimizer,128 training rows/16 fits/16 features; JSON inference, strict numeric/state admission, purged vintage selection. Portfolio admission remains false. |
+| Negative research finding | SYNTHETIC fixture only:72 OOS rows/6 states. GP MSE9.31549e-5 is worse than train-only mean baseline7.25312e-5; nominal95% coverage86.1111%, not calibrated confidence. |
+| Final backend regression |1,247 passed,9 optional FinBERT skips,0 failures;83.1%combinedcoverage. Counts do not include overlapping reruns/wheel tests. |
+| Installed native wheel |172 passed,1 optional standalone C-ABI skip;217 packaged source/data/UI byte comparisons; native pybind loaded independently. |
+| Static and frontend |Ruff,Pyflakes,compileall,mypy22configured modules plus GP kernel;150 Node DOM checks. All original CI suites retained. |
+| Actual Chromium |20 passed,0 failures;151.0.7922.173;dark/light axe checks,four responsive widths,Models rendering and explicit replay. No formal accessibility/cross-browser certification. |
+| Restart and numerical evidence |Separate source/installed-wheel processes reproduce exact prediction hash without training/orders; native parity6.94e-18 on200,000samples/11repeats,x86_64 only. |
+| Operational and institutional gates |Docker BLOCKED_STORAGE:0free bytes on/workspace,0Docker commands. Physical ARM64/Ampere unverified;fully_funded_certified=false;T4_NOT_CERTIFIED;§139UNSUPPLIED. |
+
+PR #14 targets development only. Exact final-head CI and independent recovery
+verification are recorded on the PR after publication. Evidence:
+[ML batch1](evidence/ml-batch1/README.md). All prior observed research, screenshots,
+worker lease controls and protected branches remain preserved.
+
 ## PR #13 recovered release acceptance (2026-11-13)
 
 Verified feature checkpoint: `5b8cf871a7551d747953d726fd643fb76b3243fe` on

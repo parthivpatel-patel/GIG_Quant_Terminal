@@ -51,6 +51,9 @@ The first execution uses the existing explicitly SYNTHETIC two-instrument
 persisted-bars fixture: 6 fitted states, 72 OOS rows, 1.15 seconds measured for
 the complete fit/publish call on this x86_64 CPU environment. The exact timing
 and artifact identity are recorded in `docs/evidence/ml-batch1/research-result.json`.
+The synthetic OOS MSE is `9.315493972534936e-5`, worse than the training-only
+mean baseline `7.25311755680361e-5`. Descriptive nominal 95% interval coverage is
+`86.1111%`, not 95% calibrated confidence. These negative findings are retained.
 This is functional evidence, not observed-market predictive validation or a
 latency guarantee. No new observed market-data source is claimed.
 
