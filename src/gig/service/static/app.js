@@ -24,7 +24,7 @@
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-gpr": "research-model", "workspace-research-rf": "research-model", "workspace-research-xt": "research-model", "workspace-research-svr": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
-  Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence" });
+  Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence", "workspace-financial-latent": "financial-intelligence", "workspace-financial-hybrid": "financial-intelligence", "workspace-financial-facts": "financial-intelligence" });
   workspaceActions["workspace-options-overlay"] = "options-overlay";
   workspaceActions["workspace-options-overlay-replay"] = "options-overlay-replay";
   Object.assign(workspaceActions, { "workspace-economic-research": "economic-research", "workspace-economic-replay": "economic-replay", "workspace-microstructure-admit": "microstructure-admit", "workspace-microstructure-research": "microstructure-research", "workspace-microstructure-replay": "microstructure-replay", "workspace-funded-risk": "funded-risk", "workspace-funded-risk-replay": "funded-risk-replay" });
@@ -764,6 +764,9 @@
   examples["workspace-financial-reference"] = { operation: "ingest-reference" };
   examples["workspace-financial-search"] = { operation: "search", query: "10-year Treasury yield 2023-01-03", as_of: new Date().toISOString(), limit: 3, expand: true };
   examples["workspace-financial-answer"] = { ...examples["workspace-financial-search"], operation: "answer" };
+  examples["workspace-financial-latent"] = { ...examples["workspace-financial-answer"], retrieval_mode: "latent", latent_dimensions: 8 };
+  examples["workspace-financial-hybrid"] = { ...examples["workspace-financial-answer"], retrieval_mode: "hybrid", latent_dimensions: 8, extract_facts: true };
+  examples["workspace-financial-facts"] = { ...examples["workspace-financial-answer"], extract_facts: true };
   examples["workspace-financial-replay"] = { operation: "replay", snapshot_id: "0".repeat(64) };
   examples["workspace-research-rf"] = { dataset_id: "0".repeat(64), model: "random_forest", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-xt"] = { ...examples["workspace-research-rf"], model: "extra_trees" };
@@ -851,7 +854,7 @@
   function loadExample() {
     const kind = $("analytics-kind").value;
     const example = JSON.parse(JSON.stringify(examples[kind]));
-    if (["workspace-financial-search", "workspace-financial-answer"].includes(kind)) example.as_of = new Date().toISOString();
+    if (["workspace-financial-search", "workspace-financial-answer", "workspace-financial-latent", "workspace-financial-hybrid", "workspace-financial-facts"].includes(kind)) example.as_of = new Date().toISOString();
     if (kind === "workspace-financial-replay" && workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
     if (["workspace-lifecycle-apply", "workspace-lifecycle-accrue"].includes(kind) && workflowReferences.lifecycle_action_hash) example.action_hash = workflowReferences.lifecycle_action_hash;
     if (kind === "workspace-lifecycle-replay" && workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id;
@@ -949,6 +952,9 @@
       "workspace-financial-reference": "Explicitly ingest the pinned CC0 Treasury XML document already packaged with GIG. Original source bytes and acquisition provenance are retained. No network, SEC identity, price feed, embeddings or language model is activated.",
       "workspace-financial-search": "Bounded financial-document BM25 research with optional authored terminology expansion. Only documents known by the explicit cutoff enter corpus statistics. Results retain exact source-byte citations. Relevance is not financial confidence; semantic retrieval is UNAVAILABLE.",
       "workspace-financial-answer": "Extractive source passage only, with original XML or text citations. This is not generative financial analysis. No match returns an unavailable answer; historical publication times remain UNKNOWN.",
+      "workspace-financial-latent": "Fit a bounded corpus-local LSA retrieval model on visible permitted documents, then quote a cited passage. This is statistical latent retrieval, not pretrained language understanding. Dates and pure numbers are excluded from LSA features; near-identical yield records may tie. No generative model or trading approval.",
+      "workspace-financial-hybrid": "Combine BM25 lexical ranks with corpus-local LSA cosine ranks using explicit reciprocal-rank fusion. Model and corpus identities are saved for replay. Scores are relevance diagnostics, not confidence. Parsed financial mentions retain citations; issuer truth and event occurrence remain UNKNOWN.",
+      "workspace-financial-facts": "Extract bounded Decimal-valued financial mentions, units, tenors and entity/event cues from cited passages. Mention parsing does not verify an issuer claim or establish an event. Original bytes and knowledge time remain authoritative; no formula or document instruction executes.",
       "workspace-financial-replay": "Replay a saved financial search by hash against its original pinned corpus and cutoff. New document revisions cannot change old results. No monitoring or autonomous provider connection is running.",
       "workspace-research-rf": "Bounded Random Forest research on admitted saved data. Actual CPU training, 16 trees / depth 4, 256 training rows and 16 total fits. Tree disagreement is not calibrated confidence. No allocation or trading approval.",
       "workspace-research-xt": "Bounded ExtraTrees research on admitted saved data. One family with the Random Forest variant; 16 trees / depth 4 and one CPU thread. Tree disagreement is not calibrated confidence. No allocation or trading approval.",
@@ -1051,7 +1057,14 @@
     if (!["AVAILABLE", "STALE"].includes(result.state) || !isObject(data)) return;
     const entries = [];
     if (typeof data.corpus_identity === "string") {
-      entries.push(["Retrieval", "BM25 lexical · source citations"], ["Corpus", data.corpus_identity], ["Source scope", data.classification], ["Answer state", data.answer_state], ["Answer mode", data.answer_kind], ["Semantic / generative", `${data.semantic_state} / ${data.generative_state}`]);
+      entries.push(["Retrieval", data.retrieval_mode === "latent" ? "Corpus-local LSA · cosine relevance" : data.retrieval_mode === "hybrid" ? "Hybrid BM25 + corpus-local LSA · rank fusion" : "BM25 lexical · source citations"], ["Corpus", data.corpus_identity], ["Source scope", data.classification], ["Answer state", data.answer_state], ["Answer mode", data.answer_kind], ["Semantic / generative", `${data.semantic_state} / ${data.generative_state}`]);
+      if (typeof data.model_id === "string") entries.push(["Saved retrieval model", data.model_id]);
+      if (isObject(data.model) && data.model.model_kind === "CORPUS_LOCAL_LSA") entries.push(["Latent model scope", data.model.training_scope], ["Latent dimensions", data.model.dimensions], ["Feature policy", data.model.feature_policy], ["Latent query state", data.latent_query_state]);
+      if (isObject(data.financial_nlp)) {
+        entries.push(["Financial NLP", "Original rule-based parsed mentions · not verified issuer facts"], ["Sentiment / issuer linking", `${data.financial_nlp.sentiment_state || "UNAVAILABLE"} / ${data.financial_nlp.issuer_linking_state || "UNKNOWN"}`], ["Event occurrence", "UNKNOWN · text mentions only"]);
+        const facts = data.financial_nlp.facts || data.financial_nlp.mentions;
+        if (Array.isArray(facts)) entries.push(["Cited numerical mentions", facts.slice(0, 8).map(fact => `${fact.metric_mention || fact.kind || fact.type || "Mention"}: ${fact.decimal_value ?? fact.value ?? "UNKNOWN"} ${fact.unit || ""}`).join("\n") || "No supported numerical mentions"]);
+      }
       if (typeof data.answer === "string") entries.push(["Exact normalized source passage", data.answer]);
       if (Array.isArray(data.rows) && data.rows.length) entries.push(["Citation", data.rows[0].passage_id], ["Source URL", data.rows[0].source_url], ["Original-byte range", `${data.rows[0].source_start}–${data.rows[0].source_end}`]);
     }

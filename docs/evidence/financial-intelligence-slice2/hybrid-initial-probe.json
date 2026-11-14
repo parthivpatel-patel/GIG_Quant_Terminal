@@ -1,0 +1,71 @@
+{
+  "bm25": [
+    {
+      "date": "2023-12-29",
+      "score": 5.1260223610180775,
+      "latent_score": null,
+      "bm25_rank": null,
+      "latent_rank": null
+    },
+    {
+      "date": "2023-01-03",
+      "score": 0.006034529994458044,
+      "latent_score": null,
+      "bm25_rank": null,
+      "latent_rank": null
+    },
+    {
+      "date": "2023-01-04",
+      "score": 0.006034529994458044,
+      "latent_score": null,
+      "bm25_rank": null,
+      "latent_rank": null
+    }
+  ],
+  "latent": [
+    {
+      "date": "2023-01-03",
+      "score": 1.0,
+      "latent_score": null,
+      "bm25_rank": null,
+      "latent_rank": null
+    },
+    {
+      "date": "2023-01-04",
+      "score": 1.0,
+      "latent_score": null,
+      "bm25_rank": null,
+      "latent_rank": null
+    },
+    {
+      "date": "2023-01-05",
+      "score": 1.0,
+      "latent_score": null,
+      "bm25_rank": null,
+      "latent_rank": null
+    }
+  ],
+  "hybrid": [
+    {
+      "date": "2023-01-03",
+      "score": 0.03252247488101534,
+      "latent_score": 1.0,
+      "bm25_rank": 2,
+      "latent_rank": 1
+    },
+    {
+      "date": "2023-01-04",
+      "score": 0.03200204813108039,
+      "latent_score": 1.0,
+      "bm25_rank": 3,
+      "latent_rank": 2
+    },
+    {
+      "date": "2023-01-05",
+      "score": 0.03149801587301587,
+      "latent_score": 1.0,
+      "bm25_rank": 4,
+      "latent_rank": 3
+    }
+  ]
+}

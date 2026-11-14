@@ -16,6 +16,15 @@ def tokens(text: str):
 
 
 def rank(passages, query: str, limit: int, *, expand: bool = False):
+    return _rank(passages, query, limit, expand=expand)
+
+
+def rank_candidates(passages, query: str, *, expand: bool = False):
+    """All BM25 candidates for bounded hybrid fusion, with identical scoring."""
+    return _rank(passages, query, 20, expand=expand, all_candidates=True)
+
+
+def _rank(passages, query: str, limit: int, *, expand=False, all_candidates=False):
     if not isinstance(query, str) or not query.strip() or len(query) > 512:
         raise ValueError("bounded nonempty financial query required")
     if type(limit) is not int or not 1 <= limit <= 20 or type(expand) is not bool:
@@ -45,4 +54,4 @@ def rank(passages, query: str, limit: int, *, expand: bool = False):
         if score > 0:
             output.append({**passage, "score": score, "score_kind": "BM25_RELEVANCE_NOT_FINANCIAL_CONFIDENCE"})
     output.sort(key=lambda p: (-p["score"], p["document_id"], p["ordinal"]))
-    return output[:limit], sorted(terms)
+    return (output if all_candidates else output[:limit]), sorted(terms)

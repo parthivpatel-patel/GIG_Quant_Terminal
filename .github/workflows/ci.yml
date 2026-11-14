@@ -109,6 +109,8 @@ jobs:
         run: python scripts/browser_financial_intelligence.py --evidence-dir /tmp/ci-browser-financial --axe /tmp/axe/package/axe.min.js
       - name: Chromium bounded Random Forest and ExtraTrees research
         run: python scripts/browser_forests.py --evidence-dir /tmp/ci-browser-forests --axe /tmp/axe/package/axe.min.js
+      - name: Chromium corpus-local latent/hybrid retrieval and cited financial NLP
+        run: python scripts/browser_financial_latent.py --evidence-dir /tmp/ci-browser-financial-latent --axe /tmp/axe/package/axe.min.js
       - name: Chromium bounded SVR research and saved-model replay
         run: python scripts/browser_svr.py --evidence-dir /tmp/ci-browser-svr --axe /tmp/axe/package/axe.min.js
       - uses: actions/upload-artifact@v4
@@ -126,5 +128,6 @@ jobs:
             /tmp/ci-browser-registry
             /tmp/ci-browser-gp
             /tmp/ci-browser-financial
+            /tmp/ci-browser-financial-latent
             /tmp/ci-browser-forests
             /tmp/ci-browser-svr

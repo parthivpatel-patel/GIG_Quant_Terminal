@@ -1,0 +1,21 @@
+{
+  "classification": "AUTHORED_ADVERSARIAL_TEST_NOT_OBSERVED",
+  "input": "Fraction 1/2%; unsupported cost $1_000 and $1abc.",
+  "facts": [
+    {
+      "value": "2",
+      "unit": "PERCENT",
+      "surface": "2%"
+    },
+    {
+      "value": "1",
+      "unit": "USD",
+      "surface": "$1"
+    },
+    {
+      "value": "1",
+      "unit": "USD",
+      "surface": "$1"
+    }
+  ]
+}
