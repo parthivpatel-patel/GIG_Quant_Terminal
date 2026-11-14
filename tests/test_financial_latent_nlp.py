@@ -218,6 +218,8 @@ class LatentTests(unittest.TestCase):
         nlp = result["financial_nlp"]
         self.assertEqual({(f["decimal_value"], f["unit"]) for f in nlp["facts"]},
                          {("4.250", "PERCENT"), ("1200000.00", "USD"), ("25", "BASIS_POINTS")})
+        self.assertIsNone(next(f for f in nlp["facts"] if f["unit"] == "USD")["tenor_months"])
+        self.assertEqual(next(f for f in nlp["facts"] if f["unit"] == "PERCENT")["tenor_months"], "120")
         self.assertTrue(nlp["entity_mentions"])
         self.assertTrue(any(e["conditional_cue_present"] for e in nlp["event_mentions"]))
         self.assertTrue(any(e["negation_cue_present"] for e in nlp["event_mentions"]))
@@ -270,6 +272,7 @@ class LatentHTTPTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status_code, 200, response.text)
                 data = response.json()["data"]
                 self.assertEqual(data["model"]["model_kind"], "CORPUS_LOCAL_LSA")
+                self.assertIn("corpus-local LSA", data["title"])
                 self.assertTrue(data["financial_nlp"]["facts"])
                 self.assertFalse(data["trading_approved"])
                 for bad in ({"retrieval_mode": []}, {"latent_dimensions": True}, {"extract_facts": "true"}, {"weights_url": "https://example.invalid/model"}):

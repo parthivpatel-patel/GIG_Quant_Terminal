@@ -13,7 +13,7 @@ NUMBER = r"[+-]?(?:[0-9][0-9A-Za-z_.,/⁄−–—+-]*|nan|inf(?:inity)?)"
 MEASUREMENT = re.compile(r"(?<![\w.,/⁄−–—+-])(?P<number>"+NUMBER+r")\s*(?P<unit>percent\b|%|basis\s+points\b|bps\b)(?![\w,/+-])", re.I)
 MONEY = re.compile(r"(?<![\w])(?P<currency>USD\s*|\$)(?P<number>"+NUMBER+r")(?:\s*(?P<scale>thousand|million|billion)\b)?", re.I)
 VALID_NUMBER = re.compile(r"[+-]?(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]+)?")
-TENOR = re.compile(r"\b(?:BC_(?P<code>[0-9]{1,3})(?P<code_unit>MONTH|YEAR)|(?P<n>[0-9]{1,3})[- ](?P<unit>month|year)s?)\b", re.I)
+TENOR = re.compile(r"(?<![\w+−–—-])(?:BC_(?P<code>[0-9]{1,3})(?P<code_unit>MONTH|YEAR)|(?P<n>[0-9]{1,3})[- ](?P<unit>month|year)s?)\b", re.I)
 ENTITY = re.compile(r"\b(?:U\.S\. Treasury|Treasury|Federal Reserve)\b|\b(?:NYSE|NASDAQ):\s*[A-Z]{1,5}\b")
 EVENT = re.compile(r"\b(default(?:ed)?|downgrade(?:d)?|upgrade(?:d)?|issuance|bankrupt(?:cy)?|earnings|dividend|(?:rais(?:e|ed|es)|hik(?:e|ed|es)|cut|lower(?:ed|s)?)\s+(?:policy\s+|interest\s+)?rates?)\b", re.I)
 METRIC = re.compile(r"\b(revenue|sales|profit|earnings|income|debt|cash|yield|margin|rate|rates)\b", re.I)
@@ -113,7 +113,9 @@ def extract(passages):
                 prefix = text[max(0, match.start()-64):match.start()]
                 metrics = list(METRIC.finditer(prefix))
                 metric = metrics[-1].group().lower() if metrics else "UNKNOWN"
-                prior_tenors = [t for t in tenor_matches if 0 <= match.start()-t.end() <= 32]
+                prior_tenors = [t for t in tenor_matches if unit != "USD"
+                    and 0 <= match.start()-t.end() <= 32
+                    and not re.search(r"[.;!?]", text[t.end():match.start()])]
                 tenor = prior_tenors[-1] if prior_tenors else None
                 evidence = _evidence(passage, *match.span())
                 if passage["normalization"] == "GIG_XML_RECORD_RENDERING_NOT_PUBLISHER_PROSE":

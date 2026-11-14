@@ -23,6 +23,14 @@ class FinancialIntelligenceWorkspace:
             evidence_state="HASH_VERIFIED_SOURCE_CITATIONS_NOT_FINANCIAL_ADVICE",
             error=public_error("DATA_UNAVAILABLE") if state == State.UNAVAILABLE else None)
 
+    @staticmethod
+    def _title(data):
+        if data.get("retrieval_mode", "bm25") in {"latent", "hybrid"}:
+            return "Cited financial-document corpus-local LSA research"
+        if data.get("extract_facts", False):
+            return "Cited financial-document lexical research and mention rules"
+        return "Cited financial-document lexical research"
+
     def run(self, payload):
         if not isinstance(payload, dict) or not isinstance(payload.get("operation"), str):
             raise ValueError("explicit financial operation required")
@@ -48,14 +56,12 @@ class FinancialIntelligenceWorkspace:
                 extract_facts=payload.get("extract_facts", False))
             if data is None:
                 return self._contract(None, state=State.UNAVAILABLE, as_of=payload["as_of"])
-            return self._contract({"title": ("Cited financial-document lexical research" if data["implementation"] == "gig.lexical-bm25.v1"
-                else "Cited financial-document retrieval and mention research"), **data}, as_of=data["as_of"])
+            return self._contract({"title": self._title(data), **data}, as_of=data["as_of"])
         if operation == "replay":
             _fields(payload, {"operation", "snapshot_id"}, {"operation", "snapshot_id"})
             try:
                 data = self.corpus.replay(payload["snapshot_id"])
             except FileNotFoundError:
                 return self._contract(None, state=State.UNAVAILABLE)
-            return self._contract({"title": ("Cited financial-document lexical research" if data["implementation"] == "gig.lexical-bm25.v1"
-                else "Cited financial-document retrieval and mention research"), **data}, as_of=data["as_of"])
+            return self._contract({"title": self._title(data), **data}, as_of=data["as_of"])
         raise ValueError("unsupported financial research operation")
