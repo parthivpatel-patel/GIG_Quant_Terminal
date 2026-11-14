@@ -329,3 +329,14 @@ forests25/25, financial24/24. Detailed logs, source hashes/modes and genuine
 screenshots are in `docs/evidence/sequence-lineage-fencing/`. Nine model families
 remain implemented;31 additions remain planned. External acceptance and licensing
 limits above are unchanged.
+
+## Family 10: bounded CPU SVR
+
+Actual fixed-RBF sklearn SVR training, train-only feature/target normalization,
+strict label-knowledge purge and immutable JSON support-vector replay are added
+on the dedicated batch3 branch. The existing research HTTP/workbench and model
+registry expose it explicitly. Predictive uncertainty is unavailable; allocation
+and model promotion remain rejected. Inventory:10 implemented families,30 planned.
+Focused numerical/replay tests and Chromium acceptance run before release;
+complete frozen-source evidence is published at the checkpoint. No economic
+alpha, live data availability or certification is established.

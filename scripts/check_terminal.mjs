@@ -456,7 +456,7 @@ for (const kind of financialActions) {
 }
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
-  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
   "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
   "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
   "schedule-twap": "execution-engine", "advance-clock": "execution-engine",
@@ -487,6 +487,15 @@ await get("analytics-kind").dispatch("change");
 checked("successful persisted dataset identity fills the next explicit model request", () => {
   assert.equal(JSON.parse(get("analytics-input").value).dataset_id, datasetId);
   assert.match(get("workflow-identities").textContent, new RegExp(datasetId));
+});
+get("analytics-kind").value = "workspace-research-svr";
+await get("analytics-kind").dispatch("change");
+checked("SVR retains saved dataset identity and explicit bounded research caveat", () => {
+  const request = JSON.parse(get("analytics-input").value);
+  assert.equal(request.dataset_id, datasetId);
+  assert.equal(request.model, "svr");
+  assert.match(get("workbench-scope").textContent, /128 training rows/);
+  assert.match(get("workbench-scope").textContent, /uncertainty is UNAVAILABLE/);
 });
 await successfulPipeline("research-model", { run_id: runId, dataset_id: datasetId });
 get("analytics-kind").value = "workspace-research-predict";
