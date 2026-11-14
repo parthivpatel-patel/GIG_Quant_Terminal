@@ -37,6 +37,7 @@ KINDS = {
     "gaussian_process": "FORWARD_RETURN_ESTIMATE",
     "random_forest": "FORWARD_RETURN_ESTIMATE",
     "extra_trees": "FORWARD_RETURN_ESTIMATE",
+    "svr": "FORWARD_RETURN_ESTIMATE",
 }
 
 
@@ -69,7 +70,7 @@ def configuration(payload: dict[str, Any]) -> dict[str, Any]:
     if set(payload) & ({"sequence_length", "hidden_size", "epochs", "states", "iterations"} - options):
         raise ValueError("settings do not belong to selected model")
     config = {"model": model,
-              "min_train": integer(payload.get("min_train", 40), 20, 128 if model == "gaussian_process" else 256 if model in {"random_forest", "extra_trees"} else 800, "min_train"),
+              "min_train": integer(payload.get("min_train", 40), 20, 128 if model in {"gaussian_process", "svr"} else 256 if model in {"random_forest", "extra_trees"} else 800, "min_train"),
               "test_size": integer(payload.get("test_size", 10), 1, 200, "test_size"),
               "embargo": integer(payload.get("embargo", 1), 0, 100, "embargo"),
               "seed": integer(payload.get("seed", 42), 0, 2**31 - 1, "seed")}
@@ -128,7 +129,7 @@ def _prediction(row, value, model_id, fold, model, uncertainty, **extra):
     return {"instrument_id": row["instrument_id"], "timestamp": row["timestamp"],
             "prediction": float(value), "target": row["target"], "label_end": row["label_end"],
             "fold": fold, "model_id": model_id, "prediction_kind": KINDS[model],
-            "uncertainty": uncertainty, "usable_for_portfolio": model not in {"garch", "hmm"},
+            "uncertainty": uncertainty, "usable_for_portfolio": model not in {"garch", "hmm", "svr"},
             "trading_approved": False, **extra}
 
 
@@ -413,6 +414,9 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
     elif config["model"] in {"random_forest", "extra_trees"}:
         from gig.research.forests import fit_persisted_forest
         models, predictions, folds = fit_persisted_forest(dataset, rows, names, config)
+    elif config["model"] == "svr":
+        from gig.research.svm import fit_persisted_svr
+        models, predictions, folds = fit_persisted_svr(dataset, rows, names, config)
     elif config["model"] == "gaussian_process":
         from gig.research.gaussian_process import fit_persisted_gp
         models, predictions, folds = fit_persisted_gp(dataset, rows, names, config)
@@ -440,7 +444,7 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
                             "mse_state": "AVAILABLE" if metric is not None else "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS"},
                 "dataset_diagnostics": dataset.get("diagnostics", {}),
                 "provenance": dataset.get("provenance", {}),
-                "usable_for_portfolio": config["model"] not in {"garch", "hmm"}
+                "usable_for_portfolio": config["model"] not in {"garch", "hmm", "svr"}
                     and all(r.get("fit_state", "CONVERGED") == "CONVERGED" for r in predictions),
                 "trading_approved": False, "economically_validated": False}
     # Admit the whole durable artifact before any immutable state is published.
@@ -473,6 +477,12 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
         values, spread = predict_forest(estimator, [[r["features"][n] for n in names] for r in own], names)
         output = [dict(row, prediction=float(value), uncertainty=uncertainty(sd))
                   for row, value, sd in zip(own, values, spread, strict=True)]
+    elif kind == "svr":
+        from gig.ml.svm import predict_svr
+        from gig.research.svm import uncertainty as svr_uncertainty
+        values = predict_svr(estimator, [[r["features"][n] for n in names] for r in own], names)
+        output = [dict(row, prediction=float(value), uncertainty=svr_uncertainty())
+                  for row, value in zip(own, values, strict=True)]
     elif kind == "gaussian_process":
         from gig.ml.gaussian_process import predict_gaussian_process
         from gig.research.gaussian_process import uncertainty
@@ -501,5 +511,5 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
             final.append(_prediction(row, row["prediction"], model_id, None, kind,
                                      row.get("uncertainty", {"value": None, "state": "UNAVAILABLE"}),
                                      fit_state=state["fit_state"],
-                                     usable_for_portfolio=kind not in {"garch", "hmm"} and state["fit_state"] == "CONVERGED"))
+                                     usable_for_portfolio=kind not in {"garch", "hmm", "svr"} and state["fit_state"] == "CONVERGED"))
     return final
