@@ -22,7 +22,7 @@
   ];
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
-  Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-gpr": "research-model", "workspace-research-rf": "research-model", "workspace-research-xt": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
+  Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-gpr": "research-model", "workspace-research-rf": "research-model", "workspace-research-xt": "research-model", "workspace-research-svr": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
   Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence", "workspace-financial-latent": "financial-intelligence", "workspace-financial-hybrid": "financial-intelligence", "workspace-financial-facts": "financial-intelligence" });
   workspaceActions["workspace-options-overlay"] = "options-overlay";
@@ -770,6 +770,7 @@
   examples["workspace-financial-replay"] = { operation: "replay", snapshot_id: "0".repeat(64) };
   examples["workspace-research-rf"] = { dataset_id: "0".repeat(64), model: "random_forest", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-xt"] = { ...examples["workspace-research-rf"], model: "extra_trees" };
+  examples["workspace-research-svr"] = { ...examples["workspace-research-rf"], model: "svr" };
   examples["workspace-research-gpr"] = { dataset_id: "0".repeat(64), model: "gaussian_process", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-model"] = { dataset_id: "0".repeat(64), model: "ridge", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-predict"] = { run_id: "0".repeat(64), dataset_id: "0".repeat(64) };
@@ -865,7 +866,7 @@
     if (kind === "workspace-observed-evaluation-replay" && workflowReferences.observed_evaluation_id) example.evaluation_id = workflowReferences.observed_evaluation_id;
     if (kind === "workspace-observed-replay" && workflowReferences.observed_report_id) example.report_id = workflowReferences.observed_report_id;
 
-    if (["workspace-research-model", "workspace-research-gpr", "workspace-research-rf", "workspace-research-xt", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
+    if (["workspace-research-model", "workspace-research-gpr", "workspace-research-rf", "workspace-research-xt", "workspace-research-svr", "workspace-research-predict"].includes(kind) && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (["workspace-research-predict", "workspace-research-allocate"].includes(kind) && workflowReferences.run_id) example.run_id = workflowReferences.run_id;
     if (kind === "workspace-pairs-research" && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (kind === "workspace-pairs-replay" && workflowReferences.pair_run_id) example.run_id = workflowReferences.pair_run_id;
@@ -893,7 +894,7 @@
     if (kind === "workspace-finbert") $("run-analysis").textContent = "Analyze with local licensed model";
     if (kind === "workspace-execution-engine") $("run-analysis").textContent = "Prepare offline intent";
     if (kind === "workspace-research-dataset") $("run-analysis").textContent = "Build persisted dataset";
-    if (["workspace-research-model", "workspace-research-gpr", "workspace-research-rf", "workspace-research-xt"].includes(kind)) $("run-analysis").textContent = "Run saved-data research";
+    if (["workspace-research-model", "workspace-research-gpr", "workspace-research-rf", "workspace-research-xt", "workspace-research-svr"].includes(kind)) $("run-analysis").textContent = "Run saved-data research";
     if (kind === "workspace-research-predict") $("run-analysis").textContent = "Replay saved model";
     if (kind === "workspace-research-allocate") $("run-analysis").textContent = "Construct offline targets";
     if (kind === "workspace-research-prepare") $("run-analysis").textContent = "Prepare offline target intents";
@@ -957,6 +958,7 @@
       "workspace-financial-replay": "Replay a saved financial search by hash against its original pinned corpus and cutoff. New document revisions cannot change old results. No monitoring or autonomous provider connection is running.",
       "workspace-research-rf": "Bounded Random Forest research on admitted saved data. Actual CPU training, 16 trees / depth 4, 256 training rows and 16 total fits. Tree disagreement is not calibrated confidence. No allocation or trading approval.",
       "workspace-research-xt": "Bounded ExtraTrees research on admitted saved data. One family with the Random Forest variant; 16 trees / depth 4 and one CPU thread. Tree disagreement is not calibrated confidence. No allocation or trading approval.",
+      "workspace-research-svr": "Fit bounded CPU RBF support-vector regression to admitted saved data for research. Train-only feature and target scaling, purged labels, at most 128 training rows and 16 fits. Predictive uncertainty is UNAVAILABLE, not calibrated confidence. Research only; allocation and trading remain rejected.",
       "workspace-research-gpr": "Fixed-RBF Gaussian process research on a saved admitted dataset. CPU only; at most 128 training rows and 16 total fits. Train-only scaling and purged labels; posterior spread is assumption-dependent, not calibrated confidence. No allocation or trading approval.",
       "workspace-research-model": "Train real CPU research on a saved admitted dataset with purged chronological folds. Available choices include ridge, LightGBM ranking, BiLSTM, HMM, GARCH and Kalman. Source classification and uncertainty remain explicit; research results are not approved signals.",
       "workspace-research-predict": "Reload a saved model/run and admitted dataset by hash. IDs come from this session's last successful research actions, or can be edited explicitly. Zero placeholders are unavailable, not trained models.",

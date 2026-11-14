@@ -50,7 +50,7 @@ jobs:
       - name: Mypy (Sprint 9 and Global Intelligence modules)
         run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py src/gig/service/viz.py src/gig/research_org/director.py src/gig/research_org/treasury_followup.py src/gig/research_org/template_catalog.py src/gig/research_org/observed_experiments.py src/gig/service/market_flow.py src/gig/data/cftc_positions.py src/gig/service/positioning.py src/gig/research_org/equity_experiments.py src/gig/data/equity_positioning.py src/gig/service/equity_positioning.py
       - name: Gaussian-process typed numerical boundary
-        run: mypy --follow-imports=silent --ignore-missing-imports src/gig/ml/gaussian_process.py src/gig/ml/forests.py
+        run: mypy --follow-imports=silent --ignore-missing-imports src/gig/ml/gaussian_process.py src/gig/ml/forests.py src/gig/ml/svm.py
       - name: Financial Intelligence typed boundary
         run: mypy --follow-imports=silent --ignore-missing-imports src/gig/financial_intelligence src/gig/service/financial_workspace.py
       - name: Tests
@@ -111,6 +111,8 @@ jobs:
         run: python scripts/browser_forests.py --evidence-dir /tmp/ci-browser-forests --axe /tmp/axe/package/axe.min.js
       - name: Chromium corpus-local latent/hybrid retrieval and cited financial NLP
         run: python scripts/browser_financial_latent.py --evidence-dir /tmp/ci-browser-financial-latent --axe /tmp/axe/package/axe.min.js
+      - name: Chromium bounded SVR research and saved-model replay
+        run: python scripts/browser_svr.py --evidence-dir /tmp/ci-browser-svr --axe /tmp/axe/package/axe.min.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -128,3 +130,4 @@ jobs:
             /tmp/ci-browser-financial
             /tmp/ci-browser-financial-latent
             /tmp/ci-browser-forests
+            /tmp/ci-browser-svr

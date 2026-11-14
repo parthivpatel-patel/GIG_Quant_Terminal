@@ -1,0 +1,100 @@
+{
+  "checks": [
+    {
+      "name": "pipeline-bars admitted explicit browser action",
+      "passed": true
+    },
+    {
+      "name": "pipeline-universe admitted explicit browser action",
+      "passed": true
+    },
+    {
+      "name": "research-dataset admitted explicit browser action",
+      "passed": true
+    },
+    {
+      "name": "explicit SVR uncertainty caveat",
+      "passed": true
+    },
+    {
+      "name": "research-svr admitted explicit browser action",
+      "passed": true
+    },
+    {
+      "name": "research-predict admitted explicit browser action",
+      "passed": true
+    },
+    {
+      "name": "saved inference does not retrain",
+      "passed": true
+    },
+    {
+      "name": "actual SVR artifact keeps allocation disabled",
+      "passed": true
+    },
+    {
+      "name": "SVR predictive uncertainty stays unavailable",
+      "passed": true
+    },
+    {
+      "name": "run identity is shown in traceability strip",
+      "passed": true
+    },
+    {
+      "name": "unapproved SVR allocation remains unavailable",
+      "passed": true
+    },
+    {
+      "name": "explicit saved identities replay after page reload",
+      "passed": true
+    },
+    {
+      "name": "Models renders saved SVR with source classification",
+      "passed": true
+    },
+    {
+      "name": "dark automated accessibility",
+      "passed": true
+    },
+    {
+      "name": "light automated accessibility",
+      "passed": true
+    },
+    {
+      "name": "320px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "375px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "768px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "1440px no document overflow",
+      "passed": true
+    },
+    {
+      "name": "all sixteen existing sections retained",
+      "passed": true
+    },
+    {
+      "name": "no JavaScript exceptions",
+      "passed": true
+    },
+    {
+      "name": "no external browser requests",
+      "passed": true
+    }
+  ],
+  "passed": 22,
+  "failed": 0,
+  "chromium_version": "151.0.7922.173",
+  "javascript_errors": [],
+  "external_requests": [],
+  "classification": "AUTHORED_SYNTHETIC_RESEARCH_ONLY",
+  "orders_submitted": 0,
+  "formal_accessibility_certified": false
+}
