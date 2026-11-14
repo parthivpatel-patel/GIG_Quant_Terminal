@@ -41,17 +41,21 @@ class FinancialIntelligenceWorkspace:
                 "metadata": metadata, "classification": "SYNTHETIC", "document_id": metadata["document_id"],
                 "trading_approved": False}, as_of=metadata["known_at"])
         if operation in {"search", "answer"}:
-            _fields(payload, {"operation", "query", "as_of", "limit", "expand"}, {"operation", "query", "as_of"})
+            _fields(payload, {"operation", "query", "as_of", "limit", "expand", "retrieval_mode", "latent_dimensions", "extract_facts"}, {"operation", "query", "as_of"})
             data = self.corpus.search(payload["query"], payload["as_of"], limit=payload.get("limit", 5),
-                expand=payload.get("expand", False), answer=operation == "answer")
+                expand=payload.get("expand", False), answer=operation == "answer",
+                retrieval_mode=payload.get("retrieval_mode", "bm25"), latent_dimensions=payload.get("latent_dimensions", 16),
+                extract_facts=payload.get("extract_facts", False))
             if data is None:
                 return self._contract(None, state=State.UNAVAILABLE, as_of=payload["as_of"])
-            return self._contract({"title": "Cited financial-document lexical research", **data}, as_of=data["as_of"])
+            return self._contract({"title": ("Cited financial-document lexical research" if data["implementation"] == "gig.lexical-bm25.v1"
+                else "Cited financial-document retrieval and mention research"), **data}, as_of=data["as_of"])
         if operation == "replay":
             _fields(payload, {"operation", "snapshot_id"}, {"operation", "snapshot_id"})
             try:
                 data = self.corpus.replay(payload["snapshot_id"])
             except FileNotFoundError:
                 return self._contract(None, state=State.UNAVAILABLE)
-            return self._contract({"title": "Cited financial-document lexical research", **data}, as_of=data["as_of"])
+            return self._contract({"title": ("Cited financial-document lexical research" if data["implementation"] == "gig.lexical-bm25.v1"
+                else "Cited financial-document retrieval and mention research"), **data}, as_of=data["as_of"])
         raise ValueError("unsupported financial research operation")

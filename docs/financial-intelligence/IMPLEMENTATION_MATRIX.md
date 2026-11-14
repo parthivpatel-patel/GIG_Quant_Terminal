@@ -10,27 +10,36 @@ DB/service, credentials, new dependency or pretrained model is introduced.
 | --- | --- | --- | --- |
 |1|Document ingestion/normalization|IMPLEMENTED bounded XML/plain-text slice|`financial_intelligence/reference.py` reuses canonical Treasury validation; `store.py` retains raw BLOB, byte ranges, source hashes, exact authored UTF-8 lines and immutable revisions. PDF/HTML/OCR remain planned.|
 |2|EDGAR/permitted financial documents|PARTIAL / SEC BLOCKED|Existing `data/providers/edgar.py` provides metadata only and requires a genuine contact User-Agent. No SEC request/identity was used. First corpus is already-packaged CC0 Treasury XML with pinned source and permission metadata.|
-|3|Entity extraction/linking|PLANNED|Existing ticker/CIK metadata and authored Global Intelligence themes are not a general document entity graph. Need instrument/issuer authority and ambiguity tests.|
+|3|Entity extraction/linking|PARTIAL ORIGINAL RULE MENTIONS|`nlp.py` extracts cited Treasury/Federal Reserve/exchange-qualified ticker surface mentions. Issuer authority/linking remains UNKNOWN; no general entity graph or trained NLP claim.|
 |4|Financial terminology|IMPLEMENTED minimal / PARTIAL|Explicit optional GIG-authored tenor aliases, not a comprehensive ontology. Original text remains unchanged; expansions are saved with query evidence.|
 |5|BM25 lexical retrieval|IMPLEMENTED / TESTED|Original bounded BM25, deterministic ties, 512-character/64-term queries,≤4,096passages. All TF/IDF/length statistics use only visible document revisions; independent formula reference.|
-|6|Semantic embedding retrieval|UNAVAILABLE / PLANNED|No licensed embedding weights loaded or executed. No lexical result is presented as semantic similarity.|
-|7|Hybrid retrieval/reranking|UNAVAILABLE / PLANNED|Requires separately verified semantic/reranking components and relevance evaluation; BM25 is explicitly lexical.|
+|6|Semantic embedding retrieval|PARTIAL CORPUS_LOCAL_LSA / TESTED|Actual visible-corpus TF-IDF/SVD fit, dense projection and cosine;≤256passages/512retained terms/16dimensions with reject bounds. Saved model/algorithm identity and exact restart replay. Explicitly not pretrained neural semantics/paraphrase understanding; pure numbers/dates excluded by saved feature policy. See `LATENT_AND_FINANCIAL_MENTIONS.md`.|
+|7|Hybrid retrieval/reranking|PARTIAL BM25+LSA RRF / TESTED|Original reciprocal-rank fusion over complete bounded BM25/LSA candidate rankings, component scores/ranks and independent numerical reference. Four-topic authored evaluation documented with limits; no trained cross-encoder or production relevance certification.|
 |8|Source-grounded QA|PARTIAL EXTRACTIVE ONLY|Returns a retrieved normalized source passage, not generated reasoning/financial advice. No match produces null/unavailable answer. No generative model is invoked.|
 |9|Passage citations/provenance|IMPLEMENTED / TESTED|Document/passages/snapshot identities, original raw SHA, exact source byte spans/excerpts, known time and normalization type. Treasury prose is clearly GIG rendering of XML, not publisher-authored narrative.|
-|10|Financial sentiment/events|EXISTING / NOT DOCUMENT-INTEGRATED|Existing lexicon/VADER/FinBERT/event workflows retained; document sentiment/event mapping planned. FinBERT remains noncommercial research-only, unavailable without pinned local assets.|
+|10|Financial sentiment/events|PARTIAL DOCUMENT EVENT MENTIONS|Original finite event-mention rules with exact source provenance and limited negation/conditional cue flags. Occurrence always UNKNOWN; no inference that a keyword event happened. Existing VADER/FinBERT workflows retained; no trained document sentiment invoked.|
 |11|Earnings/statement analysis|PLANNED|No unlicensed transcripts or fabricated issuer facts. Need permitted filing texts/XBRL taxonomy/context and period/unit validation.|
 |12|Multi-document synthesis|PARTIAL RETRIEVAL / SYNTHESIS PLANNED|Search spans latest visible revisions; does not claim comparative reasoning or generated synthesis.|
-|13|KPI extraction/numeric verification|PARTIAL TREASURY ONLY|Reuses Decimal quoted-yield parser, retains actual units/date precision. General issuer KPI/XBRL calculation and reconciliation remain planned.|
+|13|KPI extraction/numeric verification|PARTIAL TREASURY + EXPLICIT UNIT MENTIONS / TESTED|Exact Decimal percent/bps/USD and supported scale/tenor mentions with original UTF-8 byte or verified XML-element citations. Whole-token validation rejects exponents, ambiguous separators, fractions/identifiers, nonfinite and oversized values. Mention truth/issuer identity UNKNOWN; general issuer KPI/XBRL reconciliation planned.|
 |14|Saved searches/monitoring|PARTIAL|Immutable query snapshots/replay implemented. No monitoring daemon or background source acquisition runs; monitoring_state=NOT_RUNNING.|
 |15|Research agents/investigations|EXISTING / NEW BINDING PLANNED|Existing approved Research Director/lease workflow retained. No new document objective is automatically approved; arbitrary retrieved instructions never execute.|
 |16|Terminal/Director/Lab/Charts integration|PARTIAL|Existing Research workbench has explicit reference/search/answer/replay actions and readable cited output. All16sections remain. Automatic Director/Charts cross-linking is planned; documents never become tradable market observations.|
 
-## Verified first vertical
+## Verified first and second verticals
 
 Explicit local reference admission → immutable original XML →250normalized
 Treasury date passages →point-in-time lexical retrieval →extractive quote with
 original-byte citation →saved query identity →independent restart replay →existing
 Research workbench. No remote provider request occurs at runtime.
+
+Second vertical: permitted visible revisions → bounded original corpus-local
+TF-IDF/SVD fit → dense cosine or BM25/LSA reciprocal-rank fusion → cited
+extractive result and optional original financial mention rules → atomic saved
+model/snapshot → exact restart replay without refitting. A declared12passage
+authored4topic evaluation retrieves12/12relevant top-three slots at4dimensions
+versus6/12possible lexical matches; unseen vocabulary intentionally fails. These
+are unblinded synthetic development judgments, not financial acceptance.
+See [algorithm, provenance, evaluation and limitations](LATENT_AND_FINANCIAL_MENTIONS.md).
 
 The archive was acquired2026-11-05T03:01:08Z; its284,423bytes and pinned
 SHA256`99f80b80cfeff0a93e339735d72672080d9209073b5fe814c1252e88d1428227`
