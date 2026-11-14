@@ -250,6 +250,36 @@ def _ranking(dataset, rows, names, config):
     return models, predictions, folds
 
 
+def _sequence_supervision(rows, cutoff, window):
+    """Unknown outcomes may supply past features, never supervised targets."""
+    train = []
+    for offset, row in enumerate(rows):
+        vintage = _training_vintage(row, cutoff)
+        # The sequence kernel purges windows whose label_end overlaps cutoff.
+        # Earlier labels need a visible revision too; raw-target fallback here
+        # would fabricate earlier availability. Warm-up rows have no Y target.
+        if (offset >= window - 1 and aware_timestamp(row["label_end"]) < cutoff
+                and vintage is None):
+            raise ValueError("sequence training label knowledge is unavailable before cutoff")
+        train.append(vintage if vintage is not None else row)
+    return train
+
+
+def validate_sequence_knowledge(state, dataset):
+    """Recheck old immutable runs without deleting or rewriting their artifacts."""
+    if state.get("model") != "bilstm":
+        return
+    rows, _ = dataset_rows(dataset)
+    cutoff = aware_timestamp(state["training_cutoff"])
+    excluded = {aware_timestamp(t) for t in state["excluded_window_timestamps"]}
+    candidates = [r for r in rows if r["instrument_id"] == state["instrument_id"]
+                  and aware_timestamp(r["timestamp"]) < cutoff and aware_timestamp(r["timestamp"]) not in excluded]
+    config = state["estimator"]["configuration"]
+    if len(candidates) != config["train_size"]:
+        raise ValueError("saved sequence training prefix differs from original dataset")
+    _sequence_supervision(candidates, cutoff, config["sequence_length"])
+
+
 def _sequence(dataset, rows, config):
     models, predictions, folds = {}, [], []
     groups = defaultdict(list)
@@ -257,8 +287,8 @@ def _sequence(dataset, rows, config):
         groups[row["instrument_id"]].append(row)
     for instrument, own in sorted(groups.items()):
         for number, fold in enumerate(_folds(own, config)):
-            train = [_training_vintage(r, fold.test_start) or r for r in own
-                     if aware_timestamp(r["timestamp"]) in fold.train_index]
+            candidates = [r for r in own if aware_timestamp(r["timestamp"]) in fold.train_index]
+            train = _sequence_supervision(candidates, fold.test_start, config["sequence_length"])
             test = [r for r in own if aware_timestamp(r["timestamp"]) in fold.test_index]
             combined = train+test
             fields = ("timestamp", "available_at", "features", "target", "label_end")

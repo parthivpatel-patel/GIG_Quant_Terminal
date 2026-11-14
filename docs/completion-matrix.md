@@ -300,3 +300,32 @@ These are conditional targets, not guarantees of data availability, hardware,
 profitable results or certification. Reforecast from actual delivered checkpoints
 and the external blockers above. Feature completion, operational acceptance,
 economic validation and institutional certification remain separate milestones.
+
+## BiLSTM label-knowledge correctness repair (2026-11-13)
+
+The persisted sequence adapter now rejects supervised outcomes with no revision
+knowable strictly before the fold cutoff. Older saved runs are rechecked against
+their original admitted dataset before reuse; immutable artifacts remain intact.
+Feature-only warm-up labels cannot affect fitted identities or predictions.
+See [reproduction and acceptance](evidence/sequence-label-fencing/README.md).
+This adds no model family:9implemented,31planned. Certification and external
+operational/data-rights blockers are unchanged.
+
+Frozen-source BiLSTM repair acceptance:1,270passed/9optional FinBERT skips/0failures,
+83.13%coverage; isolated wheel84passed/1optional standalone C-ABI skip. The
+forest browser navigation wait was corrected without removing assertions; two
+25/25runs and financial24/24 pass. Initial failed browser report is preserved.
+
+Saved allocation follow-up: original model/signal/pair lineage and dataset are
+revalidated before cached portfolio/risk views or OMS preparation, including old
+plans. Reproduced bypass and27focused passes are recorded in
+[evidence/sequence-lineage-fencing](evidence/sequence-lineage-fencing/README.md).
+Historical artifacts/fills are preserved; no certification claim is added.
+
+Final research-lineage acceptance (source `536abba3`): **1,271 passed, 9 optional
+FinBERT skips, 0 failures; 83.13% coverage**. Isolated current wheel:81 passed and
+1 optional local C-ABI skip;224 packaged files match. Current Chromium workflows:
+forests25/25, financial24/24. Detailed logs, source hashes/modes and genuine
+screenshots are in `docs/evidence/sequence-lineage-fencing/`. Nine model families
+remain implemented;31 additions remain planned. External acceptance and licensing
+limits above are unchanged.

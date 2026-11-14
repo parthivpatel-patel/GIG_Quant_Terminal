@@ -1,0 +1,8 @@
+{
+  "state": "PASS",
+  "packaged_files_matched": 224,
+  "wheel_sha256": "96f98dd6b3bd1de0acf7482e78c1c8c9eaa9d845081e15d3ca09dcf7b07b286e",
+  "source_head": "592b2b0531700efea8ae2e159c8a8c99686b3fa0",
+  "package_import": "/tmp/gig-sequence-installed/gig/__init__.py",
+  "native_extension": "/tmp/gig-sequence-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so"
+}

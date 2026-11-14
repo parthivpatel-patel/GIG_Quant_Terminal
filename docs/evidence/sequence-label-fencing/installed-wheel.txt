@@ -1,0 +1,6 @@
+........................................................................ [ 84%]
+......s......                                                            [100%]
+------------- generated xml file: /tmp/gig-sequence-installed.xml --------------
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_native_operations.py:22: optional C++ library not built
+84 passed, 1 skipped in 49.31s

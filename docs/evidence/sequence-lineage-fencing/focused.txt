@@ -1,0 +1,3 @@
+...........................                                              [100%]
+------- generated xml file: /tmp/gig-sequence-lineage-focused-final.xml --------
+27 passed in 27.68s

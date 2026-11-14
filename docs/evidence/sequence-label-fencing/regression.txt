@@ -1,0 +1,233 @@
+........................................................................ [  5%]
+........................................................................ [ 11%]
+.........................s.............................................. [ 16%]
+........................................................................ [ 22%]
+........................................................................ [ 28%]
+........ssssssss........................................................ [ 33%]
+........................................................................ [ 39%]
+........................................................................ [ 45%]
+........................................................................ [ 50%]
+........................................................................ [ 56%]
+........................................................................ [ 61%]
+........................................................................ [ 67%]
+........................................................................ [ 73%]
+........................................................................ [ 78%]
+........................................................................ [ 84%]
+........................................................................ [ 90%]
+........................................................................ [ 95%]
+.......................................................                  [100%]
+---------------- generated xml file: /tmp/gig-sequence-full.xml ----------------
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.14-final-0 _______________
+
+Name                                           Stmts   Miss Branch BrPart  Cover   Missing
+------------------------------------------------------------------------------------------
+src/gig/__init__.py                                3      0      0      0   100%
+src/gig/__main__.py                                3      3      2      0     0%   1-4
+src/gig/artifacts.py                              28      1      6      2    91%   19, 33->40
+src/gig/assets/__init__.py                         3      0      0      0   100%
+src/gig/assets/futures.py                         27      8      4      0    61%   24-31
+src/gig/assets/options.py                         44      7     18      8    76%   22, 70, 75, 79, 82, 83->72, 85, 96
+src/gig/backtest/__init__.py                       4      0      0      0   100%
+src/gig/backtest/costs.py                         21      2      2      1    87%   19, 27
+src/gig/backtest/metrics.py                       30      1      4      1    94%   19
+src/gig/backtest/simulator.py                     91      2     24      1    97%   137-138
+src/gig/cli.py                                   329    160     82     12    46%   116-121, 123, 125-132, 134, 136-138, 148, 165->171, 173, 187-188, 192-210, 214-229, 234-236, 240-252, 259-345, 350-374, 389-390, 394, 401-402, 407-408, 413-414, 419-420, 426, 429-430, 436-437, 441, 462-463, 464->471, 469-470, 476
+src/gig/config.py                                 85      7     20      4    90%   14-15, 21, 26-27, 30, 114
+src/gig/data/__init__.py                           5      0      0      0   100%
+src/gig/data/actions.py                          288     20    130     19    91%   42, 52-53, 55, 70, 77, 88, 99, 104, 106, 134, 139, 154->150, 179, 207-208, 215, 219, 227, 256->251, 344, 365
+src/gig/data/calendars.py                        153      8     60      6    93%   60, 93-94, 103, 105, 163, 165, 195
+src/gig/data/cftc_positions.py                   150     13     50      6    88%   72, 86, 162, 169, 174, 192, 201-207
+src/gig/data/equity_positioning.py                51      3     12      3    90%   58, 60, 82
+src/gig/data/http.py                              29     17      8      1    35%   14-18, 22->24, 28-39
+src/gig/data/ingestion.py                        526     65    232     61    83%   63, 75, 105, 163, 166, 170, 192, 197, 202, 213, 220, 227, 250, 274, 278, 319, 337, 351, 356, 365, 414, 426, 443, 473, 495, 503, 544, 551, 554->536, 563, 588, 616, 627, 640, 650, 684, 725, 751-758, 760, 763->767, 765->763, 801, 806, 813, 818, 822, 871, 918-924, 961, 968, 972, 979, 983, 985, 993, 998, 1001, 1011, 1014, 1017, 1029, 1031->974
+src/gig/data/lake.py                              77     20     24      3    69%   46, 75->77, 78-84, 89-93, 143-154
+src/gig/data/listings.py                          70     14     20      3    81%   57, 77, 92, 119, 123-127, 131-135
+src/gig/data/provenance.py                       178     27    114     27    82%   44, 52, 58, 69, 73, 75, 81, 84, 87, 90, 93, 97, 101, 122, 156, 170, 172, 174, 176, 178, 184, 198, 203, 213, 223, 229, 231
+src/gig/data/providers/__init__.py                 0      0      0      0   100%
+src/gig/data/providers/alpaca_iex.py              32      3      8      3    85%   18, 23, 55
+src/gig/data/providers/base.py                     7      0      0      0   100%
+src/gig/data/providers/cached.py                  25     25      6      0     0%   3-37
+src/gig/data/providers/edgar.py                   72     20     28      3    69%   46, 59->56, 76, 101-102, 113-130
+src/gig/data/providers/finnhub.py                 38     11      8      1    70%   47, 53-54, 61-65, 69-82
+src/gig/data/providers/fred.py                    32     10     12      2    64%   32->34, 44, 53-61
+src/gig/data/providers/fundamentals_sec.py        77     28     34      8    57%   40->73, 42->46, 43->42, 47, 54, 58-59, 61, 71->40, 103, 123-144
+src/gig/data/providers/synthetic.py               48      5      6      1    89%   50, 97, 101-103
+src/gig/data/providers/yahoo.py                   75     58     16      0    19%   23-24, 32-52, 61-85, 94-100, 104-116
+src/gig/data/public_equity.py                    137     20     54     12    83%   54, 60, 69-70, 72, 82, 85, 89, 92, 96, 99-100, 150, 162, 165, 178-183
+src/gig/data/public_reference.py                 108     33     46     10    67%   34, 37, 50, 54, 58, 60, 63, 65, 72, 85, 100-103, 108-126
+src/gig/data/universe.py                          17      3     14      2    71%   26->25, 29-31
+src/gig/data/universe_spec.py                     46     29     24      4    30%   65, 71, 76, 81, 85-93, 98-114
+src/gig/data/validated.py                        187      6     82      7    95%   100, 106, 149, 181, 189, 243->245, 246
+src/gig/execution/__init__.py                      8      0      0      0   100%
+src/gig/execution/algo.py                         35      4     12      3    85%   54, 75, 86-87
+src/gig/execution/alpaca.py                      140     56     40      5    61%   30-31, 45-65, 101, 107, 122-125, 128-129, 132-133, 152-153, 156-175, 184-185, 188, 192-207, 233, 238-239, 254->252
+src/gig/execution/base.py                         31      6      4      1    80%   31, 35, 39, 49, 57, 73
+src/gig/execution/cost_evidence.py               185     12     64     10    91%   47, 52-53, 55, 61, 67, 80, 142, 199, 219, 245, 249
+src/gig/execution/offline_adapter.py             140     24     46     14    78%   75, 84-86, 101-103, 111, 125, 141, 156-158, 179, 195, 205-207, 240, 243, 253, 255, 266, 273->277, 275
+src/gig/execution/oms.py                         276     23     92     20    88%   48, 51-52, 60, 81, 168, 190, 241, 260, 262, 267, 321, 323, 338->exit, 340, 360, 389, 411, 454, 463, 482, 506, 509-510
+src/gig/execution/outbox.py                      223     16     80     17    89%   35, 38, 41, 98, 176, 182, 188, 217, 232, 256->258, 333->364, 343, 363, 398, 415-416, 420, 462
+src/gig/execution/paper.py                        44      4     12      2    89%   17, 37, 65, 69
+src/gig/execution/pretrade.py                    120      9     52      4    92%   46, 121-122, 140, 156->167, 187-188, 190-191, 225
+src/gig/execution/reconcile.py                   139     17     38      4    86%   62, 107-117, 120, 190-193, 221->227, 230-233, 277
+src/gig/execution/scheduler.py                   243     22    110     23    87%   52, 105, 109, 140, 144, 147, 149, 156, 163, 169, 171, 181, 211, 215, 218, 233, 238, 257, 274, 289->281, 295, 300, 340
+src/gig/execution/simulator.py                   102     15     42     13    81%   50, 52, 54, 56, 60, 62, 66, 68, 71, 79-80, 96, 103, 115, 123
+src/gig/execution/targets.py                      82     52     14      0    31%   63, 93-176
+src/gig/execution/trader.py                      226     62     58     13    71%   69, 89-90, 97->103, 114, 116, 120, 125-127, 144-145, 150-158, 181-182, 210-213, 229-230, 243-245, 253-258, 281-283, 307, 359, 364-398, 420-442
+src/gig/execution/twap.py                         32      2     10      2    90%   36, 47
+src/gig/factors/__init__.py                        7      0      0      0   100%
+src/gig/factors/base.py                            8      0      0      0   100%
+src/gig/factors/combine.py                        24      1      8      1    94%   33
+src/gig/factors/filings.py                        20      2      6      3    81%   21, 24->27, 28
+src/gig/factors/fundamentals.py                   42      5     12      4    83%   26, 30, 58, 62, 73
+src/gig/factors/macro.py                          15      6      2      0    53%   21-26
+src/gig/factors/momentum.py                       20      0      0      0   100%
+src/gig/factors/neutralize.py                     64     11     20      2    82%   17-18, 60->62, 90-91, 96, 103-108
+src/gig/factors/volatility.py                     33      1      4      1    95%   34
+src/gig/financial_intelligence/__init__.py         0      0      0      0   100%
+src/gig/financial_intelligence/reference.py       36      5     14      5    80%   20, 23, 25, 36, 46
+src/gig/financial_intelligence/retrieval.py       38      4     20      4    86%   24, 27, 34, 37
+src/gig/financial_intelligence/store.py          160     16     66     16    86%   32, 64, 66, 68, 74, 82, 93, 130, 135, 140, 148, 169, 178, 196, 206, 213
+src/gig/intel/__init__.py                          0      0      0      0   100%
+src/gig/intel/defense.py                          82      7     40      8    88%   39, 50, 57, 59, 78, 85->92, 90, 123
+src/gig/intel/events.py                          107      9     38      9    88%   39, 68, 91, 119, 124, 135, 143, 147, 153
+src/gig/intel/fetch.py                            73     13     14      0    80%   48-59, 85, 89
+src/gig/intel/reference.py                        23      0      6      1    97%   80->86
+src/gig/intel/research.py                        140     16     74     18    84%   21, 25, 28, 32, 39, 41, 53, 58, 112, 115, 118, 121, 124, 127, 133, 139, 150->160, 184->172
+src/gig/intel/sources.py                           7      0      0      0   100%
+src/gig/intel/store.py                           111      3     32      3    96%   148, 152, 154
+src/gig/logging.py                                14      0      2      0   100%
+src/gig/microstructure/__init__.py                 2      0      0      0   100%
+src/gig/microstructure/analytics.py              249     15     86     11    92%   19, 22-23, 37, 122, 141->145, 220, 253, 281-282, 294, 326, 355-356, 358, 360
+src/gig/ml/__init__.py                             2      0      0      0   100%
+src/gig/ml/forests.py                            111      9     42      9    88%   37, 45, 54, 60, 74, 102, 114, 120, 160
+src/gig/ml/gaussian_process.py                   123      9     38      9    89%   41, 60, 63, 80, 88, 105, 117, 179, 184
+src/gig/ml/ranker.py                             119     14     32      7    86%   32-33, 39-40, 58->62, 84->86, 92-93, 101, 148-149, 152-153, 175, 177, 197, 202->204
+src/gig/ml/regimes.py                            173     14     60     14    88%   59, 61, 63, 82, 84, 92, 122, 166, 168, 170, 186->185, 201-202, 229, 236
+src/gig/ml/runtime.py                              2      0      0      0   100%
+src/gig/ml/sequence.py                           295     32     94     28    85%   44-45, 61-62, 64, 70, 114, 126, 129, 171, 174, 176, 183, 188, 192, 195, 233, 236, 246, 253, 277, 280, 320, 333, 367, 409, 425, 431, 435, 449, 493, 498
+src/gig/ml/state_space.py                        108     10     26      6    88%   32, 87, 89, 95, 120-121, 133, 154-155, 160
+src/gig/ml/volatility.py                         104      8     34      9    88%   39, 50, 58, 67, 82, 108, 110, 137->127, 140
+src/gig/native/__init__.py                         2      0      0      0   100%
+src/gig/native/rolling.py                         50      5     20      3    89%   21, 33-34, 58, 63
+src/gig/nlp/__init__.py                            4      0      0      0   100%
+src/gig/nlp/lexicon.py                            15      0      4      0   100%
+src/gig/nlp/model_assets.py                       96     77     40      1    15%   36-39, 43, 66-178
+src/gig/nlp/news.py                               83     29     34     11    59%   18, 19->21, 22, 24, 39, 46-75, 88, 93, 103, 122, 130, 137->139
+src/gig/nlp/ollama.py                            138     46     42      8    61%   40, 43-44, 55, 59-67, 74-75, 101-133, 137-140, 169->172, 182-191, 193, 198-211, 214-225, 233-239, 294-296
+src/gig/nlp/sentiment.py                          14      2      2      0    88%   18-19
+src/gig/nlp/workflow.py                          290     35    110     17    87%   119, 147, 157, 160, 272, 358, 363, 406->410, 411, 421-422, 441-457, 480, 494, 499, 502, 506, 509, 520-521, 544, 562
+src/gig/ops/__init__.py                            3      0      0      0   100%
+src/gig/ops/killswitch.py                         41      2      4      1    93%   41-42, 74->76
+src/gig/ops/maintenance.py                       132     36     52     12    71%   50, 52, 62, 64, 68, 94, 97, 101, 104, 107, 112, 139-163, 167
+src/gig/ops/status.py                            100     30     34     11    65%   46, 48, 58-59, 75, 95-105, 124-128, 140, 160-161, 169, 177, 193, 207, 215-216
+src/gig/options/__init__.py                        2      0      0      0   100%
+src/gig/options/analytics.py                     277     26    104     18    88%   72-73, 90-91, 93, 115-116, 118, 153, 156, 171, 173, 188, 220, 244, 251, 277, 312, 316, 329, 344, 351-352, 379, 399, 402
+src/gig/pipeline.py                              216    170     54      4    19%   33, 65-80, 102->110, 111-137, 143-190, 202-218, 230-297, 301-335, 339-344, 348-351, 355-363, 367-369
+src/gig/portfolio/__init__.py                      3      0      0      0   100%
+src/gig/portfolio/allocation.py                   97     12     42     12    83%   26, 42, 55, 58, 63, 85, 88, 91, 100, 104, 111, 144
+src/gig/portfolio/construct.py                    20      0      2      0   100%
+src/gig/portfolio/funded.py                      144      7     58      7    93%   66, 93, 96, 108, 139, 163, 167
+src/gig/portfolio/ledger.py                      222     21    114     20    88%   21, 24-25, 32, 35, 42, 48, 124, 150, 154, 160, 166, 170, 172, 177, 179->181, 183, 187, 269, 273, 280, 286
+src/gig/portfolio/lifecycle.py                    45      3     24      6    87%   27->21, 46, 47->44, 51->50, 53, 59
+src/gig/portfolio/optimize.py                    154      8     40     10    91%   164->168, 171->173, 177->183, 184, 192-193, 235, 293->296, 304, 323, 336-337, 382->385
+src/gig/portfolio/optimizer.py                    20      1      2      1    91%   29
+src/gig/research/__init__.py                      14      6      6      3    55%   16-18, 20-22, 24-26
+src/gig/research/attribution.py                  116     58     34      6    47%   29, 35, 53-54, 64->66, 103-129, 146-155, 177-214, 231-261
+src/gig/research/economic_validation.py          251     21    132     23    89%   34, 37, 40, 46, 62->64, 66, 71, 119, 130, 157, 165, 168, 172, 185, 190, 217-218, 225, 228, 258, 264, 271, 314->322, 316->322
+src/gig/research/experiment.py                    19      0      0      0   100%
+src/gig/research/forests.py                       38      1     12      1    96%   30
+src/gig/research/gaussian_process.py              39      1     12      1    96%   37
+src/gig/research/ic.py                            38      3     10      4    85%   26, 28->30, 39, 48
+src/gig/research/indicators.py                   108      4     40      5    94%   114, 118->121, 134, 146, 150
+src/gig/research/model_pipeline.py               344     30    140     29    88%   63, 67, 91, 95, 100, 103, 106, 108, 110, 113, 127, 139, 169, 192->191, 201-202, 206, 213, 217, 222, 279, 348, 354, 363, 380, 422, 427, 452, 456, 461, 493
+src/gig/research/multiple_testing.py              25      2      6      2    87%   25, 50
+src/gig/research/persisted_data.py               300     38    138     39    82%   49, 68, 74, 79, 101, 104, 109, 112, 119, 123, 127, 131->102, 141, 147, 150, 153, 155, 157, 160, 162->148, 165, 179, 182, 186, 187->180, 199->195, 217, 235, 257, 270, 275, 300-301, 305-306, 312, 319, 342, 351, 359-360, 364
+src/gig/research/persisted_pairs.py              178     13     70     13    90%   62, 65, 68, 78, 88, 94, 151, 153, 155, 163-164, 219->225, 221->225, 272, 303
+src/gig/research/rates.py                         45      3     16      1    93%   33-34, 56
+src/gig/research/reference_evaluation.py         234     20    112     19    89%   25, 53, 67, 72, 75, 80, 89, 93, 96, 159, 162, 195, 201, 221, 270, 280-281, 285, 290, 301
+src/gig/research/reference_research.py           168      7     62      8    93%   35, 37, 41, 65, 89->110, 104, 152, 159
+src/gig/research/stat_arb.py                     274     24     78     18    88%   85, 93, 106, 143, 145, 153, 161, 185, 211, 253, 271-272, 325-326, 357, 359, 395-396, 434, 445, 484, 486, 550, 600
+src/gig/research/state_models.py                 101     12     32     12    82%   47, 51, 53, 56, 101, 170, 176, 183, 192, 197, 201, 204
+src/gig/research/walkforward.py                   29      1      4      1    94%   49
+src/gig/research/workflow.py                     183     14     74     12    90%   41-42, 85, 119, 122, 132, 134, 160, 163, 192, 194, 197, 230, 260
+src/gig/research_org/__init__.py                   3      0      0      0   100%
+src/gig/research_org/__main__.py                  45      9     12      3    75%   53-59, 61, 72
+src/gig/research_org/backlog.py                   22      0      6      0   100%
+src/gig/research_org/cycle.py                     65      7     12      1    90%   116->129, 136-137, 143-145, 152-153
+src/gig/research_org/director.py                 187     10     68      7    93%   60-61, 75, 87->91, 151-152, 154-155, 174, 190, 205
+src/gig/research_org/equity_experiments.py       133      6     50      5    94%   48, 53, 61, 76, 84, 98
+src/gig/research_org/experiment.py                78      2     12      2    96%   58, 91
+src/gig/research_org/futures_experiment.py        95      6     18      8    88%   51, 72, 79->81, 97, 110->107, 121-122, 135->137, 138
+src/gig/research_org/ledger.py                   319     21     60      9    92%   100, 112-113, 119, 156-157, 185-186, 222, 253, 258, 289-290, 325-326, 337, 437, 442-443, 473-474
+src/gig/research_org/observed_experiments.py     262     11     80     11    94%   51, 70, 83, 89, 92, 96, 104, 111, 114, 338, 364
+src/gig/research_org/roles.py                      5      0      0      0   100%
+src/gig/research_org/scheduler.py                120     18     26      6    82%   35-36, 62-63, 74-77, 105-108, 138, 147, 153-158
+src/gig/research_org/service.py                  181     10     74      8    91%   65, 107->exit, 126, 137->exit, 140, 150-152, 220, 223-225
+src/gig/research_org/template_catalog.py          86      9     24      3    89%   107, 112-113, 126, 130, 132-135
+src/gig/research_org/treasury_experiment.py       68      3     24      4    92%   38, 63, 79->69, 157
+src/gig/research_org/treasury_followup.py        127      1     34      1    99%   43
+src/gig/risk/__init__.py                           5      0      0      0   100%
+src/gig/risk/analytics.py                         80      8     36      8    86%   37, 50, 64, 88, 91, 95, 119, 127
+src/gig/risk/exposures.py                         10      0      0      0   100%
+src/gig/risk/factor_model.py                     112      5     22      5    93%   79, 107, 145, 199->206, 204-205, 216->230
+src/gig/risk/limits.py                            25      0      8      0   100%
+src/gig/risk/var.py                               11      1      2      1    85%   15
+src/gig/service/__init__.py                        2      0      0      0   100%
+src/gig/service/allocation_workspace.py          278     34    118     34    82%   66, 94, 103, 106, 109, 113, 119, 123, 139-140, 145, 150, 154->153, 161, 166, 168, 173, 183->181, 189, 190->195, 201-204, 206, 215, 218, 249, 255->253, 261, 264->269, 266->269, 297, 308, 311, 314, 331, 335, 339, 343
+src/gig/service/app.py                           486    171    124     19    62%   125, 129, 152->154, 184-185, 190, 222, 231, 235, 238, 255, 279-280, 283-284, 328, 332, 335, 350, 364, 373-386, 390-403, 407-424, 429, 432, 434, 440, 443, 446-447, 459-460, 472, 474, 479, 483, 486, 493, 503, 507, 511, 515, 519-524, 534, 538-539, 547-559, 564-578, 591-593, 597-600, 607-609, 613-615, 619-626, 630-633, 635->638, 651-677, 682-717
+src/gig/service/charts.py                        106      2     18      2    97%   141, 150
+src/gig/service/contracts.py                     107      5     34      5    93%   78, 80, 82, 84, 125
+src/gig/service/cycle_services.py                206     19     56      7    89%   28-30, 52, 108, 118, 121, 131, 141, 158, 168, 171, 181, 198, 201, 226-227, 230, 233->274, 239, 243, 272->274
+src/gig/service/dataset_workspace.py              91      9     30      9    85%   47, 73, 76, 89, 93, 96, 104, 109, 116
+src/gig/service/depth_workspace.py               102      7     38      7    90%   59, 78, 94, 102, 114, 122, 128
+src/gig/service/economic_workspace.py            104     10     26     10    85%   28, 52, 58, 78, 80, 92, 98, 119, 123, 127
+src/gig/service/equity_positioning.py             17      0      4      0   100%
+src/gig/service/equity_workspace.py               50      4     14      3    89%   39-40, 52, 60
+src/gig/service/execution_workspace.py           163     20     88     20    84%   36, 97, 100, 139, 149, 156, 162, 174, 186, 188, 193, 213, 218, 223, 225, 238, 256, 263, 274, 279
+src/gig/service/financial_workspace.py            40      8     12      4    77%   28, 37-40, 48, 54-55, 57
+src/gig/service/funded_risk_workspace.py         492     53    250     52    86%   73, 79, 84, 89, 94, 99, 104, 108->110, 111, 115, 122, 124, 128, 135, 138, 144, 148, 151, 156, 159, 161-166, 168, 180, 183, 192, 196, 209, 214, 217, 225, 233, 266, 269->273, 271, 280->283, 297, 301, 309, 317, 334, 368->367, 371, 481, 493, 509, 513, 524, 528, 530, 542, 552, 560
+src/gig/service/funded_workspace.py              389     45    184     41    85%   68, 79, 87, 89, 93, 150, 155, 158, 164, 168, 184, 192, 200, 211, 222, 231-232, 235, 258, 275, 282, 289, 293, 296, 309, 312, 315, 320, 324, 332-334, 341, 357, 377, 389, 391, 415, 429, 432, 447, 454, 457, 460, 465, 466->468
+src/gig/service/intel_workspace.py                78      8     22      6    86%   108, 111, 118, 125-126, 130, 135, 139, 140->142
+src/gig/service/lifecycle_workspace.py           329     34    188     35    87%   48, 60, 78, 114, 119, 122, 128, 144, 153, 172, 183, 205, 222, 230, 234, 237, 240, 251, 257, 260, 266, 271, 277, 285, 295, 297, 299, 302->316, 305, 308, 311, 329, 344, 359, 372
+src/gig/service/market_flow.py                   111      3     42      1    97%   33-34, 184
+src/gig/service/microstructure_workspace.py      289     23    108     24    88%   44, 58, 113, 121, 129, 133, 141, 145, 150, 175, 184, 197, 203, 214, 219, 223, 236, 241->238, 354, 356, 366, 373, 385, 395
+src/gig/service/observed_workspace.py            169     15     52     13    87%   53, 55, 72, 82, 92-93, 99, 110, 114, 118, 123, 161, 179, 184, 194
+src/gig/service/options_workspace.py             323     22    126     22    90%   49, 68, 97, 111, 151, 169, 175, 185, 198, 205, 211, 232, 264, 348, 379, 381, 390, 406, 409, 421, 424, 427
+src/gig/service/overlay_workspace.py             209     16     68     13    90%   92, 97, 101, 109, 112, 156, 213, 229, 231, 243, 250, 253-254, 256, 269, 277
+src/gig/service/pairs_workspace.py               113     10     44     10    87%   27, 68, 71, 80, 82, 94, 100, 104, 114, 136
+src/gig/service/persisted_research.py            152     16     60     16    85%   33, 36, 51, 110, 122, 130, 133, 137, 143, 149, 156, 170, 196, 201, 204, 220
+src/gig/service/portfolio_workspace.py           224     19    108     19    89%   31, 49, 68, 84, 99, 101, 118, 123, 164, 171, 181, 184, 188, 247, 250, 260, 266, 269, 275
+src/gig/service/positioning.py                    16      0      4      0   100%
+src/gig/service/risk_coordination.py              28      1      4      1    94%   30
+src/gig/service/sentiment_workspace.py           101     65     38      5    29%   30-35, 40-42, 53, 72, 79, 95, 99, 101-152, 155-213
+src/gig/service/sequence_workspace.py            107      7     36      7    90%   26, 41, 109, 118, 182, 208, 212
+src/gig/service/serialization.py                 178      5    100      4    97%   102, 109, 112, 157, 210
+src/gig/service/signal_workspace.py              166     12     56     13    89%   41, 57, 73->52, 83, 149, 153, 171, 173, 183, 191, 205, 213, 220
+src/gig/service/snapshot.py                      325     57     92     26    80%   38, 62, 73, 78, 94-104, 142-143, 153-154, 159-160, 168-170, 183-185, 190, 202->206, 222, 256, 259, 263, 265-266, 271, 275, 278, 283, 340, 427, 432-433, 435, 463-471, 487->491, 611, 636-638, 641-643, 649-659, 695-696, 698, 715
+src/gig/service/statement_workspace.py           351     39    174     32    85%   57, 70, 92, 96, 101, 105, 107, 113, 117, 124, 128->130, 134-138, 145, 147, 149-154, 182, 195, 200, 238-239, 293, 296->300, 299, 309, 328, 333, 368, 386, 388, 400, 408, 430, 433
+src/gig/service/terminal.py                      216     24     92     18    85%   61, 193, 195-202, 214, 232, 262, 265, 268-269, 276, 282->284, 288, 292, 301, 305, 307, 319, 322, 330
+src/gig/service/viz.py                           206      6     36      2    97%   192, 311-312, 342-343, 353
+src/gig/service/workspace.py                     476     50    214     48    86%   74, 77, 86-87, 100, 106, 112, 128, 143, 156, 234, 243, 272, 337, 344, 359->353, 376, 399, 414, 417, 426, 434, 450, 458, 464, 532, 541, 548, 550, 562, 564, 572, 669, 697, 700, 712, 715, 724, 796, 827->826, 832, 862, 872, 914, 943-944, 976, 987, 999, 1004, 1011, 1032
+src/gig/store/__init__.py                        213     71     58     14    63%   22-23, 33, 37, 83, 96, 111-112, 127, 132, 145-149, 153, 160-170, 174, 180-184, 190, 195, 199, 200->202, 223-224, 234, 239, 253, 260-262, 270-272, 299-315, 318-342, 351-356, 364-369, 410-411, 419-428, 432-433
+src/gig/strategies/__init__.py                     4      0      0      0   100%
+src/gig/strategies/equity_ls.py                   81     17     16      5    73%   65->74, 98-99, 102-105, 108-111, 114-118, 156-161
+src/gig/strategies/futures_tsmom.py               22      0      0      0   100%
+src/gig/strategies/options_vrp.py                 18      0      0      0   100%
+src/gig/timestamps.py                             19      1      8      1    93%   21
+src/gig/types.py                                  74      1      0      0    99%   51
+------------------------------------------------------------------------------------------
+TOTAL                                          21376   2967   7664   1479    83%
+Coverage JSON written to file /tmp/gig-sequence-coverage.json
+Required test coverage of 70.0% reached. Total coverage: 83.13%
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_cycle_http.py:132: Actual pinned FinBERT assets/runtime not provisioned
+SKIPPED [1] tests/test_finbert_actual.py:187: Actual pinned FinBERT safetensors/runtime not provisioned locally
+SKIPPED [1] tests/test_finbert_actual.py:205: Actual pinned FinBERT safetensors/runtime not provisioned locally
+SKIPPED [1] tests/test_finbert_actual.py:235: Actual pinned FinBERT safetensors/runtime not provisioned locally
+SKIPPED [1] tests/test_finbert_actual.py:177: Actual pinned FinBERT safetensors/runtime not provisioned locally
+SKIPPED [1] tests/test_finbert_actual.py:93: Actual pinned FinBERT safetensors/runtime not provisioned locally
+SKIPPED [1] tests/test_finbert_actual.py:218: Actual pinned FinBERT safetensors/runtime not provisioned locally
+SKIPPED [1] tests/test_finbert_actual.py:156: Actual pinned FinBERT safetensors/runtime not provisioned locally
+SKIPPED [1] tests/test_finbert_actual.py:141: Actual pinned FinBERT safetensors/runtime not provisioned locally
+1270 passed, 9 skipped in 475.51s (0:07:55)

@@ -78,8 +78,11 @@ def main():
         page.wait_for_function("!document.getElementById('refresh').disabled")
         page.locator("#analysis-engine").select_option("persisted")
         page.wait_for_function("!document.getElementById('refresh').disabled")
-        page.locator('#section-nav a[href="#models"]').click()
-        page.wait_for_function("document.getElementById('state-badge').textContent==='AVAILABLE' && !document.getElementById('refresh').disabled")
+        # AVAILABLE may still describe the previous Research section before
+        # hashchange runs. Fence on the actual Models request and section too.
+        with page.expect_response(lambda r: "/api/v1/terminal/models?" in r.url):
+            page.locator('#section-nav a[href="#models"]').click()
+        page.wait_for_function("document.getElementById('content').dataset.section==='models' && document.getElementById('state-badge').textContent==='AVAILABLE' && !document.getElementById('refresh').disabled")
         check("Models labels derived estimates and synthetic inputs", "MODEL_ESTIMATE" in page.locator("#source-label").inner_text() and "SYNTHETIC INPUTS" in page.locator("#truth-notice").inner_text())
         for theme in ("dark", "light"):
             page.evaluate("theme=>document.documentElement.dataset.theme=theme", arg=theme)

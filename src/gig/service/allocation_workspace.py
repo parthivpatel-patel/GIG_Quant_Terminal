@@ -64,6 +64,23 @@ class ResearchAllocationWorkspace:
         body = {k: v for k, v in document.items() if k != "allocation_id"}
         if document.get("allocation_id") != allocation_id or _hash(body) != allocation_id:
             raise ValueError("allocation integrity mismatch")
+        # A valid hash cannot make an invalidated research lineage reusable.
+        # This read precedes every cached view and OMS preparation mutation.
+        kind = document.get("source_kind", "run_id")
+        source_id = sha256(document.get("research_source_identity") or document.get("run_id"))
+        if kind == "run_id":
+            from gig.service.persisted_research import PersistedResearchWorkspace
+            source = PersistedResearchWorkspace(self.base_dir).load(source_id)
+        elif kind == "signal_id":
+            from gig.service.signal_workspace import SignalWorkspace
+            source = SignalWorkspace(self.base_dir).load(source_id)
+        elif kind == "pair_run_id":
+            from gig.service.pairs_workspace import PairsResearchWorkspace
+            source = PairsResearchWorkspace(self.base_dir).load(source_id)
+        else:
+            raise ValueError("unsupported saved allocation research source")
+        if source["dataset_id"] != document["dataset_id"]:
+            raise ValueError("saved allocation differs from its research dataset")
         return document
 
     def _positions(self) -> tuple[dict[str, Decimal], bool]:
