@@ -11,7 +11,7 @@ from decimal import Decimal, localcontext
 IMPLEMENTATION = "gig.financial-mention-rules.v1"
 NUMBER = r"[+-]?(?:[0-9][0-9A-Za-z_.,/⁄−–—+-]*|nan|inf(?:inity)?)"
 MEASUREMENT = re.compile(r"(?<![\w.,/⁄−–—+-])(?P<number>"+NUMBER+r")\s*(?P<unit>percent\b|%|basis\s+points\b|bps\b)(?![\w,/+-])", re.I)
-MONEY = re.compile(r"(?<![\w])(?P<currency>USD\s*|\$)(?P<number>"+NUMBER+r")(?:\s*(?P<scale>thousand|million|billion)\b)?", re.I)
+MONEY = re.compile(r"(?<![\w])(?P<currency>USD\s*|US\$\s*|\$)(?P<number>"+NUMBER+r")(?:\s*(?P<scale>thousand|million|billion)\b)?", re.I)
 VALID_NUMBER = re.compile(r"[+-]?(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]+)?")
 TENOR = re.compile(r"(?<![\w+−–—-])(?:BC_(?P<code>[0-9]{1,3})(?P<code_unit>MONTH|YEAR)|(?P<n>[0-9]{1,3})[- ](?P<unit>month|year)s?)\b", re.I)
 ENTITY = re.compile(r"\b(?:U\.S\. Treasury|Treasury|Federal Reserve)\b|\b(?:NYSE|NASDAQ):\s*[A-Z]{1,5}\b")
@@ -104,7 +104,13 @@ def extract(passages):
                 if reason:
                     unsupported.append({"reason": reason, "provenance": _evidence(passage, evidence_start, evidence_end)})
                     continue
-                unit = "USD" if regex is MONEY else ("PERCENT" if match["unit"].lower() in {"percent", "%"} else "BASIS_POINTS")
+                currency_mention = match["currency"].strip() if regex is MONEY else None
+                if regex is MONEY:
+                    unit = "UNSPECIFIED_DOLLAR" if currency_mention == "$" else "USD"
+                    currency_state = "UNKNOWN" if currency_mention == "$" else "EXPLICIT_SOURCE_SYNTAX"
+                else:
+                    unit = "PERCENT" if match["unit"].lower() in {"percent", "%"} else "BASIS_POINTS"
+                    currency_state = "NOT_APPLICABLE"
                 scale = match["scale"].lower() if regex is MONEY and match["scale"] else None
                 multiplier = {None: 1, "thousand": 1000, "million": 1000000, "billion": 1000000000}[scale]
                 with localcontext() as context:
@@ -113,7 +119,7 @@ def extract(passages):
                 prefix = text[max(0, match.start()-64):match.start()]
                 metrics = list(METRIC.finditer(prefix))
                 metric = metrics[-1].group().lower() if metrics else "UNKNOWN"
-                prior_tenors = [t for t in tenor_matches if unit != "USD"
+                prior_tenors = [t for t in tenor_matches if regex is not MONEY
                     and 0 <= match.start()-t.end() <= 32
                     and not re.search(r"[.;!?]", text[t.end():match.start()])]
                 tenor = prior_tenors[-1] if prior_tenors else None
@@ -124,6 +130,7 @@ def extract(passages):
                     evidence = _treasury_evidence(passage, match.start(), match.end(), tenor.group(), value)
                 facts.append({"kind": "PARSED_FINANCIAL_MENTION_NOT_VERIFIED_FACT", "metric_mention": metric,
                     "decimal_value": str(scaled), "quoted_decimal": str(value), "unit": unit,
+                    "currency_state": currency_state, "currency_mention": currency_mention,
                     "scale": scale, "scale_multiplier": str(multiplier),
                     "tenor_months": str(Decimal(tenor["code"] or tenor["n"])*(12 if (tenor["code_unit"] or tenor["unit"]).lower() == "year" else 1)) if tenor else None,
                     "observation_date": passage.get("observation_date"), "truth_state": "UNKNOWN",
@@ -136,6 +143,8 @@ def extract(passages):
             "limitations": ["Parsed mentions are not verified financial truth or issuer facts",
                 "Events are mentions only; occurrence UNKNOWN even with negation/conditional cue flags",
                 "Cue flags use sentence-local lexical rules, not reliable scope or causal understanding",
-                "Only explicit percent/bps/USD units and thousand/million/billion scales supported",
+                "Only explicit percent/bps/dollar syntax and thousand/million/billion scales supported",
+                "Bare$currency UNKNOWN/UNSPECIFIED_DOLLAR; only explicit USD/US$syntax identifies USD",
+                "Currency syntax is a parsed source mention, not verified currency jurisdiction or accounting admission",
                 "Exponent, ambiguous separators, nonfinite and oversized numerics unsupported",
                 "Normalized Treasury mentions cite XML elements; other normalized mentions cite raw passage"]}

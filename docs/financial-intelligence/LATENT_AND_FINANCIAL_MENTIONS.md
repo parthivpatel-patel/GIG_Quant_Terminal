@@ -86,10 +86,15 @@ supported exact-replay mechanism, and runtime NumPy identity is recorded.
 not FinBERT, trained NLP or sentiment inference. It analyzes only retrieved
 passages (at most20), never executes document instructions, and returns:
 
-- Supported explicit percent, basis-point and USD numeric mentions. Values use
+- Supported explicit percent, basis-point and dollar numeric mentions. Values use
   exact Decimal strings, original quoted precision, optional thousand/million/
-  billion scale and exact scaled value. Metric labels are nearby text mentions;
-  truth and issuer verification remain UNKNOWN.
+  billion scale and exact scaled value. Bare `$` retains unit
+  `UNSPECIFIED_DOLLAR` and `currency_state=UNKNOWN`; only source syntax `USD` or
+  `US$` receives `unit=USD` and `currency_state=EXPLICIT_SOURCE_SYNTAX`. Source
+  titles, English text and neighboring entity mentions never determine currency.
+  Percent/bps mentions use `currency_state=NOT_APPLICABLE`. These are parsed source
+  mentions, not verified jurisdiction or accounting admission. Metric labels are
+  nearby text mentions; truth and issuer verification remain UNKNOWN.
 - Explicit month/year and Treasury-field tenor mentions with exact month values.
 - Treasury/Federal Reserve or exchange-qualified ticker surface mentions;
   authority-based issuer linking stays UNKNOWN.
@@ -138,7 +143,8 @@ Independent verification uses a Gram-matrix eigendecomposition to reproduce
 TF-IDF projected cosine, a separate RRF formula, future-vocabulary/revision
 adversaries, saved no-refit restart replay, atomic insertion failure, model
 corruption, bounds/malformed inputs, Unicode byte evidence, numeric attacks,
-negated/conditional event mentions and HTTP restart integration. Existing12
+negated/conditional event mentions, bare-dollar versus explicit USD/US$ currency
+identity, and HTTP restart integration. Existing12
 financial-intelligence tests continue to pass.
 
 ## HTTP hooks

@@ -234,8 +234,33 @@ class LatentTests(unittest.TestCase):
         self.corpus.admit_authored(authored("Fraction 1/2%; unsupported cost $1_000 and $1abc; spaced 1 / 2%; spaced money $1 / 2; Unicode $1⁄2 and −7%. Safe $1,000 and 2% and 3 bps."))
         nlp = self.corpus.search("Fraction", T0, extract_facts=True)["financial_nlp"]
         self.assertEqual({(f["decimal_value"], f["unit"]) for f in nlp["facts"]},
-                         {("1000", "USD"), ("2", "PERCENT"), ("3", "BASIS_POINTS")})
+                         {("1000", "UNSPECIFIED_DOLLAR"), ("2", "PERCENT"), ("3", "BASIS_POINTS")})
         self.assertEqual(len(nlp["unsupported_mentions"]), 6)
+
+    def test_dollar_currency_identity_requires_explicit_source_syntax(self):
+        text = "Café Treasury 10-year yield 4.25 percent. Revenue $100 million; revenue USD 100 million; revenue US$100 million; revenue US$ 1.20 billion."
+        payload = authored(text)
+        payload["title"] = "U.S. company USD report in English"
+        self.corpus.admit_authored(payload)
+        result = self.corpus.search("revenue", T0, extract_facts=True)
+        facts = result["financial_nlp"]["facts"]
+        bare = next(f for f in facts if f["currency_mention"] == "$")
+        self.assertEqual(bare["unit"], "UNSPECIFIED_DOLLAR")
+        self.assertEqual(bare["currency_state"], "UNKNOWN")
+        self.assertEqual(bare["decimal_value"], "100000000")
+        self.assertEqual(bare["quoted_decimal"], "100")
+        self.assertEqual(bare["provenance"]["source_quote"], "$100 million")
+        self.assertIsNone(bare["tenor_months"])
+        explicit = [f for f in facts if f["currency_state"] == "EXPLICIT_SOURCE_SYNTAX"]
+        self.assertEqual(len(explicit), 3)
+        self.assertEqual({f["unit"] for f in explicit}, {"USD"})
+        self.assertEqual([f["decimal_value"] for f in explicit], ["100000000", "100000000", "1200000000.00"])
+        self.assertEqual(next(f for f in facts if f["unit"] == "PERCENT")["currency_state"], "NOT_APPLICABLE")
+        for fact in facts:
+            evidence = fact["provenance"]
+            self.assertEqual(text.encode()[evidence["source_start"]:evidence["source_end"]].decode(), evidence["source_quote"])
+            self.assertEqual(fact["truth_state"], "UNKNOWN")
+        self.assertEqual(FinancialCorpus(self.root).replay(result["snapshot_id"]), result)
 
     def test_numeric_adversaries_never_parse_suffix_or_expand_exponents(self):
         text = "Revenue 1e999999% and $1e999999; 1.234,56 percent; NaN percent; USD Infinity; "+"9"*100+" bps; safe 2.50 percent."
