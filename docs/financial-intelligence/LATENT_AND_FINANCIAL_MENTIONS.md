@@ -40,10 +40,15 @@ vocabulary is rejected. Pure-number/date queries or unseen vocabulary produce
 `UNKNOWN_VOCABULARY`; a zero projection produces `ZERO_PROJECTION`; neither
 fabricates an LSA answer. Only positive cosine above1e-12is a dense candidate.
 
-`gig.bm25-lsa-rrf.v1` fuses complete bounded candidate rankings using
+`gig.bm25-lsa-rrf.v2` fuses complete bounded candidate rankings using
 `1/(60 + BM25_rank) + 1/(60 + LSA_rank)`, omitting absent components. It does not
 combine incomparable BM25/cosine score magnitudes. Each hybrid row retains both
-component scores and ranks. Missing one component is explicit. Final ties use
+component scores and ranks. Within each component, score ties receive the mean
+of their occupied ranks. A sorted score group compares every member to its first
+score, with saved absolute1e-12and relative1e-10tolerances, so near-equal groups
+do not chain. Thus250equal Treasury vectors each receive latent rank125.5;
+ordinal order cannot create artificial dense relevance evidence. Missing one
+component is explicit. Final ties use
 document identity and ordinal, as existing BM25 does. Scores never express
 financial confidence, predicted alpha or event probability.
 
@@ -124,7 +129,9 @@ exact matches, not a production benchmark or financial-quality acceptance.
 The deliberately unseen `insolvency` query returns no LSA match. No synonym or
 paraphrase knowledge is inferred. Numeric/date-only queries cannot use LSA;
 hybrid lexical retrieval correctly selects Treasury2023-01-03and cites the
-10-year3.79percent XML value. Homogeneous Treasury renderings can collapse to
+10-year3.79percent XML value. A separate late-date mixed query (`10-year Treasury
+yield 2023-12-29`) verifies that hybrid retains the lexical date winner despite
+250tied dense scores. Homogeneous Treasury renderings can collapse to
 rank1and tie. This limitation is expected, not called semantic understanding.
 
 Independent verification uses a Gram-matrix eigendecomposition to reproduce

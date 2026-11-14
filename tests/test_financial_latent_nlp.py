@@ -75,8 +75,22 @@ class LatentTests(unittest.TestCase):
         self.assertTrue(any("coupon" not in tokens(p["text"]) for p in response["rows"]))
         hybrid = self.corpus.search("coupon", T0, retrieval_mode="hybrid", latent_dimensions=4, limit=20)
         lexical, _ = rank(passages, "coupon", 20)
-        bm25_rank = {p["ordinal"]: i for i, p in enumerate(lexical, 1)}
-        dense_rank = {p["ordinal"]: i for i, p in enumerate(response["rows"], 1)}
+        def reference_ranks(rows):
+            result, first = {}, 0
+            while first < len(rows):
+                group = [first]
+                for position in range(first+1, len(rows)):
+                    difference = abs(rows[position]["score"]-rows[first]["score"])
+                    tolerance = max(1e-12, 1e-10*max(abs(rows[position]["score"]), abs(rows[first]["score"])))
+                    if difference > tolerance:
+                        break
+                    group.append(position)
+                for position in group:
+                    result[rows[position]["ordinal"]] = sum(i+1 for i in group)/len(group)
+                first = group[-1]+1
+            return result
+        bm25_rank = reference_ranks(lexical)
+        dense_rank = reference_ranks(response["rows"])
         for row in hybrid["rows"]:
             score = sum(1/(60+ranks[row["ordinal"]]) for ranks in (bm25_rank, dense_rank) if row["ordinal"] in ranks)
             self.assertEqual(row["score"], score)
@@ -178,6 +192,24 @@ class LatentTests(unittest.TestCase):
         self.assertEqual(raw[evidence["source_start"]:evidence["source_end"]].decode(), evidence["source_quote"])
         self.assertIn("<d:BC_10YEAR", evidence["source_quote"])
         self.assertEqual(FinancialCorpus(self.root).replay(result["snapshot_id"]), result)
+
+    def test_hybrid_dense_ties_preserve_late_date_lexical_evidence(self):
+        self.corpus.admit(*treasury_document())
+        query = "10-year Treasury yield 2023-12-29"
+        lexical = self.corpus.search(query, T0)
+        hybrid = self.corpus.search(query, T0, retrieval_mode="hybrid", limit=20)
+        self.assertEqual(lexical["rows"][0]["observation_date"], "2023-12-29")
+        self.assertEqual(hybrid["rows"][0]["observation_date"], "2023-12-29")
+        # All250indistinguishable dense scores share the mean rank125.5.
+        self.assertEqual({r["latent_rank"] for r in hybrid["rows"]}, {125.5})
+        self.assertEqual(hybrid["rows"][0]["bm25_rank"], 1)
+        self.assertAlmostEqual(hybrid["rows"][0]["score"], 1/61+1/185.5, places=15)
+        self.assertEqual(hybrid["fusion"]["tie_policy"]["method"], "FRACTIONAL_MEAN_RANK")
+        self.assertEqual(FinancialCorpus(self.root).replay(hybrid["snapshot_id"]), hybrid)
+
+    def test_floating_tie_groups_compare_anchor_without_chaining(self):
+        rows = [{"score": 1.0}, {"score": 1.0-9e-11}, {"score": 1.0-18e-11}]
+        self.assertEqual([r for _, r in latent._fractional_ranks(rows)], [1.5, 1.5, 3])
 
     def test_exact_decimal_unicode_byte_spans_entities_and_event_cues(self):
         text = "Café U.S. Treasury 10-year yield 4.250 percent. Revenue USD 1.20 million.\nFederal Reserve may raise rates by 25 bps if inflation rises.\nThe board did not declare a default; no downgrade occurred."

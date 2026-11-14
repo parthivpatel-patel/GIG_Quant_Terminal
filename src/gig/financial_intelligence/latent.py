@@ -14,11 +14,13 @@ from gig.financial_intelligence.retrieval import SYNONYMS, rank, rank_candidates
 from gig.service.serialization import dumps
 
 IMPLEMENTATION = "gig.corpus-local-lsa.v1"
-HYBRID = "gig.bm25-lsa-rrf.v1"
+HYBRID = "gig.bm25-lsa-rrf.v2"
 FEATURE_POLICY = "ALPHABETIC_BEARING_TOKENS_ONLY_NO_PURE_NUMBERS_OR_DATES.v1"
 MAX_PASSAGES, MAX_TERMS, MAX_DIMENSIONS = 256, 512, 16
 RRF_K = 60
 EPSILON = 1e-12
+TIE_ABSOLUTE_TOLERANCE = 1e-12
+TIE_RELATIVE_TOLERANCE = 1e-10
 LIMITATIONS = [
     "CORPUS_LOCAL_LSA; not pretrained neural semantics, LLM or paraphrase understanding",
     "Pure-number/date distinctions excluded from LSA; hybrid BM25 preserves lexical distinctions",
@@ -117,6 +119,21 @@ def metadata(model):
     return {k: v for k, v in model.items() if k not in {"vocabulary", "idf", "components", "document_vectors", "singular_values"}}
 
 
+def _fractional_ranks(rows):
+    """Equal scores provide equal evidence; groups compare to their first score."""
+    start = 0
+    while start < len(rows):
+        end = start+1
+        anchor = rows[start]["score"]
+        while end < len(rows) and math.isclose(rows[end]["score"], anchor,
+                rel_tol=TIE_RELATIVE_TOLERANCE, abs_tol=TIE_ABSOLUTE_TOLERANCE):
+            end += 1
+        fractional_rank = (start+1+end)/2
+        for row in rows[start:end]:
+            yield row, fractional_rank
+        start = end
+
+
 def retrieve(passages, query, limit, *, mode, dimensions=MAX_DIMENSIONS, expand=False, model=None):
     settings(mode, dimensions)
     _, terms = rank([], query, limit, expand=expand)
@@ -145,7 +162,7 @@ def retrieve(passages, query, limit, *, mode, dimensions=MAX_DIMENSIONS, expand=
         lexical, _ = rank_candidates(passages, query, expand=expand)
         candidates = {}
         for component, rows in (("bm25", lexical), ("latent", dense)):
-            for position, row in enumerate(rows, 1):
+            for row, position in _fractional_ranks(rows):
                 item = candidates.setdefault(row["passage_id"], {**row, "score": 0.0,
                     "bm25_score": None, "latent_score": None, "bm25_rank": None, "latent_rank": None,
                     "score_kind": "RRF_RANK_FUSION_NOT_FINANCIAL_CONFIDENCE"})
@@ -158,5 +175,7 @@ def retrieve(passages, query, limit, *, mode, dimensions=MAX_DIMENSIONS, expand=
                 "retrieval_state": "AVAILABLE" if result else "NO_MATCH"}
     if mode == "hybrid":
         evidence["fusion"] = {"implementation": HYBRID, "method": "RECIPROCAL_RANK_FUSION", "rank_constant": RRF_K,
-                              "component_weights": {"bm25": 1, "latent": 1}}
+                              "component_weights": {"bm25": 1, "latent": 1},
+                              "tie_policy": {"method": "FRACTIONAL_MEAN_RANK", "grouping": "SORTED_SCORE_GROUP_ANCHOR",
+                                  "absolute_tolerance": TIE_ABSOLUTE_TOLERANCE, "relative_tolerance": TIE_RELATIVE_TOLERANCE}}
     return result, terms, model, evidence
