@@ -1,0 +1,1890 @@
+{
+  "source_head": "1d33a747fd7dd70209df489211812aadd759c753",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "e458c3eb760dc1c07666d664d936a2a85ec28769026437056f50f79f32b6c649",
+      "git_mode": "100644"
+    },
+    {
+      "path": "configs/equity_ls.yaml",
+      "sha256": "d24441a2f9540e1744f1133ed64516265fa2279ed1cb74aec612dcdbdad64e19",
+      "git_mode": "100644"
+    },
+    {
+      "path": "configs/futures_tsmom.yaml",
+      "sha256": "a5386f0f88bdbd4fe3c6c86f0d320c801729921572ea23d9dcb0d0e88c4c0b4d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "configs/options_vrp.yaml",
+      "sha256": "9d0c4094f34e3e7ab185c31462a610a9558d319d4d3491069eace29543e037f6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "configs/universe.yaml",
+      "sha256": "f5d6ab4783aa212b42e0ee69d5aab994394082557c8a22f3917326ebeae79043",
+      "git_mode": "100644"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "b81721947e1bcca047f19b400aaaba5ca0438d9164f52ec24bd23e38478afe70",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/ab_construction.py",
+      "sha256": "b943c05684a66d3daee83c89851545690bfec74d68042469291075e7514affaa",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/benchmark_native.py",
+      "sha256": "f4b4370af86e7c6017b36f2426f6d11e42cd42cf126c169aa83b47ea96e96d10",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_autonomy.py",
+      "sha256": "32d00e3db9d04b6e0986d7e8a7575aa9461da59f0ecc355c64941773d59ac3f5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_charts.py",
+      "sha256": "fd0215e1ca64ef778a9770a4e20db7166ddd9d5a4d028670b52ddaf51f4e2766",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_desk.py",
+      "sha256": "4cac43df5cc9109578993ab83b410be55e3e6e244b0e364957a98b8757cf2d35",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_financial_intelligence.py",
+      "sha256": "5048f38635f2a330168dc68bc3e5c49e503ef627a890bd88c63ac568deef3420",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_forests.py",
+      "sha256": "141cb1c7e70e5970c5895a7a610d0b6487da021928e0a89e6250ffff1dbe3474",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_gaussian_process.py",
+      "sha256": "9723d8575ece33f42efebebb16817d8376d2246bb8f960c61c75a4d46a9e9adf",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_global_3d.py",
+      "sha256": "e5e87d83e767f1a000b719b1bda586022b829d21ca8b8bc0be61521d2810ec56",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_multidata.py",
+      "sha256": "2ecd800e3401b0c60ea7fdc3fc21837db5703b1eaa89a5a9f1873b06db559f89",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_observatory.py",
+      "sha256": "c86f821ae0dc16508d8d04d862f30193a366256c018b2988c6f0aa861033c213",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_persisted_flow.py",
+      "sha256": "3b1d8c21a7e83dcd117a3501ea4bb76a3d563ef8e0c961e3b2f7cbb7ae37e2ee",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_redesign_check.py",
+      "sha256": "34f4b43a1f550ca58a80f842a54e834cd53a538f1741454c751a72b71df603fc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_registry.py",
+      "sha256": "3a9db3716f985138a3fd5404a018cf16d1530b65d21d6207c7a1683984b41ad1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_review_capture.py",
+      "sha256": "bbc8a44d023c70823fcd5d4dda2c505e8c31407f8e8894ba5a3488de8203d8dc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_sprint5.py",
+      "sha256": "88bcd544232c0d9b18746d37db6376d016923cb6c4d063d2247c63f6331ad80d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_sprint6.py",
+      "sha256": "f89819a42925ac1233d77da56caa1e7327be986dea1238a7da81ae12606fcf05",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_sprint7.py",
+      "sha256": "876b178ab43df9a0041dd51ecc09e2603fadc8997c1a6179ec898f30cbbb55ff",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_sprint8.py",
+      "sha256": "3aec781fe1a6b394913235c97a332f2305406708b5848176b03b2178b99dd173",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_sprint9.py",
+      "sha256": "39b71c2fc505cec2427310a681e48c05c2ab8524db609a4bb5e8374975a0752e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_stage_a_regressions.py",
+      "sha256": "b2c8f3729c442020180dceda2ac8bd7a659f36ddd8a6640d527cee2c78d5f78f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_svr.py",
+      "sha256": "312f647272fdb148d3ad7167486ae71f8fffa8ee100da25607a6b192ba1fbf9b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/browser_terminal_check.py",
+      "sha256": "4e8e697e3f3f0a8c216e6ad650ff5024a0f34eb1be7ef597eb3fe2e33a16f7a0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/build_native.py",
+      "sha256": "0506b955cb04a0b1ec3e2a561180d399fffce0ca72e37e26b9e56cac0776dd87",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/build_viz_fixtures.py",
+      "sha256": "dbb5ef3c3e8487c6dbe56d71962e9814342c6ca5692a98bda0c070b25f1159e0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/check_arm64.py",
+      "sha256": "202054dbfe35d44079ba2e3e7f7b4c0fcfafd31418fc50bef36b2f48d65a43f1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/check_checkpoint.py",
+      "sha256": "fffe01ecee6b1bd215157952766f05d73e4a9e0120e47e07cea1873f77a7cd74",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/check_container_recovery.py",
+      "sha256": "4b8c149052e23b19082caf8c9bf15d17bc0a273d94cd8caef96c46d88c487633",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/check_observed_reference.py",
+      "sha256": "16259eb8beb7ae63eb04cb942dc8f25964ee8d23aa7e7a3641a5d5fb398224a7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/check_terminal.mjs",
+      "sha256": "f3ac8d4583afbafa0e3694956c86e2d30ac879fd7897bb28ed28f31b3906ca50",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/daily_ingest.bat",
+      "sha256": "2f3134a9ed81ad764fd190d330fd548b52aa26257af02164815005185a01964f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/daily_ingest.py",
+      "sha256": "a8007778befcf2104f1f4b4b64752de88fd597c75b2a66c301a4c60f698f6ac7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/refresh_liquid.py",
+      "sha256": "b83e5b31e00c18ae27142eebabb7b404be6187223e5703053f4b9f990fec97e8",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/run_24_7.bat",
+      "sha256": "0745be3d17dcbd88a4d191ee0ddef22ced99a5cbf1d64a15874e75750394cf7a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/run_24_7.py",
+      "sha256": "a1ba3805a8be1910e6948a14a6fd929f5f546ef2136cbb2f74df2fecb231fecf",
+      "git_mode": "100644"
+    },
+    {
+      "path": "scripts/sprint8_operations_check.py",
+      "sha256": "02f6414580db519bfc9e45e240ae140feaf4f748c9c211ff644ab6728a56718c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "setup.py",
+      "sha256": "3ceeb8bc59439b077958e56be6270beab749897f4dcd9eb6b4be54d5d1f58401",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/cpp/rolling.cpp",
+      "sha256": "c18feedc57bfdbf8588ffa12beac0b62f84e521e91de823c2beaa3270a101262",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/cpp/speed.cpp",
+      "sha256": "26082884a55ce8cb8649998750bd2da23e728d91bbbf9c7c732e0d2110ee7df1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/__init__.py",
+      "sha256": "a684921404386a0294d59b71bd4f5d39dbe63847d597dc446c28a80d21b14738",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/__main__.py",
+      "sha256": "f1fc81eae99011a43771ebb2bdcc454ee805dc133ba3acd8a220ec59e24160dc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/artifacts.py",
+      "sha256": "df4f2dac1930a67a629c73caa5fc26e26823763d09898727c81ff75fc25f15fc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/assets/__init__.py",
+      "sha256": "c61b0afb583afbc28060adaef17f43f1619f2d6f61872c2f4ec0d11173e6c879",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/assets/futures.py",
+      "sha256": "02bbdece70de0b5a5cab35fc2bf467099354d494ef65fc0499531e105c5b20ae",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/assets/options.py",
+      "sha256": "32759f12740141a714e83136316c03aa0e973f3e6f1ed1bc8be7f7cad1a6c4d6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/backtest/__init__.py",
+      "sha256": "631c8e9e674ab107a8f6ed095848c0b5a86012de59c5a796aa0c1b8f2fe9bcfa",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/backtest/costs.py",
+      "sha256": "989285db9c92da1364e19475c74a66561ee2e3e20f810785f43670b5522ae06b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/backtest/metrics.py",
+      "sha256": "9aa8281cc4e995c58ef92cd762d5e0233bea8cd4f632b4e40fcaf40e07e42901",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/backtest/simulator.py",
+      "sha256": "bd322f418effc5f2c3023f88f75e895684d654846e996c2701658063ef1bc16b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/cli.py",
+      "sha256": "d6302a648a1a72dcfa36d6508296d9e56ba6ff8fcfaacc3a33101c0c43e2451c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/config.py",
+      "sha256": "1d8a84acff376becd7a3de3f3a5e0eba0f8991b2d39f87a9924af56899d5c0af",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/__init__.py",
+      "sha256": "5ab27eba39bcf4ef12220a9191d3c7bbcf2253338b1ba619545f3bda549f183b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/actions.py",
+      "sha256": "c206c8ddebcad64087876c9650a98a6b664b1f5572d3e7ced04ff57692abd541",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/calendars.py",
+      "sha256": "c7f3e9bac09dc9623da42a683bf5f3f32150279371644a738f7ef2f3660e197b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/cftc_positions.py",
+      "sha256": "22255369f21f6249bbd1c36609691c7de24272ffda5e736507b33fbf7a844e66",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/equity_positioning.py",
+      "sha256": "a5ad3a5df01e764e1d630d1accff029d87e6fad603b72b95127aef8bbc00a4c8",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/http.py",
+      "sha256": "4ab39ce7c3d70b553d9e06830d72958bcd05845ba70a2cc51e41fe2875e7ef10",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/ingestion.py",
+      "sha256": "7317b77f4437f3fda66fd4bde798631c6298e5594cb797acf839e8a7451720c7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/lake.py",
+      "sha256": "67dc97b7e7259435905bb2a6092ea0d1b3c5961f51039fd40ebbfb2913e8c0d0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/listings.py",
+      "sha256": "6378a4841d975b421cd71c38b81b9dd983627cfdc43ab7c4baacee206da14dfd",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/provenance.py",
+      "sha256": "47af270f76c0111a0c2a4d54bf56a4759fb7947e6b5a292cdf7e94d27de34274",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/__init__.py",
+      "sha256": "ea147e5544676328531b072a1884a121487278a6a9000f4fb7dca37f9bcaf8af",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/alpaca_iex.py",
+      "sha256": "36cd827f0c77f360872aa79c20da1fc1f245029bf1127659a773cecb6f70dabc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/base.py",
+      "sha256": "4a78e4a506c3cd043604b7ea2b65d163579a0ee32de8ec9401eaa582af28e194",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/cached.py",
+      "sha256": "13c1699d70421ab85c9d831dd187fc35ba2412615a1165db039e74d9bef9ff63",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/edgar.py",
+      "sha256": "772f5c6c782ba697dd97aeebe8bc8a2489d4fdb37629c2318b5675d0a0bfb2d8",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/finnhub.py",
+      "sha256": "8ffbef657479b64fe52291cb098da4bdd4239bbd8e0fd9e78c1b6bb57e9f2d4b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/fred.py",
+      "sha256": "dc9d854987429af7e95ca9c6098ce96ea4304ff060b2e3a66c0df32e5fb292c5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/fundamentals_sec.py",
+      "sha256": "c555bfa0822c950a0e03a56a3bd683491512619215cbd61c0d3842315c1f9940",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/synthetic.py",
+      "sha256": "6b65bd64735d22b9f6a718c9d3f1a1cc130cc9f1e72a5f343b47cd5b74424238",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/providers/yahoo.py",
+      "sha256": "fed405ef179acf33f6f4ba436c5ee65bf3827ef2b2597b8f6fcf1fca337249f1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/public_equity.py",
+      "sha256": "347f1eb225d8894dc65d283e80b82cc42468b75750164642e92574ab933cde92",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/public_reference.py",
+      "sha256": "336f3d1d53236b410d0e711fe073de3c648431f7da671ebad24a84ef5657f684",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/universe.py",
+      "sha256": "5f8508a4921b603da4393d4f9d552b88d61ed14d94405ff43917db7b7686744a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/universe_spec.py",
+      "sha256": "c878448f91f8840efcd13e66d997cf0860bd2bf068c9450d06c6f0742e9c9c90",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/data/validated.py",
+      "sha256": "acae8ac975cb1a2d2cf758cd6702b36e8786d2f65391333a0a499932f6416dde",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/__init__.py",
+      "sha256": "cc474b13a29750f40df8cc4c05ffc12328b2765cf985d51fb5345ff415c99b5a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/algo.py",
+      "sha256": "53c46e04aeef36384efc603268d3d38e5a28dae102428e8b52bac6785a75d36d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/alpaca.py",
+      "sha256": "5416ce3e8f0b1e7c4ed6f4d315249c36e4a241c30d9f8c6cf845b4160d73fcb9",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/base.py",
+      "sha256": "25bcaa812966261b7ab11f2f1981b2cc756f83e68b10ff0504bf96bfa79ccfc9",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/cost_evidence.py",
+      "sha256": "3132334e82a7208cda8ad4dd4b4f1e79d66a9ead68b18204b04ee0f2478b7f4a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/offline_adapter.py",
+      "sha256": "e2c9e90a7e2abb866d254696ac5f71d9d1f71f7534330b6dc3aa2435a40018fc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/oms.py",
+      "sha256": "cb84cf638ecc9385496a0f7f3136dab5ca149ae140bb54486e7d19bfa22003b5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/outbox.py",
+      "sha256": "991391189a65c333155ceb584af31e65d19753d4bf47c42a664b8e34c0210d8e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/paper.py",
+      "sha256": "b019072f019edcf67da6af3d7262bec8a3f7c1998735dbc4d4efe1235f1148c7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/pretrade.py",
+      "sha256": "72a3eb0bc0bede9d5107bfa07d3183ca2af6ce4b6a6c0dc8aaf7cd61d62f908b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/reconcile.py",
+      "sha256": "cdce5913a89ed470972e996139d5ea4f67ab93ea6084b5cc3825736a3163a218",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/scheduler.py",
+      "sha256": "e638acbdd6e8e173d7f25aa76ffd728d4c594c4aa362e758db17ba22956da329",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/simulator.py",
+      "sha256": "f9348cf308a7a1acc81a9b891eda80b4a1a56965f9ca77e4b8ee0ecef7a4b85c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/targets.py",
+      "sha256": "f825333f654b654613e3bed9acf8388557e8687dbd81de8a0f53d05657d753a0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/trader.py",
+      "sha256": "94a89f9adba726d9f056bca1ba76ead92c7d0de8d0f1d8cf6f264a37d2ddaebb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/execution/twap.py",
+      "sha256": "e69bcd2e1fbf278d337770246e2f288ea79c96fc0e9414af62f51f4f827b9960",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/__init__.py",
+      "sha256": "0b3791cdf76434d2b3c2e944974be260d9d0af0b3e73edd38c1ba4202f014cf6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/base.py",
+      "sha256": "c2a0b11262251cad6494ecc11b6ccf1dd03bb1b34b8d25f73448b3d09c63b914",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/combine.py",
+      "sha256": "e944af0b6eabf784255a40e25d99b182ec3811cf7e91f5411fc32251dafdc454",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/filings.py",
+      "sha256": "8d1e26f1e635f4d95607ed922f55978cdf16154113dfdd6d0907d749419e029a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/fundamentals.py",
+      "sha256": "f8eca5c64badbac032ef43552c2fbe861f2dd1b5fce12b4058a2e0ccec1d07ad",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/macro.py",
+      "sha256": "66a56089103ad0f9daba6e06bd4eb042735097e28d70ea98ec2d19f8acafb6d1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/momentum.py",
+      "sha256": "3181f2537125ec3d71efcb61793924ed77e59a2ef3b6d469e0f4390ce8b35efd",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/neutralize.py",
+      "sha256": "07522977d9766d4f73944b8e7a683b3a560429e3bb9c2275b9a75300dae8cb52",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/factors/volatility.py",
+      "sha256": "b6b6d5c4614d1f0466e153339c7f3c45467e2eb8d0a46c8f2704ead2e834064e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/financial_intelligence/__init__.py",
+      "sha256": "c94abc62490762c9b2c03a37c445cad2b32a88a6967a918749f79c5e3440f44f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/financial_intelligence/reference.py",
+      "sha256": "63c65e4b7bc2a91aa5952048987a00353d6c2a99178b2cb13f723ba555db4c99",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/financial_intelligence/retrieval.py",
+      "sha256": "1fbef97e37cc32866c3b2b9aeaa746886374a1227e5b1c6681f61ca96d811374",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/financial_intelligence/store.py",
+      "sha256": "a06e899e65b0200d887f2aad2de135da597a69dae969664203e935bfe76d7bad",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/__init__.py",
+      "sha256": "000d3e7482cf5fb27a0137d79c6dff89dc1d95440509852dece1419ac3d0acef",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/defense.py",
+      "sha256": "e22e0afc773e0fbf37aef23c6ffc689df5f9ff9143084d591ccf71e3cd36b24f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/events.py",
+      "sha256": "5669e9266d18d62348d2c87b6c6068e22389d55fc5c191d6f62613328f53d80f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/fetch.py",
+      "sha256": "db985075184d4c71a1906b408c2e969555f0f5eb5a265540b9edcec355d28088",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/reference.py",
+      "sha256": "b7acc51d7e5d0d2489d19898c447569a35df0411e67e77566963dcccf97893b3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/research.py",
+      "sha256": "89d835acc72e4c683134cd0bba7eb3e79daac8e8eaa8fe8d18f8ff5e8a39e548",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/sources.py",
+      "sha256": "4b019a38fbd9540eafb9bf3ea45394ae52f3fdeae31de2a662640d3740bd364b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/intel/store.py",
+      "sha256": "94f1bae98dfb71a276ca21be36a261bdfc7f8acaac2f7923108b08c05d645ea3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/logging.py",
+      "sha256": "df838840f09da51bde9574d55d04fb8edcb0baf9602ea64fa335c889cfd4d408",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/microstructure/__init__.py",
+      "sha256": "0e2166518be154f25a7f3ab884257aec59090f97992b109a497208bd2104891d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/microstructure/analytics.py",
+      "sha256": "cc9e5304d7c1c51c3458a1b91d75ff6d1410f9080585a9ed41f0181397baedd0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/__init__.py",
+      "sha256": "0a6eaff3b17e03bccc8edeaa9b974a7460701e1885ee18d70129ecbe86f79f0d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/forests.py",
+      "sha256": "dec8b2abd7a4084eb69550b98793a1e29ce3cda3a5854becd12f2d9a2998abcf",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/gaussian_process.py",
+      "sha256": "498061b44fb2e124c6a2f365592b356d321de03018322cb347a254a4cdfef7ff",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/ranker.py",
+      "sha256": "63ab5171ac0e9975585dadd4aa68878759a441a0923bc62cf979ad29d95044d0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/regimes.py",
+      "sha256": "9ee78cbc7ea294eba657c1c5d096aa918018c999c1cdbf3277bf52679418c3b5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/runtime.py",
+      "sha256": "1c5a6f31c809d9fa9f493cfd2715bf7faef1f96ab64231cdfeab335133332692",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/sequence.py",
+      "sha256": "b5b4255f261d69a9b34b78b4d8eb1a037b697c6bda1273ea1d4ed0795dffc7fa",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/state_space.py",
+      "sha256": "c50cc19fa95f1db3ad9f1e9045cd00597bfc6781736358936325422350152fb5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/svm.py",
+      "sha256": "123fca4bbddbd8386f44be38e2a734025476443b3dfd1d91c290775820a03fd3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ml/volatility.py",
+      "sha256": "e80d43efb43eabf031f997bf54bff3067c8756228ebd6c074ef72ee1a199c870",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/native/__init__.py",
+      "sha256": "dcc03b7f977e48b0386f51359e7fe482f5eb620cc03c8a8f6d3e4d674e8507a1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/native/rolling.py",
+      "sha256": "7dfc29278a278d16a9f6c74b7491215eb297952056d637fa0037b65942166629",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/nlp/__init__.py",
+      "sha256": "63c9553307adf15ae699439ca79aee0885bafd14ecbf3d500e6d58cfc9cc89db",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/nlp/lexicon.py",
+      "sha256": "ba7784796390b65e36b7263351c705cf3e6fe9a2113e670bd0d50ff5c1c72e4b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/nlp/model_assets.py",
+      "sha256": "4fa33e8bc82f7bdb50f1e1c8713fcf7b0c9948238418761c30c5e5ed1a6e7cac",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/nlp/news.py",
+      "sha256": "6c3555e07394fb8fdf2583c472350bc46bae62ed41ec4d4d790d8680c0b4149f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/nlp/ollama.py",
+      "sha256": "c9c652b132c48cac40fb32bd4420e7b5ae1b8361fbdb7fa08b8e324802a2d92a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/nlp/sentiment.py",
+      "sha256": "fbdf9a05ee7e61441f73682bcc93d55843673bf99e2a044de216db63c5037aa3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/nlp/workflow.py",
+      "sha256": "c3426d779c61d77a7af2ee1302899f5fef8b8276782a18b958a5ede9068ae774",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ops/__init__.py",
+      "sha256": "ef82d88a2f23efc32193e1c74d5d17f65bb2b551088e301a2b3bcfd5eeac84f4",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ops/killswitch.py",
+      "sha256": "689285b4c828fe71395f5a5a3883a6f1e8edcf041c1817e8ed78800cef3ff7a3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ops/maintenance.py",
+      "sha256": "d1cf40bebcc9661e73aebac66b595e903f966e9e8a602733213b9aefb3bbffe7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/ops/status.py",
+      "sha256": "56c8c97285c792e9ae288b4bd6eda6d9eeb9de01246c72890fda544f43672e76",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/options/__init__.py",
+      "sha256": "c42c86715d4ff4b4a823c0899baeb2f8baf0a966e4041b3b59bc6b93ededba7a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/options/analytics.py",
+      "sha256": "68838fe17c00a71de93a1e90a33f7b649a8b5ba611b229e91a76ad99ae9f40fe",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/pipeline.py",
+      "sha256": "4dc9ddedf3acdc5960a1558979fcd6ce7c84abb3ced808cc38b6da2b430e684b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/__init__.py",
+      "sha256": "4333a8c9b5cefa1b580ea6cd2f767e7d804cbfa18d3c47793c7821e37ec61073",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/allocation.py",
+      "sha256": "8a4090e35b8ea2ccdda10199f82c6644d355fe51b496c5bd102da006b8402e75",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/construct.py",
+      "sha256": "64b7b53c00911ae604fd8bd185ffbb46b4cb152a4d9fc30d817e7c9952d79dad",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/funded.py",
+      "sha256": "6200755a84899908e286f368988da06ebc97e93f73cad9244cdef4f47d9a519e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/ledger.py",
+      "sha256": "e8ac48545856acc82afd2c08594c4f0696f25aa9c8794c71863dca0c0824296c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/lifecycle.py",
+      "sha256": "2d9c32f3f87ef4ab961ed123b30732a5d68526eb15c31c4f12bbc590c19652c5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/optimize.py",
+      "sha256": "cb848ccc1d1b85d017e18df4e003aa163f84426699c30000db3b32d57efd7e80",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/portfolio/optimizer.py",
+      "sha256": "1f1c659e9e7de2ab232f549ec771c7808c9e4df1cb50a7664a941a1bc088aaaa",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/py.typed",
+      "sha256": "9245fb0eb6fc85567189103f4724e31e07437a7c595d13fefc159bc7dca1dabf",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/__init__.py",
+      "sha256": "a83ea92312b46a095cfb6e3233fd8673583ace10d5aabe2fd8a268db12900fa2",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/attribution.py",
+      "sha256": "d0abd5b8a34c509dd131ebeb4cdaf59a145d026a4edd374d15423ab32dce9bc2",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/economic_validation.py",
+      "sha256": "1e1ed61fee9f52d0fec011dbd20ca866d7d46b6186d319a7df38c9272600d84f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/experiment.py",
+      "sha256": "9073e3aacbd72e3e1cbd6162d677ad78b42935a524bd89a51912393f176a0e74",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/forests.py",
+      "sha256": "e4670a1b5e2e41e45cc907b93d777dd7e9f965a3125d3a696f641b74ef210402",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/gaussian_process.py",
+      "sha256": "83ac396a100c7152f310f47034262e5ed287a45ece2e9e733f9bab1c1f4de913",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/ic.py",
+      "sha256": "ab2cf32a69b03c16da1ec6c0d45a81f185fbe763c9a17af3db9f47c62a8de575",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/indicators.py",
+      "sha256": "bbe85c53281ddc7b411dd826ab512fbb7ad86deacd4bc9f8850d6e6042c426ed",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/model_pipeline.py",
+      "sha256": "7761e52bb7f46534c97155d88f716bf174f97b1cee80e28897e8a5a59434c4f3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/multiple_testing.py",
+      "sha256": "24b5b6cec1370c7b9a4cfd4bdd5f2798ce2eb41a694c2e169301d53ae8986f3c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/persisted_data.py",
+      "sha256": "dea6ddfedab8658cc3cfb1d75885f136c598c040fc148675971f331efc0b1247",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/persisted_pairs.py",
+      "sha256": "6b6356468d9e9b8ed350da917a595da208c65d6487b0e326fdb41eca847b7a40",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/rates.py",
+      "sha256": "04d90d4e889c9b8f5d64609d675d0c0a8d3f9b06433bc0f299f452c7a254a078",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/reference_evaluation.py",
+      "sha256": "e9ca0255ef351c180d06e511ee42107c0058a9a85c423f9598a9a4160e6e6584",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/reference_research.py",
+      "sha256": "416a0f0476be00adf440051754599dd97a67373156d2c4f3abf2dc1e49478339",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/stat_arb.py",
+      "sha256": "838fda9f6cfdda6204c14298c8a0c4695b79380d03ddd5ccb1e0c9446ce08f93",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/state_models.py",
+      "sha256": "c4b91bab4dee692e0b001da7016f9ec8535c23570212e20e47d0d482c4e639c8",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/svm.py",
+      "sha256": "f03dbbf8ab5745d65fd0945c8a453d1c7cd31b8475c936afdf4c85abe97dfead",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/walkforward.py",
+      "sha256": "f902d1dfa02b653de824b8d20f5a90542439f7ec869e06e8a98e4bea6ab5295d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research/workflow.py",
+      "sha256": "a30c5f127dabdda4859a3c05d5d9525ab4a2efbffd91657154722eea2b5f1fe6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/__init__.py",
+      "sha256": "598c2ac7269990af524f2cd2e5146de4fc72c36fee2caccec8ecd6246ea267f3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/__main__.py",
+      "sha256": "0fbc377a78b34c430329ac17270b6418e803858d378ed83ac8c12be81ba59fb2",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/backlog.py",
+      "sha256": "5f955adf090e48648caaa1b851e8bf2b5963ece2214b935dff641de1022a9fd7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/cycle.py",
+      "sha256": "e7ba116869e2a55d905f73f88194a6f1cbec398387e31c725a6feb77529750df",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/director.py",
+      "sha256": "c2ae26b52382ef2ae95c9654a5b76416a0cbd6454e707889c25697e12f7b0474",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/equity_experiments.py",
+      "sha256": "40e61ab94a61dab2ed915930febe098e29607555813fde36ccdfcbfdd95fc475",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/experiment.py",
+      "sha256": "c0aa998d4371f2caada85f406b7eb3128a032694a98ef5c8b35b5c92c05b735f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_boc_2023.json",
+      "sha256": "f5acbea85e4ebe9561e323bcab64115f2f4593a73dc90d72b1fd94369a53c607",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_boc_2023_source.json",
+      "sha256": "b7f3202b23b2b22351c49bc3a115ec56b9099631db9355b0b85a263b499f0d84",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_cftc_2023.json",
+      "sha256": "2ab38909fcc2a860f0faac85132d3c2faacbab28adf9d19726513b9253208f23",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_cftc_2023.metadata.json",
+      "sha256": "263d3cea94748014d8203a3f091add5a95a1ebe3a3c71efd7fc7242b595f21a4",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_cftc_sp500_2023.json",
+      "sha256": "cdd469e84c79d21759cf858a246500123ffb90f82b1491480fe74f698d003eaf",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_cftc_sp500_2023.metadata.json",
+      "sha256": "9989daa91dd77ea4441f8120d42093ea6e560f4caf55a1793292cad5f332845c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_ecb_2023.json",
+      "sha256": "c6c37a1c04da4ab43c2d0c371f43987c949fa9405d010fab40139b090184272b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_ecb_2023_source.json",
+      "sha256": "d7e138f4db37923f2580b3ffc0563ef516ac7d50665c102bb60a1fea6b96abfb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_source_permissions.json",
+      "sha256": "11c1fa69ed227b8167ac4f5bcfad228665e1abd6d49ddcf1c1204b0700ac1302",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/observed_uci_2011.json",
+      "sha256": "cf77b64c2afbb3decfeb629d42cb2096f32632e9ca8e5904c74822a0fa8f2d17",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/treasury_par_yield_2023.json",
+      "sha256": "61c4de1c76a561b61da0fa26a47b5fb5b205ee77e7f1819c8b77e9d7a4ed4042",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/fixtures/treasury_par_yield_2023.xml",
+      "sha256": "99f80b80cfeff0a93e339735d72672080d9209073b5fe814c1252e88d1428227",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/futures_experiment.py",
+      "sha256": "23153da3afc817f56b0f33d8c469e6acfd28b107253323e54e692ca56e728d46",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/ledger.py",
+      "sha256": "6c44eb73808d0dd6d0d922ea995facf31396678f6294e797df783833f247fa88",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/observed_experiments.py",
+      "sha256": "7a936d17b1ba5165e9f98adec45cb80b7a95176c30eb98b7ff8d98e7dd3fac74",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/roles.py",
+      "sha256": "9cf3e7749228f690967a23b239182c415b473d46b3fd3ea1de664006a58e1670",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/scheduler.py",
+      "sha256": "4973187ba6b2f00a20b30e122d12f00038c55cf732828237b9bdb3a158eb672a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/service.py",
+      "sha256": "777ef7ee339c60f7d1a9c111c34a9500d509e5c27d5fd4a6a1e5733b8e20b6c1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/template_catalog.py",
+      "sha256": "9296489cb3e320abf5c612808e2a15a0ca8dc0640b685a54cec0a99983441dc6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/treasury_experiment.py",
+      "sha256": "d5a2a4fe9da4b5b755a1bbcd68a13ab2451743e0a31f49b42d8b74614afdbde9",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/research_org/treasury_followup.py",
+      "sha256": "b3723ea49aebf07843aa30e43d5edc49898431044d06a055d10e27caa3c68251",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/risk/__init__.py",
+      "sha256": "95d255e79ace818a57fc5c39c518d729023bad9c593629e7fa6ef75a96a4f42c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/risk/analytics.py",
+      "sha256": "771710dace9e1864bb7f7989cecb5a6123f98e350c81723dec20edf375f4f3cb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/risk/exposures.py",
+      "sha256": "9038d70ea3e6eb599533b9c140fc4c36afb3b31972dec7fd6691066e1c244ce4",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/risk/factor_model.py",
+      "sha256": "0d942342e897dbc471afa1243c3cca12677d35eb887aeaaf3da75f886fa60b96",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/risk/limits.py",
+      "sha256": "45ef262815f8e58a844057ed6ceca8f46017a3a1a9a3acb2a5c06a4c2a5d64a7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/risk/var.py",
+      "sha256": "ff9c5c39a0bea2e1ad4d9921033bd00b108bb732c7fe8f3b0e6a3cde212acaee",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/__init__.py",
+      "sha256": "a2d869a0b5f46f0c291e6f74e73a63d163fd6a48910c45d61222fd265400d8d6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/allocation_workspace.py",
+      "sha256": "3a4ceda81a4a7e46d153aa4bf18ac1108477803443690e0e327b48586c207301",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/app.py",
+      "sha256": "317510d8fdb871763ffc8f5ae21794122c58062b0152350d40a680edce019aae",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/charts.py",
+      "sha256": "91759e97f7a47020fab73ebd75e83c8595fbb39f6bd7462b438ca8fc84855e10",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/contracts.py",
+      "sha256": "82396b58bfe1632944e8924f86cf01caccba86496f324d2343c08be70f6e8b11",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/cycle_services.py",
+      "sha256": "0f85f396a186745acbb1abc55dbd3ce908bf1b7dbd31123a98edb9411d9937f7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/dataset_workspace.py",
+      "sha256": "4b4f263ccfdd9a7e3b826df1977db22999d1f9606417fb003575e447a64b41a6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/depth_workspace.py",
+      "sha256": "39b73d881365d5b8ad85eb48623ddd88e2a15b4197dba6d3e73f1ed5b46c3e59",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/economic_workspace.py",
+      "sha256": "82279224a6a8548ecb6da5c8718f3a536fab64baefbe662b39b0e3528784e916",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/equity_positioning.py",
+      "sha256": "a5f2c52c769b7a9eb93c594f8dc5e5efbc72cb7f9d3aa23b8bb358d45e707ac3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/equity_workspace.py",
+      "sha256": "c4a6bfd862837b6b8e9ab336494514419f70e8d3e09142614f162d07f1b0998a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/execution_workspace.py",
+      "sha256": "891bc374eb490bc06c7b0b86b02c19bd93597ff4fb602230c970961c2bd65f72",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/financial_workspace.py",
+      "sha256": "34084162a3d161a8b09fd6c50a560ef10daabaf42947700edbca2880d05eb7dc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/funded_risk_workspace.py",
+      "sha256": "3f1e50c4571d967dd9102e4f70544e143f25ad2b58de21eb4ad0857a09f42ce4",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/funded_workspace.py",
+      "sha256": "0d8e58e057c35218c96ccd7eaf31f23cba568655cbd06d335142731e994d90ea",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/intel_workspace.py",
+      "sha256": "fdcf9fa683b3f43fdc301d0e59f0ad99b4efe89428d2e39ecec5883a9da65d2f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/lifecycle_workspace.py",
+      "sha256": "4822ded83db4eda07401b48287de0e5e4ac5c08d117036071087b104fa367ac3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/market_flow.py",
+      "sha256": "c3d2b90ae959a5a9d449687c2b70dd9f7bc8993d538d26ea665649d66f7c4784",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/microstructure_workspace.py",
+      "sha256": "0f04e6b9c393dd0d7211f94e97f614ac9f7244409b17ddd2f2c51298a18d1dcf",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/observed_workspace.py",
+      "sha256": "6793a2a6e9fff8d599304ef2cfb912493f2002d00e4aabd5255ece11c1b6932d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/options_workspace.py",
+      "sha256": "101a5e89018f9c580d08da236802dfc6f6786eb1cdcd602ec55f9045b41ce9b7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/overlay_workspace.py",
+      "sha256": "9cd22b08cd8577b3f3a1ff2c947b2c2a31ce13c023fc2db0ad6960009d7fc4ed",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/pairs_workspace.py",
+      "sha256": "be21fa79e275e638cfd951ff8718427f2f5f79772c8d57ab68247c0185544240",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/persisted_research.py",
+      "sha256": "34e0c8e9ab38527c13d1b04cd6a1baedf0e60f7441d0fc143ddcc7861c8eb976",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/portfolio_workspace.py",
+      "sha256": "1b0de80a6ae2d0ca25a6fc54e1862456d964950085d4078eca329df2ed3cc136",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/positioning.py",
+      "sha256": "b03f720a7b626cce55788bb86af9b9add1a966936d20038c6e6b0436081a783f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/risk_coordination.py",
+      "sha256": "a0544637387547cd98fd51973cf7e9a98081e02b571c4671d6e0b64ebf8b3d20",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/sentiment_workspace.py",
+      "sha256": "fdc7977006678ea4c953dbec5757f1d59adb266d02d9591bdbb1484ce28bab69",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/sequence_workspace.py",
+      "sha256": "0f9ff6da9f36a1c4b8a705fef2f564104f0000cfcaccaaa021df6ef02eb0515e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/serialization.py",
+      "sha256": "61fb5161e0dfc9df094f74fd69c0a984b5d2a3382472a4cfe270d50704c9d73f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/signal_workspace.py",
+      "sha256": "b479767aba746490aaef0c6bca92b4dbc478c16fd8ad8a41fdaddf4c9fee8cae",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/snapshot.py",
+      "sha256": "80ba81b663bd46b45f2def22898203e9303b59562639878007f558522a00535e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/statement_workspace.py",
+      "sha256": "dc62618ff293fda051b15db00b3684eeb35078a4d7ce3280ea1c1bff84ed291a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/app.js",
+      "sha256": "7adeeac7c9d1ef34fdb0657d03573ab258bdcd29f0f30d4bbddb82b554e1a99d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/charts.js",
+      "sha256": "fe0c91f64b6176b14059f99c881b5b654f2c64a3a6cd4d313b7fc16f5ac9f0e4",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/index.html",
+      "sha256": "6dde6bca798c6425ff88b5f206071a775e838b630de19be3b7ec36be2afbfcef",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/intel.js",
+      "sha256": "72f9913b4e23cd91291e601d5c543cb15873ff0a3368b844ee48f470b5ced203",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/layout.js",
+      "sha256": "d6ab5013044fdf8d9c185e12d05f9e96ceac5bd7ef0eb01cffea846b040be3e7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/market_flow.css",
+      "sha256": "aac7b6e0552ec62510f84199441db77e969bbee9f229e6499625f9bf642e5c06",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/market_flow.js",
+      "sha256": "cb99751ac0544bb6a507ba3edea564032e63a0ddfb4e15ab7f0995a47cf585ae",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/models3d.js",
+      "sha256": "e8e60816a1fb04ab7215316c2a386f4028b348b04b22668dfa99c88b426812b9",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/observatory.js",
+      "sha256": "74cf237fffacffef640b88ee2f0f7e5aa3bf60eba5b78632d7a748a85de344a0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/os.css",
+      "sha256": "479d6c5d9aac8d7f8a5d355fe730e08ab4b9ffb2584b0f1f46f418d10976dbb8",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/palette.js",
+      "sha256": "52d2a62658c00c196f01fd9aded33b49760a81f97669ca6b381633870b7ed2b3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/research_workspace.css",
+      "sha256": "6f012bc38f53ba428a3e13902bb7c3c5c40a35aa7e7b897ff624f0bf7fcc0999",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/research_workspace.js",
+      "sha256": "f9d8fd7d63b13dddfe4fa820ba181e0d18d306bc41122c42dcda0587bf9ced00",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/styles.css",
+      "sha256": "48c42a64ed614af616d15f43372b32883508afd01c8af6bb96ef993e35f408bb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/viz3d.js",
+      "sha256": "512af926dedff52f55fc59843a64585fc5b204886289e246c143509d665743dd",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/static/world-110m.json",
+      "sha256": "d97045f072fc900e8aa4f23252a845695226e14a5d0f3c1d2c824b03509c5a1c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/terminal.py",
+      "sha256": "23c47fb7121f72680f5d45b3fe5b728f1a3d80969014b794eec73598303fc2a0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/viz.py",
+      "sha256": "944d7eb2ba78e33fc22c5e35b77cbd01530c074ffafcd5d81298b3da68469f82",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/viz_synthetic.json",
+      "sha256": "b01f7cc660ac72c424989729566d5a1d09da9c7afdae9217f015e04252c9e470",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/service/workspace.py",
+      "sha256": "0ac6fa05acac8ae7c3a9b0556c953002f4dc76b6ab9f403e72d32b20508788f0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/store/__init__.py",
+      "sha256": "17c95bc6c84d97c2dddfba5c79d7adcfb2a64efcc25685faf6911e5d318ca85f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/store/schema.sql",
+      "sha256": "aa45dedb492e822207797065050a14d83c5326a6eaf16655f8506fa42f12762a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/strategies/__init__.py",
+      "sha256": "86478e4bd50bc7d1988bbc00aae8c4c9b03e31db4e09d67c36cfcc0739efd151",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/strategies/equity_ls.py",
+      "sha256": "104e5fca30e53b0046be99b0aee0b5f12d8f13ae295da34773df8bc1ae32b282",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/strategies/futures_tsmom.py",
+      "sha256": "845295d3b6fc94fd2a9d2ad368a27caa68b67d6646f952c6cc9f4b2d1a1c3a87",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/strategies/options_vrp.py",
+      "sha256": "e7eba90cb3ae35e141eb2428877230386303eea9fab5a841a0ab814284658378",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/timestamps.py",
+      "sha256": "9b70431aa2021a3daf81441e9ce65cc9e349cf556c1462b08c4d945bdfb8bd4c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "src/gig/types.py",
+      "sha256": "19cf0e862f934d2ee08ce56b730be645eb2da6cd610e7d4c79692e104cc7acda",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_api_boundary.py",
+      "sha256": "4b7cb741575a5a38e136802e537de5471b57ef73df42f919a058b6eb6e4ff703",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_api_contracts.py",
+      "sha256": "428f1384395659a8f91dbffa2fac56184f00a78fb3a1bee23594bc70c04a8a96",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_arm64_validation.py",
+      "sha256": "c86a74adaa9efded8d09a52ca2cb4dfdeea53f2ed8a3c65db91bc5a22500ff58",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_assets_risk_exec.py",
+      "sha256": "33733b75a3ab8963b5eec265676cb0a6f32cc3ac9acca86b011f97898d7dcccb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_attribution.py",
+      "sha256": "cc6fa3bc2ac869926f1ea5c8b68149bd0cf553cb1d342cd67df7bc5e1d9fb1c6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_autonomy_http.py",
+      "sha256": "37c029ef705329c37d3a0cb5710eef2a707e4eeb728b59fe4f628a8f36700e08",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_backtest.py",
+      "sha256": "5dc12205178334f963d56887b2d0b952cce50c82157e419f6ead5caef4d9a210",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_cftc_positions.py",
+      "sha256": "cb1913b53f9dff515350d2e3be219aad5a962574cf1ddc6d976948421e7ca7e7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_charts_service.py",
+      "sha256": "a2b0b2e72eb80620c3cd48ad636bceadced5b8d32d25bf0e0731c7bdf179929a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_cli.py",
+      "sha256": "cb5b771eb70e7fbab8cbf1d6fa514733cdbd6eca8861bedc0517dbb1818d5419",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_container_preflight.py",
+      "sha256": "b726405d492d837d3b1c0bb4bf161b50846d0b241ca2fde193707ffc457d28d0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_corporate_actions.py",
+      "sha256": "286c1ff419cbce97bd952f41641534ceb0fd216f0fa8e619c1b3114e49f1e305",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_cycle_http.py",
+      "sha256": "5ef9b09614683e8070f21ead46c985bee4fdcf200fbda138c19eaa26548ffff9",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_depth_workspace.py",
+      "sha256": "9596a076f91dc90f0d4279bd95b7e66e7f5c2e21a7c45ca3eba540b214470cd7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_dividend_receivables.py",
+      "sha256": "3ae4811a8a1be937a05e21cf3ab8719435b37f73d51fd5963046ccc2664a6590",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_economic_validation.py",
+      "sha256": "c45b753935a3cdc566e146f92d5b0e8b6be17d9d080d47708e01c2369579abe4",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_equity_positioning.py",
+      "sha256": "507a86cefd39650f89d6f9eb8c2c208d496f42c082d08160108ce9d2efe0c7b5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_equity_registry.py",
+      "sha256": "35dc77fc1ebc6827e9ddb17669e8ff7902a2d4f7f26e617168524a4d023cb772",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_equity_workspace.py",
+      "sha256": "75539be743a3b11914943cbf4ddc4ba128308591dbb9176202c0cefeb230c373",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_execution.py",
+      "sha256": "ad88ed0fa472d06f0f8e04adb8d12c8b7edfffb6effcdca039a0d195eb26cc9e",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_execution_outbox.py",
+      "sha256": "6f628294ca42ecb1fe08394d243a4ead5fdb53c92187a29a6bfd2083679fb200",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_execution_safety.py",
+      "sha256": "1ec51499130bab33d82a5827426fdc5455ca3b615b5a3ef8f228dc871d38de93",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_execution_scheduler.py",
+      "sha256": "6af11d9400aa6966316d6e75b79549be11303bd1de991b2b91307277d95d4209",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_factors.py",
+      "sha256": "a1c35fec45d06d7e38508cc22c507e3ecdff8801f96687d396c67393ad11f1b7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_financial_intelligence.py",
+      "sha256": "de1e5f014c58e0a6df9ecb8e4b4089705da4775e4f2ef038f843cd98c24c21c5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_finbert_actual.py",
+      "sha256": "512e1259cfb502e46b5913ac8e2a897c29d2155ae6d3074db59fec5d72c92a26",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_forests.py",
+      "sha256": "63b3a599d7e6cafa0dd71dd8b8c61c5da52d77148930f8ce592b5d82c089c350",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_fundamentals_sec.py",
+      "sha256": "51ba9c0078c91c83b2dc113b9bc14aad6d300eb2e3260f439f4fc3fdc9a70702",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_funded_accounting.py",
+      "sha256": "e869f874a7ee32fa58129318ca7e1abca3c30654bc1e1fba63ec3ecd6c6474d1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_funded_factor_risk.py",
+      "sha256": "a010631d34b89ff2427be09fe1f0e5f11474f7953175d8c9e2ab6a7cf2d6b520",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_funded_lifecycle.py",
+      "sha256": "43812b57f54895074da5642fdf404006d992400421612aa1821a634ae545d493",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_funded_risk.py",
+      "sha256": "73d34cfb3310630bebb5182209f982a1fe6c36dfe647dc86bb3e5e585c36611f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_gaussian_process.py",
+      "sha256": "6588d088235eefe92d9281a79a5fd89d7de4a62bfc077ebc0d4aecae79e724fe",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_global_intelligence.py",
+      "sha256": "a505064e63b991da7592109d0d907794e10177ac2d9602dfc7f7ed80b017d2f4",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_indicators.py",
+      "sha256": "132dda5f60d412500eef3725e4f85f15afd599c536eff19d475cacee9b963e4d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_listings.py",
+      "sha256": "71062b5710554804f80ca5f9397fbcbf8ac16056f3d2677c0301a3122fa3a3ea",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_market_analytics.py",
+      "sha256": "9e067bf57efa03778cf8ea54b27853b7214bc57ee97bee177347d9072771721a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_market_calendars.py",
+      "sha256": "df28f5b6767e333c28790a7dda70560c64e15f29ca44bb12f51d6e3c53782977",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_market_flow.py",
+      "sha256": "eb51e5e9b657c1e31fda2ca5b5656b534ae6e041ed6054896b32ca0e7d7420bb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_market_foundation_http.py",
+      "sha256": "ad4a132766583fe5f7ea0d03438242e7b51bc0a11e7116cedfb6febe2ec5a928",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_ml.py",
+      "sha256": "97139a6de090face12ba101fe4b9f5b89d55fe2b38e2274ae050998cfe15d7af",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_multidata_http.py",
+      "sha256": "5a38e20cfac0bdf4826d747dd4263a5794244ed25573c86145397b327eb53857",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_multidata_science.py",
+      "sha256": "6028c2ee5e155cc0acfa3c608b6e3d2f03ef207b6307a4ddcaf588d2a106f47d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_multitemplate_director.py",
+      "sha256": "9747ccaf7c40cf1dc2b423a84658a4a0d4f8d585c4491e215236a42e6d15e4e0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_native_neutralize.py",
+      "sha256": "18a917804ea623a7d84356543367a0c80e1af2539f5f2e0044d474af31d3dc30",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_native_operations.py",
+      "sha256": "9fb5747f0cb0cae67ed40b9eddd48e5cc6d540370040151b3b1f9723d8184de0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_news_workflow.py",
+      "sha256": "b335ddaed8c4d6f7fb167d5476023594309f0e083c7e3c3dc2803ce7cb0dfa81",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_observed_model_scoring.py",
+      "sha256": "7f9f0143ea72a79fba4f7f4e212c9417887897ae68efcee0d8d5eadd94894959",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_observed_reference.py",
+      "sha256": "1da6627cba94ebd5285c48140e49954e116fe54e2e0f913b8a3adf4f70672f1c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_offline_oms.py",
+      "sha256": "eced11ca06d91e16fa1228c65760cdbc2a71c1971bdf6c00ffaf5f0f0b260dd3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_ollama.py",
+      "sha256": "fa0863d251f00da853bdbc82a8d2da7536071ed99d9f2152876db4667e95df67",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_ops.py",
+      "sha256": "040b895c8af39870cbe1be0e871c6e37cb1a63ccd8c7479e2e34855005d06433",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_optimizer.py",
+      "sha256": "962e09af1540180f1363b4469fdbee263659fd0f2ef83d24e29f5cc5b9b99934",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_optional_research_models.py",
+      "sha256": "de8bd9f0657d3bcdc85d0ba55da4d93a0f500b3d51467dcca043328b36b67bda",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_options_overlay.py",
+      "sha256": "284016ee0d20abdcff1bc861d2cc56d957e4868f0abb26dc80ec853f13885451",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_options_workspace.py",
+      "sha256": "d583fede6ea6b5a61dd37639ead416d800f88f5b870174ae447085493b5ea8a0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_persisted_data.py",
+      "sha256": "7c5c4a433fd145f2ae13c3b655d0cd966133605641c7ca5263848c3053c50ea5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_persisted_flow_http.py",
+      "sha256": "b1f1d3b754abdb8810724e3df867d78bf28ed13070cbc02d3ad6a958b2b56777",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_persisted_microstructure.py",
+      "sha256": "a3e4d71a05cb5bdcbe783bf2c15f78610ae1bb8cc4ed6516280f49cee08dc570",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_persisted_models.py",
+      "sha256": "6ecdae18d95437d5307d2c712d118e3cdb2ace162ab01176f09d184d1a325b75",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_persisted_pairs.py",
+      "sha256": "4f065d1e602ca324091993ddcadb94d499a368185c3535754dd4c57b3f7c464c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_phase7_models.py",
+      "sha256": "1299d2d78060bbdafc896f30faa5e08c662230458753b7e4012e8d3460ca778f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_pipeline.py",
+      "sha256": "b4e8d314eb5a003d50017ad156a5227b80892083ce7a324c293351f86dce5267",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_portfolio_ledger.py",
+      "sha256": "07068777e363cd2164e56768bf43b35533e93dc688566104ca89f8dd65057fb0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_provider_ingestion.py",
+      "sha256": "34fa01e7c7ebeb6f20966673af442dae77a51cd37cf2d745fb39306c48968d01",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_public_equity.py",
+      "sha256": "8a74690daf6946f7f9d8a661af9329ff204dcf021ef47589e07ea079aaafe9b3",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_reference_evaluation.py",
+      "sha256": "479ff922315a061f9c6529a486a11b124045a8802a6834cfd8b57efe554d4ebd",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_registry_http.py",
+      "sha256": "53ed915ef602120aaf5accdc81322f9d90e64219da5d8c2eeb561c7cf916ff35",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research.py",
+      "sha256": "cbbf37cd095f72aca186c898923b28a9550e587cba68a3f056b09f51929d134f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_director.py",
+      "sha256": "7e5120548d9c652580dc3da6d1dc8180183b2155c33d338c28cb6d82a358ee3c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_followup.py",
+      "sha256": "7e1bfc6b3aec4299ed7e693a5a4d59f93da8fb6201f338e0bf8b9498f31b76e1",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_foundation.py",
+      "sha256": "8e42f7be16a55c49b82b8059c836bafa8f8c6d8189e424820b0c2676483bd46f",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_leases.py",
+      "sha256": "358a789dd42d61d8df3f0f4ec77605d00f817a34e9a3cd59869beaae22162104",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_limits.py",
+      "sha256": "564eacd64c16d7cff1922e34fc9dd8e0359edb5bb233172cc8f8e7ae03e61fe9",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_org.py",
+      "sha256": "673f9ed9d8879afc8613cc0cf224f1cbff2f28782e1de22fc7c37c9faafc0ee7",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_scheduler.py",
+      "sha256": "e66a4bda41837b7c08af492abe77168a239b8b01fbeed1022bdae07a5f8b3060",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_research_worker.py",
+      "sha256": "e236938e1e2a64f0d0bb929a764468d06b37c7e3ebec14cfd9e2a4af096ad3fc",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_risk_allocation.py",
+      "sha256": "c3fa6d668e329bb6e163cf5f9438fef2586870d09c06864fc9e517bdde2d70e6",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_risk_coordination.py",
+      "sha256": "d3caf8ba198a619ce5994605eaac9d6d0c365e137ce3acb1307585ad61caddff",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_risk_model.py",
+      "sha256": "aaf814279f1d73f19f025a637238464dee923bdad0600dfde6a2d42e71b1884c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sequence_knowledge_fence.py",
+      "sha256": "48b647bcaa3482b1d77b87eede6ad93941abcee6d03dca7588b43c0a8df3e604",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sequence_model.py",
+      "sha256": "7361277a34e6a019325c25934033358c3bbbb060632c9f69a8770ba70c59b21a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sequence_workspace.py",
+      "sha256": "225a05e2c05105ea37db5396b7db00021c40acbe059d1de89e603cf6447866ff",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_service.py",
+      "sha256": "470ffbe130d7559272236bac76a15b3120e74395affc220275218e25d175c6df",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_signal_workspace.py",
+      "sha256": "4d211f163b93f5e7484abf894ec1239d01d2fd97a96f06190f17723311580751",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint5_boundaries.py",
+      "sha256": "97e6b930a85131bcffc4244d26ac8f97b124f56db8c7f2fba0e4300f69a9ad93",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint6_http.py",
+      "sha256": "c66a649e882c16c891203f61f1e2dd741f93a40ecfe766bf34d150ff9acd1a11",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint7_http.py",
+      "sha256": "4c10208cb40b68de7aae1c857a42588855b29c52668f8c4405989b3f0716262d",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint8_http.py",
+      "sha256": "fa7e188d761183614ec0b0ed27ea2b27d1185d95ab87169feeb7b9b2e600178c",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint8_operations.py",
+      "sha256": "c26f27b2c6d8ddb945e28a2d7e5121db3abc4f2855cb79643744060d8347056b",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint8_risk_integration.py",
+      "sha256": "80d8a6c242ef305da60798511950d239d2f652d329d90ca14fdf890883a7eafd",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint9_cost_evidence.py",
+      "sha256": "c1d4ca72e15a7cd41d36285504769f8cab0c4c86dbb37d89a871f6d0c1e318c0",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_sprint9_provenance.py",
+      "sha256": "e38c8278a8847b16cf72e65a1a47a825a0ea3fa1fe94ab44d0e6a89878b844ae",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_stat_arb_research.py",
+      "sha256": "61881f29e3f6dc59447a02a00dd2ace08e806ff59a3d5606c0ffe54324a266a5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_state_model_research.py",
+      "sha256": "16ae0b6bf55368fc1dda91b036ef400297908a044eff022576b408c73e5035da",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_statement_reconciliation.py",
+      "sha256": "aaf054af102914d00ddfcf14999057cdb3fb0782a7a43eabaafbf37b36b79434",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_store_nlp.py",
+      "sha256": "d01d917ce0712ecb0c9f23bc6c719e0cf7d17257784eae0c067044acc5b478fb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_strategies_extra.py",
+      "sha256": "e161ece4b7dfff6915370d386d865e9c0f27b11a8328055c2e6e279d52932384",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_svm.py",
+      "sha256": "89161a817f46b81993ae3b70519e912e9d7919b1ab23c974c25463782b312efb",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_terminal_workspace.py",
+      "sha256": "6ac38a09e0112272bb09416562f231c0dc2e1b4c18ca3bd14c22db42eb9aa576",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_treasury_curve.py",
+      "sha256": "3a8153c679bf87d155a33edf9ba5e44ec070684d43c50679a17bf50c7610bac5",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_universe.py",
+      "sha256": "1bf15282a3fb25c93b6b45d1a02ab542cc47b26365586dc4bfba39e414820991",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_vendors.py",
+      "sha256": "2d2fa0304d5a2432a78ac016ca674929f6f965e4ae0265ed1a737cdce554455a",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_viz_modules.py",
+      "sha256": "bf6519c1a459c97ff63b4475bdb996011c1b7eede69cc91cada86c73d02f4660",
+      "git_mode": "100644"
+    },
+    {
+      "path": "tests/test_workspace_http.py",
+      "sha256": "395374c5ba0a0ca20672938317ef6cb91b174ff37c096660b52b6be7c9365174",
+      "git_mode": "100644"
+    }
+  ]
+}

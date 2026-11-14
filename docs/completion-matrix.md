@@ -340,3 +340,8 @@ and model promotion remain rejected. Inventory:10 implemented families,30 planne
 Focused numerical/replay tests and Chromium acceptance run before release;
 complete frozen-source evidence is published at the checkpoint. No economic
 alpha, live data availability or certification is established.
+
+Family10 final source acceptance at1d33a747:1,280passed/9optional FinBERTskips/
+0failures,83.22%coverage; isolatedwheel66passed/1optionalCABI skip,226filesmatch.
+Real Chromium22/22; two synthetic OOS folds worse than the train-mean baseline
+are preserved. Evidence: `docs/evidence/ml-batch3/`.10familiesimplemented,30planned.

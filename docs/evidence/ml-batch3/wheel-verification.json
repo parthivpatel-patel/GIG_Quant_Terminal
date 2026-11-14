@@ -1,0 +1,9 @@
+{
+  "state": "PASS",
+  "source_head": "1d33a747fd7dd70209df489211812aadd759c753",
+  "packaged_files_matched": 226,
+  "package_import": "/tmp/gig-svr-installed/gig/__init__.py",
+  "native_extension": "/tmp/gig-svr-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "wheel_sha256": "67c7aabebd682f826c35c2b947285f3660e3b3f6e464ad8734c2d92cd5a40c5b",
+  "separate_process_prediction_wire_sha256": "b60cefd074bb14be1993d62653cb87c8481d463a23e9995bb48333c8fb133a15"
+}
