@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from copy import deepcopy
 
 import numpy as np
 
@@ -92,7 +93,7 @@ def fit(passages, dimensions=MAX_DIMENSIONS):
             "bounds": {"passages": MAX_PASSAGES, "retained_terms": MAX_TERMS, "dimensions": MAX_DIMENSIONS},
             "vocabulary": vocabulary, "idf": idf,
             "components": components.tolist(), "document_vectors": vectors.tolist(),
-            "singular_values": singular[:retained].tolist(), "limitations": LIMITATIONS}
+            "singular_values": singular[:retained].tolist(), "limitations": list(LIMITATIONS)}
 
 
 def validate(model, passages, dimensions):
@@ -116,7 +117,8 @@ def validate(model, passages, dimensions):
 
 
 def metadata(model):
-    return {k: v for k, v in model.items() if k not in {"vocabulary", "idf", "components", "document_vectors", "singular_values"}}
+    """Return detached metadata; caller mutations must not change fitted identity."""
+    return deepcopy({k: v for k, v in model.items() if k not in {"vocabulary", "idf", "components", "document_vectors", "singular_values"}})
 
 
 def _fractional_ranks(rows):

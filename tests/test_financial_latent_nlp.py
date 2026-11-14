@@ -16,7 +16,7 @@ import numpy as np
 from gig.financial_intelligence import latent
 from gig.financial_intelligence.reference import treasury_document
 from gig.financial_intelligence.retrieval import rank, tokens
-from gig.financial_intelligence.store import FinancialCorpus
+from gig.financial_intelligence.store import FinancialCorpus, digest
 from gig.service.app import create_app
 from gig.service.serialization import dumps
 
@@ -166,6 +166,22 @@ class LatentTests(unittest.TestCase):
             db.execute("UPDATE latent_models SET body='{}'")
         with self.assertRaises(ValueError):
             FinancialCorpus(self.root).replay(result["snapshot_id"])
+
+    def test_metadata_and_model_mutations_cannot_change_later_fit_identity(self):
+        passages = self.topic_document()
+        model = latent.fit(passages, 1)
+        original_identity = digest(model)
+        global_limitations = list(latent.LIMITATIONS)
+        exposed = latent.metadata(model)
+        exposed["limitations"].append("Caller metadata mutation")
+        exposed["bounds"]["dimensions"] = 999
+        self.assertEqual(digest(model), original_identity)
+        self.assertEqual(latent.LIMITATIONS, global_limitations)
+        self.assertEqual(digest(latent.fit(passages, 1)), original_identity)
+        # The fitted model also owns its own list, independent of global defaults.
+        model["limitations"].append("Caller fitted-model mutation")
+        self.assertEqual(latent.LIMITATIONS, global_limitations)
+        self.assertEqual(digest(latent.fit(passages, 1)), original_identity)
 
     def test_preexisting_bm25_snapshot_schema_and_identity_unchanged(self):
         self.topic_document()

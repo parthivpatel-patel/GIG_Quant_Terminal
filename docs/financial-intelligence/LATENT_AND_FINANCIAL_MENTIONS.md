@@ -68,7 +68,10 @@ limits and fit metadata. Its SHA256 is `model_id`. Only compact model metadata
 is returned through HTTP. The model and query snapshot insert in one
 `BEGIN IMMEDIATE` transaction; a failure rolls both back. The additive single
 `CREATE TABLE IF NOT EXISTS` migration is atomic SQLite DDL and does not change
-existing document or snapshot rows.
+existing document or snapshot rows. Each fit owns its limitations list and
+returned compact metadata is a defensive deep copy: caller mutations to nested
+metadata or a previous model cannot change global defaults or later same-input
+model identities. This ownership rule does not change serialized model output.
 
 Restart replay loads saved arrays, verifies the model hash, recomputes the
 visible matrix/statistics, checks dimensions/orthonormality/document projection,
