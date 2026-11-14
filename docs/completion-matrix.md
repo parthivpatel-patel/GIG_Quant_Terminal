@@ -329,3 +329,15 @@ forests25/25, financial24/24. Detailed logs, source hashes/modes and genuine
 screenshots are in `docs/evidence/sequence-lineage-fencing/`. Nine model families
 remain implemented;31 additions remain planned. External acceptance and licensing
 limits above are unchanged.
+
+## Financial Intelligence: corpus-local latent/hybrid and cited NLP
+
+The existing permitted-corpus workflow now supports actual bounded TF-IDF/SVD
+projection and cosine retrieval, tie-aware fractional reciprocal-rank fusion with
+BM25, immutable fitted-model/query replay and original rule-based financial
+mentions with exact Decimal/unit/source-byte evidence. Pure numbers/dates are
+excluded from LSA; hybrid preserves their lexical relevance. This is corpus-local
+LSA, not pretrained language understanding or general financial truth. Sentiment
+is UNAVAILABLE; issuer linking and event occurrence remain UNKNOWN. Existing
+BM25 snapshots remain compatible. Focused25test/backend checks and real Chromium
+workflows precede full frozen-source release acceptance.

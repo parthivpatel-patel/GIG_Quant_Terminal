@@ -445,7 +445,7 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
-const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay"];
+const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts"];
 for (const kind of financialActions) {
   get("analytics-kind").value = "workspace-" + kind;
   const before = calls.length;
