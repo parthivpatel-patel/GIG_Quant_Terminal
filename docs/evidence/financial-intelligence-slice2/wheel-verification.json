@@ -1,0 +1,8 @@
+{
+  "state": "PASS",
+  "source_commit": "5de784c003f6eef2e0d505b76b4dc4db4a7d7dbb",
+  "packaged_files_matched": 228,
+  "package_import": "/tmp/gig-pr19-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-pr19-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "wheel_sha256": "ee7478e16ad8d9dcaaa6d0a23ffb4dfb820910a14b5f12851d6dc4586f914b78"
+}
