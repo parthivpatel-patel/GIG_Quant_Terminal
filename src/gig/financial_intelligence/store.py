@@ -167,10 +167,11 @@ class FinancialCorpus:
         return sorted(latest.values())
 
     def search(self, query, as_of, *, limit=5, expand=False, answer=False, document_ids=None, save=True,
-               retrieval_mode="bm25", latent_dimensions=16, extract_facts=False, _model=None):
+               retrieval_mode="bm25", latent_dimensions=16, extract_facts=False, nlp_profile="v1", _model=None):
         at = aware_timestamp(as_of)
         if type(answer) is not bool or type(extract_facts) is not bool:
             raise ValueError("exact extractive and fact settings required")
+        nlp.settings(nlp_profile, extract_facts)
         latent.settings(retrieval_mode, latent_dimensions)
         rank([], query, limit, expand=expand)
         ids = self._visible_ids(at) if document_ids is None else document_ids
@@ -208,7 +209,9 @@ class FinancialCorpus:
             else:
                 body["retrieval_implementation"] = IMPLEMENTATION
             if extract_facts:
-                body["financial_nlp"] = nlp.extract(results)
+                body["financial_nlp"] = nlp.extract(results, profile=nlp_profile)
+                if nlp_profile != "v1":
+                    body["nlp_profile"] = nlp_profile
         identity = digest(body)
         if save:
             with closing(self._connect(write=True)) as db:
@@ -253,7 +256,7 @@ class FinancialCorpus:
         reproduced = self.search(body["query"], body["as_of"], limit=body["limit"], expand=body["expand"],
             answer=body["answer_kind"] == "EXTRACTIVE_PASSAGE_ONLY", document_ids=body["corpus_document_ids"], save=False,
             retrieval_mode=body.get("retrieval_mode", "bm25"), latent_dimensions=body.get("latent_dimensions", 16),
-            extract_facts=body.get("extract_facts", False), _model=model)
+            extract_facts=body.get("extract_facts", False), nlp_profile=body.get("nlp_profile", "v1"), _model=model)
         if reproduced is None or reproduced["snapshot_id"] != identity:
             raise ValueError("financial retrieval replay changed")
         return reproduced
