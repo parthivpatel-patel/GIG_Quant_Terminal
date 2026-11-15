@@ -1,0 +1,9 @@
+{
+  "state": "PASS",
+  "source_commit": "012a7ab49cdbd1e57b780b1b9d51b569f7a8d00f",
+  "packaged_files_matched": 231,
+  "package_import": "/tmp/gig-knn-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-knn-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "wheel_sha256": "1fbdfa31bb760af92e79bc9c8c773ee978040867c2aec51075f17a7252fff713",
+  "tracked_only": true
+}

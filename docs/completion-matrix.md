@@ -377,5 +377,10 @@ train-only scaling. Fixed five-neighbor uniform predictions use deterministic
 squared-distance/chronological-index ties, safe JSON state and purged validation.
 Predictive uncertainty is unavailable; allocation and promotion remain rejected.
 The existing HTTP/workbench supports explicit training/replay; real Chromium
-acceptance22/22 and focused kernel/model tests pass before broad release checks.
+acceptance22/22 passes. Frozen-source regression:1,307passed/9optional FinBERT
+skips,83.45%coverage; isolated wheel86passed/1optional standalone C-ABI skip.
+231packaged files match and a separate installed process reproduces saved JSON
+predictions without fitting. Full evidence/source hashes are in
+`docs/evidence/ml-batch4/`. Three of six synthetic OOSfolds underperform the
+training-mean baseline; those negative findings are retained.
 Inventory:11implemented families,29planned; no economic or certification claim.

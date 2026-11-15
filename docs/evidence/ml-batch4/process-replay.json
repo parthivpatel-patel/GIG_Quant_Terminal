@@ -1,0 +1,23 @@
+{
+  "state": "PASS",
+  "fresh_installed_process": true,
+  "no_refit": true,
+  "response_sha256": "3b9996ba35f452c87776c7eabbc01b3adcf41e0a4842b381fcb4ae8721450605",
+  "run_id": "129dff0f967c686d41b0d3064a7c61d6258da959c9b9a456f1167154198dbcca",
+  "dataset_id": "0a051b5a88ebf195b25720e94df20228981b177b665d8567cf049970e30d7eeb",
+  "package": "/tmp/gig-knn-installed/gig/__init__.py",
+  "native": "/tmp/gig-knn-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "immutable_json_files": {
+    "persisted-research/responses/887975f65e34d97317a453468d8d7affa291a118e1707556f751fc7f18d5c0e5.json": "887975f65e34d97317a453468d8d7affa291a118e1707556f751fc7f18d5c0e5",
+    "persisted-research/runs/129dff0f967c686d41b0d3064a7c61d6258da959c9b9a456f1167154198dbcca.json": "129dff0f967c686d41b0d3064a7c61d6258da959c9b9a456f1167154198dbcca",
+    "persisted-research/models/f63ad32316d938301a378167be5754327ab2740c4bb05a5e0f2254e94d65c542.json": "f63ad32316d938301a378167be5754327ab2740c4bb05a5e0f2254e94d65c542",
+    "persisted-research/models/6f60c2bb26932265cd3738b0b3ad62b7c25b96e7367b01038f7089f501ff7748.json": "6f60c2bb26932265cd3738b0b3ad62b7c25b96e7367b01038f7089f501ff7748",
+    "persisted-research/models/b1a0c35aac4d212f3e3050146d50975544f8ac59504f5a9b0ccabbbe71f589d0.json": "b1a0c35aac4d212f3e3050146d50975544f8ac59504f5a9b0ccabbbe71f589d0",
+    "persisted-research/models/f101a864b4ce5844db707fc92fb1ae1d1d18b792fcb87067e7b6ac65ddb61baf.json": "f101a864b4ce5844db707fc92fb1ae1d1d18b792fcb87067e7b6ac65ddb61baf",
+    "persisted-research/models/afc760b7dd69cd4b932b336b77b69218a301e72a7db0acbfc318f17972b15d6c.json": "afc760b7dd69cd4b932b336b77b69218a301e72a7db0acbfc318f17972b15d6c",
+    "persisted-research/models/943025e8d09220209c9a6410111edbd8bd90577a4a56aadf82bc2218db1e5168.json": "943025e8d09220209c9a6410111edbd8bd90577a4a56aadf82bc2218db1e5168",
+    "research-datasets/datasets/0a051b5a88ebf195b25720e94df20228981b177b665d8567cf049970e30d7eeb.json": "69c0e4179eefd8b35f6a403e154b453a0d822806e64dac5f93d48bb4595c5f6c"
+  },
+  "runtime_backup_external": false,
+  "study_classification": "SYNTHETIC"
+}
