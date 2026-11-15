@@ -379,3 +379,12 @@ Permanent identity, issuer links, exchange membership and existence stay UNKNOWN
 Saved replay pins the original profile, rejects overrides and preserves numeric,
 currency and event semantics. Focused38tests and Chromium27/27 pass before broad
 acceptance. This annotation component adds no quant model family or market data.
+## Family 11: bounded nearest-neighbor research
+
+Actual CPU KNeighborsRegressor fit/query retains admitted labelled instances and
+train-only scaling. Fixed five-neighbor uniform predictions use deterministic
+squared-distance/chronological-index ties, safe JSON state and purged validation.
+Predictive uncertainty is unavailable; allocation and promotion remain rejected.
+The existing HTTP/workbench supports explicit training/replay; real Chromium
+acceptance22/22 and focused kernel/model tests pass before broad release checks.
+Inventory:11implemented families,29planned; no economic or certification claim.

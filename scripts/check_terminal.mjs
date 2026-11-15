@@ -456,7 +456,7 @@ for (const kind of financialActions) {
 }
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
-  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-knn": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
   "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
   "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
   "schedule-twap": "execution-engine", "advance-clock": "execution-engine",
@@ -495,6 +495,15 @@ checked("SVR retains saved dataset identity and explicit bounded research caveat
   assert.equal(request.dataset_id, datasetId);
   assert.equal(request.model, "svr");
   assert.match(get("workbench-scope").textContent, /128 training rows/);
+  assert.match(get("workbench-scope").textContent, /uncertainty is UNAVAILABLE/);
+});
+get("analytics-kind").value = "workspace-research-knn";
+await get("analytics-kind").dispatch("change");
+checked("KNN uses the saved dataset with explicit nonparametric research bounds", () => {
+  const request = JSON.parse(get("analytics-input").value);
+  assert.equal(request.dataset_id, datasetId);
+  assert.equal(request.model, "knn");
+  assert.match(get("workbench-scope").textContent, /20–256 labelled rows/);
   assert.match(get("workbench-scope").textContent, /uncertainty is UNAVAILABLE/);
 });
 await successfulPipeline("research-model", { run_id: runId, dataset_id: datasetId });
