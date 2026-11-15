@@ -330,6 +330,17 @@ screenshots are in `docs/evidence/sequence-lineage-fencing/`. Nine model familie
 remain implemented;31 additions remain planned. External acceptance and licensing
 limits above are unchanged.
 
+## Financial Intelligence: corpus-local latent/hybrid and cited NLP
+
+The existing permitted-corpus workflow now supports actual bounded TF-IDF/SVD
+projection and cosine retrieval, tie-aware fractional reciprocal-rank fusion with
+BM25, immutable fitted-model/query replay and original rule-based financial
+mentions with exact Decimal/unit/source-byte evidence. Pure numbers/dates are
+excluded from LSA; hybrid preserves their lexical relevance. This is corpus-local
+LSA, not pretrained language understanding or general financial truth. Sentiment
+is UNAVAILABLE; issuer linking and event occurrence remain UNKNOWN. Existing
+BM25 snapshots remain compatible. Focused25test/backend checks and real Chromium
+workflows precede full frozen-source release acceptance.
 ## Family 10: bounded CPU SVR
 
 Actual fixed-RBF sklearn SVR training, train-only feature/target normalization,
@@ -345,3 +356,16 @@ Family10 final source acceptance at1d33a747:1,280passed/9optional FinBERTskips/
 0failures,83.22%coverage; isolatedwheel66passed/1optionalCABI skip,226filesmatch.
 Real Chromium22/22; two synthetic OOS folds worse than the train-mean baseline
 are preserved. Evidence: `docs/evidence/ml-batch3/`.10familiesimplemented,30planned.
+
+## Financial Intelligence slice 2 release acceptance
+
+Frozen source `5de784c`:1,295passed/9optional FinBERTskips/0failures locally,
+83.37%coverage; exact-head CI1,293passed/11skips with two additional unavailable
+ECB evidence fixtures. Installed native wheel73passed/1optional C-ABI skip;
+228packaged files match. Current Chromium37financial+22SVR workflows pass,
+and restored SQLite reproduces the exact response without fitting. Full logs,
+source hashes/modes, original failures and genuine screenshots are retained in
+`docs/evidence/financial-intelligence-slice2/`. Semantic scope is corpus-local
+LSA only; issuer linking/event truth and general financial intelligence remain
+partial or unavailable.10model families implemented;30planned; no Family11
+implementation is inferred from a missing temporary worker checkout.

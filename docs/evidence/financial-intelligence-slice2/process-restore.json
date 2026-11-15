@@ -1,0 +1,22 @@
+{
+  "source_commit": "5de784c003f6eef2e0d505b76b4dc4db4a7d7dbb",
+  "snapshot_id": "a512c6758c59cb21f8c53492f8e972937da80e7da5668855312bee65f484bd29",
+  "model_id": "3f073c57ee51e90fa9be2a961be1bed79dbc4ee5ee7a5431eb42d3778a99ccbe",
+  "response_sha256": "7a57c8b494dd29004703edaa63d0fa31e17df8d173ae98f0c39efc959125d997",
+  "source_raw_sha256": "99f80b80cfeff0a93e339735d72672080d9209073b5fe814c1252e88d1428227",
+  "license": "CC0-1.0",
+  "source_scope": "HISTORICAL_TREASURY_REFERENCE_YIELDS_NOT_EXECUTABLE_MARKET_PRICES",
+  "original_publication_state": "UNKNOWN",
+  "restored_table_counts": {
+    "documents": 1,
+    "passages": 250,
+    "latent_models": 1,
+    "snapshots": 1
+  },
+  "local_backup_sha256": "54ccab9f6d3ca86fd272216b8e79299918d137c01bcc81cee58417409e509ea2",
+  "external_runtime_backup_verified": false,
+  "broker_connected": false,
+  "installed_process_replay": "PASS_NO_REFIT",
+  "package_import": "/tmp/gig-pr19-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-pr19-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so"
+}

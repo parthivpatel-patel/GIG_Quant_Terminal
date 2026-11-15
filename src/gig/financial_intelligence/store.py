@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from gig.financial_intelligence import latent, nlp
 from gig.financial_intelligence.retrieval import IMPLEMENTATION, rank
 from gig.service.serialization import dumps, loads
 from gig.timestamps import aware_timestamp
@@ -19,8 +20,10 @@ CREATE TABLE IF NOT EXISTS documents(id TEXT PRIMARY KEY, revision_key TEXT UNIQ
 CREATE TABLE IF NOT EXISTS passages(document_id TEXT NOT NULL, ordinal INTEGER NOT NULL,
  body TEXT NOT NULL, PRIMARY KEY(document_id,ordinal));
 CREATE TABLE IF NOT EXISTS snapshots(id TEXT PRIMARY KEY, body TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS latent_models(id TEXT PRIMARY KEY, body TEXT NOT NULL);
 """
 NORMALIZER = "gig.financial-documents.v1"
+RESEARCH_IMPLEMENTATION = "gig.financial-research.v2"
 
 
 def digest(value: Any):
@@ -163,10 +166,12 @@ class FinancialCorpus:
             latest[logical] = identity
         return sorted(latest.values())
 
-    def search(self, query, as_of, *, limit=5, expand=False, answer=False, document_ids=None, save=True):
+    def search(self, query, as_of, *, limit=5, expand=False, answer=False, document_ids=None, save=True,
+               retrieval_mode="bm25", latent_dimensions=16, extract_facts=False, _model=None):
         at = aware_timestamp(as_of)
-        if type(answer) is not bool:
-            raise ValueError("exact extractive mode required")
+        if type(answer) is not bool or type(extract_facts) is not bool:
+            raise ValueError("exact extractive and fact settings required")
+        latent.settings(retrieval_mode, latent_dimensions)
         rank([], query, limit, expand=expand)
         ids = self._visible_ids(at) if document_ids is None else document_ids
         if not ids:
@@ -177,7 +182,12 @@ class FinancialCorpus:
             if aware_timestamp(document["metadata"]["known_at"]) > at:
                 raise ValueError("future financial evidence cannot enter retrieval")
             passages.extend(document["passages"])
-        results, terms = rank(passages, query, limit, expand=expand)
+        model, evidence = None, None
+        if retrieval_mode == "bm25":
+            results, terms = rank(passages, query, limit, expand=expand)
+        else:
+            results, terms, model, evidence = latent.retrieve(passages, query, limit, mode=retrieval_mode,
+                dimensions=latent_dimensions, expand=expand, model=_model)
         body = {"implementation": IMPLEMENTATION, "query": query, "as_of": at.isoformat(),
                 "limit": limit, "expand": expand, "expanded_terms": terms,
                 "corpus_document_ids": ids, "corpus_identity": digest(ids), "rows": results,
@@ -187,13 +197,37 @@ class FinancialCorpus:
                 "semantic_state": "UNAVAILABLE", "generative_state": "UNAVAILABLE",
                 "monitoring_state": "NOT_RUNNING", "trading_approved": False,
                 "classification": "SYNTHETIC" if any(p["classification"] == "SYNTHETIC" for p in passages) else "HISTORICAL"}
+        if retrieval_mode != "bm25" or extract_facts:
+            body.update(implementation=RESEARCH_IMPLEMENTATION, retrieval_mode=retrieval_mode,
+                        latent_dimensions=latent_dimensions, extract_facts=extract_facts,
+                        retrieval_state="AVAILABLE" if results else "NO_MATCH")
+            if evidence is not None:
+                body.update(evidence)
+                body["semantic_state"] = "CORPUS_LOCAL_LSA"
+                body["retrieval_implementation"] = latent.HYBRID if retrieval_mode == "hybrid" else latent.IMPLEMENTATION
+            else:
+                body["retrieval_implementation"] = IMPLEMENTATION
+            if extract_facts:
+                body["financial_nlp"] = nlp.extract(results)
         identity = digest(body)
         if save:
             with closing(self._connect(write=True)) as db:
-                db.execute("INSERT OR IGNORE INTO snapshots VALUES(?,?)", (identity, dumps(body)))
-                existing = db.execute("SELECT body FROM snapshots WHERE id=?", (identity,)).fetchone()
-                if existing is None or existing[0] != dumps(body):
-                    raise ValueError("financial snapshot conflicts with immutable content")
+                db.execute("BEGIN IMMEDIATE")
+                try:
+                    if model is not None:
+                        model_id, model_wire = digest(model), dumps(model)
+                        db.execute("INSERT OR IGNORE INTO latent_models VALUES(?,?)", (model_id, model_wire))
+                        stored_model = db.execute("SELECT body FROM latent_models WHERE id=?", (model_id,)).fetchone()
+                        if stored_model is None or stored_model[0] != model_wire:
+                            raise ValueError("financial model conflicts with immutable content")
+                    db.execute("INSERT OR IGNORE INTO snapshots VALUES(?,?)", (identity, dumps(body)))
+                    existing = db.execute("SELECT body FROM snapshots WHERE id=?", (identity,)).fetchone()
+                    if existing is None or existing[0] != dumps(body):
+                        raise ValueError("financial snapshot conflicts with immutable content")
+                    db.execute("COMMIT")
+                except Exception:
+                    db.execute("ROLLBACK")
+                    raise
         return {**body, "snapshot_id": identity}
 
     def replay(self, snapshot_id):
@@ -205,10 +239,21 @@ class FinancialCorpus:
         if row is None:
             raise FileNotFoundError("financial snapshot unavailable")
         body = loads(row[0])
-        if digest(body) != identity or body["implementation"] != IMPLEMENTATION:
+        if digest(body) != identity or body["implementation"] not in {IMPLEMENTATION, RESEARCH_IMPLEMENTATION}:
             raise ValueError("financial snapshot integrity failed")
+        model = None
+        if body.get("model_id"):
+            with closing(self._connect()) as db:
+                model_row = db.execute("SELECT body FROM latent_models WHERE id=?", (body["model_id"],)).fetchone()
+            if model_row is None:
+                raise ValueError("saved financial model unavailable")
+            model = loads(model_row[0])
+            if digest(model) != body["model_id"]:
+                raise ValueError("saved financial model integrity failed")
         reproduced = self.search(body["query"], body["as_of"], limit=body["limit"], expand=body["expand"],
-            answer=body["answer_kind"] == "EXTRACTIVE_PASSAGE_ONLY", document_ids=body["corpus_document_ids"], save=False)
+            answer=body["answer_kind"] == "EXTRACTIVE_PASSAGE_ONLY", document_ids=body["corpus_document_ids"], save=False,
+            retrieval_mode=body.get("retrieval_mode", "bm25"), latent_dimensions=body.get("latent_dimensions", 16),
+            extract_facts=body.get("extract_facts", False), _model=model)
         if reproduced is None or reproduced["snapshot_id"] != identity:
             raise ValueError("financial retrieval replay changed")
         return reproduced
