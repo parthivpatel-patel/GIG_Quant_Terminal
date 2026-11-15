@@ -47,6 +47,10 @@ def model_capabilities() -> dict[str, dict[str, Any]]:
     dependencies = {"lightgbm": _exists("lightgbm"), "torch": _exists("torch"),
                     "transformers": _exists("transformers")}
     return {
+        "nearest_neighbors": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
+                              "implemented": True, "trained": False, "trading_approved": False,
+                              "dependency_available": _exists("sklearn"),
+                              "reason": "One bounded CPU uniform K=5 regressor retaining training observations; uncertainty unavailable; research only"},
         "support_vector_machines_svr": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
                                         "implemented": True, "trained": False, "trading_approved": False,
                                         "dependency_available": _exists("sklearn"),
