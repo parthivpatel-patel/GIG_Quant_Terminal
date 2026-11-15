@@ -369,3 +369,13 @@ source hashes/modes, original failures and genuine screenshots are retained in
 LSA only; issuer linking/event truth and general financial intelligence remain
 partial or unavailable.10model families implemented;30planned; no Family11
 implementation is inferred from a missing temporary worker checkout.
+
+## Versioned financial annotation profiles
+
+Published v1 rules remain frozen with exact annotation bytes and saved IDs.
+Explicit v2 extracts whole bounded qualified symbols/share classes with raw
+source citations; unsupported candidates cannot become partial ticker facts.
+Permanent identity, issuer links, exchange membership and existence stay UNKNOWN.
+Saved replay pins the original profile, rejects overrides and preserves numeric,
+currency and event semantics. Focused38tests and Chromium27/27 pass before broad
+acceptance. This annotation component adds no quant model family or market data.
