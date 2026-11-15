@@ -369,3 +369,13 @@ source hashes/modes, original failures and genuine screenshots are retained in
 LSA only; issuer linking/event truth and general financial intelligence remain
 partial or unavailable.10model families implemented;30planned; no Family11
 implementation is inferred from a missing temporary worker checkout.
+
+## Family 11: bounded nearest-neighbor research
+
+Actual CPU KNeighborsRegressor fit/query retains admitted labelled instances and
+train-only scaling. Fixed five-neighbor uniform predictions use deterministic
+squared-distance/chronological-index ties, safe JSON state and purged validation.
+Predictive uncertainty is unavailable; allocation and promotion remain rejected.
+The existing HTTP/workbench supports explicit training/replay; real Chromium
+acceptance22/22 and focused kernel/model tests pass before broad release checks.
+Inventory:11implemented families,29planned; no economic or certification claim.
