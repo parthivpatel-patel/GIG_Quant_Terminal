@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sqlite3
 import tempfile
 import unittest
@@ -42,9 +43,7 @@ class ProfileTests(unittest.TestCase):
     def test_golden_preprofile_v1_annotation_bytes_and_saved_identities(self):
         self.admit()
         cases = [({}, "5a64bda426e7853b3941ae078c91791c3271823db8292f26a31bd5c8abbf73bc"),
-                 ({"extract_facts": True}, "ba99f82a5ebffc4273a45fe44b9ce16117270b4cdcddcd5a74f7c3f6da86e4cd"),
-                 ({"retrieval_mode": "hybrid", "extract_facts": True, "latent_dimensions": 2},
-                  "66365bd40d61a5c7ba659312af0165f3a37a1eb80a01e2aeec6e90c379e59aec")]
+                 ({"extract_facts": True}, "ba99f82a5ebffc4273a45fe44b9ce16117270b4cdcddcd5a74f7c3f6da86e4cd")]
         for options, expected_id in cases:
             default = self.corpus.search("Revenue", T0, **options)
             explicit = self.corpus.search("Revenue", T0, nlp_profile="v1", **options)
@@ -54,6 +53,39 @@ class ProfileTests(unittest.TestCase):
             if "financial_nlp" in default:
                 self.assertEqual(digest(default["financial_nlp"]), "0bf44f89534b948c6aaa4deb2f9499471d1555082a5a88dd9b904f509d275fec")
             self.assertEqual(FinancialCorpus(self.root).replay(expected_id), default)
+
+    def test_historical_hybrid_fixture_replays_original_identity_without_fit(self):
+        # Captured from the actual pre-profile source 5de784c, NumPy2.3.5.
+        # Retain that historical model/version rather than pretending a fresh
+        # SVD fit on every supported NumPy version must have identical bytes.
+        fixture = json.loads((Path(__file__).parent/"fixtures/financial_intelligence/preprofile-v1-hybrid.json").read_text())
+        self.assertEqual(fixture["source_commit"], "5de784c003f6eef2e0d505b76b4dc4db4a7d7dbb")
+        self.admit(fixture["source_text"])
+        snapshot, model = fixture["snapshot"], fixture["model"]
+        expected_id = "66365bd40d61a5c7ba659312af0165f3a37a1eb80a01e2aeec6e90c379e59aec"
+        self.assertEqual(snapshot["snapshot_id"], expected_id)
+        body = {k: v for k, v in snapshot.items() if k != "snapshot_id"}
+        self.assertEqual(digest(body), expected_id)
+        self.assertEqual(digest(model), snapshot["model_id"])
+        with sqlite3.connect(self.corpus.path) as db:
+            db.execute("INSERT INTO latent_models VALUES(?,?)", (snapshot["model_id"], dumps(model)))
+            db.execute("INSERT INTO snapshots VALUES(?,?)", (expected_id, dumps(body)))
+        with patch.object(latent, "fit", side_effect=AssertionError("historical replay must not fit")):
+            self.assertEqual(FinancialCorpus(self.root).replay(expected_id), snapshot)
+        self.assertEqual(snapshot["model"]["numpy_version"], "2.3.5")
+
+    def test_current_hybrid_fit_preserves_v1_output_and_dependency_provenance(self):
+        import numpy as np
+        self.admit()
+        options = {"retrieval_mode": "hybrid", "extract_facts": True, "latent_dimensions": 2}
+        default = self.corpus.search("Revenue", T0, **options)
+        explicit = self.corpus.search("Revenue", T0, nlp_profile="v1", **options)
+        self.assertEqual(dumps(default), dumps(explicit))
+        self.assertNotIn("nlp_profile", default)
+        self.assertEqual(default["model"]["numpy_version"], np.__version__)
+        self.assertEqual(digest(default["financial_nlp"]), "0bf44f89534b948c6aaa4deb2f9499471d1555082a5a88dd9b904f509d275fec")
+        with patch.object(latent, "fit", side_effect=AssertionError("replay must not fit")):
+            self.assertEqual(FinancialCorpus(self.root).replay(default["snapshot_id"]), default)
 
     def test_legacy_replay_explicitly_selects_v1_despite_future_default(self):
         self.admit()
