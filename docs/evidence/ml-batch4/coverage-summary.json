@@ -1,0 +1,26 @@
+{
+  "source_commit": "012a7ab49cdbd1e57b780b1b9d51b569f7a8d00f",
+  "meta": {
+    "format": 3,
+    "version": "7.17.0",
+    "timestamp": "2026-11-15T04:48:12.936639",
+    "branch_coverage": true,
+    "show_contexts": false
+  },
+  "totals": {
+    "covered_lines": 18944,
+    "num_statements": 21926,
+    "percent_covered": 83.44526527871055,
+    "percent_covered_display": "83",
+    "missing_lines": 2982,
+    "excluded_lines": 11,
+    "percent_statements_covered": 86.39970810909422,
+    "percent_statements_covered_display": "86",
+    "num_branches": 7854,
+    "num_partial_branches": 1496,
+    "covered_branches": 5906,
+    "missing_branches": 1948,
+    "percent_branches_covered": 75.1973516679399,
+    "percent_branches_covered_display": "75"
+  }
+}
