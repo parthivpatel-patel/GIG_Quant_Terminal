@@ -1,0 +1,19 @@
+{
+  "state": "PASS",
+  "separate_installed_process": true,
+  "sqlite_backup_restored": true,
+  "no_refit": true,
+  "runtime_backup_external": false,
+  "snapshots": [
+    {
+      "id": "ba99f82a5ebffc4273a45fe44b9ce16117270b4cdcddcd5a74f7c3f6da86e4cd",
+      "profile": "v1",
+      "response_sha256": "2697c0d3d7e7f2d6a2a35c1cbdc459f12461b7a4fd5a39debadfde5c845d019d"
+    },
+    {
+      "id": "6587a8b9ca107aa847c82d65ad4d5bd2d2ef0ade4aedd92a1372f5fe7d1d4105",
+      "profile": "v2",
+      "response_sha256": "d182e81d5cb1ff002645b856671708a60ef674e359594dbc4a9076f7a5590df0"
+    }
+  ]
+}

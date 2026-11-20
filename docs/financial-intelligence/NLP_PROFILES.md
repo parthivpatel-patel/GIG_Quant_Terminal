@@ -81,3 +81,15 @@ legacy/v2 replay under changed dispatcher defaults, saved-model replay without
 refitting, strict API/profile/resource rejection, Unicode byte quote boundaries,
 whole-candidate rejections, unknown authority and the original numeric attacks.
 The existing financial intelligence and latent/NLP tests remain unchanged.
+
+The pre-profile hybrid fixture at
+`tests/fixtures/financial_intelligence/preprofile-v1-hybrid.json` was captured
+from actual published source `5de784c003f6eef2e0d505b76b4dc4db4a7d7dbb`
+with NumPy2.3.5 and the explicitly GIG-authored SYNTHETIC protocol text. It pins
+the original snapshot ID, complete JSON model and annotation bytes. The test
+replays that saved model without fitting, including under NumPy2.4.6. Separate
+fresh-fit tests require default/explicit-v1 equivalence, the original annotation
+hash, actual dependency provenance and exact no-refit replay. A new SVD fit with
+a different recorded NumPy version has a different model/snapshot identity;
+tests must not mislabel it as the old fitted artifact. The original PR21 CI
+failure is retained in release evidence rather than erased.
