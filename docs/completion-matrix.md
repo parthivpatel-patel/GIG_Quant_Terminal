@@ -399,3 +399,17 @@ predictions without fitting. Full evidence/source hashes are in
 `docs/evidence/ml-batch4/`. Three of six synthetic OOSfolds underperform the
 training-mean baseline; those negative findings are retained.
 Inventory:11implemented families,29planned; no economic or certification claim.
+
+## Family12: bounded empirical-Bayes linear research
+
+Actual CPU BayesianRidge fitting, training-only transforms and purged validation
+feed immutable posterior JSON and no-refit inference through the existing
+registry, HTTP and terminal. Conditional Gaussian uncertainty stays explicitly
+uncalibrated; ARD and automatic allocation/promotion remain unavailable.
+Gaussian OOS density, nominal interval coverage/width and train-only baselines
+are saved; zero-variance baseline density is null/UNAVAILABLE. Focused50combined
+numerical/persistence tests and22real Chromium checks pass before full release
+acceptance. Strict budgets, future-vintage invariance, posterior algebra,
+failure-injected nonconvergence and allocation rejection are verified.
+Inventory:12implemented families,28planned on this feature branch. No economic
+validation, tradable signal, ARM64/container acceptance or certification claim.
