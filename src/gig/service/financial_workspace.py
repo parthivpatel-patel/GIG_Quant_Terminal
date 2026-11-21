@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from gig.financial_intelligence.citations import verify_citation
 from gig.financial_intelligence.reference import treasury_document
 from gig.financial_intelligence.store import FinancialCorpus
 from gig.service.contracts import Contract, State
@@ -57,6 +58,13 @@ class FinancialIntelligenceWorkspace:
             if data is None:
                 return self._contract(None, state=State.UNAVAILABLE, as_of=payload["as_of"])
             return self._contract({"title": self._title(data), **data}, as_of=data["as_of"])
+        if operation == "verify-citation":
+            _fields(payload, {"operation", "snapshot_id", "passage_id"}, {"operation", "snapshot_id", "passage_id"})
+            try:
+                data = verify_citation(self.corpus, payload["snapshot_id"], payload["passage_id"])
+            except FileNotFoundError:
+                return self._contract(None, state=State.UNAVAILABLE)
+            return self._contract({"title": "Saved citation byte verification; financial truth UNKNOWN", **data}, as_of=data["as_of"])
         if operation == "replay":
             _fields(payload, {"operation", "snapshot_id"}, {"operation", "snapshot_id"})
             try:
