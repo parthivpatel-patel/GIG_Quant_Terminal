@@ -8,12 +8,12 @@ trained, economically validated or approved trading models.
 Implementation update: families08(Gaussian process),09(Random Forest /
 ExtraTrees),10(fixed-RBF epsilon-SVR),11(uniform K=5 nearest-neighbor regression)
 12(empirical-Bayes ridge regression) and13(binomial logit probability research)
-are implemented in bounded CPU batches. There are thirteen implemented families
-and27planned additions. RF and ExtraTrees
+and14(additive cubic-spline regression) are implemented in bounded CPU batches.
+There are fourteen implemented families and26planned additions. RF and ExtraTrees
 are two actually fitted variants of one family, not two independent statistical hypotheses. See
 [Gaussian process](GAUSSIAN_PROCESS.md), [forests](FORESTS.md), [SVR](SVM.md),
 [nearest neighbors](KNN.md), [Bayesian linear](BAYESIAN_LINEAR.md)
-and [binomial GLM](BINOMIAL_GLM.md).
+[binomial GLM](BINOMIAL_GLM.md) and [additive splines](ADDITIVE_SPLINE.md).
 
 ## Seven existing primary families
 
@@ -49,7 +49,7 @@ inventory never registers executable code or starts training.
 | 11 | Nearest-neighbor models | IMPLEMENTED: actual sklearn uniform K=5 regression; JSON retained-observation replay |20..256training rows/16fits; train-only scaling, canonical chronological distance ties, null uncertainty, no allocation approval |
 | 12 | Bayesian linear / ARD regression | IMPLEMENTED: actual sklearn BayesianRidge; JSON posterior replay; ARD unavailable |20..256rows/16fits/512iterations; conditional Gaussian intervals uncalibrated; proper OOS density/coverage diagnostics; allocation rejected |
 | 13 | Generalized linear models | IMPLEMENTED: actual sklearn regularized binomial logit; safe JSON probability replay |20..256rows/16fits/512iterations; directional labels, Brier/log-loss and train-only baselines; uncalibrated; no allocation approval; other likelihoods unavailable |
-| 14 | Generalized additive models | spline basis plus existing linear kernels | Reuse supported BSD components; fixed training-only knots |
+| 14 | Generalized additive models | IMPLEMENTED: actual sklearn cubic SplineTransformer plus Ridge, safe JSON/SciPy replay |20..256rows/16fits/96basis columns; fixed training-only uniform knots and linear boundary extrapolation; null uncertainty, no interactions or allocation approval |
 | 15 | Robust regression / Huber / RANSAC | scikit-learn | Disclose robust-loss and outlier policy; no hindsight filtering |
 | 16 | Linear quantile regression | scikit-learn / SciPy | Pinball loss, quantile crossing and coverage checks |
 | 17 | XGBoost | candidate CPU tree engine | Separate source/license/ARM compatibility verification before installation |
@@ -94,7 +94,9 @@ batch4 as one bounded uniform K=5 nearest-neighbor regressor retaining training
 observations and labels, without optimized weights. Family12 is implemented in
 batch5 as bounded empirical-Bayes ridge, not ARD. Family13 is implemented in
 batch6 as a bounded binomial logit for directional probabilities, not expected
-returns. Twenty-seven later additions remain planned.
+returns. Family14 is implemented in batch7 as fixed cubic additive splines plus
+ridge, without interactions or calibrated intervals. Twenty-six later additions
+remain planned.
 
 Every family must preserve acquisition/revision knowledge, feature availability,
 purged label selection, source classification, training-only preprocessing,

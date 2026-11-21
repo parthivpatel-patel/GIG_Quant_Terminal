@@ -449,3 +449,16 @@ SQLite backup restoration pass. Exact hashes, full logs and screenshots are in
 clears stale passage handoffs on empty queries and renders source markup inertly.
 No data rights, trading approval, model family or institutional certification is
 created by this read-only check. See `docs/financial-intelligence/CITATION_VERIFICATION.md`.
+
+## Family14: bounded additive cubic-spline research
+
+Actual CPU SplineTransformer plus fixed Ridge fitting uses training-only uniform
+knots and purged admitted observations. Safe JSON preserves transforms, knots,
+coefficients and constant-input policy; independent Cox-de Boor/ridge references
+and no-refit replay pass. New variation in constant training features rejects
+inference. No interactions or calibrated uncertainty are claimed. Registry,
+HTTP and saved-dataset terminal integration pass8focused tests and22actual
+Chromium159checks;180Node smoke checks are separate. Full frozen-source and
+installed-wheel acceptance are pending at this implementation checkpoint.
+Inventory:14implemented,26planned. Allocation and production promotion remain
+rejected; authored data stays SYNTHETIC. No economic or certification claim.

@@ -456,7 +456,7 @@ for (const kind of financialActions) {
 }
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
-  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-knn": "research-model", "research-bayes": "research-model", "research-glm": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-knn": "research-model", "research-bayes": "research-model", "research-glm": "research-model", "research-gam": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
   "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
   "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
   "schedule-twap": "execution-engine", "advance-clock": "execution-engine",
@@ -765,4 +765,10 @@ await successfulPipeline("financial-answer", { snapshot_id: "e".repeat(64), rows
 get("analytics-kind").value = "workspace-financial-verify";
 await get("analytics-kind").dispatch("change");
 checked("Empty new query clears the previous passage binding", () => assert.equal(JSON.parse(get("analytics-input").value).passage_id, "0".repeat(64)));
+
+
+get("analytics-kind").value = "workspace-research-gam";
+await get("analytics-kind").dispatch("change");
+checked("Additive splines select an explicit saved-dataset model", () => assert.equal(JSON.parse(get("analytics-input").value).model, "additive_spline"));
+checked("Additive uncertainty and constant-feature limits are explicit", () => { assert(get("workbench-scope").textContent.includes("Uncertainty is UNAVAILABLE")); assert(get("workbench-scope").textContent.includes("constant training features")); });
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);
