@@ -41,6 +41,7 @@ KINDS = {
     "knn": "FORWARD_RETURN_ESTIMATE",
     "bayesian_ridge": "FORWARD_RETURN_ESTIMATE",
     "binomial_glm": "FORWARD_DIRECTION_PROBABILITY",
+    "additive_spline": "FORWARD_RETURN_ESTIMATE",
 }
 
 
@@ -73,7 +74,7 @@ def configuration(payload: dict[str, Any]) -> dict[str, Any]:
     if set(payload) & ({"sequence_length", "hidden_size", "epochs", "states", "iterations"} - options):
         raise ValueError("settings do not belong to selected model")
     config = {"model": model,
-              "min_train": integer(payload.get("min_train", 40), 20, 128 if model in {"gaussian_process", "svr"} else 256 if model in {"random_forest", "extra_trees", "knn", "bayesian_ridge", "binomial_glm"} else 800, "min_train"),
+              "min_train": integer(payload.get("min_train", 40), 20, 128 if model in {"gaussian_process", "svr"} else 256 if model in {"random_forest", "extra_trees", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"} else 800, "min_train"),
               "test_size": integer(payload.get("test_size", 10), 1, 200, "test_size"),
               "embargo": integer(payload.get("embargo", 1), 0, 100, "embargo"),
               "seed": integer(payload.get("seed", 42), 0, 2**31 - 1, "seed")}
@@ -132,7 +133,7 @@ def _prediction(row, value, model_id, fold, model, uncertainty, **extra):
     return {"instrument_id": row["instrument_id"], "timestamp": row["timestamp"],
             "prediction": float(value), "target": row["target"], "label_end": row["label_end"],
             "fold": fold, "model_id": model_id, "prediction_kind": KINDS[model],
-            "uncertainty": uncertainty, "usable_for_portfolio": model not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm"},
+            "uncertainty": uncertainty, "usable_for_portfolio": model not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"},
             "trading_approved": False, **extra}
 
 
@@ -423,6 +424,9 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
     elif config["model"] == "bayesian_ridge":
         from gig.research.bayesian_linear import fit_persisted_bayesian_ridge
         models, predictions, folds = fit_persisted_bayesian_ridge(dataset, rows, names, config)
+    elif config["model"] == "additive_spline":
+        from gig.research.additive_spline import fit_persisted_additive_spline
+        models, predictions, folds = fit_persisted_additive_spline(dataset, rows, names, config)
     elif config["model"] == "binomial_glm":
         from gig.research.binomial_glm import fit_persisted_binomial_glm
         models, predictions, folds = fit_persisted_binomial_glm(dataset, rows, names, config)
@@ -456,7 +460,7 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
                             "mse_state": "AVAILABLE" if metric is not None else "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS"},
                 "dataset_diagnostics": dataset.get("diagnostics", {}),
                 "provenance": dataset.get("provenance", {}),
-                "usable_for_portfolio": config["model"] not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm"}
+                "usable_for_portfolio": config["model"] not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"}
                     and all(r.get("fit_state", "CONVERGED") == "CONVERGED" for r in predictions),
                 "trading_approved": False, "economically_validated": False}
     if config["model"] == "binomial_glm":
@@ -505,6 +509,13 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
         values, spread = predict_bayesian_ridge(estimator, [[r["features"][n] for n in names] for r in own], names)
         output = [dict(row, prediction=float(value), uncertainty=bayesian_uncertainty(sd))
                   for row, value, sd in zip(own, values, spread, strict=True)]
+    elif kind == "additive_spline":
+        from gig.ml.additive_spline import predict_additive_spline
+        from gig.research.additive_spline import uncertainty as additive_uncertainty
+        query = [r for r in own if aware_timestamp(r["timestamp"]) >= aware_timestamp(state["training_cutoff"])]
+        values = predict_additive_spline(estimator, [[r["features"][n] for n in names] for r in query], names)
+        output = [dict(row, prediction=float(value), uncertainty=additive_uncertainty())
+                  for row, value in zip(query, values, strict=True)]
     elif kind == "binomial_glm":
         from gig.ml.binomial_glm import LABEL_RULE, predict_binomial_glm
         from gig.research.binomial_glm import uncertainty as binomial_uncertainty
@@ -549,5 +560,5 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
             final.append(_prediction(row, row["prediction"], model_id, None, kind,
                                      row.get("uncertainty", {"value": None, "state": "UNAVAILABLE"}),
                                      fit_state=state["fit_state"],
-                                     usable_for_portfolio=kind not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm"} and state["fit_state"] == "CONVERGED", **extra))
+                                     usable_for_portfolio=kind not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"} and state["fit_state"] == "CONVERGED", **extra))
     return final
