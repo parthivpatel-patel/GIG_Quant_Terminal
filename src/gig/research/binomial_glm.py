@@ -7,7 +7,13 @@ from pathlib import Path
 
 import numpy as np
 
-from gig.ml.binomial_glm import LABEL_RULE, MAX_FITS, MAX_TRAIN, fit_binomial_glm, predict_binomial_glm
+from gig.ml.binomial_glm import (
+    LABEL_RULE,
+    MAX_FITS,
+    MAX_TRAIN,
+    fit_binomial_glm,
+    predict_binomial_glm,
+)
 from gig.research.model_pipeline import _folds, _prediction, _training_vintage, _wrapper, identity
 from gig.timestamps import aware_timestamp
 

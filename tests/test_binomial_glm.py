@@ -105,6 +105,7 @@ class BinomialKernelTests(unittest.TestCase):
 
     def test_nonconvergence_and_even_rehashed_tampering_rejected(self):
         from sklearn.linear_model import LogisticRegression
+
         from gig.ml.binomial_glm import _fingerprint
         original = LogisticRegression.fit
         def capped(estimator, *args, **kwargs):
