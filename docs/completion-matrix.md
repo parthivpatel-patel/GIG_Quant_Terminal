@@ -433,3 +433,19 @@ hashes, negative findings and acceptance evidence are in `docs/evidence/ml-batch
 Probabilities stay uncalibrated and allocation/promotion remain rejected.
 Inventory:13implemented families,27planned
 on this feature branch; other GLM likelihoods/links remain unavailable.
+
+## Read-only financial citation verification
+
+Saved query/passage binding and original document/quoted-byte hashes are verified
+without writing state or fitting a retrieval model. Exact UTF-8 lines and
+normalized XML rendering remain distinct. Verifier code and source/query
+identities are traceable; the hash result is unsigned and not a saved external
+audit/certificate. Authenticity, financial truth, issuer identity and freshness
+remain unverified. Combined regression1,348passed/9optional FinBERT skips,
+83.67%coverage; installed wheel127passed/1optional C-ABI skip,238packaged files
+match.26citation+24GLM Chromium159checks,177Node checks and independent installed
+SQLite backup restoration pass. Exact hashes, full logs and screenshots are in
+`docs/evidence/financial-citation-verification/`. The workbench uses real saved IDs,
+clears stale passage handoffs on empty queries and renders source markup inertly.
+No data rights, trading approval, model family or institutional certification is
+created by this read-only check. See `docs/financial-intelligence/CITATION_VERIFICATION.md`.

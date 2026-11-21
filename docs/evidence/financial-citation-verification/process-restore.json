@@ -1,0 +1,20 @@
+{
+  "state": "PASS",
+  "separate_installed_process": true,
+  "sqlite_backup_restored": true,
+  "no_refit": true,
+  "unchanged_counts": {
+    "documents": 1,
+    "passages": 1,
+    "latent_models": 1,
+    "snapshots": 1
+  },
+  "integrity": "ok",
+  "verification_id": "bcc551a6fe089fcec0bc9dc2bbab2d0b93efd9385cfd69552f998fa97fb56aff",
+  "verifier_code_sha256": "e337e1dd297d83854a915d21cffc9ebb0d00ae7a96538ad03f2241af8604a3cd",
+  "response_sha256": "17f32dbcf14ec42ba8bbb57817e1aaf8599be07da93c72c635f81195b28ba1a9",
+  "hash_encoding": "gig.service.serialization.dumps UTF-8",
+  "runtime_backup_external": false,
+  "package_import": "/tmp/gig-citations-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-citations-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so"
+}
