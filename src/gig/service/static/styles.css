@@ -200,3 +200,6 @@ main[data-workspace="charts"] .engine-control{display:none}
 @media(max-width:920px){.charts-body{grid-template-columns:1fr}.charts-watch{border-right:0;border-bottom:1px solid var(--border);max-height:none}.chart-watchlist{display:flex;overflow-x:auto}.chart-watch-row{min-width:120px}.chart-pane-price{height:320px}}
 @media(max-width:640px){.charts-toolbar{padding:12px 14px}.charts-layouts input{width:120px}.chart-pane-price{height:280px}}
 .charts-note{margin:0;padding:8px 14px;font-size:12px;color:var(--amber);border-bottom:1px solid var(--border)}
+
+/* Preserve complete textual states on mobile while keeping numeric figures intact. */
+@media(max-width:420px){.metric-value.text-value{overflow-wrap:anywhere;word-break:normal}}
