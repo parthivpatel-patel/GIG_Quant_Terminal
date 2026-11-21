@@ -456,7 +456,7 @@ for (const kind of financialActions) {
 }
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
-  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-knn": "research-model", "research-bayes": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-knn": "research-model", "research-bayes": "research-model", "research-glm": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
   "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
   "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
   "schedule-twap": "execution-engine", "advance-clock": "execution-engine",
@@ -743,4 +743,15 @@ await get("analytics-kind").dispatch("change");
 checked("Bayesian ridge has explicit saved-dataset action", () => assert.equal(JSON.parse(get("analytics-input").value).model, "bayesian_ridge"));
 checked("Bayesian uncertainty assumptions remain explicit", () => assert(get("workbench-scope").textContent.includes("NOT OOS calibrated")));
 
+
+
+get("analytics-kind").value = "workspace-research-glm";
+await get("analytics-kind").dispatch("change");
+checked("Binomial GLM explicitly selects probability research", () => assert.equal(JSON.parse(get("analytics-input").value).model, "binomial_glm"));
+checked("Probability research never claims return estimates", () => assert(get("workbench-scope").textContent.includes("not expected returns")));
+
+
+replyOverride = { body: fixture({ data: { metrics: { state: "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS", number: 1.25 }, rows: [] } }) };
+await get("refresh").dispatch("click"); await settle();
+checked("Categorical metric states can wrap without reflowing numeric figures", () => { const values = get("metrics").children.map(card => card.children[1]); assert(values[0].className.includes("text-value")); assert(!values[1].className.includes("text-value")); assert.equal(values[0].textContent, "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS"); });
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

@@ -416,3 +416,20 @@ underperform training-only baselines; negative findings are retained in
 failure-injected nonconvergence and allocation rejection are verified.
 Inventory:12implemented families,28planned on this feature branch. No economic
 validation, tradable signal, ARM64/container acceptance or certification claim.
+
+## Family13: bounded binomial GLM probability research
+
+Actual CPU binomial logit fitting, strict purged directional labels and safe
+JSON replay connect to the existing registry/HTTP/workbench. Return targets
+remain traceable; probability output is explicitly distinct from return units.
+Brier/log-loss and training-only frequency baselines replace return-MSE;
+empty calibration bins and parameter uncertainty are unavailable/null.
+Full regression:1,340passed/9optional FinBERT skips,83.65%coverage. Independent
+wheel119passed/1optional C-ABI skip;237packaged files match and installed-process
+replay performs no fit.24Chromium159checks pass after repairing mobile textual
+state overflow; the original failing diagnostics/screenshots remain preserved.
+Synthetic Brier/log-loss both underperform train-only baselines. Complete source
+hashes, negative findings and acceptance evidence are in `docs/evidence/ml-batch6/`.
+Probabilities stay uncalibrated and allocation/promotion remain rejected.
+Inventory:13implemented families,27planned
+on this feature branch; other GLM likelihoods/links remain unavailable.

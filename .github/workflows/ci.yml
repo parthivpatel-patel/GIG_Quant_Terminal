@@ -50,7 +50,7 @@ jobs:
       - name: Mypy (Sprint 9 and Global Intelligence modules)
         run: mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py src/gig/service/viz.py src/gig/research_org/director.py src/gig/research_org/treasury_followup.py src/gig/research_org/template_catalog.py src/gig/research_org/observed_experiments.py src/gig/service/market_flow.py src/gig/data/cftc_positions.py src/gig/service/positioning.py src/gig/research_org/equity_experiments.py src/gig/data/equity_positioning.py src/gig/service/equity_positioning.py
       - name: Gaussian-process typed numerical boundary
-        run: mypy --follow-imports=silent --ignore-missing-imports src/gig/ml/gaussian_process.py src/gig/ml/forests.py src/gig/ml/svm.py src/gig/ml/knn.py src/gig/ml/bayesian_linear.py
+        run: mypy --follow-imports=silent --ignore-missing-imports src/gig/ml/gaussian_process.py src/gig/ml/forests.py src/gig/ml/svm.py src/gig/ml/knn.py src/gig/ml/bayesian_linear.py src/gig/ml/binomial_glm.py
       - name: Financial Intelligence typed boundary
         run: mypy --follow-imports=silent --ignore-missing-imports src/gig/financial_intelligence src/gig/service/financial_workspace.py
       - name: Tests
@@ -119,6 +119,8 @@ jobs:
         run: python scripts/browser_knn.py --evidence-dir /tmp/ci-browser-knn --axe /tmp/axe/package/axe.min.js
       - name: Chromium bounded Bayesian linear research and uncertainty
         run: python scripts/browser_bayesian_linear.py --evidence-dir /tmp/ci-browser-bayes --axe /tmp/axe/package/axe.min.js
+      - name: Chromium bounded binomial GLM and probability scoring
+        run: python scripts/browser_binomial_glm.py --evidence-dir /tmp/ci-browser-binomial --axe /tmp/axe/package/axe.min.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -140,3 +142,4 @@ jobs:
             /tmp/ci-browser-svr
             /tmp/ci-browser-knn
             /tmp/ci-browser-bayes
+            /tmp/ci-browser-binomial

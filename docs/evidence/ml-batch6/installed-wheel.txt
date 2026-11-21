@@ -1,0 +1,6 @@
+........................................................................ [ 60%]
+............................s...................                         [100%]
+------------------ generated xml file: /tmp/gig-glm-wheel.xml ------------------
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_native_operations.py:22: optional C++ library not built
+119 passed, 1 skipped in 68.48s (0:01:08)

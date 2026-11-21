@@ -40,6 +40,7 @@ KINDS = {
     "svr": "FORWARD_RETURN_ESTIMATE",
     "knn": "FORWARD_RETURN_ESTIMATE",
     "bayesian_ridge": "FORWARD_RETURN_ESTIMATE",
+    "binomial_glm": "FORWARD_DIRECTION_PROBABILITY",
 }
 
 
@@ -72,7 +73,7 @@ def configuration(payload: dict[str, Any]) -> dict[str, Any]:
     if set(payload) & ({"sequence_length", "hidden_size", "epochs", "states", "iterations"} - options):
         raise ValueError("settings do not belong to selected model")
     config = {"model": model,
-              "min_train": integer(payload.get("min_train", 40), 20, 128 if model in {"gaussian_process", "svr"} else 256 if model in {"random_forest", "extra_trees", "knn", "bayesian_ridge"} else 800, "min_train"),
+              "min_train": integer(payload.get("min_train", 40), 20, 128 if model in {"gaussian_process", "svr"} else 256 if model in {"random_forest", "extra_trees", "knn", "bayesian_ridge", "binomial_glm"} else 800, "min_train"),
               "test_size": integer(payload.get("test_size", 10), 1, 200, "test_size"),
               "embargo": integer(payload.get("embargo", 1), 0, 100, "embargo"),
               "seed": integer(payload.get("seed", 42), 0, 2**31 - 1, "seed")}
@@ -131,7 +132,7 @@ def _prediction(row, value, model_id, fold, model, uncertainty, **extra):
     return {"instrument_id": row["instrument_id"], "timestamp": row["timestamp"],
             "prediction": float(value), "target": row["target"], "label_end": row["label_end"],
             "fold": fold, "model_id": model_id, "prediction_kind": KINDS[model],
-            "uncertainty": uncertainty, "usable_for_portfolio": model not in {"garch", "hmm", "svr", "knn", "bayesian_ridge"},
+            "uncertainty": uncertainty, "usable_for_portfolio": model not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm"},
             "trading_approved": False, **extra}
 
 
@@ -422,6 +423,9 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
     elif config["model"] == "bayesian_ridge":
         from gig.research.bayesian_linear import fit_persisted_bayesian_ridge
         models, predictions, folds = fit_persisted_bayesian_ridge(dataset, rows, names, config)
+    elif config["model"] == "binomial_glm":
+        from gig.research.binomial_glm import fit_persisted_binomial_glm
+        models, predictions, folds = fit_persisted_binomial_glm(dataset, rows, names, config)
     elif config["model"] == "svr":
         from gig.research.svm import fit_persisted_svr
         models, predictions, folds = fit_persisted_svr(dataset, rows, names, config)
@@ -434,7 +438,7 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
         raise ValueError("research exceeds 64 fitted model states")
     predictions.sort(key=lambda r: (aware_timestamp(r["timestamp"]), r["instrument_id"]))
     errors = [(r["prediction"]-r["target"])**2 for r in predictions]
-    metric = float(np.mean(errors)) if config["model"] not in {"lightgbm", "garch"} else None
+    metric = float(np.mean(errors)) if config["model"] not in {"lightgbm", "garch", "binomial_glm"} else None
     if metric is not None and not math.isfinite(metric):
         raise ValueError("research metric exceeds finite range")
     latest = {}
@@ -452,9 +456,13 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
                             "mse_state": "AVAILABLE" if metric is not None else "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS"},
                 "dataset_diagnostics": dataset.get("diagnostics", {}),
                 "provenance": dataset.get("provenance", {}),
-                "usable_for_portfolio": config["model"] not in {"garch", "hmm", "svr", "knn", "bayesian_ridge"}
+                "usable_for_portfolio": config["model"] not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm"}
                     and all(r.get("fit_state", "CONVERGED") == "CONVERGED" for r in predictions),
                 "trading_approved": False, "economically_validated": False}
+    if config["model"] == "binomial_glm":
+        artifact["metrics"].update(brier_score=float(np.mean(errors)),
+            log_loss=sum(f["log_loss"]*f["test_count"] for f in folds)/len(predictions),
+            target_kind="BINARY_FORWARD_RETURN_STRICTLY_POSITIVE", probability_calibrated=False)
     # Admit the whole durable artifact before any immutable state is published.
     return {**artifact, "run_id": identity(artifact)}, models
 
@@ -497,6 +505,14 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
         values, spread = predict_bayesian_ridge(estimator, [[r["features"][n] for n in names] for r in own], names)
         output = [dict(row, prediction=float(value), uncertainty=bayesian_uncertainty(sd))
                   for row, value, sd in zip(own, values, spread, strict=True)]
+    elif kind == "binomial_glm":
+        from gig.ml.binomial_glm import LABEL_RULE, predict_binomial_glm
+        from gig.research.binomial_glm import uncertainty as binomial_uncertainty
+        values, logits = predict_binomial_glm(estimator, [[r["features"][n] for n in names] for r in own], names)
+        output = [dict(row, prediction=float(value), target=float(row["target"] > 0),
+                       raw_return_target=row["target"], label_rule=LABEL_RULE,
+                       linear_predictor=float(logit), uncertainty=binomial_uncertainty(value))
+                  for row, value, logit in zip(own, values, logits, strict=True)]
     elif kind == "svr":
         from gig.ml.svm import predict_svr
         from gig.research.svm import uncertainty as svr_uncertainty
@@ -528,8 +544,10 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
     final = []
     for row in output:
         if aware_timestamp(row["timestamp"]) >= cutoff:
+            extra = ({k: row[k] for k in ("raw_return_target", "label_rule", "linear_predictor")}
+                     if kind == "binomial_glm" else {})
             final.append(_prediction(row, row["prediction"], model_id, None, kind,
                                      row.get("uncertainty", {"value": None, "state": "UNAVAILABLE"}),
                                      fit_state=state["fit_state"],
-                                     usable_for_portfolio=kind not in {"garch", "hmm", "svr", "knn", "bayesian_ridge"} and state["fit_state"] == "CONVERGED"))
+                                     usable_for_portfolio=kind not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm"} and state["fit_state"] == "CONVERGED", **extra))
     return final

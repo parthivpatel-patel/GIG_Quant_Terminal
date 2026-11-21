@@ -47,6 +47,10 @@ def model_capabilities() -> dict[str, dict[str, Any]]:
     dependencies = {"lightgbm": _exists("lightgbm"), "torch": _exists("torch"),
                     "transformers": _exists("transformers")}
     return {
+        "generalized_linear": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
+                              "implemented": True, "trained": False, "trading_approved": False,
+                              "dependency_available": _exists("sklearn"),
+                              "reason": "Bounded CPU binomial logit GLM; proper Brier/log-loss scoring; probabilities uncalibrated; other links unavailable; research only"},
         "bayesian_linear": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
                             "implemented": True, "trained": False, "trading_approved": False,
                             "dependency_available": _exists("sklearn"),

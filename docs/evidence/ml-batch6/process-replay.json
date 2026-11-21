@@ -1,0 +1,11 @@
+{
+  "state": "PASS",
+  "dataset_id": "0a051b5a88ebf195b25720e94df20228981b177b665d8567cf049970e30d7eeb",
+  "run_id": "22ac8471260050f9bb89be99e9cd9e23ae91bcdc1cc64110a8726b88c36cc6bb",
+  "separate_installed_process": true,
+  "no_refit": true,
+  "response_sha256": "58a8079eae34e935ee4c90bf6d0b76f8edb2909f0eb3d2d2bb89e164e2331189",
+  "runtime_backup_external": false,
+  "package_import": "/tmp/gig-glm-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-glm-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so"
+}
