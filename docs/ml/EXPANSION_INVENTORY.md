@@ -6,11 +6,11 @@ was prepared. This is a research implementation inventory, not a claim of forty
 trained, economically validated or approved trading models.
 
 Implementation update: families08(Gaussian process),09(Random Forest /
-ExtraTrees),10(fixed-RBF epsilon-SVR) and11(uniform K=5 nearest-neighbor regression)
+ExtraTrees),10(fixed-RBF epsilon-SVR),11(uniform K=5 nearest-neighbor regression)
 and12(empirical-Bayes ridge regression) are implemented in bounded CPU batches.
 There are twelve implemented families and28planned additions. RF and ExtraTrees
 are two actually fitted variants of one family, not two independent statistical hypotheses. See
-[Gaussian process](GAUSSIAN_PROCESS.md), [forests](FORESTS.md), [SVR](SVM.md)
+[Gaussian process](GAUSSIAN_PROCESS.md), [forests](FORESTS.md), [SVR](SVM.md),
 [nearest neighbors](KNN.md) and [Bayesian linear](BAYESIAN_LINEAR.md).
 
 ## Seven existing primary families

@@ -1,0 +1,11 @@
+{
+  "state": "PASS",
+  "dataset_id": "0a051b5a88ebf195b25720e94df20228981b177b665d8567cf049970e30d7eeb",
+  "run_id": "be2c14a6b14e29e4712ebbca88acef94609afdf084ef054caa6dab9af6526cfb",
+  "separate_installed_process": true,
+  "no_refit": true,
+  "response_sha256": "5daea9afb85eb53e0d9c6787cbfd52d9d58daf4ff457ad2d1500ffad8d3cf064",
+  "runtime_backup_external": false,
+  "package_import": "/tmp/gig-bayes-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-bayes-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so"
+}

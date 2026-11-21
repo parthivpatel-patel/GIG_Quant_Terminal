@@ -1,0 +1,6 @@
+........................................................................ [ 64%]
+....................s...................                                 [100%]
+----------------- generated xml file: /tmp/gig-bayes-wheel.xml -----------------
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_native_operations.py:22: optional C++ library not built
+111 passed, 1 skipped in 33.18s
