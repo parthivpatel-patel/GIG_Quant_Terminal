@@ -498,7 +498,8 @@
       const card = el("article", "metric-card");
       const label = el("div", "metric-label");
       label.append(el("span", "", item.label || knownLabel || human(key)), el("span", "metric-marker"));
-      const valueElement = el("div", `metric-value${value.length > 15 ? " long-value" : ""}`, value);
+      const textValue = typeof item.value === "string" && !Number.isFinite(Number(item.value));
+      const valueElement = el("div", `metric-value${value.length > 15 ? " long-value" : ""}${textValue ? " text-value" : ""}`, value);
       const detail = [item.unit, item.state, item.description || item.note].filter((part) => part !== null && part !== undefined && part !== "").join(" · ");
       card.append(label, valueElement, el("div", "metric-detail", detail || knownDetail || "Backend research metric"));
       return card;

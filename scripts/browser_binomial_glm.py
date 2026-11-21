@@ -17,7 +17,7 @@ def main():
     parser.add_argument("--executable")
     args = parser.parse_args()
     args.evidence_dir.mkdir(parents=True, exist_ok=True)
-    checks, errors, external = [], [], []
+    checks, errors, external, responsive, axe_reports = [], [], [], [], []
 
     def check(name, value):
         checks.append({"name": name, "passed": bool(value)})
@@ -98,17 +98,27 @@ def main():
                 assert hashlib.sha256(args.axe.read_bytes()).hexdigest() == manifest["script_sha256"]
                 page.add_script_tag(path=str(args.axe))
                 result = page.evaluate("async()=>await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa']}})")
+                axe_reports.append({"theme": theme, "violations": result["violations"], "incomplete": result["incomplete"]})
                 check(theme + " automated accessibility", not result["violations"])
             page.screenshot(path=str(args.evidence_dir / ("binomial-" + theme + ".png")), full_page=True)
         for width in (320, 375, 768, 1440):
             page.set_viewport_size({"width": width, "height": 900})
-            check(str(width) + "px no document overflow", page.evaluate("document.documentElement.scrollWidth<=innerWidth"))
+            layout = page.evaluate("""() => ({width:innerWidth,document_width:document.documentElement.scrollWidth,
+              overflowing_elements:[...document.querySelectorAll('main *')].filter(e=>{
+                const r=e.getBoundingClientRect();return !e.closest('.table-scroll,pre')&&r.width>0&&r.left>=0&&r.right>innerWidth+1;
+              }).slice(0,16).map(e=>({tag:e.tagName,id:e.id,class_name:e.className,
+                text:e.textContent.slice(0,90),right:e.getBoundingClientRect().right}))})""")
+            responsive.append(layout)
+            check(str(width) + "px no document overflow", layout["document_width"] <= layout["width"])
+            if layout["document_width"] > layout["width"]:
+                page.screenshot(path=str(args.evidence_dir / ("overflow-"+str(width)+".png")), full_page=True)
         check("all sixteen existing sections retained", page.locator("#section-nav a").count() == 16)
         check("no JavaScript exceptions", not errors)
         check("no external browser requests", not external)
         browser.close()
     report = {"checks": checks, "passed": sum(c["passed"] for c in checks), "failed": sum(not c["passed"] for c in checks),
               "chromium_version": version, "javascript_errors": errors, "external_requests": external,
+              "responsive": responsive, "axe": axe_reports,
               "classification": "AUTHORED_SYNTHETIC_RESEARCH_ONLY", "orders_submitted": 0,
               "formal_accessibility_certified": False}
     (args.evidence_dir / "report.json").write_text(json.dumps(report, indent=2) + "\n")

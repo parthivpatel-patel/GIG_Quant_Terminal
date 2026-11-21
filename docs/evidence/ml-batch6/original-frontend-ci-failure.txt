@@ -1,0 +1,128 @@
+Published source36dd65584b457e49aaf52604a69b6a95c8d8030a, frontend job136737066919.
+Both backend jobs passed. The actual Chromium159 run failed strict320px and375px
+no-document-overflow assertions. The tests and browser version were retained.
+
+2026-11-21T04:59:00.6181169Z ##[group]Run python scripts/browser_binomial_glm.py --evidence-dir /tmp/ci-browser-binomial --axe /tmp/axe/package/axe.min.js
+2026-11-21T04:59:00.6181781Z [36;1mpython scripts/browser_binomial_glm.py --evidence-dir /tmp/ci-browser-binomial --axe /tmp/axe/package/axe.min.js[0m
+2026-11-21T04:59:00.6210587Z shell: /usr/bin/bash -e {0}
+2026-11-21T04:59:00.6210801Z env:
+2026-11-21T04:59:00.6210975Z   GIG_BROKER_CONNECTIVITY_ENABLED: false
+2026-11-21T04:59:00.6211191Z   OPENBLAS_NUM_THREADS: 1
+2026-11-21T04:59:00.6211364Z   OMP_NUM_THREADS: 1
+2026-11-21T04:59:00.6211585Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-21T04:59:00.6211907Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib/pkgconfig
+2026-11-21T04:59:00.6212225Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-21T04:59:00.6212500Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-21T04:59:00.6212819Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.16/x64
+2026-11-21T04:59:00.6213098Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.16/x64/lib
+2026-11-21T04:59:00.6213333Z ##[endgroup]
+2026-11-21T04:59:07.5903418Z {
+2026-11-21T04:59:07.5903786Z   "checks": [
+2026-11-21T04:59:07.5904050Z     {
+2026-11-21T04:59:07.5904383Z       "name": "pipeline-bars admitted explicit browser action",
+2026-11-21T04:59:07.5904732Z       "passed": true
+2026-11-21T04:59:07.5904898Z     },
+2026-11-21T04:59:07.5905037Z     {
+2026-11-21T04:59:07.5905267Z       "name": "pipeline-universe admitted explicit browser action",
+2026-11-21T04:59:07.5905523Z       "passed": true
+2026-11-21T04:59:07.5905679Z     },
+2026-11-21T04:59:07.5905819Z     {
+2026-11-21T04:59:07.5906036Z       "name": "research-dataset admitted explicit browser action",
+2026-11-21T04:59:07.5906282Z       "passed": true
+2026-11-21T04:59:07.5906434Z     },
+2026-11-21T04:59:07.5906565Z     {
+2026-11-21T04:59:07.5906760Z       "name": "explicit Binomial GLM uncertainty caveat",
+2026-11-21T04:59:07.5907003Z       "passed": true
+2026-11-21T04:59:07.5907152Z     },
+2026-11-21T04:59:07.5907284Z     {
+2026-11-21T04:59:07.5907490Z       "name": "research-glm admitted explicit browser action",
+2026-11-21T04:59:07.5907720Z       "passed": true
+2026-11-21T04:59:07.5907876Z     },
+2026-11-21T04:59:07.5908009Z     {
+2026-11-21T04:59:07.5908220Z       "name": "research-predict admitted explicit browser action",
+2026-11-21T04:59:07.5908462Z       "passed": true
+2026-11-21T04:59:07.5908925Z     },
+2026-11-21T04:59:07.5909085Z     {
+2026-11-21T04:59:07.5909272Z       "name": "saved inference does not retrain",
+2026-11-21T04:59:07.5909500Z       "passed": true
+2026-11-21T04:59:07.5909656Z     },
+2026-11-21T04:59:07.5909788Z     {
+2026-11-21T04:59:07.5910026Z       "name": "actual Binomial GLM artifact keeps allocation disabled",
+2026-11-21T04:59:07.5910284Z       "passed": true
+2026-11-21T04:59:07.5910437Z     },
+2026-11-21T04:59:07.5910579Z     {
+2026-11-21T04:59:07.5910815Z       "name": "Binomial GLM parameter uncertainty remains unavailable",
+2026-11-21T04:59:07.5911069Z       "passed": true
+2026-11-21T04:59:07.5911215Z     },
+2026-11-21T04:59:07.5911346Z     {
+2026-11-21T04:59:07.5911575Z       "name": "probability model rejects return-MSE interpretation",
+2026-11-21T04:59:07.5912150Z       "passed": true
+2026-11-21T04:59:07.5912308Z     },
+2026-11-21T04:59:07.5912449Z     {
+2026-11-21T04:59:07.5912653Z       "name": "directional output kind is explicit",
+2026-11-21T04:59:07.5912866Z       "passed": true
+2026-11-21T04:59:07.5913012Z     },
+2026-11-21T04:59:07.5913152Z     {
+2026-11-21T04:59:07.5913353Z       "name": "run identity is shown in traceability strip",
+2026-11-21T04:59:07.5913583Z       "passed": true
+2026-11-21T04:59:07.5913732Z     },
+2026-11-21T04:59:07.5913860Z     {
+2026-11-21T04:59:07.5914084Z       "name": "unapproved Binomial GLM allocation remains unavailable",
+2026-11-21T04:59:07.5914340Z       "passed": true
+2026-11-21T04:59:07.5914484Z     },
+2026-11-21T04:59:07.5914610Z     {
+2026-11-21T04:59:07.5914933Z       "name": "explicit saved identities replay after page reload",
+2026-11-21T04:59:07.5915184Z       "passed": true
+2026-11-21T04:59:07.5915336Z     },
+2026-11-21T04:59:07.5915479Z     {
+2026-11-21T04:59:07.5915725Z       "name": "Models renders saved Binomial GLM with source classification",
+2026-11-21T04:59:07.5915999Z       "passed": true
+2026-11-21T04:59:07.5916144Z     },
+2026-11-21T04:59:07.5916307Z     {
+2026-11-21T04:59:07.5916491Z       "name": "dark automated accessibility",
+2026-11-21T04:59:07.5916708Z       "passed": true
+2026-11-21T04:59:07.5916859Z     },
+2026-11-21T04:59:07.5917000Z     {
+2026-11-21T04:59:07.5917184Z       "name": "light automated accessibility",
+2026-11-21T04:59:07.5917401Z       "passed": true
+2026-11-21T04:59:07.5917550Z     },
+2026-11-21T04:59:07.5917685Z     {
+2026-11-21T04:59:07.5917856Z       "name": "320px no document overflow",
+2026-11-21T04:59:07.5918069Z       "passed": false
+2026-11-21T04:59:07.5918229Z     },
+2026-11-21T04:59:07.5918361Z     {
+2026-11-21T04:59:07.5918539Z       "name": "375px no document overflow",
+2026-11-21T04:59:07.5918915Z       "passed": false
+2026-11-21T04:59:07.5919073Z     },
+2026-11-21T04:59:07.5919218Z     {
+2026-11-21T04:59:07.5919390Z       "name": "768px no document overflow",
+2026-11-21T04:59:07.5919591Z       "passed": true
+2026-11-21T04:59:07.5919743Z     },
+2026-11-21T04:59:07.5919886Z     {
+2026-11-21T04:59:07.5920051Z       "name": "1440px no document overflow",
+2026-11-21T04:59:07.5920251Z       "passed": true
+2026-11-21T04:59:07.5920395Z     },
+2026-11-21T04:59:07.5920521Z     {
+2026-11-21T04:59:07.5920711Z       "name": "all sixteen existing sections retained",
+2026-11-21T04:59:07.5920922Z       "passed": true
+2026-11-21T04:59:07.5921067Z     },
+2026-11-21T04:59:07.5921196Z     {
+2026-11-21T04:59:07.5921369Z       "name": "no JavaScript exceptions",
+2026-11-21T04:59:07.5921567Z       "passed": true
+2026-11-21T04:59:07.5921712Z     },
+2026-11-21T04:59:07.5921842Z     {
+2026-11-21T04:59:07.5922018Z       "name": "no external browser requests",
+2026-11-21T04:59:07.5922216Z       "passed": true
+2026-11-21T04:59:07.5922372Z     }
+2026-11-21T04:59:07.5922504Z   ],
+2026-11-21T04:59:07.5922643Z   "passed": 22,
+2026-11-21T04:59:07.5922782Z   "failed": 2,
+2026-11-21T04:59:07.5922943Z   "chromium_version": "159.0.8154.6",
+2026-11-21T04:59:07.5923129Z   "javascript_errors": [],
+2026-11-21T04:59:07.5923316Z   "external_requests": [],
+2026-11-21T04:59:07.5923552Z   "classification": "AUTHORED_SYNTHETIC_RESEARCH_ONLY",
+2026-11-21T04:59:07.5923787Z   "orders_submitted": 0,
+2026-11-21T04:59:07.5923989Z   "formal_accessibility_certified": false
+2026-11-21T04:59:07.5924186Z }
+2026-11-21T04:59:07.6249277Z ##[error]Process completed with exit code 1.
+
