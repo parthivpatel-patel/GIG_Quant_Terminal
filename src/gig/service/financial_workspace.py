@@ -49,11 +49,11 @@ class FinancialIntelligenceWorkspace:
                 "metadata": metadata, "classification": "SYNTHETIC", "document_id": metadata["document_id"],
                 "trading_approved": False}, as_of=metadata["known_at"])
         if operation in {"search", "answer"}:
-            _fields(payload, {"operation", "query", "as_of", "limit", "expand", "retrieval_mode", "latent_dimensions", "extract_facts"}, {"operation", "query", "as_of"})
+            _fields(payload, {"operation", "query", "as_of", "limit", "expand", "retrieval_mode", "latent_dimensions", "extract_facts", "nlp_profile"}, {"operation", "query", "as_of"})
             data = self.corpus.search(payload["query"], payload["as_of"], limit=payload.get("limit", 5),
                 expand=payload.get("expand", False), answer=operation == "answer",
                 retrieval_mode=payload.get("retrieval_mode", "bm25"), latent_dimensions=payload.get("latent_dimensions", 16),
-                extract_facts=payload.get("extract_facts", False))
+                extract_facts=payload.get("extract_facts", False), nlp_profile=payload.get("nlp_profile", "v1"))
             if data is None:
                 return self._contract(None, state=State.UNAVAILABLE, as_of=payload["as_of"])
             return self._contract({"title": self._title(data), **data}, as_of=data["as_of"])

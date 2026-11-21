@@ -1,0 +1,8 @@
+{
+  "state": "PASS",
+  "source_commit": "990781f2e0f522ad1c1588d148b860a4dd490d79",
+  "packaged_files_matched": 233,
+  "package_import": "/tmp/gig-nlp-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-nlp-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "wheel_sha256": "9f508ffce5b3dd2f443a454ea04a0412439cd026c5b8a9b732974d6e41fee80d"
+}

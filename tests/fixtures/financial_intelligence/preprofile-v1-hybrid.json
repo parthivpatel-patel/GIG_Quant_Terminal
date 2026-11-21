@@ -1,0 +1,413 @@
+{
+  "source_commit": "5de784c003f6eef2e0d505b76b4dc4db4a7d7dbb",
+  "source_text": "Café NYSE:BRK.B and NASDAQ:AAPL. Treasury 10-year yield 4.250 percent. Revenue USD 1.20 million and $7. No default may occur; 1e999%.",
+  "source_id": "profiles",
+  "title": "GIG-authored profile fixture",
+  "as_of": "2026-11-13T21:00:00.000000001Z",
+  "snapshot": {
+    "implementation": "gig.financial-research.v2",
+    "query": "Revenue",
+    "as_of": "2026-11-13T21:00:00.000000001+00:00",
+    "limit": 5,
+    "expand": false,
+    "expanded_terms": [
+      "revenue"
+    ],
+    "corpus_document_ids": [
+      "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5"
+    ],
+    "corpus_identity": "c569235a0ed616e443e88960a68740c83531f6566e60fd6246f7dc60f66ec3f2",
+    "rows": [
+      {
+        "observation_date": null,
+        "source_end": 134,
+        "source_start": 0,
+        "text": "Café NYSE:BRK.B and NASDAQ:AAPL. Treasury 10-year yield 4.250 percent. Revenue USD 1.20 million and $7. No default may occur; 1e999%.",
+        "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+        "ordinal": 0,
+        "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+        "source_url": "urn:gig:authored:profiles",
+        "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+        "source_excerpt": "Café NYSE:BRK.B and NASDAQ:AAPL. Treasury 10-year yield 4.250 percent. Revenue USD 1.20 million and $7. No default may occur; 1e999%.",
+        "normalization": "EXACT_UTF8_LINES",
+        "classification": "SYNTHETIC",
+        "known_at": "2026-11-13T21:00:00.000000001+00:00",
+        "score": 0.03278688524590164,
+        "score_kind": "RRF_RANK_FUSION_NOT_FINANCIAL_CONFIDENCE",
+        "bm25_score": 0.2876820724517809,
+        "latent_score": 1.0,
+        "bm25_rank": 1.0,
+        "latent_rank": 1.0
+      }
+    ],
+    "answer": null,
+    "answer_kind": "NOT_REQUESTED",
+    "answer_state": "UNAVAILABLE",
+    "semantic_state": "CORPUS_LOCAL_LSA",
+    "generative_state": "UNAVAILABLE",
+    "monitoring_state": "NOT_RUNNING",
+    "trading_approved": false,
+    "classification": "SYNTHETIC",
+    "retrieval_mode": "hybrid",
+    "latent_dimensions": 2,
+    "extract_facts": true,
+    "retrieval_state": "AVAILABLE",
+    "model_id": "220d42dad227ab11d82371fa325c5ff35702387f4c5bb2d729f873fd350e0791",
+    "model": {
+      "implementation": "gig.corpus-local-lsa.v1",
+      "model_kind": "CORPUS_LOCAL_LSA",
+      "numpy_version": "2.3.5",
+      "feature_policy": "ALPHABETIC_BEARING_TOKENS_ONLY_NO_PURE_NUMBERS_OR_DATES.v1",
+      "tf_idf_policy": "LOG_TF_SMOOTH_IDF_L2.v1",
+      "requested_dimensions": 2,
+      "dimensions": 1,
+      "effective_rank": 1,
+      "passage_count": 1,
+      "vocabulary_count": 18,
+      "corpus_identity": "ddf75b1074cff529f1958a0568853761ab4c386d93b5238bac091ace567c92a2",
+      "statistics_identity": "292476136c254362c890c2b6481ca67afd5c5c12fe5a7d823eaf47d415a67e75",
+      "training_scope": "LATEST_VISIBLE_REVISIONS_ONLY",
+      "bounds": {
+        "passages": 256,
+        "retained_terms": 512,
+        "dimensions": 16
+      },
+      "limitations": [
+        "CORPUS_LOCAL_LSA; not pretrained neural semantics, LLM or paraphrase understanding",
+        "Pure-number/date distinctions excluded from LSA; hybrid BM25 preserves lexical distinctions",
+        "Similarity reflects corpus co-occurrence, not verified financial relevance or confidence",
+        "Homogeneous passages can tie; unseen vocabulary and zero projections cannot be understood"
+      ]
+    },
+    "latent_query_state": "AVAILABLE",
+    "known_query_terms": [
+      "revenue"
+    ],
+    "unknown_query_terms": [],
+    "fusion": {
+      "implementation": "gig.bm25-lsa-rrf.v2",
+      "method": "RECIPROCAL_RANK_FUSION",
+      "rank_constant": 60,
+      "component_weights": {
+        "bm25": 1,
+        "latent": 1
+      },
+      "tie_policy": {
+        "method": "FRACTIONAL_MEAN_RANK",
+        "grouping": "SORTED_SCORE_GROUP_ANCHOR",
+        "absolute_tolerance": 1e-12,
+        "relative_tolerance": 1e-10
+      }
+    },
+    "retrieval_implementation": "gig.bm25-lsa-rrf.v2",
+    "financial_nlp": {
+      "implementation": "gig.financial-mention-rules.v1",
+      "method": "ORIGINAL_RULE_BASED_NOT_FINBERT_OR_TRAINED_NLP",
+      "scope": "RETRIEVED_PASSAGES_ONLY",
+      "state": "AVAILABLE",
+      "facts": [
+        {
+          "kind": "PARSED_FINANCIAL_MENTION_NOT_VERIFIED_FACT",
+          "metric_mention": "yield",
+          "decimal_value": "4.250",
+          "quoted_decimal": "4.250",
+          "unit": "PERCENT",
+          "currency_state": "NOT_APPLICABLE",
+          "currency_mention": null,
+          "scale": null,
+          "scale_multiplier": "1",
+          "tenor_months": "120",
+          "observation_date": null,
+          "truth_state": "UNKNOWN",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 57,
+            "source_end": 70,
+            "source_quote": "4.250 percent",
+            "normalized_char_start": 56,
+            "normalized_char_end": 69,
+            "surface_text": "4.250 percent",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        },
+        {
+          "kind": "PARSED_FINANCIAL_MENTION_NOT_VERIFIED_FACT",
+          "metric_mention": "revenue",
+          "decimal_value": "1200000.00",
+          "quoted_decimal": "1.20",
+          "unit": "USD",
+          "currency_state": "EXPLICIT_SOURCE_SYNTAX",
+          "currency_mention": "USD",
+          "scale": "million",
+          "scale_multiplier": "1000000",
+          "tenor_months": null,
+          "observation_date": null,
+          "truth_state": "UNKNOWN",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 80,
+            "source_end": 96,
+            "source_quote": "USD 1.20 million",
+            "normalized_char_start": 79,
+            "normalized_char_end": 95,
+            "surface_text": "USD 1.20 million",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        },
+        {
+          "kind": "PARSED_FINANCIAL_MENTION_NOT_VERIFIED_FACT",
+          "metric_mention": "revenue",
+          "decimal_value": "7",
+          "quoted_decimal": "7",
+          "unit": "UNSPECIFIED_DOLLAR",
+          "currency_state": "UNKNOWN",
+          "currency_mention": "$",
+          "scale": null,
+          "scale_multiplier": "1",
+          "tenor_months": null,
+          "observation_date": null,
+          "truth_state": "UNKNOWN",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 101,
+            "source_end": 104,
+            "source_quote": "$7.",
+            "normalized_char_start": 100,
+            "normalized_char_end": 103,
+            "surface_text": "$7.",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        }
+      ],
+      "tenor_mentions": [
+        {
+          "tenor_months": "120",
+          "unit": "MONTHS",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 43,
+            "source_end": 50,
+            "source_quote": "10-year",
+            "normalized_char_start": 42,
+            "normalized_char_end": 49,
+            "surface_text": "10-year",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        }
+      ],
+      "entity_mentions": [
+        {
+          "mention": "NYSE:BRK",
+          "link_state": "UNKNOWN_NO_ISSUER_AUTHORITY",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 6,
+            "source_end": 14,
+            "source_quote": "NYSE:BRK",
+            "normalized_char_start": 5,
+            "normalized_char_end": 13,
+            "surface_text": "NYSE:BRK",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        },
+        {
+          "mention": "NASDAQ:AAPL",
+          "link_state": "UNKNOWN_NO_ISSUER_AUTHORITY",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 21,
+            "source_end": 32,
+            "source_quote": "NASDAQ:AAPL",
+            "normalized_char_start": 20,
+            "normalized_char_end": 31,
+            "surface_text": "NASDAQ:AAPL",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        },
+        {
+          "mention": "Treasury",
+          "link_state": "UNKNOWN_NO_ISSUER_AUTHORITY",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 34,
+            "source_end": 42,
+            "source_quote": "Treasury",
+            "normalized_char_start": 33,
+            "normalized_char_end": 41,
+            "surface_text": "Treasury",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        }
+      ],
+      "event_mentions": [
+        {
+          "mention": "default",
+          "occurrence": "UNKNOWN",
+          "negation_cue_present": true,
+          "conditional_cue_present": true,
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 108,
+            "source_end": 115,
+            "source_quote": "default",
+            "normalized_char_start": 107,
+            "normalized_char_end": 114,
+            "surface_text": "default",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        }
+      ],
+      "unsupported_mentions": [
+        {
+          "reason": "EXPONENT_SYNTAX_UNSUPPORTED",
+          "provenance": {
+            "document_id": "e08e308bb884a5aa83a7d898a5b806f89105fcb3b09b97047d6475214a91aec5",
+            "passage_id": "88edb4e2dcf52788ca1843a152c7c9a1b5224430481efc197ab9ae6df1a84201",
+            "raw_sha256": "834d05987e33cc2847d0b9b07115d1d078f1b73ad6eafd0f6f50a942149b8985",
+            "source_url": "urn:gig:authored:profiles",
+            "source_start": 127,
+            "source_end": 133,
+            "source_quote": "1e999%",
+            "normalized_char_start": 126,
+            "normalized_char_end": 132,
+            "surface_text": "1e999%",
+            "evidence_kind": "EXACT_SOURCE_BYTES"
+          }
+        }
+      ],
+      "sentiment_state": "UNAVAILABLE",
+      "issuer_linking_state": "UNKNOWN",
+      "limitations": [
+        "Parsed mentions are not verified financial truth or issuer facts",
+        "Events are mentions only; occurrence UNKNOWN even with negation/conditional cue flags",
+        "Cue flags use sentence-local lexical rules, not reliable scope or causal understanding",
+        "Only explicit percent/bps/dollar syntax and thousand/million/billion scales supported",
+        "Bare$currency UNKNOWN/UNSPECIFIED_DOLLAR; only explicit USD/US$syntax identifies USD",
+        "Currency syntax is a parsed source mention, not verified currency jurisdiction or accounting admission",
+        "Exponent, ambiguous separators, nonfinite and oversized numerics unsupported",
+        "Normalized Treasury mentions cite XML elements; other normalized mentions cite raw passage"
+      ]
+    },
+    "snapshot_id": "66365bd40d61a5c7ba659312af0165f3a37a1eb80a01e2aeec6e90c379e59aec"
+  },
+  "model": {
+    "bounds": {
+      "dimensions": 16,
+      "passages": 256,
+      "retained_terms": 512
+    },
+    "components": [
+      [
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.37986679020582564,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776,
+        0.22435544562652776
+      ]
+    ],
+    "corpus_identity": "ddf75b1074cff529f1958a0568853761ab4c386d93b5238bac091ace567c92a2",
+    "dimensions": 1,
+    "document_vectors": [
+      [
+        1.0
+      ]
+    ],
+    "effective_rank": 1,
+    "feature_policy": "ALPHABETIC_BEARING_TOKENS_ONLY_NO_PURE_NUMBERS_OR_DATES.v1",
+    "idf": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "implementation": "gig.corpus-local-lsa.v1",
+    "limitations": [
+      "CORPUS_LOCAL_LSA; not pretrained neural semantics, LLM or paraphrase understanding",
+      "Pure-number/date distinctions excluded from LSA; hybrid BM25 preserves lexical distinctions",
+      "Similarity reflects corpus co-occurrence, not verified financial relevance or confidence",
+      "Homogeneous passages can tie; unseen vocabulary and zero projections cannot be understood"
+    ],
+    "model_kind": "CORPUS_LOCAL_LSA",
+    "numpy_version": "2.3.5",
+    "passage_count": 1,
+    "requested_dimensions": 2,
+    "singular_values": [
+      1.0
+    ],
+    "statistics_identity": "292476136c254362c890c2b6481ca67afd5c5c12fe5a7d823eaf47d415a67e75",
+    "tf_idf_policy": "LOG_TF_SMOOTH_IDF_L2.v1",
+    "training_scope": "LATEST_VISIBLE_REVISIONS_ONLY",
+    "vocabulary": [
+      "10-year",
+      "1e999",
+      "aapl",
+      "and",
+      "brk.b",
+      "caf",
+      "default",
+      "may",
+      "million",
+      "nasdaq",
+      "no",
+      "nyse",
+      "occur",
+      "percent",
+      "revenue",
+      "treasury",
+      "usd",
+      "yield"
+    ],
+    "vocabulary_count": 18
+  }
+}

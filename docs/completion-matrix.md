@@ -370,6 +370,21 @@ LSA only; issuer linking/event truth and general financial intelligence remain
 partial or unavailable.10model families implemented;30planned; no Family11
 implementation is inferred from a missing temporary worker checkout.
 
+## Versioned financial annotation profiles
+
+Published v1 rules remain frozen with exact annotation bytes and saved IDs.
+Explicit v2 extracts whole bounded qualified symbols/share classes with raw
+source citations; unsupported candidates cannot become partial ticker facts.
+Permanent identity, issuer links, exchange membership and existence stay UNKNOWN.
+Saved replay pins the original profile, rejects overrides and preserves numeric,
+currency and event semantics. Full combined regression:1,320passed/9optional
+FinBERT skips; isolated wheel99passed/1optional standalone C-ABI skip. Chromium
+27NLP+22KNN checks pass and a separate installed process restores both profiles
+without fitting. The historical pre-profile model/snapshot fixture retains its
+original identity;13profile tests pass under NumPy2.3.5 and CI NumPy2.4.6.
+Source hashes, complete logs, original CI failure and genuine screenshots are
+in `docs/evidence/financial-nlp-profiles/`. This annotation component adds no
+quant model family, authoritative identity or market data.
 ## Family 11: bounded nearest-neighbor research
 
 Actual CPU KNeighborsRegressor fit/query retains admitted labelled instances and
