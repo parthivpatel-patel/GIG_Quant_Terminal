@@ -445,7 +445,7 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
-const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities"];
+const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify"];
 for (const kind of financialActions) {
   get("analytics-kind").value = "workspace-" + kind;
   const before = calls.length;
@@ -754,4 +754,15 @@ checked("Probability research never claims return estimates", () => assert(get("
 replyOverride = { body: fixture({ data: { metrics: { state: "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS", number: 1.25 }, rows: [] } }) };
 await get("refresh").dispatch("click"); await settle();
 checked("Categorical metric states can wrap without reflowing numeric figures", () => { const values = get("metrics").children.map(card => card.children[1]); assert(values[0].className.includes("text-value")); assert(!values[1].className.includes("text-value")); assert.equal(values[0].textContent, "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS"); });
+
+
+await successfulPipeline("financial-answer", { snapshot_id: "c".repeat(64), rows: [{ passage_id: "d".repeat(64) }] });
+get("analytics-kind").value = "workspace-financial-verify";
+await get("analytics-kind").dispatch("change");
+checked("Citation verification binds saved query and passage IDs", () => { assert.equal(JSON.parse(get("analytics-input").value).snapshot_id, "c".repeat(64)); assert.equal(JSON.parse(get("analytics-input").value).passage_id, "d".repeat(64)); });
+checked("Citation verification has an honest read-only action", () => assert.equal(get("run-analysis").textContent, "Verify saved citation"));
+await successfulPipeline("financial-answer", { snapshot_id: "e".repeat(64), rows: [] });
+get("analytics-kind").value = "workspace-financial-verify";
+await get("analytics-kind").dispatch("change");
+checked("Empty new query clears the previous passage binding", () => assert.equal(JSON.parse(get("analytics-input").value).passage_id, "0".repeat(64)));
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

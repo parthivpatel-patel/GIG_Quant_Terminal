@@ -24,7 +24,7 @@
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-gpr": "research-model", "workspace-research-rf": "research-model", "workspace-research-xt": "research-model", "workspace-research-svr": "research-model", "workspace-research-knn": "research-model", "workspace-research-bayes": "research-model", "workspace-research-glm": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
-  Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence", "workspace-financial-latent": "financial-intelligence", "workspace-financial-hybrid": "financial-intelligence", "workspace-financial-facts": "financial-intelligence", "workspace-financial-entity-protocol": "financial-intelligence", "workspace-financial-entities": "financial-intelligence" });
+  Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence", "workspace-financial-verify": "financial-intelligence", "workspace-financial-latent": "financial-intelligence", "workspace-financial-hybrid": "financial-intelligence", "workspace-financial-facts": "financial-intelligence", "workspace-financial-entity-protocol": "financial-intelligence", "workspace-financial-entities": "financial-intelligence" });
   workspaceActions["workspace-options-overlay"] = "options-overlay";
   workspaceActions["workspace-options-overlay-replay"] = "options-overlay-replay";
   Object.assign(workspaceActions, { "workspace-economic-research": "economic-research", "workspace-economic-replay": "economic-replay", "workspace-microstructure-admit": "microstructure-admit", "workspace-microstructure-research": "microstructure-research", "workspace-microstructure-replay": "microstructure-replay", "workspace-funded-risk": "funded-risk", "workspace-funded-risk-replay": "funded-risk-replay" });
@@ -37,7 +37,7 @@
   workspaceActions["workspace-lifecycle-dividend-cancel"] = "funded-lifecycle";
   workspaceActions["workspace-funded-factor-risk"] = "funded-risk";
   for (const operation of ["fetch", "admit", "replay"]) workspaceActions["workspace-equity-" + operation] = "equity-reference";
-  const workflowReferences = { financial_snapshot_id: null, equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
+  const workflowReferences = { financial_snapshot_id: null, financial_passage_id: null, financial_verification_id: null, equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
   const comparisonResults = [];
 
   workspaceActions["workspace-depth"] = "depth";
@@ -771,6 +771,7 @@
   examples["workspace-financial-entity-protocol"] = { operation: "admit-authored", source_id: "gig-authored-entity-protocol-v2", title: "GIG authored entity syntax protocol", license: "GIG-AUTHORED", text: "GIG AUTHORED SYNTHETIC entity syntax protocol. NYSE:BRK.B and NASDAQ:AAPL are source mention examples only. NYSE:BRK.BOGUS is an unsupported whole candidate. Issuer identity, exchange membership and historical eligibility are UNKNOWN. No market observations or trading approval are supplied." };
   examples["workspace-financial-entities"] = { ...examples["workspace-financial-answer"], query: "entity syntax protocol", extract_facts: true, nlp_profile: "v2" };
   examples["workspace-financial-replay"] = { operation: "replay", snapshot_id: "0".repeat(64) };
+  examples["workspace-financial-verify"] = { operation: "verify-citation", snapshot_id: "0".repeat(64), passage_id: "0".repeat(64) };
   examples["workspace-research-rf"] = { dataset_id: "0".repeat(64), model: "random_forest", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-xt"] = { ...examples["workspace-research-rf"], model: "extra_trees" };
   examples["workspace-research-knn"] = { ...examples["workspace-research-rf"], model: "knn" };
@@ -862,6 +863,10 @@
     const example = JSON.parse(JSON.stringify(examples[kind]));
     if (["workspace-financial-search", "workspace-financial-answer", "workspace-financial-latent", "workspace-financial-hybrid", "workspace-financial-facts", "workspace-financial-entities"].includes(kind)) example.as_of = new Date().toISOString();
     if (kind === "workspace-financial-replay" && workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
+    if (kind === "workspace-financial-verify") {
+      if (workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
+      if (workflowReferences.financial_passage_id) example.passage_id = workflowReferences.financial_passage_id;
+    }
     if (["workspace-lifecycle-apply", "workspace-lifecycle-accrue"].includes(kind) && workflowReferences.lifecycle_action_hash) example.action_hash = workflowReferences.lifecycle_action_hash;
     if (kind === "workspace-lifecycle-replay" && workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id;
     if (kind === "workspace-statement-reconcile") { if (workflowReferences.statement_hash) example.statement_hash = workflowReferences.statement_hash; if (workflowReferences.funded_snapshot_id) example.snapshot_id = workflowReferences.funded_snapshot_id; }
@@ -901,6 +906,7 @@
     if (kind === "workspace-execution-engine") $("run-analysis").textContent = "Prepare offline intent";
     if (kind === "workspace-research-dataset") $("run-analysis").textContent = "Build persisted dataset";
     if (["workspace-research-model", "workspace-research-gpr", "workspace-research-rf", "workspace-research-xt", "workspace-research-svr", "workspace-research-knn", "workspace-research-bayes", "workspace-research-glm"].includes(kind)) $("run-analysis").textContent = "Run saved-data research";
+    if (kind === "workspace-financial-verify") $("run-analysis").textContent = "Verify saved citation";
     if (kind === "workspace-research-predict") $("run-analysis").textContent = "Replay saved model";
     if (kind === "workspace-research-allocate") $("run-analysis").textContent = "Construct offline targets";
     if (kind === "workspace-research-prepare") $("run-analysis").textContent = "Prepare offline target intents";
@@ -962,6 +968,7 @@
       "workspace-financial-hybrid": "Combine BM25 lexical ranks with corpus-local LSA cosine ranks using explicit reciprocal-rank fusion. Model and corpus identities are saved for replay. Scores are relevance diagnostics, not confidence. Parsed financial mentions retain citations; issuer truth and event occurrence remain UNKNOWN.",
       "workspace-financial-facts": "Extract bounded Decimal-valued financial mentions, units, tenors and entity/event cues from cited passages. Mention parsing does not verify an issuer claim or establish an event. Original bytes and knowledge time remain authoritative; no formula or document instruction executes.",
       "workspace-financial-entity-protocol": "Explicitly admit a GIG-authored SYNTHETIC entity syntax protocol. Source symbols are text examples, with issuer identity, exchange membership and historical eligibility UNKNOWN. This adds no market observations and cannot approve a trade.",
+      "workspace-financial-verify": "Read-only research citation check. First select a successful saved query and passage. Replays the pinned query and checks original source bytes; it writes no new state and performs no fit. Hash integrity does not establish financial truth, source authenticity, rights, freshness, signatures or trading approval.",
       "workspace-financial-entities": "Use the explicit version-2 financial mention profile on cited source text. Complete qualified symbols and share classes remain unverified mentions; unsupported whole candidates are never partially linked. Saved snapshots pin their profile; published version-1 results retain their original rules.",
       "workspace-financial-replay": "Replay a saved financial search by hash against its original pinned corpus and cutoff. New document revisions cannot change old results. No monitoring or autonomous provider connection is running.",
       "workspace-research-rf": "Bounded Random Forest research on admitted saved data. Actual CPU training, 16 trees / depth 4, 256 training rows and 16 total fits. Tree disagreement is not calibrated confidence. No allocation or trading approval.",
@@ -1051,12 +1058,18 @@
         if (action === "microstructure-admit" && identity(result.data.snapshot_id)) workflowReferences.microstructure_snapshot_id = result.data.snapshot_id;
         if (action === "microstructure-research" && identity(result.data.report_id)) workflowReferences.microstructure_report_id = result.data.report_id;
         if (action === "funded-risk" && identity(result.data.report_id)) workflowReferences.funded_risk_id = result.data.report_id;
-        if (action === "financial-intelligence" && identity(result.data.snapshot_id)) workflowReferences.financial_snapshot_id = result.data.snapshot_id;
+        if (action === "financial-intelligence" && identity(result.data.snapshot_id)) {
+          if (workflowReferences.financial_snapshot_id !== result.data.snapshot_id) { workflowReferences.financial_passage_id = null; workflowReferences.financial_verification_id = null; }
+          workflowReferences.financial_snapshot_id = result.data.snapshot_id;
+          if (Array.isArray(result.data.rows)) workflowReferences.financial_passage_id = identity(result.data.rows[0]?.passage_id) ? result.data.rows[0].passage_id : null;
+        }
+        if (action === "financial-intelligence" && identity(result.data.passage_id)) workflowReferences.financial_passage_id = result.data.passage_id;
+        if (action === "financial-intelligence" && identity(result.data.verification_id)) workflowReferences.financial_verification_id = result.data.verification_id;
         rememberExperiment(action, result);
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
         if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
-        $("workflow-identities").textContent = ["financial_snapshot_id", "equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+        $("workflow-identities").textContent = ["financial_snapshot_id", "financial_passage_id", "financial_verification_id", "equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();
@@ -1067,6 +1080,9 @@
     const data = result.data;
     if (!["AVAILABLE", "STALE"].includes(result.state) || !isObject(data)) return;
     const entries = [];
+    if (typeof data.verification_id === "string") {
+      entries.push(["Verification scope", "Immutable byte provenance only"], ["Verification ID", data.verification_id], ["Saved query", data.snapshot_id], ["Passage", data.passage_id], ["Source bytes SHA-256", data.source_bytes_sha256], ["Quoted bytes SHA-256", data.quoted_bytes_sha256], ["Original source quote", data.source_excerpt], ["Normalized passage", data.normalized_passage], ["Text / byte relationship", data.direct_text_byte_match ? "Exact UTF-8 source text" : "Rendered text; original source bytes shown separately"], ["Original-byte range", `${data.source_start}–${data.source_end}`], ["Source license", data.source_license], ["Financial truth / issuer identity", `${data.content_truth_state} / ${data.issuer_identity_state}`], ["Signature / freshness", `${data.signature_state} / ${data.freshness_state}`], ["Persistence", "Read only · no new state written"]);
+    }
     if (typeof data.corpus_identity === "string") {
       entries.push(["Retrieval", data.retrieval_mode === "latent" ? "Corpus-local LSA · cosine relevance" : data.retrieval_mode === "hybrid" ? "Hybrid BM25 + corpus-local LSA · rank fusion" : "BM25 lexical · source citations"], ["Corpus", data.corpus_identity], ["Source scope", data.classification], ["Answer state", data.answer_state], ["Answer mode", data.answer_kind], ["Semantic / generative", `${data.semantic_state} / ${data.generative_state}`]);
       if (typeof data.model_id === "string") entries.push(["Saved retrieval model", data.model_id]);

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 
 from gig.financial_intelligence.store import FinancialCorpus, _sha, digest
 
@@ -26,7 +27,9 @@ def verify_citation(corpus: FinancialCorpus, snapshot_id: str, passage_id: str):
     if len(raw_quote) != original["source_end"]-original["source_start"]:
         raise ValueError("citation byte length differs from original source range")
     metadata = document["metadata"]
-    body = {"implementation": IMPLEMENTATION, "snapshot_id": snapshot_id,
+    body = {"implementation": IMPLEMENTATION,
+            "verifier_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "snapshot_id": snapshot_id,
             "passage_id": passage_id, "document_id": selected["document_id"],
             "as_of": snapshot["as_of"], "classification": snapshot["classification"],
             "quote_classification": original["classification"],
