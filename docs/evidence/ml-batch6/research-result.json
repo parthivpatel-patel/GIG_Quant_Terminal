@@ -1,0 +1,788 @@
+{
+  "source_commit": "5322a17c796487e647d0b42ffdf618d1b56439ea",
+  "classification": "AUTHORED_SYNTHETIC_NOT_OBSERVED_MARKET_DATA",
+  "dataset_id": "0a051b5a88ebf195b25720e94df20228981b177b665d8567cf049970e30d7eeb",
+  "run_id": "22ac8471260050f9bb89be99e9cd9e23ae91bcdc1cc64110a8726b88c36cc6bb",
+  "model_count": 6,
+  "oos_rows": 72,
+  "training_wall_seconds": 1.9343761779999795,
+  "training_process_cpu_seconds": 0.6387621150000001,
+  "metrics": {
+    "brier_score": 0.2637410078515328,
+    "fold_count": 6,
+    "log_loss": 0.7245326645205504,
+    "model_count": 6,
+    "mse": null,
+    "mse_state": "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS",
+    "oos_count": 72,
+    "probability_calibrated": false,
+    "target_kind": "BINARY_FORWARD_RETURN_STRICTLY_POSITIVE"
+  },
+  "training_rate_baseline_brier": 0.25163116000858504,
+  "training_rate_baseline_log_loss": 0.6964443134268321,
+  "underperforming_brier_folds": [
+    {
+      "brier_score": 0.2589729982762525,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 3,
+          "lower": 0.2,
+          "mean_probability": 0.3493766254046522,
+          "observed_positive_rate": 0.3333333333333333,
+          "state": "AVAILABLE",
+          "upper": 0.4
+        },
+        {
+          "count": 7,
+          "lower": 0.4,
+          "mean_probability": 0.473693334281652,
+          "observed_positive_rate": 0.5714285714285714,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 2,
+          "lower": 0.6,
+          "mean_probability": 0.621796722946615,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 2,
+      "instrument_id": "US:AAA",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.7112396722271109,
+      "max_training_label_end": "2026-03-02T20:00:00.000000123+00:00",
+      "model_id": "59b87824b08da7481db369a1b3f7932f878c4a823555ba32e9ced73c29c12cc1",
+      "positive_training_labels": 29,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-14T20:00:00.000000123+00:00",
+      "test_start": "2026-03-03T20:00:00.000000123+00:00",
+      "train_count": 54,
+      "training_positive_rate": 0.5370370370370371,
+      "training_rate_baseline_brier": 0.25137174211248287,
+      "training_rate_baseline_log_loss": 0.6958982191369368
+    },
+    {
+      "brier_score": 0.33829390545837085,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 0,
+          "lower": 0.2,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.4
+        },
+        {
+          "count": 0,
+          "lower": 0.4,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.6
+        },
+        {
+          "count": 12,
+          "lower": 0.6,
+          "mean_probability": 0.7204444911460958,
+          "observed_positive_rate": 0.4166666666666667,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 0,
+      "instrument_id": "US:BBB",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.891084617550169,
+      "max_training_label_end": "2026-02-06T20:00:00.000000123+00:00",
+      "model_id": "74404ba10e74143d1a2383f70c7e53526df5ded7f0b82a65be82347d96f977d4",
+      "positive_training_labels": 17,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-02-18T20:00:00.000000123+00:00",
+      "test_start": "2026-02-07T20:00:00.000000123+00:00",
+      "train_count": 30,
+      "training_positive_rate": 0.5666666666666667,
+      "training_rate_baseline_brier": 0.26555555555555554,
+      "training_rate_baseline_log_loss": 0.7244713631195022
+    },
+    {
+      "brier_score": 0.274165886287604,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 0,
+          "lower": 0.2,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.4
+        },
+        {
+          "count": 4,
+          "lower": 0.4,
+          "mean_probability": 0.5508528281796492,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 8,
+          "lower": 0.6,
+          "mean_probability": 0.6551161683496899,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 2,
+      "instrument_id": "US:BBB",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.7468740489280106,
+      "max_training_label_end": "2026-03-02T20:00:00.000000123+00:00",
+      "model_id": "4977b99525362169498c525d78b6295a4e3bd9e1f9459cd5af2d7de3b3afa610",
+      "positive_training_labels": 30,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-14T20:00:00.000000123+00:00",
+      "test_start": "2026-03-03T20:00:00.000000123+00:00",
+      "train_count": 54,
+      "training_positive_rate": 0.5555555555555556,
+      "training_rate_baseline_brier": 0.25308641975308643,
+      "training_rate_baseline_log_loss": 0.6993584405592239
+    }
+  ],
+  "underperforming_log_loss_folds": [
+    {
+      "brier_score": 0.2589729982762525,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 3,
+          "lower": 0.2,
+          "mean_probability": 0.3493766254046522,
+          "observed_positive_rate": 0.3333333333333333,
+          "state": "AVAILABLE",
+          "upper": 0.4
+        },
+        {
+          "count": 7,
+          "lower": 0.4,
+          "mean_probability": 0.473693334281652,
+          "observed_positive_rate": 0.5714285714285714,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 2,
+          "lower": 0.6,
+          "mean_probability": 0.621796722946615,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 2,
+      "instrument_id": "US:AAA",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.7112396722271109,
+      "max_training_label_end": "2026-03-02T20:00:00.000000123+00:00",
+      "model_id": "59b87824b08da7481db369a1b3f7932f878c4a823555ba32e9ced73c29c12cc1",
+      "positive_training_labels": 29,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-14T20:00:00.000000123+00:00",
+      "test_start": "2026-03-03T20:00:00.000000123+00:00",
+      "train_count": 54,
+      "training_positive_rate": 0.5370370370370371,
+      "training_rate_baseline_brier": 0.25137174211248287,
+      "training_rate_baseline_log_loss": 0.6958982191369368
+    },
+    {
+      "brier_score": 0.33829390545837085,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 0,
+          "lower": 0.2,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.4
+        },
+        {
+          "count": 0,
+          "lower": 0.4,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.6
+        },
+        {
+          "count": 12,
+          "lower": 0.6,
+          "mean_probability": 0.7204444911460958,
+          "observed_positive_rate": 0.4166666666666667,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 0,
+      "instrument_id": "US:BBB",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.891084617550169,
+      "max_training_label_end": "2026-02-06T20:00:00.000000123+00:00",
+      "model_id": "74404ba10e74143d1a2383f70c7e53526df5ded7f0b82a65be82347d96f977d4",
+      "positive_training_labels": 17,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-02-18T20:00:00.000000123+00:00",
+      "test_start": "2026-02-07T20:00:00.000000123+00:00",
+      "train_count": 30,
+      "training_positive_rate": 0.5666666666666667,
+      "training_rate_baseline_brier": 0.26555555555555554,
+      "training_rate_baseline_log_loss": 0.7244713631195022
+    },
+    {
+      "brier_score": 0.274165886287604,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 0,
+          "lower": 0.2,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.4
+        },
+        {
+          "count": 4,
+          "lower": 0.4,
+          "mean_probability": 0.5508528281796492,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 8,
+          "lower": 0.6,
+          "mean_probability": 0.6551161683496899,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 2,
+      "instrument_id": "US:BBB",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.7468740489280106,
+      "max_training_label_end": "2026-03-02T20:00:00.000000123+00:00",
+      "model_id": "4977b99525362169498c525d78b6295a4e3bd9e1f9459cd5af2d7de3b3afa610",
+      "positive_training_labels": 30,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-14T20:00:00.000000123+00:00",
+      "test_start": "2026-03-03T20:00:00.000000123+00:00",
+      "train_count": 54,
+      "training_positive_rate": 0.5555555555555556,
+      "training_rate_baseline_brier": 0.25308641975308643,
+      "training_rate_baseline_log_loss": 0.6993584405592239
+    }
+  ],
+  "folds": [
+    {
+      "brier_score": 0.2480236213281212,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 10,
+          "lower": 0.2,
+          "mean_probability": 0.33132666391475807,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.4
+        },
+        {
+          "count": 2,
+          "lower": 0.4,
+          "mean_probability": 0.4973879394891334,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 0,
+          "lower": 0.6,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 0,
+      "instrument_id": "US:AAA",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.6865688479623645,
+      "max_training_label_end": "2026-02-06T20:00:00.000000123+00:00",
+      "model_id": "4884466bb62ff969f1625617bf08b2b6b381a86e861d9646951c684419607bbe",
+      "positive_training_labels": 16,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-02-18T20:00:00.000000123+00:00",
+      "test_start": "2026-02-07T20:00:00.000000123+00:00",
+      "train_count": 30,
+      "training_positive_rate": 0.5333333333333333,
+      "training_rate_baseline_brier": 0.2511111111111111,
+      "training_rate_baseline_log_loss": 0.6953743557346356
+    },
+    {
+      "brier_score": 0.23283646734080285,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 1,
+          "lower": 0.2,
+          "mean_probability": 0.33038495557380176,
+          "observed_positive_rate": 0.0,
+          "state": "AVAILABLE",
+          "upper": 0.4
+        },
+        {
+          "count": 8,
+          "lower": 0.4,
+          "mean_probability": 0.5211224151548941,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 3,
+          "lower": 0.6,
+          "mean_probability": 0.7294635420167538,
+          "observed_positive_rate": 0.6666666666666666,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 1,
+      "instrument_id": "US:AAA",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.6580505536647804,
+      "max_training_label_end": "2026-02-18T20:00:00.000000123+00:00",
+      "model_id": "294bb1e055c1819d7c981873ef5a183ae4f1f09efb9a95494d2d3062c861a8ea",
+      "positive_training_labels": 23,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-02T20:00:00.000000123+00:00",
+      "test_start": "2026-02-19T20:00:00.000000123+00:00",
+      "train_count": 42,
+      "training_positive_rate": 0.5476190476190477,
+      "training_rate_baseline_brier": 0.25226757369614516,
+      "training_rate_baseline_log_loss": 0.6977030207355731
+    },
+    {
+      "brier_score": 0.2589729982762525,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 3,
+          "lower": 0.2,
+          "mean_probability": 0.3493766254046522,
+          "observed_positive_rate": 0.3333333333333333,
+          "state": "AVAILABLE",
+          "upper": 0.4
+        },
+        {
+          "count": 7,
+          "lower": 0.4,
+          "mean_probability": 0.473693334281652,
+          "observed_positive_rate": 0.5714285714285714,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 2,
+          "lower": 0.6,
+          "mean_probability": 0.621796722946615,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 2,
+      "instrument_id": "US:AAA",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.7112396722271109,
+      "max_training_label_end": "2026-03-02T20:00:00.000000123+00:00",
+      "model_id": "59b87824b08da7481db369a1b3f7932f878c4a823555ba32e9ced73c29c12cc1",
+      "positive_training_labels": 29,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-14T20:00:00.000000123+00:00",
+      "test_start": "2026-03-03T20:00:00.000000123+00:00",
+      "train_count": 54,
+      "training_positive_rate": 0.5370370370370371,
+      "training_rate_baseline_brier": 0.25137174211248287,
+      "training_rate_baseline_log_loss": 0.6958982191369368
+    },
+    {
+      "brier_score": 0.33829390545837085,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 0,
+          "lower": 0.2,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.4
+        },
+        {
+          "count": 0,
+          "lower": 0.4,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.6
+        },
+        {
+          "count": 12,
+          "lower": 0.6,
+          "mean_probability": 0.7204444911460958,
+          "observed_positive_rate": 0.4166666666666667,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 0,
+      "instrument_id": "US:BBB",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.891084617550169,
+      "max_training_label_end": "2026-02-06T20:00:00.000000123+00:00",
+      "model_id": "74404ba10e74143d1a2383f70c7e53526df5ded7f0b82a65be82347d96f977d4",
+      "positive_training_labels": 17,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-02-18T20:00:00.000000123+00:00",
+      "test_start": "2026-02-07T20:00:00.000000123+00:00",
+      "train_count": 30,
+      "training_positive_rate": 0.5666666666666667,
+      "training_rate_baseline_brier": 0.26555555555555554,
+      "training_rate_baseline_log_loss": 0.7244713631195022
+    },
+    {
+      "brier_score": 0.23015316841804545,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 0,
+          "lower": 0.2,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.4
+        },
+        {
+          "count": 12,
+          "lower": 0.4,
+          "mean_probability": 0.5029960138380538,
+          "observed_positive_rate": 0.6666666666666666,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 0,
+          "lower": 0.6,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 1,
+      "instrument_id": "US:BBB",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.6533782467908674,
+      "max_training_label_end": "2026-02-18T20:00:00.000000123+00:00",
+      "model_id": "32dd005ae33f92347d02fd4c749b2f6aa980164d19d0742ae2b2ada872119d6c",
+      "positive_training_labels": 23,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-02T20:00:00.000000123+00:00",
+      "test_start": "2026-02-19T20:00:00.000000123+00:00",
+      "train_count": 42,
+      "training_positive_rate": 0.5476190476190477,
+      "training_rate_baseline_brier": 0.23639455782312926,
+      "training_rate_baseline_log_loss": 0.6658604812751215
+    },
+    {
+      "brier_score": 0.274165886287604,
+      "calibration_bins": [
+        {
+          "count": 0,
+          "lower": 0.0,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.2
+        },
+        {
+          "count": 0,
+          "lower": 0.2,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 0.4
+        },
+        {
+          "count": 4,
+          "lower": 0.4,
+          "mean_probability": 0.5508528281796492,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.6
+        },
+        {
+          "count": 8,
+          "lower": 0.6,
+          "mean_probability": 0.6551161683496899,
+          "observed_positive_rate": 0.5,
+          "state": "AVAILABLE",
+          "upper": 0.8
+        },
+        {
+          "count": 0,
+          "lower": 0.8,
+          "mean_probability": null,
+          "observed_positive_rate": null,
+          "state": "UNAVAILABLE_NO_OBSERVATIONS",
+          "upper": 1.0
+        }
+      ],
+      "economic_claim": "NONE",
+      "fit_state": "CONVERGED_BOUNDED_BINOMIAL_GLM",
+      "fold": 2,
+      "instrument_id": "US:BBB",
+      "label_rule": "FORWARD_ARITHMETIC_RETURN_STRICTLY_POSITIVE.v1",
+      "log_loss": 0.7468740489280106,
+      "max_training_label_end": "2026-03-02T20:00:00.000000123+00:00",
+      "model_id": "4977b99525362169498c525d78b6295a4e3bd9e1f9459cd5af2d7de3b3afa610",
+      "positive_training_labels": 30,
+      "probability_calibrated": false,
+      "purged_count": 0,
+      "test_count": 12,
+      "test_end": "2026-03-14T20:00:00.000000123+00:00",
+      "test_start": "2026-03-03T20:00:00.000000123+00:00",
+      "train_count": 54,
+      "training_positive_rate": 0.5555555555555556,
+      "training_rate_baseline_brier": 0.25308641975308643,
+      "training_rate_baseline_log_loss": 0.6993584405592239
+    }
+  ],
+  "probability_calibrated": false,
+  "economically_validated": false,
+  "usable_for_portfolio": false
+}
