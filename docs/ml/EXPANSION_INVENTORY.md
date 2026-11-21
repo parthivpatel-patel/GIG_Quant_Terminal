@@ -6,12 +6,12 @@ was prepared. This is a research implementation inventory, not a claim of forty
 trained, economically validated or approved trading models.
 
 Implementation update: families08(Gaussian process),09(Random Forest /
-ExtraTrees),10(fixed-RBF epsilon-SVR) and11(uniform K=5 nearest-neighbor regression)
-are implemented in bounded CPU batches. There are eleven implemented families
-and29planned additions. RF and ExtraTrees
+ExtraTrees),10(fixed-RBF epsilon-SVR),11(uniform K=5 nearest-neighbor regression)
+and12(empirical-Bayes ridge regression) are implemented in bounded CPU batches.
+There are twelve implemented families and28planned additions. RF and ExtraTrees
 are two actually fitted variants of one family, not two independent statistical hypotheses. See
-[Gaussian process](GAUSSIAN_PROCESS.md), [forests](FORESTS.md), [SVR](SVM.md)
-and [nearest neighbors](KNN.md).
+[Gaussian process](GAUSSIAN_PROCESS.md), [forests](FORESTS.md), [SVR](SVM.md),
+[nearest neighbors](KNN.md) and [Bayesian linear](BAYESIAN_LINEAR.md).
 
 ## Seven existing primary families
 
@@ -45,7 +45,7 @@ inventory never registers executable code or starts training.
 | 09 | Random forest / ExtraTrees | IMPLEMENTED: actual sklearn, JSON tree replay |16trees/depth4,256training rows,16total fits; descriptive disagreement, no allocation approval |
 | 10 | Support vector machines / SVR | IMPLEMENTED: actual sklearn fixed-RBF epsilon-SVR, JSON support-vector replay | One regressor;128training rows/16fits, train-only scaling, null uncertainty, no allocation approval |
 | 11 | Nearest-neighbor models | IMPLEMENTED: actual sklearn uniform K=5 regression; JSON retained-observation replay |20..256training rows/16fits; train-only scaling, canonical chronological distance ties, null uncertainty, no allocation approval |
-| 12 | Bayesian linear / ARD regression | scikit-learn | Posterior assumptions and OOS interval calibration |
+| 12 | Bayesian linear / ARD regression | IMPLEMENTED: actual sklearn BayesianRidge; JSON posterior replay; ARD unavailable |20..256rows/16fits/512iterations; conditional Gaussian intervals uncalibrated; proper OOS density/coverage diagnostics; allocation rejected |
 | 13 | Generalized linear models | statsmodels / scikit-learn | Link/likelihood must match label type |
 | 14 | Generalized additive models | spline basis plus existing linear kernels | Reuse supported BSD components; fixed training-only knots |
 | 15 | Robust regression / Huber / RANSAC | scikit-learn | Disclose robust-loss and outlier policy; no hindsight filtering |
@@ -89,7 +89,8 @@ independent numerical references. No optimizer, downloads, broker connections,
 orders or automatic model promotion. Family09 is implemented in batch2; family10
 is implemented in batch3 as one bounded SVR regressor; family11 is implemented in
 batch4 as one bounded uniform K=5 nearest-neighbor regressor retaining training
-observations and labels, without optimized weights. Twenty-nine later additions
+observations and labels, without optimized weights. Family12 is implemented in
+batch5 as bounded empirical-Bayes ridge, not ARD. Twenty-eight later additions
 remain planned.
 
 Every family must preserve acquisition/revision knowledge, feature availability,

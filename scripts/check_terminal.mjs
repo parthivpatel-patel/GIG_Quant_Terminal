@@ -456,7 +456,7 @@ for (const kind of financialActions) {
 }
 const pipelineActions = {
   "pipeline-bars": "bars", "pipeline-universe": "universe", "research-dataset": "research-dataset",
-  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-knn": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
+  "research-model": "research-model", "research-gpr": "research-model", "research-rf": "research-model", "research-xt": "research-model", "research-svr": "research-model", "research-knn": "research-model", "research-bayes": "research-model", "research-predict": "research-predict", "research-allocate": "research-allocate",
   "research-prepare": "research-prepare", "portfolio-accounting": "portfolio-accounting",
   "offline-dispatch": "execution-engine", "offline-fill": "execution-engine",
   "schedule-twap": "execution-engine", "advance-clock": "execution-engine",
@@ -736,4 +736,11 @@ replyOverride = { body: fixture({ data: { rows: [], metrics: {} } }) };
 await get("analysis-engine").dispatch("change"); await settle();
 checked("weekly archive view retains source eligibility limits", () => { assert(calls.at(-1).url.includes("engine=observed-equity")); assert.match(get("truth-notice").textContent, /permanent security/); assert.match(get("truth-notice").textContent, /Not eligible/); });
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(submittedWorkspaceExamples, null, 2));
+
+
+get("analytics-kind").value = "workspace-research-bayes";
+await get("analytics-kind").dispatch("change");
+checked("Bayesian ridge has explicit saved-dataset action", () => assert.equal(JSON.parse(get("analytics-input").value).model, "bayesian_ridge"));
+checked("Bayesian uncertainty assumptions remain explicit", () => assert(get("workbench-scope").textContent.includes("NOT OOS calibrated")));
+
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

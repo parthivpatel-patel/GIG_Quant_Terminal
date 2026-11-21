@@ -1,0 +1,8 @@
+{
+  "state": "PASS",
+  "source_commit": "37e3550cf166462b4553d4449708a86b5493277b",
+  "packaged_files_matched": 235,
+  "package_import": "/tmp/gig-bayes-installed/gig/__init__.py",
+  "native_import": "/tmp/gig-bayes-installed/gig/_speed.cpython-312-x86_64-linux-gnu.so",
+  "wheel_sha256": "91cd8fd0255ffc85d1883a872aef71f9aff4949d1affca21445b49d18e7e4177"
+}
