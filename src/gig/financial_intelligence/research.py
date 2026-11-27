@@ -393,6 +393,11 @@ def replay(corpus: FinancialCorpus, record_id: str) -> dict[str, Any]:
             if statements(corpus, reviewed["document_id"])["record_id"] != reviewed["statement_record_id"]:
                 raise ValueError("financial research replay changed")
         again = saved
+    elif operation in ("transcript", "compare"):
+        from gig.financial_intelligence import documents
+
+        again = (documents.transcript(corpus, saved["document_id"]) if operation == "transcript"
+                 else documents.compare(corpus, saved["base_document_id"], saved["revised_document_id"]))
     else:
         raise ValueError("unsupported financial research record")
     if again is None or again["record_id"] != saved["record_id"]:

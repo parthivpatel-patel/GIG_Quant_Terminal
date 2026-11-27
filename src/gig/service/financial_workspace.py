@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from gig.financial_intelligence import research
+from gig.financial_intelligence import documents, research
 from gig.financial_intelligence.citations import verify_citation
 from gig.financial_intelligence.reference import treasury_document
 from gig.financial_intelligence.store import FinancialCorpus
@@ -18,6 +18,9 @@ RESEARCH = {
                      "Saved research watch; checked only on explicit request"),
     "watch-check": ({"watch_id", "as_of"}, set(), "Explicit watch check against its saved baseline"),
     "investigate": ({"title", "questions", "as_of"}, set(), "Cited investigation report; extractive findings only"),
+    "transcript": ({"document_id"}, set(), "Cited transcript structure; speaker labels and cue words, not interpretation"),
+    "compare": ({"base_document_id", "revised_document_id"}, set(),
+                "Cited document comparison; text differences, not verified restatements"),
     "research-replay": ({"record_id"}, set(), "Saved financial research record replay"),
 }
 
@@ -102,6 +105,10 @@ class FinancialIntelligenceWorkspace:
         try:
             if operation == "statements":
                 data = research.statements(self.corpus, payload["document_id"])
+            elif operation == "transcript":
+                data = documents.transcript(self.corpus, payload["document_id"])
+            elif operation == "compare":
+                data = documents.compare(self.corpus, payload["base_document_id"], payload["revised_document_id"])
             elif operation == "synthesize":
                 data = research.multi_document_digest(self.corpus, payload["query"], payload["as_of"], **options)
             elif operation == "watch-create":
