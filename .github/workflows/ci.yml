@@ -135,6 +135,8 @@ jobs:
         run: python scripts/sync_bounded_families.py --check
       - name: Chromium registry-wide bounded families and saved replay
         run: python scripts/browser_bounded_families.py --evidence-dir /tmp/ci-browser-bounded --axe /tmp/axe/package/axe.min.js
+      - name: Chromium cited statements, digest, explicit watch and investigation
+        run: python scripts/browser_financial_research.py --evidence-dir /tmp/ci-browser-financial-research --axe /tmp/axe/package/axe.min.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -160,3 +162,4 @@ jobs:
             /tmp/ci-browser-citations
             /tmp/ci-browser-additive
             /tmp/ci-browser-bounded
+            /tmp/ci-browser-financial-research

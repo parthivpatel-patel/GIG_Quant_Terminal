@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from gig.financial_intelligence import latent, nlp
+from gig.financial_intelligence import ingest, latent, nlp
 from gig.financial_intelligence.retrieval import IMPLEMENTATION, rank
 from gig.service.serialization import dumps, loads
 from gig.timestamps import aware_timestamp
@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS passages(document_id TEXT NOT NULL, ordinal INTEGER N
  body TEXT NOT NULL, PRIMARY KEY(document_id,ordinal));
 CREATE TABLE IF NOT EXISTS snapshots(id TEXT PRIMARY KEY, body TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS latent_models(id TEXT PRIMARY KEY, body TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS research_records(id TEXT PRIMARY KEY, kind TEXT NOT NULL, body TEXT NOT NULL);
 """
 NORMALIZER = "gig.financial-documents.v1"
 RESEARCH_IMPLEMENTATION = "gig.financial-research.v2"
@@ -127,6 +128,9 @@ class FinancialCorpus:
              "source_acquired_at": None, "publication_time": None, "publication_state": "UNKNOWN",
              "classification": "SYNTHETIC", "normalization": "EXACT_UTF8_LINES", "raw_sha256": hashlib.sha256(raw).hexdigest()}, passages)
 
+    def admit_html(self, payload):
+        return self.admit(*ingest.html_document(payload))
+
     def document(self, document_id):
         document_id = _sha(document_id)
         if not self.path.exists():
@@ -149,6 +153,8 @@ class FinancialCorpus:
             excerpt = raw[p["source_start"]:p["source_end"]].decode("utf-8")
             if descriptor["normalization"] == "EXACT_UTF8_LINES" and excerpt != p["text"]:
                 raise ValueError("authored citation text differs from original bytes")
+            if descriptor["normalization"] == ingest.NORMALIZATION and ingest.renormalize(excerpt.encode("utf-8")) != p["text"]:
+                raise ValueError("authored HTML citation text differs from original bytes")
             passages.append({**p, "document_id": document_id, "ordinal": ordinal,
                 "passage_id": digest({"document_id": document_id, "ordinal": ordinal, "passage_hash": digest(p)}),
                 "source_url": descriptor["source_url"], "raw_sha256": descriptor["raw_sha256"],
