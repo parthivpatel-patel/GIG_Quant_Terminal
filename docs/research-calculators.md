@@ -16,6 +16,15 @@ and the exact inputs to a local content-addressed journal.
 rejects the record if the result differs. The plain calculation and the
 saved record stay `MODEL_ESTIMATE` / `RESEARCH_ONLY`.
 
+**Calculate from saved dataset** copies one instrument's `return_1` or `close`
+from an already saved point-in-time dataset into `cornish-fisher-var`,
+`stationary-bootstrap`, or `roll-spread`, then stores those exact numbers.
+A leading `return_1` warmup may be omitted and is counted. Any other gap is
+refused, and nothing is imputed. Replay recomputes from the pinned series
+even if the dataset file is later removed. The dataset classification is
+kept beside the record and is not upgraded. `POST /api/v1/analytics/<kind>`
+still reads no dataset.
+
 | Kind | Method | Independent reference in `tests/test_quant_analytics.py` |
 | --- | --- | --- |
 | `ledoit-wolf` | Ledoit-Wolf (2004) shrinkage to a scaled identity | scikit-learn `ledoit_wolf` |

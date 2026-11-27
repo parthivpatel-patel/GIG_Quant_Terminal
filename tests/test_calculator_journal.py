@@ -9,8 +9,15 @@ from pathlib import Path
 import httpx
 
 from gig.service.app import create_app
-from gig.service.calculator_journal import MAX_RECORDS, CalculatorJournal
+from gig.service.calculator_journal import (
+    MAX_RECORDS,
+    CalculatorJournal,
+    CalculatorJournalWorkspace,
+    panel_series,
+)
+from gig.service.dataset_workspace import PersistedDatasetWorkspace
 from gig.service.quant_analytics import ANALYSES
+from test_persisted_data import dataset_request, seed_persisted_fixture
 
 
 class JournalTests(unittest.TestCase):
@@ -80,6 +87,100 @@ class HTTPTests(unittest.IsolatedAsyncioTestCase):
                 hostile = await client.post(endpoint, json={"operation": "replay", "record_id": body["data"]["record_id"]},
                                             headers={"Origin": "https://hostile.invalid"})
                 self.assertEqual(hostile.status_code, 403)
+
+    async def test_a_saved_dataset_series_is_calculated_and_replayed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            seed_persisted_fixture(root)
+            dataset = PersistedDatasetWorkspace(root).build(dataset_request()).to_dict()["data"]
+            transport = httpx.ASGITransport(app=create_app(state_dir=root))
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                endpoint = "/api/v1/workspace/calculator-journal"
+                saved = await client.post(endpoint, json={
+                    "operation": "from-dataset", "dataset_id": dataset["dataset_id"],
+                    "kind": "cornish-fisher-var", "instrument_id": "US:AAA", "field": "return_1",
+                    "inputs": {"confidence": 0.95}})
+                self.assertEqual(saved.status_code, 200, saved.text)
+                body = saved.json()
+                self.assertEqual(body["data"]["source"]["dataset_classification"], "SYNTHETIC")
+                self.assertFalse(body["data"]["trading_approved"])
+                self.assertGreater(body["data"]["source"]["observations"], 30)
+                replay = await client.post(endpoint, json={"operation": "replay", "record_id": body["data"]["record_id"]})
+                self.assertEqual(replay.json()["data"]["result"], body["data"]["result"])
+                refused = await client.post(endpoint, json={
+                    "operation": "from-dataset", "dataset_id": dataset["dataset_id"],
+                    "kind": "roll-spread", "instrument_id": "US:AAA", "field": "return_1", "inputs": {}})
+                self.assertEqual(refused.status_code, 422)
+
+
+class DatasetBindingTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name) / "state"
+        seed_persisted_fixture(self.root)
+        built = PersistedDatasetWorkspace(self.root).build(dataset_request()).to_dict()
+        self.dataset = built["data"]
+        self.workspace = CalculatorJournalWorkspace(self.root)
+
+    def test_only_a_leading_return_warmup_may_be_absent(self):
+        rows = [{"instrument_id": "US:AAA", "return_1": None},
+                {"instrument_id": "US:AAA", "return_1": 0.01},
+                {"instrument_id": "US:AAA", "return_1": None}]
+        with self.assertRaisesRegex(ValueError, "leading warmup"):
+            panel_series(rows, "US:AAA", "return_1")
+        rows[2]["return_1"] = True
+        with self.assertRaisesRegex(ValueError, "finite"):
+            panel_series(rows, "US:AAA", "return_1")
+        with self.assertRaisesRegex(ValueError, "missing observation"):
+            panel_series([{"instrument_id": "US:AAA", "close": 1.0}, {"instrument_id": "US:AAA", "close": None}],
+                         "US:AAA", "close")
+
+    def test_the_extracted_series_is_pinned_after_the_dataset_is_removed(self):
+        saved = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": self.dataset["dataset_id"],
+            "kind": "stationary-bootstrap", "instrument_id": "US:AAA", "field": "return_1",
+            "inputs": {"mean_block": 5, "replications": 100, "seed": 1, "confidence": 0.95},
+        }).to_dict()
+        data = saved["data"]
+        series = [row["return_1"] for row in self.dataset["panel_rows"]
+                  if row["instrument_id"] == "US:AAA" and row["return_1"] is not None]
+        self.assertEqual(data["inputs"]["series"], series)
+        self.assertEqual(data["source"]["extraction"], "PANEL_ROWS_IN_STORED_ORDER_NO_IMPUTATION")
+        self.assertEqual(data["source"]["leading_missing_observations"], 1)
+        self.assertFalse(data["trading_approved"])
+        manual = CalculatorJournal(self.root).save("stationary-bootstrap", data["inputs"])
+        self.assertNotEqual(manual["record_id"], data["record_id"])
+        self.assertEqual(manual["result"], data["result"])
+        spread = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": self.dataset["dataset_id"],
+            "kind": "roll-spread", "instrument_id": "US:BBB", "field": "close", "inputs": {},
+        }).to_dict()["data"]
+        closes = [row["close"] for row in self.dataset["panel_rows"] if row["instrument_id"] == "US:BBB"]
+        self.assertEqual(spread["inputs"]["prices"], closes)
+        self.assertEqual(spread["source"]["leading_missing_observations"], 0)
+        (self.root / "research-datasets" / "datasets" / f"{self.dataset['dataset_id']}.json").unlink()
+        replayed = self.workspace.run({"operation": "replay", "record_id": data["record_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["replay_state"], "REPRODUCED_FROM_PINNED_INPUTS")
+        self.assertEqual(replayed["data"]["result"], data["result"])
+        missing = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": self.dataset["dataset_id"],
+            "kind": "roll-spread", "instrument_id": "US:BBB", "field": "close", "inputs": {},
+        }).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+
+    def test_unbound_or_mismatched_fields_are_refused(self):
+        base = {"operation": "from-dataset", "dataset_id": self.dataset["dataset_id"], "instrument_id": "US:AAA"}
+        for payload in (
+            {**base, "kind": "cornish-fisher-var", "field": "close", "inputs": {}},
+            {**base, "kind": "stationary-bootstrap", "field": "return_1",
+             "inputs": {"series": [0.01, -0.02], "mean_block": 2}},
+            {**base, "kind": "ledoit-wolf", "field": "return_1", "inputs": {}},
+            {**base, "kind": "roll-spread", "field": "close", "inputs": {}, "broker": "live"},
+            {**base, "kind": "roll-spread", "field": "close"},
+        ):
+            with self.assertRaises(ValueError):
+                self.workspace.run(payload)
 
 
 if __name__ == "__main__":
