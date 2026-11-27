@@ -24,10 +24,13 @@ IMPLEMENTATION = "gig.calculator-journal.v1"
 MAX_RECORDS = 128
 # The argument is filled from the dataset. The allowed fields are the only
 # panel columns that may be copied, and they are not imputed.
+# argument, allowed panel fields, and whether one column or an aligned matrix is copied.
 DATASET_BINDINGS = {
-    "cornish-fisher-var": ("returns", frozenset({"return_1"})),
-    "stationary-bootstrap": ("series", frozenset({"return_1", "close"})),
-    "roll-spread": ("prices", frozenset({"close"})),
+    "cornish-fisher-var": ("returns", frozenset({"return_1"}), "series"),
+    "stationary-bootstrap": ("series", frozenset({"return_1", "close"}), "series"),
+    "roll-spread": ("prices", frozenset({"close"}), "series"),
+    "ledoit-wolf": ("returns", frozenset({"return_1"}), "panel"),
+    "minimum-cvar": ("scenarios", frozenset({"return_1"}), "panel"),
 }
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
@@ -73,6 +76,51 @@ def panel_series(rows: Any, instrument_id: str, field: str) -> tuple[list[float]
     if len(values) < 2:
         raise ValueError("dataset series is too short")
     return values, len(missing)
+
+
+def aligned_returns(rows: Any, instrument_ids: Any, field: str) -> tuple[list[list[float]], int]:
+    """Keep timestamps where every requested instrument has a finite return. Do not fill the rest."""
+    if field != "return_1":
+        raise ValueError("aligned returns use return_1")
+    if not isinstance(instrument_ids, list) or not 2 <= len(instrument_ids) <= 64 or len(set(instrument_ids)) != len(instrument_ids):
+        raise ValueError("aligned returns need 2 to 64 distinct instruments")
+    if any(not isinstance(item, str) or not item or len(item) > 64 for item in instrument_ids):
+        raise ValueError("instrument identity must be a short string")
+    if not isinstance(rows, list):
+        raise ValueError("dataset panel is unavailable")
+    order: list[str] = []
+    seen: dict[str, dict[str, Any]] = {}
+    requested = set(instrument_ids)
+    for row in rows:
+        if not isinstance(row, dict) or row.get("instrument_id") not in requested:
+            continue
+        stamp = row.get("timestamp")
+        if not isinstance(stamp, str):
+            raise ValueError("dataset timestamp is unavailable")
+        if stamp not in seen:
+            seen[stamp] = {}
+            order.append(stamp)
+        if row["instrument_id"] in seen[stamp]:
+            raise ValueError("dataset repeats an instrument at one timestamp")
+        seen[stamp][row["instrument_id"]] = row.get(field)
+    matrix: list[list[float]] = []
+    skipped = 0
+    for stamp in order:
+        cells = [seen[stamp].get(ident) for ident in instrument_ids]
+        if all(value is None for value in cells):
+            skipped += 1
+            continue
+        if any(value is None for value in cells):
+            raise ValueError("aligned return panel has a partial observation")
+        numbers: list[float] = []
+        for value in cells:
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+                raise ValueError("dataset field is not a finite number")
+            numbers.append(float(value))
+        matrix.append(numbers)
+    if len(matrix) < 2:
+        raise ValueError("dataset series is too short")
+    return matrix, skipped
 
 
 class CalculatorJournal:
@@ -171,21 +219,35 @@ class CalculatorJournalWorkspace:
             return self._contract(None, state=State.UNAVAILABLE)
 
     def _from_dataset(self, payload: dict[str, Any]) -> dict[str, Any]:
-        fields = _fields(payload, {"operation", "dataset_id", "kind", "instrument_id", "field", "inputs"},
-                         {"operation", "dataset_id", "kind", "instrument_id", "field", "inputs"})
+        fields = _fields(payload, {"operation", "dataset_id", "kind", "instrument_id", "instruments", "field", "inputs"},
+                         {"operation", "dataset_id", "kind", "field", "inputs"})
         kind = fields["kind"]
         if not isinstance(kind, str) or kind not in DATASET_BINDINGS:
             raise ValueError("calculator cannot be bound to a saved dataset")
-        argument, allowed_fields = DATASET_BINDINGS[kind]
+        argument, allowed_fields, mode = DATASET_BINDINGS[kind]
         if fields["field"] not in allowed_fields:
             raise ValueError("dataset field is not valid for that calculator")
         inputs = fields["inputs"]
         if not isinstance(inputs, dict) or argument in inputs:
             raise ValueError("calculator inputs must leave the dataset argument unbound")
+        has_one = "instrument_id" in fields
+        has_many = "instruments" in fields
+        if mode == "series" and (not has_one or has_many):
+            raise ValueError("this calculator binds one instrument_id")
+        if mode == "panel" and (not has_many or has_one):
+            raise ValueError("this calculator binds an instruments list")
         document = PersistedDatasetWorkspace(self.directory).load(fields["dataset_id"])
-        values, skipped = panel_series(document["panel_rows"], fields["instrument_id"], fields["field"])
+        if mode == "series":
+            series, skipped = panel_series(document["panel_rows"], fields["instrument_id"], fields["field"])
+            source = {"dataset_id": document["dataset_id"], "dataset_classification": document["classification"],
+                      "instrument_id": fields["instrument_id"], "field": fields["field"], "argument": argument,
+                      "observations": len(series), "leading_missing_observations": skipped,
+                      "extraction": "PANEL_ROWS_IN_STORED_ORDER_NO_IMPUTATION"}
+            return self.journal.save(kind, {**inputs, argument: series}, source=source)
+        matrix, skipped = aligned_returns(document["panel_rows"], fields["instruments"], fields["field"])
         source = {"dataset_id": document["dataset_id"], "dataset_classification": document["classification"],
-                  "instrument_id": fields["instrument_id"], "field": fields["field"], "argument": argument,
-                  "observations": len(values), "leading_missing_observations": skipped,
-                  "extraction": "PANEL_ROWS_IN_STORED_ORDER_NO_IMPUTATION"}
-        return self.journal.save(kind, {**inputs, argument: values}, source=source)
+                  "instruments": list(fields["instruments"]), "field": fields["field"], "argument": argument,
+                  "observations": len(matrix), "assets": len(fields["instruments"]),
+                  "skipped_all_missing_timestamps": skipped,
+                  "extraction": "ALIGNED_RETURN_PANEL_NO_IMPUTATION"}
+        return self.journal.save(kind, {**inputs, argument: matrix}, source=source)

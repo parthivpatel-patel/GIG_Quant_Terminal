@@ -1129,7 +1129,7 @@
     for (const [key, , scope] of quantAnalytics) specialScopes[key] = scope;
     specialScopes["workspace-calculator-save"] = "Save one registry calculation under the hash of its kind and inputs. Replay recomputes it. No order, allocation or trading approval.";
     specialScopes["workspace-calculator-replay"] = "Recompute a saved calculation from its pinned inputs. Any difference is an integrity failure. Nothing new is fitted or fetched.";
-    specialScopes["workspace-calculator-dataset"] = "Copy one instrument series from a saved dataset into cornish-fisher-var, stationary-bootstrap, or roll-spread. Missing values are not filled. Replay uses the pinned series. No order or trading approval.";
+    specialScopes["workspace-calculator-dataset"] = "Copy one instrument series, or an aligned return panel for Ledoit-Wolf or minimum-CVaR, from a saved dataset. Missing values are not filled. Replay uses the pinned numbers. No order or trading approval.";
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
   }
   async function runAnalysis() {
@@ -1253,7 +1253,7 @@
       }
       if (data.operation === "calculator") {
         entries.push(["Saved calculation", data.record_id], ["Calculator", data.kind], ["Persistence", "Local content-addressed record"], ["Replay", data.replay_state || "Saved from these inputs"]);
-        if (isObject(data.source)) entries.push(["Dataset", data.source.dataset_id], ["Series", `${data.source.instrument_id} ${data.source.field}`], ["Dataset classification", data.source.dataset_classification]);
+        if (isObject(data.source)) entries.push(["Dataset", data.source.dataset_id], ["Series", data.source.instrument_id || (data.source.instruments || []).join(", ")], ["Field", data.source.field], ["Dataset classification", data.source.dataset_classification]);
         if (Array.isArray(data.result?.headline)) data.result.headline.forEach(row => entries.push([row.label, row.value]));
       }
       if (data.operation === "investigation") {

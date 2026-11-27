@@ -13,6 +13,7 @@ from gig.service.calculator_journal import (
     MAX_RECORDS,
     CalculatorJournal,
     CalculatorJournalWorkspace,
+    aligned_returns,
     panel_series,
 )
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
@@ -135,6 +136,12 @@ class DatasetBindingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing observation"):
             panel_series([{"instrument_id": "US:AAA", "close": 1.0}, {"instrument_id": "US:AAA", "close": None}],
                          "US:AAA", "close")
+        partial = [{"instrument_id": "US:AAA", "timestamp": "t1", "return_1": 0.01},
+                   {"instrument_id": "US:BBB", "timestamp": "t1", "return_1": None},
+                   {"instrument_id": "US:AAA", "timestamp": "t2", "return_1": 0.02},
+                   {"instrument_id": "US:BBB", "timestamp": "t2", "return_1": -0.01}]
+        with self.assertRaisesRegex(ValueError, "partial"):
+            aligned_returns(partial, ["US:AAA", "US:BBB"], "return_1")
 
     def test_the_extracted_series_is_pinned_after_the_dataset_is_removed(self):
         saved = self.workspace.run({
@@ -159,10 +166,32 @@ class DatasetBindingTests(unittest.TestCase):
         closes = [row["close"] for row in self.dataset["panel_rows"] if row["instrument_id"] == "US:BBB"]
         self.assertEqual(spread["inputs"]["prices"], closes)
         self.assertEqual(spread["source"]["leading_missing_observations"], 0)
+        panel = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": self.dataset["dataset_id"],
+            "kind": "ledoit-wolf", "instruments": ["US:BBB", "US:AAA"], "field": "return_1", "inputs": {},
+        }).to_dict()["data"]
+        self.assertEqual(panel["source"]["assets"], 2)
+        self.assertEqual(panel["source"]["skipped_all_missing_timestamps"], 1)
+        self.assertEqual(panel["source"]["extraction"], "ALIGNED_RETURN_PANEL_NO_IMPUTATION")
+        columns = list(zip(*panel["inputs"]["returns"], strict=True))
+        other = [row["return_1"] for row in self.dataset["panel_rows"]
+                 if row["instrument_id"] == "US:BBB" and row["return_1"] is not None]
+        self.assertEqual(list(columns[0]), other)
+        self.assertEqual(list(columns[1]), series)
+        allocation = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": self.dataset["dataset_id"],
+            "kind": "minimum-cvar", "instruments": ["US:AAA", "US:BBB"], "field": "return_1",
+            "inputs": {"confidence": 0.95, "max_weight": 1},
+        }).to_dict()["data"]
+        self.assertEqual(len(allocation["result"]["weights"]), 2)
+        self.assertFalse(allocation["trading_approved"])
+        self.assertAlmostEqual(sum(allocation["result"]["weights"]), 1)
         (self.root / "research-datasets" / "datasets" / f"{self.dataset['dataset_id']}.json").unlink()
         replayed = self.workspace.run({"operation": "replay", "record_id": data["record_id"]}).to_dict()
         self.assertEqual(replayed["data"]["replay_state"], "REPRODUCED_FROM_PINNED_INPUTS")
         self.assertEqual(replayed["data"]["result"], data["result"])
+        covariance = self.workspace.run({"operation": "replay", "record_id": panel["record_id"]}).to_dict()
+        self.assertEqual(covariance["data"]["result"], panel["result"])
         missing = self.workspace.run({
             "operation": "from-dataset", "dataset_id": self.dataset["dataset_id"],
             "kind": "roll-spread", "instrument_id": "US:BBB", "field": "close", "inputs": {},
