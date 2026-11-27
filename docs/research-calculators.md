@@ -1,0 +1,52 @@
+# Stateless research calculators
+
+`POST /api/v1/analytics/<kind>` computes one result from the JSON request and
+returns it as a `MODEL_ESTIMATE` with readiness `RESEARCH_ONLY`. A calculator
+reads no account, saved dataset or market feed, saves nothing and places no
+order. Unknown fields, booleans or strings in place of numbers, nonfinite
+values and oversized inputs are refused with 422.
+
+The kinds, their workbench options and their examples come from one registry,
+`gig.service.quant_analytics.ANALYSES`. `scripts/sync_bounded_families.py`
+writes it into the static shell and CI fails if the two differ.
+
+| Kind | Method | Independent reference in `tests/test_quant_analytics.py` |
+| --- | --- | --- |
+| `ledoit-wolf` | Ledoit-Wolf (2004) shrinkage to a scaled identity | scikit-learn `ledoit_wolf` |
+| `hierarchical-risk-parity` | Lopez de Prado (2016): single linkage, leaf order, recursive bisection | the published quasi-diagonal and recursion, written separately |
+| `minimum-cvar` | Rockafellar-Uryasev linear program, long-only, weight cap, optional return floor | two-asset grid over the definition |
+| `efficient-frontier` | long-only minimum variance across attainable returns | closed-form two-fund weights; one-dimensional scan under a cap |
+| `parametric-var` | normal VaR and expected shortfall with Euler components | quadrature of the quantile function; finite-difference marginal |
+| `cornish-fisher-var` | fourth-order Cornish-Fisher quantile | SciPy moments and the written-out expansion |
+| `historical-var-components` | scenario VaR, expected shortfall and per-asset tail shares | the tail-loss definition minimized over every sample loss |
+| `monte-carlo-var` | seeded Gaussian or covariance-matched Student-t | the normal formula, within 2% at 200,000 paths |
+| `var-backtest` | Kupiec coverage, Christoffersen independence, Basel-style zone | binomial log-likelihoods; the Basel 250-day table; hand-counted transitions |
+| `almgren-chriss` | Almgren-Chriss (2000) discrete optimal liquidation and frontier | tridiagonal first-order conditions; random perturbations never improve the objective |
+| `participation-schedule` | whole-share volume-proportional slices under a participation cap | conservation, cap and proportionality properties |
+| `shortfall-simulation` | seeded implementation shortfall under the same price model | analytic mean and standard deviation |
+| `american-option` | Cox-Ross-Rubinstein tree with early exercise | a plain recursion; Hull's five-step put (4.49); put-call symmetry |
+| `option-greeks-advanced` | closed-form vanna, volga, charm, speed, zomma | finite differences of the existing Black-Scholes kernel |
+| `svi-smile` | raw SVI least squares, butterfly function, wing slopes, implied density | recovery of generating parameters; a published arbitrage example |
+| `variance-swap` | discrete log-contract replication | flat-volatility Black-Scholes strip |
+| `backtest-overfitting` | combinatorially symmetric cross-validation | direct enumeration of every split |
+| `track-record-length` | minimum track record length | inversion of the existing probabilistic Sharpe ratio |
+| `fama-macbeth` | period regressions, Newey-West standard errors on mean slopes | statsmodels OLS and HAC |
+| `trade-bars` | time, tick, volume and dollar bars from ordered prints | pandas group-by; conservation of prints |
+| `bar-quality` | structural errors and statistical warnings for a bar series | one planted defect of each kind |
+
+## Limits
+
+- Inputs are whatever the caller supplies. Covariances, expected returns,
+  impact coefficients, volume forecasts and option prices are assumptions, and
+  no result is evidence about a market.
+- `svi-smile` is a local fit from 27 fixed starts. It reports butterfly
+  arbitrage; it does not constrain the fit to be free of it, and it does not
+  check calendar arbitrage across expiries.
+- `american-option` supports a continuous dividend yield only.
+- `variance-swap` is biased by coarse strike spacing and truncated wings; the
+  share of the two edge strikes is reported.
+- `monte-carlo-var` does not estimate its own sampling error.
+- `var-backtest` uses asymptotic tests with low power in short samples.
+- `bar-quality` is calendar-unaware and repairs nothing.
+- `fama-macbeth` needs a balanced panel and applies no errors-in-variables or
+  multiple-testing correction.

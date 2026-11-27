@@ -57,7 +57,8 @@ def american_binomial(spot, strike, rate=0., div=0., vol=.2, ttm=1., call=True, 
         # Indifference (for example a zero-rate deep in-the-money put) is not early exercise.
         early = exercise > hold*(1+1e-12)+1e-14
         american = np.maximum(hold, exercise)
-        if early.any():
+        # Odd and even steps sit on different price grids; one grid keeps the boundary free of sawtooth.
+        if early.any() and step % 2 == 0:
             critical = prices(step)[early]
             boundary.append({"time": step*dt, "critical_price": float(critical.min() if call else critical.max())})
         if step <= 2:
@@ -74,7 +75,7 @@ def american_binomial(spot, strike, rate=0., div=0., vol=.2, ttm=1., call=True, 
             "gamma": float((upper-lower)/(.5*(s2[2]-s2[0]))),
             "theta_per_year": float((levels[2][1]-american[0])/(2*dt)),
             "exercise_boundary": boundary[::-1][:: max(1, len(boundary)//50)],
-            "exercise_boundary_nodes": len(boundary),
+            "exercise_boundary_nodes": len(boundary), "exercise_boundary_resolution": "TREE_NODE_PRICES_AT_EVEN_STEPS",
             "dividend_model": "CONTINUOUS_YIELD_NO_DISCRETE_DIVIDENDS", "classification": "MODEL_ESTIMATE"}
 
 
