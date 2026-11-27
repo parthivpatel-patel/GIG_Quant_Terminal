@@ -15,8 +15,9 @@ from gig.execution import schedule
 from gig.microstructure import spreads
 from gig.options import exotics
 from gig.options import models as option_models
-from gig.portfolio import construction, rebalance
+from gig.portfolio import allocation, construction, rebalance
 from gig.research import bootstrap, cross_section, overfitting
+from gig.risk import analytics as risk_analytics
 from gig.risk import stress, var_models
 
 
@@ -260,6 +261,29 @@ ANALYSES = _declare(
               "low": [99.4676, 99.1851, 99.2999, 99.6378, 99.6083, 99.3083, 99.6968, 99.5334, 99.1625, 99.1498, 99.5721,
                       99.7437, 99.3342, 99.4593, 99.6152, 99.5668, 99.7317, 99.4096, 99.4971, 99.3463, 99.6834, 99.3158,
                       99.4995, 99.4166]}),
+    Analysis("risk-parity", "Risk parity", allocation.risk_parity, ("covariance",), ("budgets", "max_weight"),
+             (("Risk-budget state", "state"), ("Volatility", "volatility")),
+             "Long-only fully invested risk budgets on the covariance you supply. A binding weight cap is reported as "
+             "an approximation when the budgets cannot be met." + RESEARCH_ONLY,
+             {"covariance": [[.04, 0], [0, .16]]}),
+    Analysis("black-litterman", "Black-Litterman posterior", allocation.black_litterman,
+             ("covariance", "market_weights", "views", "view_returns"), ("risk_aversion", "tau", "view_covariance"),
+             (("Posterior excess returns", "expected_excess_returns"), ("View uncertainty", "view_uncertainty_source")),
+             "Gaussian Black-Litterman posterior from your covariance, long-only market weights and views. Excess "
+             "returns must share one horizon. No portfolio is optimized from the posterior." + RESEARCH_ONLY,
+             {"covariance": [[.04, .01], [.01, .09]], "market_weights": [.6, .4], "views": [[1, -1]],
+              "view_returns": [-.034999999999999976], "risk_aversion": 2.5, "tau": .05}),
+    Analysis("fractional-kelly", "Capped fractional Kelly", allocation.fractional_kelly,
+             ("expected_excess", "covariance"), ("fraction", "max_gross", "max_name", "allow_short"),
+             (("Gross exposure", "gross"), ("Net exposure", "net")),
+             "Quarter-Kelly by default: fraction times the inverse covariance times your excess returns, then clipped "
+             "by name and gross caps. Capping changes the unconstrained result. Not an order." + RESEARCH_ONLY,
+             {"expected_excess": [.08, -.04], "covariance": [[.04, 0], [0, .04]], "fraction": .25, "max_name": 1}),
+    Analysis("drawdown", "Compounded drawdown", risk_analytics.drawdown_report, ("returns",), (),
+             (("Maximum drawdown", "max_drawdown"), ("Current drawdown", "current_drawdown")),
+             "Drawdown of compounded wealth from arithmetic returns, starting from wealth one. A return below "
+             "-100 percent is refused. This is path accounting, not a forecast." + RESEARCH_ONLY,
+             {"returns": [.1, -.2, .05]}),
 )
 
 
