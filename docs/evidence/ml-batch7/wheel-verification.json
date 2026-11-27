@@ -1,0 +1,9 @@
+{
+  "state": "PASS",
+  "source_commit": "2965249d2a2f4ab66548d6e41d19aadc5a30c474",
+  "packaged_files_matched": 240,
+  "tracked_package_files": 240,
+  "unmatched": [],
+  "wheel": "gig-0.1.0-cp312-cp312-linux_x86_64.whl",
+  "wheel_sha256": "04c67fb26bdafe67841c62f644158f96d33df63aa31f96573f7d9ad215a7b32c"
+}
