@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import random
 import sqlite3
 import tempfile
 import unittest
@@ -81,6 +82,24 @@ class IngestTests(Base):
         self.assertEqual([b[0] for b in visible_blocks(source)], ["loose text", "inner", "Net income | (5)", "tail"])
         for body, start, end in visible_blocks(source):
             self.assertEqual(renormalize(source[start:end].encode()), body)
+
+    def test_malformed_markup_is_either_refused_or_cited_exactly(self):
+        parts = ["<p>", "</p>", "<table>", "<tr>", "</tr>", "<td>", "</td>", "<th>", "<br>", "<li>", "<div>", "</div>", "<script>",
+                 "</script>", "<style>", "</style>", "<h1>", "</h1>", "<!-- c -->", "&amp;", "&#233;", "é", "Revenue", " 1,000 ", "(50)",
+                 "\n", "<", ">", "</", "<p", "<b>", "</b>", "<p class='x'>", "<![CDATA[x]]>", "|", "日本", "</td", "<pre>", "\t"]
+        generator = random.Random(7)
+        admitted = 0
+        for _ in range(1500):
+            text = "".join(generator.choice(parts) for _ in range(generator.randint(1, 40)))
+            try:
+                raw, _, passages = html_document(html(html=text))
+            except ValueError:
+                continue
+            admitted += 1
+            for passage in passages:
+                self.assertEqual(renormalize(raw[passage["source_start"]:passage["source_end"]]), passage["text"])
+                self.assertNotIn("<script", passage["text"])
+        self.assertGreater(admitted, 500)
 
     def test_rejected_html_creates_no_state(self):
         bad = [html(license="PUBLIC"), html(source="../x"), html(html="<script>only()</script>"), html(html=" "),
