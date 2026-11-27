@@ -12,6 +12,7 @@ from typing import Any
 
 from gig.data import bars
 from gig.execution import schedule
+from gig.microstructure import spreads
 from gig.options import exotics
 from gig.options import models as option_models
 from gig.portfolio import construction, rebalance
@@ -242,6 +243,23 @@ ANALYSES = _declare(
              "blocks wrapped around the series you supply. A resampling, not evidence that a strategy worked."
              + RESEARCH_ONLY,
              {"series": _SERIES, "mean_block": 5, "replications": 1000, "seed": 7, "confidence": .95}),
+    Analysis("roll-spread", "Roll spread", spreads.roll_spread, ("prices",), (),
+             (("Spread", "spread"), ("Autocovariance", "autocovariance")),
+             "Implied spread from the autocovariance of price changes (Roll 1984). A nonnegative autocovariance is "
+             "reported as not identified. Prices are yours; no quote is read." + RESEARCH_ONLY,
+             {"prices": [100.1174, 99.8087, 99.8919, 99.9248, 100.1427, 100.1425, 99.8113, 100.1187, 100.0383, 99.7504,
+                         99.7622, 99.841, 99.8568, 100.1823, 100.1077, 100.2203, 100.1245, 100.1796, 100.1631, 100.1191,
+                         99.7863, 99.7527, 100.0717, 100.0662]}),
+    Analysis("corwin-schultz", "Corwin-Schultz spread", spreads.corwin_schultz, ("high", "low"), (),
+             (("Spread, negatives set to zero", "mean_spread_floored_at_zero"), ("Negative windows", "negative_estimates")),
+             "High-low spread for every pair of consecutive bars (Corwin and Schultz 2012). Overlapping windows are "
+             "not independent samples, and a negative window is a noisy estimate, not a negative spread." + RESEARCH_ONLY,
+             {"high": [100.4624, 100.5642, 100.5275, 100.405, 100.6083, 100.6549, 100.2758, 100.4447, 100.3054, 100.2029,
+                       100.245, 100.7685, 100.7373, 100.4617, 100.6014, 100.2955, 100.7236, 100.5519, 100.7053, 100.3347,
+                       100.362, 100.3115, 100.7052, 100.3739],
+              "low": [99.4676, 99.1851, 99.2999, 99.6378, 99.6083, 99.3083, 99.6968, 99.5334, 99.1625, 99.1498, 99.5721,
+                      99.7437, 99.3342, 99.4593, 99.6152, 99.5668, 99.7317, 99.4096, 99.4971, 99.3463, 99.6834, 99.3158,
+                      99.4995, 99.4166]}),
 )
 
 

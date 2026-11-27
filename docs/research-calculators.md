@@ -42,6 +42,8 @@ writes it into the static shell and CI fails if the two differ.
 | `maximum-diversification` | long-only Choueifaty-Coignard ratio | inverse-volatility weights and a simplex grid under a cap |
 | `tracking-portfolio` | long-only minimum tracking variance | the benchmark itself when it is feasible; an unreachable active-return floor is refused |
 | `stationary-bootstrap` | Politis-Romano (1994) geometric blocks, circular wrap, percentile interval | a direct block-by-block reconstruction; unit blocks match the iid resample variance |
+| `roll-spread` | Roll (1984) spread from the autocovariance of price changes | the written covariance formula; a seeded bid-ask bounce recovers its spread |
+| `corwin-schultz` | Corwin-Schultz (2012) high-low spread on consecutive bars | the published two-day expression on each window |
 
 ## Limits
 
@@ -73,3 +75,7 @@ writes it into the static shell and CI fails if the two differ.
   optimality conditions have been re-checked.
 - `stationary-bootstrap` resamples the supplied series. The interval is not a
   hypothesis test and does not correct for having tried other series.
+- `roll-spread` needs a negative autocovariance. A trend is reported as not
+  identified rather than given an imaginary spread.
+- `corwin-schultz` uses overlapping pairs. Negative windows are counted and
+  also shown floored at zero.
