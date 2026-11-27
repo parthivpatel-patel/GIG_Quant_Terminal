@@ -16,6 +16,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from gig.ml.bounded import FAMILIES
 from gig.ml.ranker import _group_sizes, _relevance_labels
 from gig.ml.regimes import GaussianHMM, fit_gaussian_hmm
 from gig.ml.sequence import predict_sequence, train_sequence
@@ -42,7 +43,10 @@ KINDS = {
     "bayesian_ridge": "FORWARD_RETURN_ESTIMATE",
     "binomial_glm": "FORWARD_DIRECTION_PROBABILITY",
     "additive_spline": "FORWARD_RETURN_ESTIMATE",
+    **{key: family.kind for key, family in FAMILIES.items()},
 }
+# Research-only outputs are never portfolio-usable, whatever their fit state.
+RESEARCH_ONLY = frozenset({"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm", "additive_spline", *FAMILIES})
 
 
 def identity(value: Any) -> str:
@@ -74,7 +78,7 @@ def configuration(payload: dict[str, Any]) -> dict[str, Any]:
     if set(payload) & ({"sequence_length", "hidden_size", "epochs", "states", "iterations"} - options):
         raise ValueError("settings do not belong to selected model")
     config = {"model": model,
-              "min_train": integer(payload.get("min_train", 40), 20, 128 if model in {"gaussian_process", "svr"} else 256 if model in {"random_forest", "extra_trees", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"} else 800, "min_train"),
+              "min_train": integer(payload.get("min_train", 40), 20, FAMILIES[model].max_train if model in FAMILIES else 128 if model in {"gaussian_process", "svr"} else 256 if model in {"random_forest", "extra_trees", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"} else 800, "min_train"),
               "test_size": integer(payload.get("test_size", 10), 1, 200, "test_size"),
               "embargo": integer(payload.get("embargo", 1), 0, 100, "embargo"),
               "seed": integer(payload.get("seed", 42), 0, 2**31 - 1, "seed")}
@@ -133,7 +137,7 @@ def _prediction(row, value, model_id, fold, model, uncertainty, **extra):
     return {"instrument_id": row["instrument_id"], "timestamp": row["timestamp"],
             "prediction": float(value), "target": row["target"], "label_end": row["label_end"],
             "fold": fold, "model_id": model_id, "prediction_kind": KINDS[model],
-            "uncertainty": uncertainty, "usable_for_portfolio": model not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"},
+            "uncertainty": uncertainty, "usable_for_portfolio": model not in RESEARCH_ONLY,
             "trading_approved": False, **extra}
 
 
@@ -409,7 +413,10 @@ def _state_models(dataset, rows, config):
 
 def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
     rows, names = dataset_rows(dataset)
-    if config["model"] == "ridge":
+    if config["model"] in FAMILIES:
+        from gig.research.bounded import fit_persisted_family
+        models, predictions, folds = fit_persisted_family(dataset, rows, names, config)
+    elif config["model"] == "ridge":
         models, predictions, folds = _ridge(dataset, rows, names, config)
     elif config["model"] == "lightgbm":
         models, predictions, folds = _ranking(dataset, rows, names, config)
@@ -442,7 +449,9 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
         raise ValueError("research exceeds 64 fitted model states")
     predictions.sort(key=lambda r: (aware_timestamp(r["timestamp"]), r["instrument_id"]))
     errors = [(r["prediction"]-r["target"])**2 for r in predictions]
-    metric = float(np.mean(errors)) if config["model"] not in {"lightgbm", "garch", "binomial_glm"} else None
+    family = FAMILIES.get(config["model"])
+    comparable = family.return_units if family else config["model"] not in {"lightgbm", "garch", "binomial_glm"}
+    metric = float(np.mean(errors)) if comparable else None
     if metric is not None and not math.isfinite(metric):
         raise ValueError("research metric exceeds finite range")
     latest = {}
@@ -460,13 +469,17 @@ def fit_dataset(dataset: dict[str, Any], config: dict[str, Any]):
                             "mse_state": "AVAILABLE" if metric is not None else "UNAVAILABLE_DIFFERENT_OUTPUT_UNITS"},
                 "dataset_diagnostics": dataset.get("diagnostics", {}),
                 "provenance": dataset.get("provenance", {}),
-                "usable_for_portfolio": config["model"] not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"}
+                "usable_for_portfolio": config["model"] not in RESEARCH_ONLY
                     and all(r.get("fit_state", "CONVERGED") == "CONVERGED" for r in predictions),
                 "trading_approved": False, "economically_validated": False}
     if config["model"] == "binomial_glm":
         artifact["metrics"].update(brier_score=float(np.mean(errors)),
             log_loss=sum(f["log_loss"]*f["test_count"] for f in folds)/len(predictions),
             target_kind="BINARY_FORWARD_RETURN_STRICTLY_POSITIVE", probability_calibrated=False)
+    if family:
+        from gig.research.bounded import summarize
+        artifact["metrics"]["family"] = summarize(folds)
+        artifact["family_number"] = family.number
     # Admit the whole durable artifact before any immutable state is published.
     return {**artifact, "run_id": identity(artifact)}, models
 
@@ -491,6 +504,9 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
             import lightgbm as lgb
             prediction = lgb.Booster(model_str=estimator["booster_text"]).predict(x, num_threads=1)
         output = [dict(row, prediction=float(value)) for row, value in zip(own, prediction, strict=True)]
+    elif kind in FAMILIES:
+        from gig.research.bounded import saved_family_rows
+        output = saved_family_rows(state, dataset, own, names)
     elif kind in {"random_forest", "extra_trees"}:
         from gig.ml.forests import predict_forest
         from gig.research.forests import uncertainty
@@ -556,9 +572,9 @@ def saved_predict(state: dict[str, Any], dataset: dict[str, Any]) -> list[dict[s
     for row in output:
         if aware_timestamp(row["timestamp"]) >= cutoff:
             extra = ({k: row[k] for k in ("raw_return_target", "label_rule", "linear_predictor")}
-                     if kind == "binomial_glm" else {})
+                     if kind == "binomial_glm" else row.get("extra", {}))
             final.append(_prediction(row, row["prediction"], model_id, None, kind,
                                      row.get("uncertainty", {"value": None, "state": "UNAVAILABLE"}),
                                      fit_state=state["fit_state"],
-                                     usable_for_portfolio=kind not in {"garch", "hmm", "svr", "knn", "bayesian_ridge", "binomial_glm", "additive_spline"} and state["fit_state"] == "CONVERGED", **extra))
+                                     usable_for_portfolio=kind not in RESEARCH_ONLY and state["fit_state"] == "CONVERGED", **extra))
     return final
