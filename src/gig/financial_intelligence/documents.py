@@ -10,11 +10,12 @@ Nothing is scored for sentiment or checked against the world.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from decimal import Decimal
 from difflib import SequenceMatcher
 from typing import Any
 
-from gig.financial_intelligence import nlp
+from gig.financial_intelligence import nlp, nlp_v2
 from gig.financial_intelligence.research import IMPLEMENTATION, statements
 from gig.financial_intelligence.store import FinancialCorpus, digest
 from gig.timestamps import aware_timestamp
@@ -22,6 +23,7 @@ from gig.timestamps import aware_timestamp
 MAX_TURNS = 400
 MAX_MENTIONS = 200
 MAX_CHANGES = 400
+MAX_DIFFERENCES = 40
 REWORD_SIMILARITY = .5
 LABEL = re.compile(r"^(?P<name>[A-Z][\w.'’-]*(?:\s+[A-Z][\w.'’-]*){0,3})\s*"
                    r"(?:(?:[-–—,]\s*|\()(?P<role>[^:]{1,96}?)\)?)?\s*:\s*(?P<rest>.*)$", re.S)
@@ -61,8 +63,9 @@ def _role(name: str, role: str | None) -> str:
     return "UNKNOWN"
 
 
-def transcript(corpus: FinancialCorpus, document_id: str) -> dict[str, Any]:
+def transcript(corpus: FinancialCorpus, document_id: str, *, profile: str = "v1") -> dict[str, Any]:
     """Speaker turns, sections, question-and-answer exchanges and forward-looking sentences of one document."""
+    nlp.settings(profile)
     document = corpus.document(document_id)
     speakers: dict[str, dict[str, Any]] = {}
     turns: list[dict[str, Any]] = []
@@ -137,8 +140,11 @@ def transcript(corpus: FinancialCorpus, document_id: str) -> dict[str, Any]:
     by_role = {role: sum(turn["words"] for turn in turns if turn["role"] == role)
                for role in ("MANAGEMENT", "ANALYST", "OPERATOR", "UNKNOWN")}
     annotated = spoken[:20]
-    parsed = nlp.extract(annotated) if annotated else {"implementation": nlp.IMPLEMENTATION, "facts": [], "event_mentions": [],
-                                                       "entity_mentions": [], "unsupported_mentions": []}
+    if annotated:
+        parsed = nlp.extract(annotated, profile=profile)
+    else:
+        parsed = {"implementation": nlp.IMPLEMENTATION if profile == "v1" else nlp_v2.IMPLEMENTATION,
+                  "facts": [], "event_mentions": [], "entity_mentions": [], "unsupported_mentions": []}
     metadata = document["metadata"]
     roster = sorted(speakers.values(), key=lambda row: (-row["words"], row["name"]))
     body = {"implementation": IMPLEMENTATION, "operation": "transcript", "document_id": metadata["document_id"],
@@ -153,7 +159,7 @@ def transcript(corpus: FinancialCorpus, document_id: str) -> dict[str, Any]:
             "forward_looking": mentions, "forward_looking_truncated": len(mentions) == MAX_MENTIONS,
             "hedged_forward_looking": sum(m["hedged"] for m in mentions),
             "speaker_identity_state": "LABEL_TEXT_ONLY_NOT_VERIFIED", "sentiment_state": "NOT_SCORED",
-            "financial_mentions": {"implementation": parsed["implementation"],
+            "financial_mentions": {"implementation": parsed["implementation"], "profile": profile,
                                    "coverage": "ALL_SPEAKER_PASSAGES" if len(spoken) <= 20 else "FIRST_20_SPEAKER_PASSAGES",
                                    "speaker_passages": len(spoken), "passages_annotated": len(annotated),
                                    "facts": parsed["facts"], "event_mentions": parsed["event_mentions"],
@@ -171,6 +177,114 @@ def _masked(text: str) -> str:
 
 def _side(passage: dict[str, Any]) -> dict[str, Any]:
     return {"text": passage["text"][:600], "ordinal": passage["ordinal"], "citation": _citation(passage)}
+
+
+def _only(items: list[dict[str, Any]], key, other: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    remaining = Counter(key(item) for item in other)
+    kept = []
+    for item in items:
+        identity = key(item)
+        if remaining[identity]:
+            remaining[identity] -= 1
+        else:
+            kept.append(item)
+    return kept
+
+
+def _fact_key(fact: dict[str, Any]):
+    return (fact["metric_mention"], fact["unit"], fact["quoted_decimal"], fact["decimal_value"],
+            fact["currency_state"], fact["scale"])
+
+
+def _cited_fact(fact: dict[str, Any]) -> dict[str, Any]:
+    return {"metric_mention": fact["metric_mention"], "quoted_decimal": fact["quoted_decimal"],
+            "decimal_value": fact["decimal_value"], "unit": fact["unit"], "currency_state": fact["currency_state"],
+            "scale": fact["scale"], "truth_state": "UNKNOWN", "provenance": fact["provenance"]}
+
+
+def _event_key(event: dict[str, Any]):
+    return (event["mention"].lower(), event["negation_cue_present"], event["conditional_cue_present"])
+
+
+def _cited_event(event: dict[str, Any]) -> dict[str, Any]:
+    return {"mention": event["mention"], "occurrence": "UNKNOWN",
+            "negation_cue_present": event["negation_cue_present"],
+            "conditional_cue_present": event["conditional_cue_present"], "provenance": event["provenance"]}
+
+
+def _entity_key(entity: dict[str, Any]):
+    return entity["mention"]
+
+
+def _cited_entity(entity: dict[str, Any]) -> dict[str, Any]:
+    return {"mention": entity["mention"], "link_state": "UNKNOWN_NO_ISSUER_AUTHORITY",
+            "instrument_identity_state": "UNKNOWN", "existence_state": "UNKNOWN",
+            "provenance": entity["provenance"]}
+
+
+def _annotate(document: dict[str, Any], profile: str) -> dict[str, Any]:
+    passages = document["passages"][:20]
+    if passages:
+        parsed = nlp.extract(passages, profile=profile)
+    else:
+        parsed = {"implementation": nlp.IMPLEMENTATION if profile == "v1" else nlp_v2.IMPLEMENTATION,
+                  "facts": [], "event_mentions": [], "entity_mentions": []}
+    return {"implementation": parsed["implementation"], "passages": len(document["passages"]),
+            "passages_annotated": len(passages), "facts": parsed["facts"],
+            "event_mentions": parsed["event_mentions"], "entity_mentions": parsed["entity_mentions"]}
+
+
+def mention_diff(corpus: FinancialCorpus, base_document_id: str, revised_document_id: str, *,
+                 profile: str = "v1") -> dict[str, Any]:
+    """Cited numerical, event and entity mentions that are not in both documents.
+
+    Matching is by the parsed mention, with multiplicity. Nothing here decides
+    which text is the corrected figure.
+    """
+    nlp.settings(profile)
+    base, revised = corpus.document(base_document_id), corpus.document(revised_document_id)
+    if base["metadata"]["document_id"] == revised["metadata"]["document_id"]:
+        raise ValueError("mention comparison requires two different documents")
+    before, after = _annotate(base, profile), _annotate(revised, profile)
+    base_facts, revised_facts = _only(before["facts"], _fact_key, after["facts"]), _only(after["facts"], _fact_key, before["facts"])
+    base_events = _only(before["event_mentions"], _event_key, after["event_mentions"])
+    revised_events = _only(after["event_mentions"], _event_key, before["event_mentions"])
+    base_entities = _only(before["entity_mentions"], _entity_key, after["entity_mentions"])
+    revised_entities = _only(after["entity_mentions"], _entity_key, before["entity_mentions"])
+    stamps = [base["metadata"]["known_at"], revised["metadata"]["known_at"]]
+    listed = {"base_only_facts": [_cited_fact(fact) for fact in base_facts[:MAX_DIFFERENCES]],
+              "revised_only_facts": [_cited_fact(fact) for fact in revised_facts[:MAX_DIFFERENCES]],
+              "base_only_events": [_cited_event(event) for event in base_events[:MAX_DIFFERENCES]],
+              "revised_only_events": [_cited_event(event) for event in revised_events[:MAX_DIFFERENCES]],
+              "base_only_entities": [_cited_entity(entity) for entity in base_entities[:MAX_DIFFERENCES]],
+              "revised_only_entities": [_cited_entity(entity) for entity in revised_entities[:MAX_DIFFERENCES]]}
+    body = {"implementation": IMPLEMENTATION, "operation": "mention-diff", "nlp_profile": profile,
+            "nlp_implementation": before["implementation"],
+            "base_document_id": base["metadata"]["document_id"], "revised_document_id": revised["metadata"]["document_id"],
+            "base_title": base["metadata"]["title"], "revised_title": revised["metadata"]["title"],
+            "as_of": max(stamps, key=aware_timestamp),
+            "classification": "SYNTHETIC" if "SYNTHETIC" in (base["metadata"]["classification"],
+                                                              revised["metadata"]["classification"]) else "HISTORICAL",
+            "coverage": "ALL_PASSAGES" if before["passages"] <= 20 and after["passages"] <= 20 else "FIRST_20_PASSAGES_OF_A_DOCUMENT",
+            "base_passages": before["passages"], "revised_passages": after["passages"],
+            "base_passages_annotated": before["passages_annotated"], "revised_passages_annotated": after["passages_annotated"],
+            "shared_fact_count": len(before["facts"])-len(base_facts),
+            "shared_event_count": len(before["event_mentions"])-len(base_events),
+            "shared_entity_count": len(before["entity_mentions"])-len(base_entities),
+            **listed,
+            "facts_truncated": len(base_facts) > MAX_DIFFERENCES or len(revised_facts) > MAX_DIFFERENCES,
+            "events_truncated": len(base_events) > MAX_DIFFERENCES or len(revised_events) > MAX_DIFFERENCES,
+            "entities_truncated": len(base_entities) > MAX_DIFFERENCES or len(revised_entities) > MAX_DIFFERENCES,
+            "identical_mentions": not any((base_facts, revised_facts, base_events, revised_events, base_entities, revised_entities)),
+            "difference_state": "PARSED_MENTIONS_NOT_VERIFIED_RESTATEMENTS",
+            "sentiment_state": "NOT_SCORED", "content_truth_state": "UNKNOWN",
+            "issuer_linking_state": "UNKNOWN", "generative_state": "UNAVAILABLE", "trading_approved": False,
+            "limitations": ["Differences are between parsed source mentions, not verified restatements or issuer facts",
+                            "At most the first 20 passages of each document are annotated",
+                            "Repeated mentions are matched by count; leftover copies stay on that side",
+                            "Entity and symbol text is not an instrument identity, issuer link or proof the thing exists",
+                            "No language model generated or interpreted any text"]}
+    return {**body, "record_id": digest(body)}
 
 
 def compare(corpus: FinancialCorpus, base_document_id: str, revised_document_id: str) -> dict[str, Any]:
