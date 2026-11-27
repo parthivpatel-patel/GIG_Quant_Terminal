@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from gig.ml.bounded import (  # importing registers each family
+    boosting,
     history,
     latent,
     neural,
@@ -21,7 +22,7 @@ from gig.ml.bounded.core import (
     predict_family,
 )
 
-__all__ = ["FAMILIES", "IMPLEMENTATION", "MAX_FITS", "MAX_PREDICT", "Family", "admit", "capabilities",
+__all__ = ["FAMILIES", "IMPLEMENTATION", "MAX_FITS", "MAX_PREDICT", "Family", "admit", "boosting", "capabilities",
            "fit_family", "history", "latent", "neural", "predict_family", "supervised", "tails"]
 
 

@@ -157,7 +157,8 @@ def tree_arrays(tree: Any, columns: int, depth: int):
     return left, right, feature, threshold, value
 
 
-def tree_values(parts, x32: np.ndarray, depth: int) -> np.ndarray:
+def tree_values(parts, x32: np.ndarray, depth: int, *, strict: bool = False) -> np.ndarray:
+    """Leaf value per row; a row goes left at x <= threshold, or x < threshold when strict."""
     left, right, feature, threshold, value = parts
     nodes = np.zeros(len(x32), dtype=np.int64)
     for _ in range(depth+1):
@@ -165,7 +166,9 @@ def tree_values(parts, x32: np.ndarray, depth: int) -> np.ndarray:
         if not len(active):
             break
         here = nodes[active]
-        nodes[active] = np.where(x32[active, feature[here]] <= threshold[here], left[here], right[here])
+        column = x32[active, feature[here]]
+        goes_left = column < threshold[here].astype(np.float32) if strict else column <= threshold[here]
+        nodes[active] = np.where(goes_left, left[here], right[here])
     return value[nodes]
 
 

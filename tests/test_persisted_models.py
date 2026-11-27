@@ -41,12 +41,16 @@ class PersistedModelTests(unittest.TestCase):
         cls.workspace = PersistedResearchWorkspace(cls.base)
         cls.results = {}
         cls.refused = {}
+        cls.unavailable = set()  # optional engines not installed here
         for model in KINDS:
             payload = {"dataset_id": cls.dataset["dataset_id"], "model": model,
                        "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17}
             if model == "bilstm":
                 payload.update(epochs=2, hidden_size=3, sequence_length=4)
             if model in FAMILIES:
+                if not FAMILIES[model].available():
+                    cls.unavailable.add(model)
+                    continue
                 payload["min_train"] = max(30, FAMILIES[model].min_train)
             if model in FIXTURE_REFUSALS:
                 try:
@@ -125,7 +129,8 @@ class PersistedModelTests(unittest.TestCase):
         self.assertEqual(set(self.refused), set(FIXTURE_REFUSALS))
         for name, reason in FIXTURE_REFUSALS.items():
             self.assertIn(reason, self.refused[name])
-        self.assertEqual(set(self.results), set(KINDS)-set(FIXTURE_REFUSALS))
+        self.assertEqual(set(self.results), set(KINDS)-set(FIXTURE_REFUSALS)-self.unavailable)
+        self.assertLessEqual(self.unavailable, {"xgboost", "catboost", "ngboost", "ebm"})
 
     def test_all_model_folds_purge_label_knowledge_before_test(self):
         for name in self.results:

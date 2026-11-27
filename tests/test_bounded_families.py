@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
@@ -32,7 +33,8 @@ from test_persisted_data import fixture_times, seed_persisted_fixture
 from test_persisted_flow_http import allocation_request
 
 ROOT = Path(__file__).resolve().parents[1]
-INVENTORY = {15: ["huber", "ransac"], 16: ["quantile"], 19: ["adaboost"], 22: ["arima"], 23: ["ets"], 24: ["var"],
+INVENTORY = {15: ["huber", "ransac"], 16: ["quantile"], 17: ["xgboost"], 18: ["catboost"], 19: ["adaboost"],
+             20: ["ngboost"], 21: ["ebm"], 22: ["arima"], 23: ["ets"], 24: ["var"],
              25: ["dynamic_factor"], 26: ["gmm"], 27: ["kmeans"], 28: ["pca"], 29: ["ica"], 30: ["nmf"],
              31: ["gaussian_copula"], 32: ["evt_pot"], 33: ["bocpd"], 35: ["mlp"], 36: ["tcn"], 37: ["esn"],
              38: ["nbeats"], 39: ["attention"], 40: ["autoencoder"]}
@@ -40,6 +42,14 @@ INVENTORY = {15: ["huber", "ransac"], 16: ["quantile"], 19: ["adaboost"], 22: ["
 
 # Diagnostics that no replay reads; every other numeric payload field must be re-derived or checked.
 INFORMATIONAL = {"training_excess_kurtosis", "explained_variance_ratio", "sigma", "final_training_loss"}
+
+
+# Engines from the optional `boosting` extra; absent ones are checked as UNAVAILABLE instead of fitted.
+OPTIONAL = {"xgboost", "catboost", "ngboost", "ebm"}
+
+
+def families():
+    return {key: family for key, family in FAMILIES.items() if key not in OPTIONAL or family.available()}
 
 
 def sample(key, rows=None, seed=5):
@@ -97,7 +107,7 @@ class ContractTests(unittest.TestCase):
     """Every registered family obeys the same replay, bound and tamper rules."""
 
     def test_json_replay_is_deterministic_bounded_and_isolated(self):
-        for key, family in FAMILIES.items():
+        for key, family in families().items():
             with self.subTest(family=key):
                 x, y, names = sample(key)
                 original = x.copy()
@@ -118,7 +128,7 @@ class ContractTests(unittest.TestCase):
                     predict_family(state, np.tile(x[:1], (2001, 1)), names)
 
     def test_work_bounds_and_noncoercive_inputs_reject(self):
-        for key, family in FAMILIES.items():
+        for key, family in families().items():
             with self.subTest(family=key):
                 x, y, names = sample(key, family.max_train)
                 fit_family(key, x, y, names)
@@ -139,7 +149,7 @@ class ContractTests(unittest.TestCase):
                     fit_family(key, np.ones_like(x), y, names)
 
     def test_boundary_flags_and_rehashed_tampering_reject(self):
-        for key, family in FAMILIES.items():
+        for key, family in families().items():
             x, y, names = sample(key)
             original = fit_family(key, x, y, names)
             for field, value in [("trading_approved", True), ("production_promoted", True), ("interval_calibrated", True),
@@ -168,7 +178,7 @@ class ContractTests(unittest.TestCase):
                     predict_family(state, x, names)
 
     def test_history_outputs_never_depend_on_later_rows(self):
-        for key, family in FAMILIES.items():
+        for key, family in families().items():
             if family.data == "FEATURES":
                 continue
             with self.subTest(family=key):
@@ -226,6 +236,73 @@ class ReferenceTests(unittest.TestCase):
         ols = LinearRegression().fit(z[inliers], self.target(state, y)[inliers])
         np.testing.assert_allclose(values[:, 0], ols.predict(z)*state["target_scale"][0]+state["target_mean"][0], rtol=1e-9, atol=1e-12)
         self.assertLess(len(inliers), len(x))
+
+
+    def test_boosted_engines_match_fresh_library_estimators_on_unseen_rows(self):
+        query = np.random.default_rng(1).normal(size=(40, 5))
+        query[:, 2] = .1
+
+        def xgboost_reference(z, t, q):
+            import xgboost
+            booster = xgboost.train({"objective": "reg:squarederror", "max_depth": 2, "eta": .1, "min_child_weight": 3., "lambda": 1.,
+                                     "tree_method": "exact", "base_score": 0., "nthread": 1, "verbosity": 0, "seed": 3},
+                                    xgboost.DMatrix(z.astype(np.float32), label=t), num_boost_round=32)
+            return booster.predict(xgboost.DMatrix(q.astype(np.float32)))[:, None]
+
+        def catboost_reference(z, t, q):
+            import catboost
+            model = catboost.CatBoostRegressor(iterations=32, depth=2, learning_rate=.1, l2_leaf_reg=3., border_count=32,
+                                               boosting_type="Ordered", bootstrap_type="No", random_seed=3, thread_count=1,
+                                               allow_writing_files=False, verbose=False).fit(z.astype(np.float32), t)
+            return model.predict(q.astype(np.float32))[:, None]
+
+        def ngboost_reference(z, t, q):
+            from ngboost import NGBRegressor
+            from ngboost.distns import Normal
+            from sklearn.tree import DecisionTreeRegressor
+            model = NGBRegressor(Dist=Normal, Base=DecisionTreeRegressor(criterion="squared_error", max_depth=2, min_samples_leaf=3),
+                                 n_estimators=32, learning_rate=.05, minibatch_frac=1., col_sample=1., natural_gradient=True,
+                                 random_state=3, verbose=False).fit(z.astype(np.float32), t)
+            fitted = model.pred_dist(q.astype(np.float32))
+            return np.column_stack([fitted.loc, fitted.scale])
+
+        def ebm_reference(z, t, q):
+            from interpret.glassbox import ExplainableBoostingRegressor
+            model = ExplainableBoostingRegressor(interactions=2, max_bins=32, max_interaction_bins=8, outer_bags=1, inner_bags=0,
+                                                 max_rounds=200, learning_rate=.05, validation_size=.15, early_stopping_rounds=20,
+                                                 min_samples_leaf=3, n_jobs=1, random_state=3).fit(z, t)
+            return model.predict(q)[:, None]
+
+        references = {"xgboost": (xgboost_reference, 1e-5), "catboost": (catboost_reference, 1e-9),
+                      "ngboost": (ngboost_reference, 1e-9), "ebm": (ebm_reference, 1e-9)}
+        self.assertEqual(set(references), OPTIONAL)
+        for key, (reference, tolerance) in references.items():
+            if not FAMILIES[key].available():
+                self.assertEqual(capabilities()[FAMILIES[key].capability]["state"], "UNAVAILABLE")
+                with self.assertRaisesRegex(ImportError, "no fallback"):
+                    fit_family(key, *sample(key))
+                continue
+            with self.subTest(family=key), warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                x, y, names, state, z, _ = self.fit(key)
+                q = ((query-np.array(state["mean"]))/np.array(state["scale"]))[:, state["active_indices"]]
+                expected = reference(z, self.target(state, y), q)
+                scale, mean = state["target_scale"][0], state["target_mean"][0]
+                expected[:, 0] = expected[:, 0]*scale+mean
+                if key == "ngboost":
+                    expected[:, 1] *= scale
+                actual = predict_family(state, query, names)
+                np.testing.assert_allclose(actual, expected, rtol=tolerance, atol=tolerance*scale)
+                self.assertGreater(np.ptp(actual[:, 0]), 0)
+                if key == "ngboost":
+                    self.assertTrue(np.all(actual[:, 1] > 0))
+                    broken = deepcopy(state)
+                    broken["payload"]["stages"][0]["step"] = -1.
+                    broken["state_sha256"] = _fingerprint(broken)
+                    with self.assertRaises(ValueError):
+                        predict_family(broken, query, names)
+                if key == "ebm":
+                    self.assertTrue(any(len(term["features"]) == 2 for term in state["payload"]["terms"]))
 
     def test_history_variants_match_independent_recursions(self):
         x, _, names, state, z, values = self.fit("arima")
@@ -407,7 +484,7 @@ class PersistedTests(unittest.TestCase):
                          "min_train": max(30, family.min_train), "test_size": 12, "seed": 42}, self.base/str(periods)
 
     def test_purged_folds_saved_replay_and_research_only_boundary(self):
-        for key, family in FAMILIES.items():
+        for key, family in families().items():
             if key == "nmf":
                 continue
             with self.subTest(family=key):
@@ -565,7 +642,7 @@ class HTTPTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse((base/"allocations").exists())
                 self.assertFalse((base/"execution-engine").exists())
                 unknown = await client.post("/api/v1/workspace/research-model", json={
-                    "dataset_id": dataset["dataset_id"], "model": "xgboost", "min_train": 30, "test_size": 12})
+                    "dataset_id": dataset["dataset_id"], "model": "hawkes", "min_train": 30, "test_size": 12})
                 self.assertNotEqual(unknown.json().get("state"), "AVAILABLE")
 
 

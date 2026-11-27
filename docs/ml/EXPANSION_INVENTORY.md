@@ -9,10 +9,10 @@ Implementation update: families08(Gaussian process),09(Random Forest /
 ExtraTrees),10(fixed-RBF epsilon-SVR),11(uniform K=5 nearest-neighbor regression)
 12(empirical-Bayes ridge regression) and13(binomial logit probability research)
 and14(additive cubic-spline regression) are implemented in bounded CPU batches.
-Families 15, 16, 19, 22-33 and 35-40 (21 families, 22 fitted variants) are implemented
+Families 15-33 and 35-40 (25 families, 26 fitted variants) are implemented
 behind one shared bounded contract; see [bounded families](BOUNDED_FAMILIES.md).
-There are 35 implemented families; 17, 18, 20 and 21 remain planned pending
-package/license review and 34 remains BLOCKED on permitted event timestamps. RF and ExtraTrees
+There are 39 implemented families; 17, 18, 20 and 21 need the optional `boosting` extra and are
+UNAVAILABLE without it. 34 remains BLOCKED on permitted event timestamps. RF and ExtraTrees
 are two actually fitted variants of one family, not two independent statistical hypotheses. See
 [Gaussian process](GAUSSIAN_PROCESS.md), [forests](FORESTS.md), [SVR](SVM.md),
 [nearest neighbors](KNN.md), [Bayesian linear](BAYESIAN_LINEAR.md)
@@ -55,11 +55,11 @@ inventory never registers executable code or starts training.
 | 14 | Generalized additive models | IMPLEMENTED: actual sklearn cubic SplineTransformer plus Ridge, safe JSON/SciPy replay |20..256rows/16fits/96basis columns; fixed training-only uniform knots and linear boundary extrapolation; null uncertainty, no interactions or allocation approval |
 | 15 | Robust regression / Huber / RANSAC | IMPLEMENTED: actual sklearn HuberRegressor and RANSACRegressor, JSON replay | Two variants of one family; Huber stationarity and RANSAC consensus least squares rechecked; uncertainty null |
 | 16 | Linear quantile regression | IMPLEMENTED: actual sklearn QuantileRegressor (HiGHS) at 10/50/90% | Pinball loss vs training quantiles, crossing count and uncalibrated coverage reported; band is not calibrated |
-| 17 | XGBoost | candidate CPU tree engine | Separate source/license/ARM compatibility verification before installation |
-| 18 | CatBoost | candidate CPU ordered boosting | License and categorical availability/target-encoding review |
+| 17 | XGBoost | IMPLEMENTED: actual `xgboost-cpu` exact trees, JSON tree replay | 32 depth-2 trees; Apache-2.0 CPU-only distribution (the `xgboost` distribution pulls a proprietary NVIDIA runtime on Linux and is not used); aarch64 wheels published, physical ARM64 run unverified; uncertainty null |
+| 18 | CatBoost | IMPLEMENTED: actual catboost ordered boosting, JSON oblivious-tree replay | 32 depth-2 trees; Apache-2.0; numeric features only, so no categorical target statistics are computed; aarch64 wheels published, physical ARM64 run unverified; uncertainty null |
 | 19 | AdaBoost | IMPLEMENTED: actual sklearn AdaBoost.R2, saved trees and weighted-median replay | 16 depth-2 trees; training-only reweighting; uncertainty null |
-| 20 | Natural-gradient distributional boosting | candidate NGBoost | Package/license review; proper distributional scores |
-| 21 | Explainable boosting machines | candidate interpret engine | Package/license review; training-only interactions |
+| 20 | Natural-gradient distributional boosting | IMPLEMENTED: actual ngboost Normal, JSON stage replay | 32 stages; Apache-2.0 pure Python; Gaussian log score, CRPS and 90% coverage against the unconditional training Normal; standard deviation uncalibrated |
+| 21 | Explainable boosting machines | IMPLEMENTED: actual interpret-core EBM, JSON bin/score replay | Main effects plus at most two pairs selected on the training fold; MIT (stated in the project repository; the PyPI metadata field is empty); uncertainty null |
 | 22 | ARIMA / seasonal ARIMA | IMPLEMENTED: actual statsmodels ARIMA(2,0,0) exact MLE, recursion replay | AR(2) with mean only; differencing, MA and seasonal terms unavailable |
 | 23 | Exponential smoothing / ETS | IMPLEMENTED: actual statsmodels ETS(A,N,N), level recursion replay | No trend or seasonality; training-only initial level |
 | 24 | VAR / VECM | IMPLEMENTED: actual statsmodels VAR(1) on the balanced return panel | 2..8 instruments on identical decision times; VECM/cointegration and higher lags unavailable |

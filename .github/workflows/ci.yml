@@ -38,7 +38,7 @@ jobs:
       - name: Install
         run: |
           pip install 'torch>=2.2' --index-url https://download.pytorch.org/whl/cpu
-          pip install -e ".[web,research,calendar,sequence,dev]" pyflakes
+          pip install -e ".[web,research,calendar,sequence,boosting,dev]" pyflakes
       - name: Build optional C++20 rolling kernel
         run: CXX=g++ python scripts/build_native.py
       - name: Ruff
