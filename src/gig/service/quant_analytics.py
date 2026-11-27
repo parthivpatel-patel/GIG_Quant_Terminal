@@ -15,7 +15,7 @@ from gig.execution import schedule
 from gig.options import exotics
 from gig.options import models as option_models
 from gig.portfolio import construction, rebalance
-from gig.research import cross_section, overfitting
+from gig.research import bootstrap, cross_section, overfitting
 from gig.risk import stress, var_models
 
 
@@ -235,6 +235,13 @@ ANALYSES = _declare(
              "Long-only portfolio closest to a benchmark in tracking variance, with exclusions, a weight cap and an "
              "optional active-return floor. Ex ante only." + RESEARCH_ONLY,
              {"benchmark_weights": [.4, .3, .2, .1], "covariance": _COV, "excluded": [3], "max_weight": .5}),
+    Analysis("stationary-bootstrap", "Stationary bootstrap", bootstrap.stationary_bootstrap, ("series", "mean_block"),
+             ("replications", "seed", "confidence"),
+             (("Mean", "mean"), ("Sharpe ratio", "sharpe"), ("Mean interval contains zero", "mean_interval_contains_zero")),
+             "Percentile interval for the mean and Sharpe ratio by the Politis-Romano stationary bootstrap: geometric "
+             "blocks wrapped around the series you supply. A resampling, not evidence that a strategy worked."
+             + RESEARCH_ONLY,
+             {"series": _SERIES, "mean_block": 5, "replications": 1000, "seed": 7, "confidence": .95}),
 )
 
 

@@ -41,6 +41,7 @@ writes it into the static shell and CI fails if the two differ.
 | `cost-aware-rebalance` | mean-variance rebalance with proportional costs and a turnover cap | a one-dimensional scan; a book that is already optimal does not trade |
 | `maximum-diversification` | long-only Choueifaty-Coignard ratio | inverse-volatility weights and a simplex grid under a cap |
 | `tracking-portfolio` | long-only minimum tracking variance | the benchmark itself when it is feasible; an unreachable active-return floor is refused |
+| `stationary-bootstrap` | Politis-Romano (1994) geometric blocks, circular wrap, percentile interval | a direct block-by-block reconstruction; unit blocks match the iid resample variance |
 
 ## Limits
 
@@ -70,3 +71,5 @@ writes it into the static shell and CI fails if the two differ.
 - `cost-aware-rebalance`, `maximum-diversification` and `tracking-portfolio`
   are long-only and fully invested. A solution is returned only after its
   optimality conditions have been re-checked.
+- `stationary-bootstrap` resamples the supplied series. The interval is not a
+  hypothesis test and does not correct for having tried other series.

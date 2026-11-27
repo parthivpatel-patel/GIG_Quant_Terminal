@@ -482,13 +482,13 @@ Authored data stays SYNTHETIC. No economic or certification claim.
 
 ## Stateless research calculators (2026-11-27)
 
-Twenty-nine calculators for portfolio construction, value at risk, execution
+Thirty calculators for portfolio construction, value at risk, execution
 scheduling, option models, overfitting statistics and bar construction are
 served from one registry at `/api/v1/analytics/<kind>` and offered in the
 workbench. The later eight add a Heston price, single-barrier prices, an
 expiry strategy profile, conditional stress, liquidation-horizon value at
-risk, a cost-aware rebalance, maximum diversification and minimum tracking
-error. Methods, references and limits are in
+risk, a cost-aware rebalance, maximum diversification, minimum tracking
+error and a stationary bootstrap interval. Methods, references and limits are in
 [`research-calculators.md`](research-calculators.md). They run on
 caller-supplied inputs only and change no requirement row above: broker
 authorization, observed option quotes, data entitlements and observed alpha
