@@ -479,3 +479,19 @@ references, tamper rejection, causality and persisted replay are covered by
 need the optional `boosting` extra and report UNAVAILABLE without it; 34
 BLOCKED on event timestamps.
 Authored data stays SYNTHETIC. No economic or certification claim.
+
+## Stateless research calculators (2026-11-27)
+
+Thirty-two calculators for portfolio construction, value at risk, execution
+scheduling, option models, overfitting statistics and bar construction are
+served from one registry at `/api/v1/analytics/<kind>` and offered in the
+workbench. The later eight add a Heston price, single-barrier prices, an
+expiry strategy profile, conditional stress, liquidation-horizon value at
+risk, a cost-aware rebalance, maximum diversification, minimum tracking
+error, a stationary bootstrap interval, a Roll spread and a Corwin-Schultz
+high-low spread. Methods, references and limits are in
+[`research-calculators.md`](research-calculators.md). They run on
+caller-supplied inputs only and change no requirement row above: broker
+authorization, observed option quotes, data entitlements and observed alpha
+remain as stated there.
+

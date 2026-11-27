@@ -445,7 +445,7 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
-const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify", "financial-html", "financial-statements", "financial-digest", "financial-watch", "financial-watch-check", "financial-investigate", "financial-record-replay"];
+const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify", "financial-html", "financial-statements", "financial-digest", "financial-watch", "financial-watch-check", "financial-investigate", "financial-call", "financial-transcript", "financial-compare", "financial-record-replay"];
 for (const kind of financialActions) {
   get("analytics-kind").value = "workspace-" + kind;
   const before = calls.length;
@@ -782,4 +782,28 @@ for (const [, key] of boundedOptions) {
     assert(get("workbench-scope").textContent.includes("Allocation, promotion and trading remain unapproved"));
   });
 }
+const quantOptions = [...(html.match(/<!-- BEGIN QUANT ANALYTICS -->(.*?)<!-- END QUANT ANALYTICS -->/s)?.[1] ?? "").matchAll(/<option value="([a-z-]+)">([^<]+)<\/option>/g)];
+checked("Registry-generated calculators are offered", () => assert(quantOptions.length >= 21));
+for (const [, key] of quantOptions) {
+  get("analytics-kind").value = key;
+  await get("analytics-kind").dispatch("change"); await settle();
+  const submitted = get("analytics-input").value;
+  replyOverride = { body: fixture({ data: { method: "TEST", headline: [{ label: "Headline figure", value: 0.125 }], assumption_limits: "CALLER_ASSUMPTIONS_ONLY" } }) };
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`Calculator ${key} posts its example unchanged to the stateless analytics endpoint`, () => {
+    assert(Object.keys(JSON.parse(submitted)).length >= 1);
+    assert.equal(get("run-analysis").textContent, "Run local calculation");
+    assert(get("workbench-scope").textContent.includes("no order, allocation or trading approval"));
+    assert.equal(calls.at(-1).url, `/api/v1/analytics/${key}`);
+    assert.equal(calls.at(-1).options.body, submitted);
+  });
+}
+checked("Calculator summary shows the headline, stated limits and that nothing was saved", () => {
+  assert.match(get("analysis-summary-values").textContent, /Headline figure/);
+  assert.match(get("analysis-summary-values").textContent, /0\.125/);
+  assert.match(get("analysis-summary-values").textContent, /caller assumptions only/);
+  assert.match(get("analysis-summary-note").textContent, /Nothing was saved or sent/);
+  assert.equal(get("analysis-summary-title").textContent, "Calculation summary");
+});
+replyOverride = null;
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);

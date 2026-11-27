@@ -327,4 +327,8 @@ def analytics(kind: str, payload: dict[str, Any]) -> Contract:
         return _response({"classifications": [asdict(value) for value in lee_ready(matches)],
                           "order_flow_imbalance": order_flow_imbalance(q)},
                          scope=scope, source="user-supplied-event-data")
+    from gig.service.quant_analytics import ANALYSES, run
+
+    if kind in ANALYSES:
+        return _response(run(kind, payload), scope=scope, source="user-supplied-research-inputs")
     raise ValueError("unsupported analytics kind")

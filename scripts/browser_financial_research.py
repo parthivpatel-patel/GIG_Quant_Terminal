@@ -1,4 +1,4 @@
-"""Actual local Chromium flow: authored HTML, cited statements, digest, explicit watch and investigation."""
+"""Actual local Chromium flow: authored HTML, cited statements, digest, watch, investigation, transcript and comparison."""
 from __future__ import annotations
 
 import argparse
@@ -115,6 +115,39 @@ def main():
         status, replay, summary = run("record-replay", {"record_id": data["record_id"]})
         check("saved investigation replays after reload", status == 200 and replay["data"]["replay_state"] == "REPRODUCED_FROM_PINNED_INPUTS"
               and replay["data"]["findings"] == data["findings"] and "REPRODUCED_FROM_PINNED_INPUTS" in summary)
+        status, call, _ = run("call")
+        check("authored call transcript admitted as synthetic exact text lines", status == 200
+              and call["data"]["classification"] == "SYNTHETIC" and call["data"]["metadata"]["normalization"] == "EXACT_UTF8_LINES")
+        check("call identity is handed to transcript analysis", select("transcript")["document_id"] == call["data"]["document_id"])
+        status, transcript, summary = run("transcript")
+        data = transcript["data"]
+        roles = {row["name"]: row["role"] for row in data["speakers"]}
+        check("speakers, roles and exchanges follow the labels", status == 200 and data["transcript_state"] == "AVAILABLE"
+              and roles == {"Jane Doe": "MANAGEMENT", "Raj Patel": "MANAGEMENT", "Operator": "OPERATOR", "Alex Kim": "ANALYST",
+                            "Maria Silva": "ANALYST"}
+              and [(e["analyst"], e["answered"]) for e in data["exchanges"]] == [("Alex Kim", True), ("Maria Silva", False)])
+        check("forward-looking sentences are cited quotes, not interpretation", len(data["forward_looking"]) == 4
+              and data["sentiment_state"] == "NOT_SCORED" and data["generative_state"] == "UNAVAILABLE" and not data["trading_approved"]
+              and all(m["occurrence_state"] == "STATED_IN_TEXT_NOT_VERIFIED" for m in data["forward_looking"]))
+        check("readable transcript summary", "Maria Silva: no management answer found" in summary
+              and "We expect full-year 2025 revenue growth of approximately 8% to 10%." in summary and "not verified or interpreted" in summary)
+        example = select("call")
+        status, revised, _ = run("call", {"source_id": example["source_id"] + "-revised",
+                                          "text": example["text"].replace("8% to 10%", "6% to 8%").replace("Pricing is stable.", "Pricing is under pressure in two regions.")})
+        pair = select("compare")
+        check("both document identities are handed to the comparison", status == 200
+              and (pair["base_document_id"], pair["revised_document_id"]) == (call["data"]["document_id"], revised["data"]["document_id"]))
+        status, compared, summary = run("compare")
+        data = compared["data"]
+        check("comparison reports the number-only and reworded passages with citations", status == 200
+              and data["counts"] == {"ADDED": 0, "REMOVED": 0, "REWORDED": 1, "NUMERIC_ONLY": 1} and data["unchanged_passages"] == 12
+              and all(c["base"]["citation"]["document_id"] == call["data"]["document_id"] for c in data["changes"]))
+        check("readable comparison summary", "NUMERIC_ONLY" in summary and "6% to 8%" in summary and "under pressure in two regions" in summary
+              and "not an interpretation" in summary)
+        status, replay, summary = run("record-replay", {"record_id": data["record_id"]})
+        check("saved comparison replays", status == 200 and replay["data"]["replay_state"] == "REPRODUCED_FROM_PINNED_INPUTS")
+        status, rejected, _ = run("compare", {"revised_document_id": call["data"]["document_id"]})
+        check("a document is not compared with itself", status == 422 and rejected["state"] == "ERROR")
         for theme in ("dark", "light"):
             page.evaluate("theme=>document.documentElement.dataset.theme=theme", arg=theme)
             if args.axe:
