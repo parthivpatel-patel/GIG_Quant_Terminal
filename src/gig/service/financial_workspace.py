@@ -3,12 +3,23 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from gig.financial_intelligence import research
 from gig.financial_intelligence.citations import verify_citation
 from gig.financial_intelligence.reference import treasury_document
 from gig.financial_intelligence.store import FinancialCorpus
 from gig.service.contracts import Contract, State
 from gig.service.serialization import public_error
 from gig.service.workspace import TerminalWorkspace, _fields
+
+RESEARCH = {
+    "statements": ({"document_id"}, set(), "Cited statement line items; parsed mentions, not verified facts"),
+    "synthesize": ({"query", "as_of"}, {"per_document", "expand"}, "Extractive multi-document digest with citations"),
+    "watch-create": ({"query", "as_of"}, {"limit", "expand", "retrieval_mode", "latent_dimensions"},
+                     "Saved research watch; checked only on explicit request"),
+    "watch-check": ({"watch_id", "as_of"}, set(), "Explicit watch check against its saved baseline"),
+    "investigate": ({"title", "questions", "as_of"}, set(), "Cited investigation report; extractive findings only"),
+    "research-replay": ({"record_id"}, set(), "Saved financial research record replay"),
+}
 
 
 class FinancialIntelligenceWorkspace:
@@ -49,6 +60,15 @@ class FinancialIntelligenceWorkspace:
             return self._contract({"title": "Admitted authored document; source authenticity unverified",
                 "metadata": metadata, "classification": "SYNTHETIC", "document_id": metadata["document_id"],
                 "trading_approved": False}, as_of=metadata["known_at"])
+        if operation == "admit-html":
+            fields = {"operation", "source_id", "title", "html", "license"}
+            _fields(payload, fields, fields)
+            metadata = self.corpus.admit_html({k: v for k, v in payload.items() if k != "operation"})
+            return self._contract({"title": "Admitted authored HTML document; source authenticity unverified",
+                "metadata": metadata, "classification": "SYNTHETIC", "document_id": metadata["document_id"],
+                "passage_count": len(metadata["passage_hashes"]), "trading_approved": False}, as_of=metadata["known_at"])
+        if operation in RESEARCH:
+            return self._research(operation, payload)
         if operation in {"search", "answer"}:
             _fields(payload, {"operation", "query", "as_of", "limit", "expand", "retrieval_mode", "latent_dimensions", "extract_facts", "nlp_profile"}, {"operation", "query", "as_of"})
             data = self.corpus.search(payload["query"], payload["as_of"], limit=payload.get("limit", 5),
@@ -73,3 +93,29 @@ class FinancialIntelligenceWorkspace:
                 return self._contract(None, state=State.UNAVAILABLE)
             return self._contract({"title": self._title(data), **data}, as_of=data["as_of"])
         raise ValueError("unsupported financial research operation")
+
+
+    def _research(self, operation, payload):
+        required, optional, title = RESEARCH[operation]
+        _fields(payload, {"operation", *required, *optional}, {"operation", *required})
+        options = {k: payload[k] for k in optional if k in payload}
+        try:
+            if operation == "statements":
+                data = research.statements(self.corpus, payload["document_id"])
+            elif operation == "synthesize":
+                data = research.multi_document_digest(self.corpus, payload["query"], payload["as_of"], **options)
+            elif operation == "watch-create":
+                data = research.watch_create(self.corpus, payload["query"], payload["as_of"], **options)
+            elif operation == "watch-check":
+                data = research.watch_check(self.corpus, research.load(self.corpus, payload["watch_id"]), payload["as_of"])
+            elif operation == "investigate":
+                data = research.investigate(self.corpus, payload["title"], payload["questions"], payload["as_of"])
+            else:
+                data = research.replay(self.corpus, payload["record_id"])
+        except FileNotFoundError:
+            return self._contract(None, state=State.UNAVAILABLE)
+        if data is None:
+            return self._contract(None, state=State.UNAVAILABLE, as_of=payload.get("as_of"))
+        if operation != "research-replay":
+            research.save(self.corpus, data)
+        return self._contract({"title": title, **data}, as_of=data["as_of"])
