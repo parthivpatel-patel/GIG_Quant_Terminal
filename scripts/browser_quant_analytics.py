@@ -53,7 +53,7 @@ def main():
             if change:
                 payload.update(change)
                 page.locator("#analytics-input").fill(json.dumps(payload))
-            with page.expect_response(lambda response: "/api/v1/analytics/" in response.url) as exchange:
+            with page.expect_response(lambda response: "/api/v1/analytics/" in response.url or response.url.endswith("/api/v1/workspace/calculator-journal")) as exchange:
                 page.locator("#run-analysis").click()
             page.wait_for_function("!document.getElementById('run-analysis').disabled")
             summary = page.locator("#analysis-summary")
@@ -81,6 +81,18 @@ def main():
         check("American put shows a positive early-exercise premium beside the European value",
               body["data"]["early_exercise_premium"] > 0 and "Early-exercise premium" in summary)
         check("only stateless analytics endpoints were called", all("/api/v1/analytics/" in post for post in posts))
+        response, saved, summary = run("workspace-calculator-save")
+        record = (saved.get("data") or {}).get("record_id")
+        check("a calculation is saved only by the explicit journal action", response.status == 200 and saved["state"] == "AVAILABLE"
+              and isinstance(record, str) and len(record) == 64 and saved["data"]["operation"] == "calculator"
+              and "Saved calculation" in summary and "Nothing was saved" not in summary)
+        page.locator("#analytics-kind").select_option("workspace-calculator-replay")
+        handed = json.loads(page.locator("#analytics-input").input_value())
+        check("the saved record is handed to replay", handed.get("record_id") == record)
+        response, replayed, summary = run("workspace-calculator-replay")
+        check("the saved calculation replays from its pinned inputs", response.status == 200
+              and replayed["data"]["replay_state"] == "REPRODUCED_FROM_PINNED_INPUTS" and replayed["data"]["record_id"] == record
+              and "REPRODUCED_FROM_PINNED_INPUTS" in summary)
         for theme in ("dark", "light"):
             page.evaluate("theme=>document.documentElement.dataset.theme=theme", arg=theme)
             if args.axe:

@@ -26,7 +26,9 @@
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
   Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence", "workspace-financial-verify": "financial-intelligence", "workspace-financial-latent": "financial-intelligence", "workspace-financial-hybrid": "financial-intelligence", "workspace-financial-facts": "financial-intelligence", "workspace-financial-entity-protocol": "financial-intelligence", "workspace-financial-entities": "financial-intelligence" });
   const financialResearchKinds = ["workspace-financial-html", "workspace-financial-statements", "workspace-financial-digest", "workspace-financial-watch", "workspace-financial-watch-check", "workspace-financial-investigate", "workspace-financial-call", "workspace-financial-transcript", "workspace-financial-compare", "workspace-financial-record-replay"];
+  const calculatorJournalKinds = ["workspace-calculator-save", "workspace-calculator-replay"];
   for (const kind of financialResearchKinds) workspaceActions[kind] = "financial-intelligence";
+  for (const kind of calculatorJournalKinds) workspaceActions[kind] = "calculator-journal";
   workspaceActions["workspace-options-overlay"] = "options-overlay";
   // BEGIN GENERATED BOUNDED FAMILIES
   const boundedFamilies = [
@@ -108,7 +110,7 @@
   workspaceActions["workspace-lifecycle-dividend-cancel"] = "funded-lifecycle";
   workspaceActions["workspace-funded-factor-risk"] = "funded-risk";
   for (const operation of ["fetch", "admit", "replay"]) workspaceActions["workspace-equity-" + operation] = "equity-reference";
-  const workflowReferences = { financial_snapshot_id: null, financial_passage_id: null, financial_verification_id: null, financial_document_id: null, financial_base_document_id: null, financial_record_id: null, financial_watch_id: null, equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
+  const workflowReferences = { calculator_record_id: null, financial_snapshot_id: null, financial_passage_id: null, financial_verification_id: null, financial_document_id: null, financial_base_document_id: null, financial_record_id: null, financial_watch_id: null, equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, prepared_client_ids: [] };
   const comparisonResults = [];
 
   workspaceActions["workspace-depth"] = "depth";
@@ -862,6 +864,8 @@
   examples["workspace-research-svr"] = { ...examples["workspace-research-rf"], model: "svr" };
   for (const [key, , , minTrain] of boundedFamilies) examples[boundedKind(key)] = { ...examples["workspace-research-rf"], model: key, min_train: minTrain, seed: 42 };
   for (const [key, , , example] of quantAnalytics) examples[key] = example;
+  examples["workspace-calculator-save"] = { operation: "save", kind: "track-record-length", inputs: { sharpe: .1, benchmark: 0, skew: -.5, kurtosis: 5, confidence: .95 } };
+  examples["workspace-calculator-replay"] = { operation: "replay", record_id: "0".repeat(64) };
   examples["workspace-research-gpr"] = { dataset_id: "0".repeat(64), model: "gaussian_process", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-model"] = { dataset_id: "0".repeat(64), model: "ridge", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-predict"] = { run_id: "0".repeat(64), dataset_id: "0".repeat(64) };
@@ -950,6 +954,7 @@
     if (kind === "workspace-financial-compare" && workflowReferences.financial_base_document_id) Object.assign(example, { base_document_id: workflowReferences.financial_base_document_id, revised_document_id: workflowReferences.financial_document_id });
     if (kind === "workspace-financial-watch-check" && workflowReferences.financial_watch_id) example.watch_id = workflowReferences.financial_watch_id;
     if (kind === "workspace-financial-record-replay" && workflowReferences.financial_record_id) example.record_id = workflowReferences.financial_record_id;
+    if (kind === "workspace-calculator-replay" && workflowReferences.calculator_record_id) example.record_id = workflowReferences.calculator_record_id;
     if (kind === "workspace-financial-replay" && workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
     if (kind === "workspace-financial-verify") {
       if (workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
@@ -997,6 +1002,8 @@
     if (kind === "workspace-financial-verify") $("run-analysis").textContent = "Verify saved citation";
     if (kind === "workspace-financial-watch-check") $("run-analysis").textContent = "Check saved watch now";
     if (kind === "workspace-financial-record-replay") $("run-analysis").textContent = "Replay saved research record";
+    if (kind === "workspace-calculator-save") $("run-analysis").textContent = "Save calculation";
+    if (kind === "workspace-calculator-replay") $("run-analysis").textContent = "Replay saved calculation";
     if (kind === "workspace-research-predict") $("run-analysis").textContent = "Replay saved model";
     if (kind === "workspace-research-allocate") $("run-analysis").textContent = "Construct offline targets";
     if (kind === "workspace-research-prepare") $("run-analysis").textContent = "Prepare offline target intents";
@@ -1115,6 +1122,8 @@
     });
     for (const [key, , scope] of boundedFamilies) specialScopes[boundedKind(key)] = scope;
     for (const [key, , scope] of quantAnalytics) specialScopes[key] = scope;
+    specialScopes["workspace-calculator-save"] = "Save one registry calculation under the hash of its kind and inputs. Replay recomputes it. No order, allocation or trading approval.";
+    specialScopes["workspace-calculator-replay"] = "Recompute a saved calculation from its pinned inputs. Any difference is an integrity failure. Nothing new is fitted or fetched.";
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
   }
   async function runAnalysis() {
@@ -1172,6 +1181,7 @@
           workflowReferences.financial_base_document_id = workflowReferences.financial_document_id;
           workflowReferences.financial_document_id = result.data.document_id;
         }
+        if (action === "calculator-journal" && identity(result.data.record_id)) workflowReferences.calculator_record_id = result.data.record_id;
         if (action === "financial-intelligence" && identity(result.data.record_id)) {
           workflowReferences.financial_record_id = result.data.record_id;
           if (result.data.operation === "watch") workflowReferences.financial_watch_id = result.data.record_id;
@@ -1180,7 +1190,7 @@
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
         if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
-        $("workflow-identities").textContent = ["financial_snapshot_id", "financial_passage_id", "financial_verification_id", "financial_document_id", "financial_base_document_id", "financial_record_id", "financial_watch_id", "equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+        $("workflow-identities").textContent = ["calculator_record_id", "financial_snapshot_id", "financial_passage_id", "financial_verification_id", "financial_document_id", "financial_base_document_id", "financial_record_id", "financial_watch_id", "equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();
@@ -1224,6 +1234,10 @@
       if (data.operation === "watch") entries.push(["Monitoring", "Explicit checks only · nothing runs in the background"], ["Baseline query", data.query], ["Baseline passages", data.baseline_passage_ids.length]);
       if (data.operation === "watch-check") {
         entries.push(["Watch state", data.alert_state], ["Monitoring", "Explicit check · no notification sent"], ["New passages", data.new_rows.map(row => row.text).join("\n") || "None"], ["Dropped passages", data.dropped_passage_ids.length], ["New documents", data.new_document_ids.length], ["Superseded documents", data.retired_document_ids.length]);
+      }
+      if (data.operation === "calculator") {
+        entries.push(["Saved calculation", data.record_id], ["Calculator", data.kind], ["Persistence", "Local content-addressed record"], ["Replay", data.replay_state || "Saved from these inputs"]);
+        if (Array.isArray(data.result?.headline)) data.result.headline.forEach(row => entries.push([row.label, row.value]));
       }
       if (data.operation === "investigation") {
         entries.push(["Report", "Extractive cited findings · not generated analysis"], ["Answered", `${data.answered} of ${data.questions.length}`], ["Autonomy", "Single explicit request · no background agent"]);
@@ -1270,8 +1284,8 @@
       entry.append(el("dt", "context-label", label), el("dd", "context-value", printable(value)));
       return entry;
     }));
-    $("analysis-summary-title").textContent = calculator ? "Calculation summary" : "Saved evidence summary";
-    $("analysis-summary-note").textContent = calculator ? "Model estimate computed from the inputs you supplied. Nothing was saved or sent. No order, allocation or trading approval is established." : isObject(data.account) ? "SIMULATED supported-scope account. A dividend receivable is not available cash. Unknown valuation remains unknown; funding is not independently certified." : "Saved research diagnostics. Output units, missing folds and uncertainty remain explicit. No profitability, calibrated trading confidence or trading approval is established.";
+    $("analysis-summary-title").textContent = data.operation === "calculator" ? "Saved calculation" : calculator ? "Calculation summary" : "Saved evidence summary";
+    $("analysis-summary-note").textContent = data.operation === "calculator" ? "Saved from the inputs in this record and recomputed on replay. No order, allocation or trading approval is established." : calculator ? "Model estimate computed from the inputs you supplied. Nothing was saved or sent. No order, allocation or trading approval is established." : isObject(data.account) ? "SIMULATED supported-scope account. A dividend receivable is not available cash. Unknown valuation remains unknown; funding is not independently certified." : "Saved research diagnostics. Output units, missing folds and uncertainty remain explicit. No profitability, calibrated trading confidence or trading approval is established.";
     $("analysis-summary").classList.remove("hidden");
     $("analysis-summary-values").querySelectorAll("dd").forEach(value => {
       if (value.scrollHeight > value.clientHeight + 1 || value.scrollWidth > value.clientWidth + 1) value.tabIndex = 0;

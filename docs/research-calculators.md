@@ -10,6 +10,12 @@ The kinds, their workbench options and their examples come from one registry,
 `gig.service.quant_analytics.ANALYSES`. `scripts/sync_bounded_families.py`
 writes it into the static shell and CI fails if the two differ.
 
+Running a calculator still saves nothing. **Save calculation** writes the kind
+and the exact inputs to a local content-addressed journal.
+**Replay saved calculation** runs the calculator again from that record and
+rejects the record if the result differs. The plain calculation and the
+saved record stay `MODEL_ESTIMATE` / `RESEARCH_ONLY`.
+
 | Kind | Method | Independent reference in `tests/test_quant_analytics.py` |
 | --- | --- | --- |
 | `ledoit-wolf` | Ledoit-Wolf (2004) shrinkage to a scaled identity | scikit-learn `ledoit_wolf` |
