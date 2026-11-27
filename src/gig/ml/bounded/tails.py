@@ -210,4 +210,4 @@ register(Family(
     backend="gig.ml.bounded.tails (NumPy Adams-MacKay recursion, scipy.special.gammaln)", requires=("scipy",),
     data="SERIES", outputs=("prediction", "recent_change_probability", "expected_run_length"),
     parameters={"hazard": HAZARD, "run_limit": RUN_LIMIT, "recent_window": RECENT, "prior": dict(PRIOR)},
-    score=_change_score, uncertainty=_change_uncertainty, license="Apache-2.0"))
+    score=_change_score, uncertainty=_change_uncertainty, license="MIT"))
