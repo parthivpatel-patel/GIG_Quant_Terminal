@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
+from gig.ml.bounded import FAMILIES
 from gig.research.model_pipeline import KINDS, configuration, fit_dataset, identity
 from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
@@ -24,6 +25,10 @@ from test_persisted_data import (
     seed_persisted_fixture,
 )
 
+# Bounded families that must refuse this fixture before any fit: its features are
+# signed and its series are shorter than a tail model's training minimum.
+FIXTURE_REFUSALS = {"nmf": "nonnegative", "evt_pot": "walk-forward folds"}
+
 
 class PersistedModelTests(unittest.TestCase):
     @classmethod
@@ -35,11 +40,24 @@ class PersistedModelTests(unittest.TestCase):
         cls.dataset = cls.dataset_workspace.build(request).to_dict()["data"]
         cls.workspace = PersistedResearchWorkspace(cls.base)
         cls.results = {}
+        cls.refused = {}
+        cls.unavailable = set()  # optional engines not installed here
         for model in KINDS:
             payload = {"dataset_id": cls.dataset["dataset_id"], "model": model,
                        "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17}
             if model == "bilstm":
                 payload.update(epochs=2, hidden_size=3, sequence_length=4)
+            if model in FAMILIES:
+                if not FAMILIES[model].available():
+                    cls.unavailable.add(model)
+                    continue
+                payload["min_train"] = max(30, FAMILIES[model].min_train)
+            if model in FIXTURE_REFUSALS:
+                try:
+                    cls.workspace.run(payload)
+                except ValueError as error:
+                    cls.refused[model] = str(error)
+                continue
             result = cls.workspace.run(payload).to_dict()
             EnvelopeSchema.model_validate(result)
             cls.results[model] = (payload, result)
@@ -107,8 +125,15 @@ class PersistedModelTests(unittest.TestCase):
         self.assertEqual(state["estimator"]["parameter_method"], "TRAINING_VARIANCE_HEURISTIC_NOT_MLE")
         self.assertTrue(all(row["uncertainty"]["value"] > 0 for row in artifact["rows"]))
 
+    def test_unsuitable_fixture_is_refused_without_a_saved_run(self):
+        self.assertEqual(set(self.refused), set(FIXTURE_REFUSALS))
+        for name, reason in FIXTURE_REFUSALS.items():
+            self.assertIn(reason, self.refused[name])
+        self.assertEqual(set(self.results), set(KINDS)-set(FIXTURE_REFUSALS)-self.unavailable)
+        self.assertLessEqual(self.unavailable, {"xgboost", "catboost", "ebm"})
+
     def test_all_model_folds_purge_label_knowledge_before_test(self):
-        for name in KINDS:
+        for name in self.results:
             for fold in self.artifact(name)["folds"]:
                 with self.subTest(model=name, fold=fold["model_id"]):
                     self.assertLess(pd.Timestamp(fold["max_training_label_end"]), pd.Timestamp(fold["test_start"]))

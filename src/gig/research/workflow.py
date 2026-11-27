@@ -46,7 +46,9 @@ def model_capabilities() -> dict[str, dict[str, Any]]:
     """Dependency presence is separate from implemented/trained/approved state."""
     dependencies = {"lightgbm": _exists("lightgbm"), "torch": _exists("torch"),
                     "transformers": _exists("transformers")}
+    from gig.ml.bounded import capabilities
     return {
+        **capabilities(),
         "generalized_additive": {"state": "AVAILABLE" if _exists("sklearn") else "UNAVAILABLE",
                                 "implemented": True, "trained": False, "trading_approved": False,
                                 "dependency_available": _exists("sklearn"),

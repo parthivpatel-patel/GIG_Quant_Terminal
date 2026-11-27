@@ -771,4 +771,15 @@ get("analytics-kind").value = "workspace-research-gam";
 await get("analytics-kind").dispatch("change");
 checked("Additive splines select an explicit saved-dataset model", () => assert.equal(JSON.parse(get("analytics-input").value).model, "additive_spline"));
 checked("Additive uncertainty and constant-feature limits are explicit", () => { assert(get("workbench-scope").textContent.includes("Uncertainty is UNAVAILABLE")); assert(get("workbench-scope").textContent.includes("constant training features")); });
+const boundedOptions = [...html.matchAll(/<option value="workspace-research-family-([a-z_]+)">([^<]+)<\/option>/g)];
+checked("Registry-generated bounded families are offered", () => assert(boundedOptions.length >= 20));
+for (const [, key] of boundedOptions) {
+  get("analytics-kind").value = `workspace-research-family-${key}`;
+  await get("analytics-kind").dispatch("change");
+  checked(`Bounded family ${key} submits its explicit research-only saved-dataset model`, () => {
+    assert.equal(JSON.parse(get("analytics-input").value).model, key);
+    assert.equal(get("run-analysis").textContent, "Run saved-data research");
+    assert(get("workbench-scope").textContent.includes("Allocation, promotion and trading remain unapproved"));
+  });
+}
 console.log(`Verified ${checks} frontend smoke checks. This Node DOM stub does not establish browser rendering, accessibility conformance, or visual QA.`);
