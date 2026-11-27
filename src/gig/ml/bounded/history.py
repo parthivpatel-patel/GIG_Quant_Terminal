@@ -212,7 +212,7 @@ register(Family(
     uncertainty=unavailable("SMOOTHED_LEVEL_HAS_NO_CALIBRATED_PREDICTIVE_INTERVAL"), tolerance=1e-9))
 register(Family(
     key="var", number=24, capability="vector_autoregression", label="VAR(1) forecast · cross-instrument returns",
-    scope="Bounded CPU VAR(1) with intercept by least squares on the balanced cross-instrument return panel: 2–8 instruments on identical decision times, 30–256 training dates, 16 fits. Cointegration (VECM) and higher lags are unavailable." + _COMMON,
+    scope="Bounded CPU VAR(1) with intercept by least squares on the balanced cross-instrument return panel: 2–8 instruments on identical decision times, 30–256 training dates, 16 fits. One cointegrating relation is the separate VECM family. Higher lags are unavailable." + _COMMON,
     kind="NEXT_OBSERVATION_RETURN_ESTIMATE", fit=_var_fit, replay=_var_replay, check=_var_check,
     backend="statsmodels.tsa.api.VAR", requires=("statsmodels",), data="PANEL", min_train=30, max_columns=8,
     parameters={"lags": 1, "trend": "c"},

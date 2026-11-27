@@ -38,7 +38,8 @@ INVENTORY = {15: ["huber", "ransac"], 16: ["quantile"], 17: ["xgboost"], 18: ["c
              20: ["ngboost"], 21: ["ebm"], 22: ["arima"], 23: ["ets"], 24: ["var"],
              25: ["dynamic_factor"], 26: ["gmm"], 27: ["kmeans"], 28: ["pca"], 29: ["ica"], 30: ["nmf"],
              31: ["gaussian_copula"], 32: ["evt_pot"], 33: ["bocpd"], 35: ["mlp"], 36: ["tcn"], 37: ["esn"],
-             38: ["nbeats"], 39: ["attention"], 40: ["autoencoder"]}
+             38: ["nbeats"], 39: ["attention"], 40: ["autoencoder"], 41: ["ard"], 42: ["sarima"],
+             43: ["vecm"], 44: ["spectral"]}
 
 
 # Diagnostics that no replay reads; every other numeric payload field must be re-derived or checked.
@@ -509,6 +510,33 @@ class ReferenceTests(unittest.TestCase):
                 forecast = sum(w*(token@p["value"]) for w, token in zip(weights, tokens, strict=True))@p["readout"]+p["readout_bias"]
             self.assertAlmostEqual(values[-1, 0], forecast*state["scale"][0]+state["mean"][0], places=12)
             self.assertLess(state["payload"]["final_training_loss"], 1.5)
+
+    def test_ard_sarima_vecm_and_spectral_match_fresh_library_fits(self):
+        from sklearn.cluster import SpectralClustering
+        from sklearn.linear_model import ARDRegression
+        from statsmodels.tsa.statespace.sarimax import SARIMAX
+        from statsmodels.tsa.vector_ar.vecm import VECM
+        x, y, names, state, z, values = self.fit("ard")
+        fresh = ARDRegression(max_iter=300, tol=1e-6, threshold_lambda=1e4).fit(z, self.target(state, y))
+        np.testing.assert_allclose(values[:, 0], fresh.predict(z)*state["target_scale"][0]+state["target_mean"][0], rtol=1e-8, atol=1e-8)
+        _, _, _, state, z, values = self.fit("sarima")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            seasonal = SARIMAX(z[:, 0], order=(1, 0, 0), seasonal_order=(1, 0, 0, 4), trend="c").fit(disp=False, maxiter=200)
+        self.assertAlmostEqual(state["payload"]["ar"], float(seasonal.params[1]), places=8)
+        self.assertTrue(state["payload"]["optimizer_converged"])
+        x, _, names, state, z, values = self.fit("vecm")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model = VECM(z, k_ar_diff=1, coint_rank=1, deterministic="ci").fit()
+        scale = float(np.asarray(model.beta)[0, 0])
+        np.testing.assert_allclose(state["payload"]["beta"], np.asarray(model.beta).ravel()/scale, rtol=1e-8, atol=1e-8)
+        np.testing.assert_allclose(values[:, :, 0], predict_family(state, x, names)[:, :, 0])
+        _, _, _, state, z, _ = self.fit("spectral")
+        labels = SpectralClustering(n_clusters=3, affinity="rbf", gamma=1., assign_labels="discretize", random_state=3).fit_predict(z)
+        centers = np.array([z[labels == cluster].mean(0) for cluster in range(3)])
+        centers = centers[np.lexsort(centers.T[::-1])]
+        np.testing.assert_allclose(state["payload"]["centers"], centers, rtol=1e-8, atol=1e-8)
 
 
 class PersistedTests(unittest.TestCase):
