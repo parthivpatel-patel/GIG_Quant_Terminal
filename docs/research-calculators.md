@@ -33,6 +33,14 @@ writes it into the static shell and CI fails if the two differ.
 | `fama-macbeth` | period regressions, Newey-West standard errors on mean slopes | statsmodels OLS and HAC |
 | `trade-bars` | time, tick, volume and dollar bars from ordered prints | pandas group-by; conservation of prints |
 | `bar-quality` | structural errors and statistical warnings for a bar series | one planted defect of each kind |
+| `heston-option` | Heston (1993) European value, one Fourier integral | Black-Scholes limit as the variance of variance vanishes; seeded full-truncation Monte Carlo |
+| `barrier-option` | Reiner-Rubinstein single barrier; Broadie-Glasserman-Kou discrete shift | Brownian-bridge Monte Carlo for every up/down, in/out, call/put branch |
+| `option-strategy` | exact piecewise-linear expiry profit | hand-computed bull call spread, covered call and long call |
+| `conditional-stress` | zero-mean joint-normal shock propagation | two-asset regression formula and a chi-squared tail probability |
+| `liquidity-var` | equal-sale liquidation VaR plus an exogenous half spread | the closed horizon factor and the Bangia spread term |
+| `cost-aware-rebalance` | mean-variance rebalance with proportional costs and a turnover cap | a one-dimensional scan; a book that is already optimal does not trade |
+| `maximum-diversification` | long-only Choueifaty-Coignard ratio | inverse-volatility weights and a simplex grid under a cap |
+| `tracking-portfolio` | long-only minimum tracking variance | the benchmark itself when it is feasible; an unreachable active-return floor is refused |
 
 ## Limits
 
@@ -50,3 +58,15 @@ writes it into the static shell and CI fails if the two differ.
 - `bar-quality` is calendar-unaware and repairs nothing.
 - `fama-macbeth` needs a balanced panel and applies no errors-in-variables or
   multiple-testing correction.
+- `heston-option` integrates caller-supplied parameters. It does not calibrate
+  them, and a failed integral is refused rather than returned.
+- `barrier-option` has constant volatility, one barrier and no rebate. Discrete
+  monitoring uses a barrier shift, not an exact discrete-barrier price.
+- `option-strategy` values one shared expiry only. It is not a mark-to-market.
+- `conditional-stress` propagates shocks linearly. It does not apply
+  stress-period correlations.
+- `liquidity-var` sells in equal daily pieces and adds a spread you supply. It
+  does not estimate price impact.
+- `cost-aware-rebalance`, `maximum-diversification` and `tracking-portfolio`
+  are long-only and fully invested. A solution is returned only after its
+  optimality conditions have been re-checked.

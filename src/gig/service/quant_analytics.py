@@ -12,10 +12,11 @@ from typing import Any
 
 from gig.data import bars
 from gig.execution import schedule
+from gig.options import exotics
 from gig.options import models as option_models
-from gig.portfolio import construction
+from gig.portfolio import construction, rebalance
 from gig.research import cross_section, overfitting
-from gig.risk import var_models
+from gig.risk import stress, var_models
 
 
 @dataclass(frozen=True)
@@ -183,6 +184,57 @@ ANALYSES = _declare(
              "Flag impossible prices, inconsistent highs and lows, duplicate or out-of-order timestamps, gaps, "
              "stale closes and return outliers. Calendar-unaware; nothing is repaired." + RESEARCH_ONLY,
              {"bars": _BARS}),
+    Analysis("heston-option", "Heston option", exotics.heston, ("spot", "strike", "initial_variance", "mean_reversion",
+             "long_run_variance", "vol_of_variance", "correlation"), ("rate", "div", "ttm", "call"),
+             (("Price", "price"), ("Implied volatility", "implied_volatility")),
+             "European value under Heston (1993) dynamics by one Fourier integral, plus the Black-Scholes volatility "
+             "that matches it. Parameters are yours; nothing is calibrated to a quote." + RESEARCH_ONLY,
+             {"spot": 100, "strike": 100, "rate": .03, "div": .01, "ttm": .5, "call": True, "initial_variance": .04,
+              "mean_reversion": 2, "long_run_variance": .04, "vol_of_variance": .3, "correlation": -.5}),
+    Analysis("barrier-option", "Barrier option", exotics.barrier, ("spot", "strike", "barrier_level", "direction", "knock"),
+             ("rate", "div", "vol", "ttm", "call", "monitoring_dates"),
+             (("Price", "price"), ("Knock-in value", "knock_in"), ("Knock-out value", "knock_out")),
+             "Single-barrier European value under constant volatility, continuously monitored, or shifted for equally "
+             "spaced discrete monitoring. No rebate and no smile." + RESEARCH_ONLY,
+             {"spot": 100, "strike": 100, "barrier_level": 80, "rate": .03, "div": .01, "vol": .2, "ttm": .5, "call": True,
+              "direction": "DOWN", "knock": "OUT", "monitoring_dates": 50}),
+    Analysis("option-strategy", "Option strategy at expiry", exotics.strategy, ("legs",), ("multiplier",),
+             (("Net premium", "net_premium"), ("Direction", "premium_direction"), ("Breakevens", "breakeven_count")),
+             "Exact expiry profit of calls, puts and the underlying held to one date, including breakevens and whether "
+             "profit or loss is bounded. No early exercise, financing or fees." + RESEARCH_ONLY,
+             {"legs": [{"kind": "CALL", "strike": 100, "quantity": 1, "premium": 5},
+                       {"kind": "CALL", "strike": 110, "quantity": -1, "premium": 2}], "multiplier": 100}),
+    Analysis("conditional-stress", "Conditional stress propagation", stress.conditional_stress,
+             ("weights", "covariance", "shocked_assets", "shocks"), (),
+             (("Portfolio return", "portfolio_return"), ("Propagated return", "propagated_return")),
+             "Apply stated return shocks and let the other assets follow their conditional normal mean through the "
+             "covariance you supply. Stress correlations are not modelled." + RESEARCH_ONLY,
+             {"weights": [.4, .3, .2, .1], "covariance": _COV, "shocked_assets": [0], "shocks": [-.2]}),
+    Analysis("liquidity-var", "Liquidation-horizon value at risk", stress.liquidity_adjusted_var,
+             ("position_value", "volatility", "average_daily_value"),
+             ("max_participation", "spread", "spread_volatility", "spread_multiplier", "confidence"),
+             (("Liquidation days", "liquidation_days"), ("Liquidity-adjusted VaR", "liquidity_adjusted_var")),
+             "Normal value at risk while a position is sold in equal pieces at a participation cap, plus an exogenous "
+             "half-spread cost. No price impact and no volume uncertainty." + RESEARCH_ONLY,
+             {"position_value": 5000000, "volatility": .02, "average_daily_value": 2000000, "max_participation": .2,
+              "spread": .001, "spread_volatility": .0004, "spread_multiplier": 3, "confidence": .99}),
+    Analysis("cost-aware-rebalance", "Cost-aware rebalance", rebalance.rebalance_with_costs,
+             ("current_weights", "expected_returns", "covariance", "risk_aversion", "cost"), ("max_weight", "max_turnover"),
+             (("Turnover", "turnover"), ("Utility gain after cost", "utility_gain")),
+             "Long-only mean-variance rebalance from current weights with proportional trading costs and an optional "
+             "one-way turnover cap. Expected returns and costs are your assumptions." + RESEARCH_ONLY,
+             {"current_weights": [.4, .3, .2, .1], "expected_returns": [.08, .1, .05, .03], "covariance": _COV,
+              "risk_aversion": 3, "cost": .002, "max_weight": .6}),
+    Analysis("maximum-diversification", "Maximum diversification", rebalance.maximum_diversification, ("covariance",),
+             ("max_weight",), (("Diversification ratio", "diversification_ratio"), ("Assets held", "held_assets")),
+             "Long-only weights that maximize weighted-average volatility over portfolio volatility. The covariance "
+             "is your input; there is no return forecast." + RESEARCH_ONLY, {"covariance": _COV, "max_weight": .5}),
+    Analysis("tracking-portfolio", "Minimum tracking error", rebalance.tracking_error_portfolio,
+             ("benchmark_weights", "covariance"), ("excluded", "max_weight", "expected_returns", "minimum_active_return"),
+             (("Tracking error", "tracking_error"), ("Active share", "active_share")),
+             "Long-only portfolio closest to a benchmark in tracking variance, with exclusions, a weight cap and an "
+             "optional active-return floor. Ex ante only." + RESEARCH_ONLY,
+             {"benchmark_weights": [.4, .3, .2, .1], "covariance": _COV, "excluded": [3], "max_weight": .5}),
 )
 
 
