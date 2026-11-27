@@ -2,7 +2,7 @@
 
 Functional source `2965249d2a2f4ab66548d6e41d19aadc5a30c474` (PR #25 head) was
 accepted unchanged. Later commits add only this evidence and documentation;
-`validated-source-manifest.json` records all 407 functional source hashes and
+`validated-source-manifest.json` records all 405 functional source hashes and
 Git modes at that commit.
 
 - Full backend at the frozen source: **1,343 passed, 22 skipped, 0 failures**,
