@@ -55,6 +55,12 @@ jobs:
         run: mypy --follow-imports=silent --ignore-missing-imports src/gig/financial_intelligence src/gig/service/financial_workspace.py
       - name: Tests
         run: python -m pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
+      # Last on purpose: the ngboost package downgrades pandas below 3 through lifelines.
+      - name: Native NGBoost agrees with the ngboost package
+        run: |
+          pip install "ngboost==0.6.1"
+          python -c "import ngboost"
+          python -m pytest -p no:cacheprovider -rs tests/test_bounded_families.py -k natural_gradient
 
   frontend:
     runs-on: ubuntu-24.04

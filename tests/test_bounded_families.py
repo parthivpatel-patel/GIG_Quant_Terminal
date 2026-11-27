@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import json
 import subprocess
 import sys
@@ -45,7 +46,7 @@ INFORMATIONAL = {"training_excess_kurtosis", "explained_variance_ratio", "sigma"
 
 
 # Engines from the optional `boosting` extra; absent ones are checked as UNAVAILABLE instead of fitted.
-OPTIONAL = {"xgboost", "catboost", "ngboost", "ebm"}
+OPTIONAL = {"xgboost", "catboost", "ebm"}
 
 
 def families():
@@ -256,16 +257,6 @@ class ReferenceTests(unittest.TestCase):
                                                allow_writing_files=False, verbose=False).fit(z.astype(np.float32), t)
             return model.predict(q.astype(np.float32))[:, None]
 
-        def ngboost_reference(z, t, q):
-            from ngboost import NGBRegressor
-            from ngboost.distns import Normal
-            from sklearn.tree import DecisionTreeRegressor
-            model = NGBRegressor(Dist=Normal, Base=DecisionTreeRegressor(criterion="squared_error", max_depth=2, min_samples_leaf=3),
-                                 n_estimators=32, learning_rate=.05, minibatch_frac=1., col_sample=1., natural_gradient=True,
-                                 random_state=3, verbose=False).fit(z.astype(np.float32), t)
-            fitted = model.pred_dist(q.astype(np.float32))
-            return np.column_stack([fitted.loc, fitted.scale])
-
         def ebm_reference(z, t, q):
             from interpret.glassbox import ExplainableBoostingRegressor
             model = ExplainableBoostingRegressor(interactions=2, max_bins=32, max_interaction_bins=8, outer_bags=1, inner_bags=0,
@@ -273,8 +264,7 @@ class ReferenceTests(unittest.TestCase):
                                                  min_samples_leaf=3, n_jobs=1, random_state=3).fit(z, t)
             return model.predict(q)[:, None]
 
-        references = {"xgboost": (xgboost_reference, 1e-5), "catboost": (catboost_reference, 1e-9),
-                      "ngboost": (ngboost_reference, 1e-9), "ebm": (ebm_reference, 1e-9)}
+        references = {"xgboost": (xgboost_reference, 1e-5), "catboost": (catboost_reference, 1e-9), "ebm": (ebm_reference, 1e-9)}
         self.assertEqual(set(references), OPTIONAL)
         for key, (reference, tolerance) in references.items():
             if not FAMILIES[key].available():
@@ -289,20 +279,76 @@ class ReferenceTests(unittest.TestCase):
                 expected = reference(z, self.target(state, y), q)
                 scale, mean = state["target_scale"][0], state["target_mean"][0]
                 expected[:, 0] = expected[:, 0]*scale+mean
-                if key == "ngboost":
-                    expected[:, 1] *= scale
                 actual = predict_family(state, query, names)
                 np.testing.assert_allclose(actual, expected, rtol=tolerance, atol=tolerance*scale)
                 self.assertGreater(np.ptp(actual[:, 0]), 0)
-                if key == "ngboost":
-                    self.assertTrue(np.all(actual[:, 1] > 0))
-                    broken = deepcopy(state)
-                    broken["payload"]["stages"][0]["step"] = -1.
-                    broken["state_sha256"] = _fingerprint(broken)
-                    with self.assertRaises(ValueError):
-                        predict_family(broken, query, names)
                 if key == "ebm":
                     self.assertTrue(any(len(term["features"]) == 2 for term in state["payload"]["terms"]))
+
+    def natural_gradient_case(self):
+        query = np.random.default_rng(1).normal(size=(40, 5))
+        query[:, 2] = .1
+        x, y, names, state, z, _ = self.fit("ngboost")
+        q32 = (((query-np.array(state["mean"]))/np.array(state["scale"]))[:, state["active_indices"]]).astype(np.float32)
+        return query, names, state, self.target(state, y), z.astype(np.float32), q32, predict_family(state, query, names)
+
+    def test_natural_gradient_boosting_matches_an_independent_recursion(self):
+        from scipy.stats import norm
+        from sklearn.tree import DecisionTreeRegressor
+        query, names, state, t, z32, q32, actual = self.natural_gradient_case()
+        scale, mean = state["target_scale"][0], state["target_mean"][0]
+
+        def loss(location, log_scale):
+            return -np.mean(norm.logpdf(t, location, np.exp(log_scale)))
+
+        # Independent recursion: scipy log density, library tree prediction, explicit Fisher solve.
+        location, log_scale = np.full(len(t), t.mean()), np.full(len(t), np.log(t.std()))
+        unseen = np.tile([t.mean(), np.log(t.std())], (len(query), 1))
+        marginal, steps = loss(location, log_scale), []
+        for _ in range(32):
+            variance = np.exp(2*log_scale)
+            gradient = np.column_stack([(location-t)/variance, 1-(location-t)**2/variance])
+            fisher = np.zeros((len(t), 2, 2))
+            fisher[:, 0, 0], fisher[:, 1, 1] = 1/variance, 2
+            natural = np.linalg.solve(fisher, gradient[:, :, None])[:, :, 0]
+            trees = [DecisionTreeRegressor(max_depth=2, min_samples_leaf=3, random_state=3).fit(z32, g) for g in natural.T]
+            move = np.column_stack([tree.predict(z32) for tree in trees])
+            before, step = loss(location, log_scale), 1.
+            while loss(location-step*move[:, 0], log_scale-step*move[:, 1]) <= before and step <= 256:
+                step *= 2
+            while (np.mean(np.linalg.norm(step*move, axis=1)) >= 1e-4
+                   and not loss(location-step*move[:, 0], log_scale-step*move[:, 1]) < before):
+                step *= .5
+            steps.append(step)
+            location, log_scale = location-.05*step*move[:, 0], log_scale-.05*step*move[:, 1]
+            unseen -= .05*step*np.column_stack([tree.predict(q32) for tree in trees])
+        np.testing.assert_allclose([stage["step"] for stage in state["payload"]["stages"]], steps)
+        np.testing.assert_allclose(actual, np.column_stack([unseen[:, 0]*scale+mean, np.exp(unseen[:, 1])*scale]), rtol=1e-9)
+        self.assertAlmostEqual(state["payload"]["training_nll"], loss(location, log_scale), places=12)
+        self.assertAlmostEqual(state["payload"]["marginal_training_nll"], marginal, places=12)
+        self.assertLess(state["payload"]["training_nll"], marginal)
+        self.assertTrue(np.all(actual[:, 1] > 0) and np.ptp(actual[:, 1]) > 0)
+        broken = deepcopy(state)
+        broken["payload"]["stages"][0]["step"] = -1.
+        broken["state_sha256"] = _fingerprint(broken)
+        with self.assertRaises(ValueError):
+            predict_family(broken, query, names)
+
+    @unittest.skipIf(importlib.util.find_spec("ngboost") is None, "the ngboost package pins pandas below 3; CI runs this in an isolated step")
+    def test_natural_gradient_boosting_matches_the_ngboost_package(self):
+        from sklearn.tree import DecisionTreeRegressor
+        _, _, state, t, z32, q32, actual = self.natural_gradient_case()
+        scale, mean = state["target_scale"][0], state["target_mean"][0]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from ngboost import NGBRegressor
+            from ngboost.distns import Normal
+            package = NGBRegressor(Dist=Normal, Base=DecisionTreeRegressor(max_depth=2, min_samples_leaf=3, random_state=3),
+                                   n_estimators=32, learning_rate=.05, minibatch_frac=1., col_sample=1., natural_gradient=True,
+                                   random_state=3, verbose=False).fit(z32, t)
+            fitted = package.pred_dist(q32)
+        self.assertEqual(package.scalings, [stage["step"] for stage in state["payload"]["stages"]])
+        np.testing.assert_allclose(actual, np.column_stack([fitted.loc*scale+mean, fitted.scale*scale]), rtol=1e-8)
 
     def test_history_variants_match_independent_recursions(self):
         x, _, names, state, z, values = self.fit("arima")

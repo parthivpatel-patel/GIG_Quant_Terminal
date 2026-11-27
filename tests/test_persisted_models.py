@@ -130,7 +130,7 @@ class PersistedModelTests(unittest.TestCase):
         for name, reason in FIXTURE_REFUSALS.items():
             self.assertIn(reason, self.refused[name])
         self.assertEqual(set(self.results), set(KINDS)-set(FIXTURE_REFUSALS)-self.unavailable)
-        self.assertLessEqual(self.unavailable, {"xgboost", "catboost", "ngboost", "ebm"})
+        self.assertLessEqual(self.unavailable, {"xgboost", "catboost", "ebm"})
 
     def test_all_model_folds_purge_label_knowledge_before_test(self):
         for name in self.results:

@@ -51,18 +51,26 @@ workbench table and options, and add an independent reference to
 `tests/test_bounded_families.py`. The contract, persisted, HTTP, Node and
 Chromium checks pick the new entry up from the registry.
 
-## Optional boosted engines (17, 18, 20, 21)
+## Boosted engines (17, 18, 20, 21)
 
-These four need `pip install "gig[boosting]"`. Without a library its family is
-UNAVAILABLE and refuses to fit; nothing is substituted. Prediction never needs
-the library: trees, bins and scores are saved as JSON and replayed in NumPy.
+Families 17, 18 and 21 need `pip install "gig[boosting]"`. Without a library
+its family is UNAVAILABLE and refuses to fit; nothing is substituted.
+Prediction never needs the library: trees, bins and scores are saved as JSON
+and replayed in NumPy.
 
 | Family | Distribution (tested) | License | Review notes |
 | --- | --- | --- | --- |
 | 17 XGBoost | `xgboost-cpu` 3.4.1, 3.2.0 | Apache-2.0 | The `xgboost` distribution depends on `nvidia-nccl` on Linux, so the CPU-only distribution is required. Python 3.11 resolves to 3.2.0. |
 | 18 CatBoost | `catboost` 1.2.10 | Apache-2.0 | Numeric features only; no categorical target statistics. Installs plotting packages it does not need here. |
-| 20 NGBoost | `ngboost` 0.6.1 | Apache-2.0 | Pure Python on scikit-learn trees. |
 | 21 EBM | `interpret-core` 0.7.8 | MIT | License is stated in the project repository; the PyPI metadata field is empty. |
+
+Family 20 is the NGBoost algorithm (natural gradient of the Normal log score,
+depth-2 trees for location and log scale, the published line search)
+implemented in `boosting.py` on scikit-learn trees. The `ngboost` package
+(Apache-2.0) was reviewed and not adopted: it requires lifelines, which
+requires pandas below 3, so installing it downgrades pandas for the whole
+project. The native fit reproduces `ngboost` 0.6.1 step sizes exactly and its
+predictions to 1e-8; CI checks this in a final isolated step.
 
 Licenses and platform wheels were read from PyPI metadata on 2026-11-27. Linux
 aarch64 wheels are published for the two compiled engines, but no run on

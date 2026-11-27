@@ -37,9 +37,10 @@ calendar = ["exchange-calendars>=4.5"]
 broker = ["alpaca-py>=0.21"]
 ml = ["lightgbm>=4.3"]
 research = ["lightgbm>=4.3", "statsmodels>=0.14"]
-# CPU-only boosted engines for families 17, 18, 20 and 21. `xgboost-cpu` is deliberate: the
-# `xgboost` distribution depends on a proprietary NVIDIA runtime on Linux.
-boosting = ["xgboost-cpu>=3.2", "catboost>=1.2.10", "ngboost>=0.6.1", "interpret-core>=0.7.8"]
+# CPU-only boosted engines for families 17, 18 and 21. `xgboost-cpu` is deliberate: the
+# `xgboost` distribution depends on a proprietary NVIDIA runtime on Linux. `ngboost` is
+# deliberately absent: it pins pandas below 3 through lifelines.
+boosting = ["xgboost-cpu>=3.2", "catboost>=1.2.10", "interpret-core>=0.7.8"]
 nlp = ["vaderSentiment>=3.3"]
 sequence = ["torch>=2.2"]
 transformers = ["transformers>=4.40,<5", "torch>=2.2", "safetensors>=0.4"]

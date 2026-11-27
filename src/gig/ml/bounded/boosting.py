@@ -1,10 +1,14 @@
-"""Families 17, 18, 20 and 21: optional boosted engines with saved JSON replay.
+"""Families 17, 18, 20 and 21: boosted engines with saved JSON replay.
 
-Each fit is the named library on training-only standardized inputs and targets.
-The library is never needed to predict: trees, bins and scores are exported to
-JSON and replayed in NumPy, and the fit is refused unless that replay reproduces
-the library's own training-row outputs. A missing library is UNAVAILABLE; no
-other engine is substituted.
+XGBoost, CatBoost and the explainable boosting machine are the named optional
+libraries; a missing one is UNAVAILABLE and nothing is substituted. NGBoost is
+the published algorithm implemented here on scikit-learn trees, because the
+ngboost package pins pandas below 3 through its dependencies.
+
+Every fit uses training-only standardized inputs and targets. No library is
+needed to predict: trees, bins and scores are exported to JSON and replayed in
+NumPy, and a fit is refused unless that replay reproduces its own training-row
+outputs.
 """
 from __future__ import annotations
 
@@ -24,7 +28,7 @@ XGB = {"objective": "reg:squarederror", "max_depth": DEPTH, "eta": RATE, "min_ch
        "tree_method": "exact", "base_score": 0., "nthread": 1, "verbosity": 0}
 CAT = {"iterations": ROUNDS, "depth": DEPTH, "learning_rate": RATE, "l2_leaf_reg": 3., "border_count": 32,
        "boosting_type": "Ordered", "bootstrap_type": "No"}
-NGB_RATE, NGB_LEAF, LOG_SCALE_LIMIT, INTERVAL_Z = .05, 3, 20., 1.6448536269514722
+NGB_RATE, NGB_LEAF, NGB_TOLERANCE, LOG_SCALE_LIMIT, INTERVAL_Z = .05, 3, 1e-4, 20., 1.6448536269514722
 EBM = {"interactions": 2, "max_bins": 32, "max_interaction_bins": 8, "outer_bags": 1, "inner_bags": 0, "max_rounds": 200,
        "learning_rate": .05, "validation_size": .15, "early_stopping_rounds": 20, "min_samples_leaf": 3}
 
@@ -98,21 +102,51 @@ def _cat_replay(payload, z):
     return (total*vector(payload, "scale", ()) + vector(payload, "bias", ()))[:, None]
 
 
+def _normal_loss(parameters, y) -> float:
+    """Mean negative log likelihood of Normal(location, exp(log scale))."""
+    return float(np.mean(.5*math.log(2*math.pi) + parameters[:, 1] + .5*((y-parameters[:, 0])/np.exp(parameters[:, 1]))**2))
+
+
+def _line_search(update, start, y) -> float:
+    """NGBoost step scaling: double while the training loss does not rise, then halve until it falls."""
+    base, step = _normal_loss(start, y), 1.
+    with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+        while True:
+            loss = _normal_loss(start-update*step, y)
+            if not math.isfinite(loss) or loss > base or step > 256:
+                break
+            step *= 2
+        while True:
+            loss = _normal_loss(start-update*step, y)
+            if np.mean(np.linalg.norm(update*step, axis=1)) < NGB_TOLERANCE or (math.isfinite(loss) and loss < base):
+                break
+            step *= .5
+    return step
+
+
 def _ngb_fit(z, y, seed):
-    x32 = z.astype(np.float32)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from ngboost import NGBRegressor
-        from ngboost.distns import Normal
-        from sklearn.tree import DecisionTreeRegressor
-        base = DecisionTreeRegressor(criterion="squared_error", max_depth=DEPTH, min_samples_leaf=NGB_LEAF)
-        estimator = NGBRegressor(Dist=Normal, Base=base, n_estimators=ROUNDS, learning_rate=NGB_RATE, minibatch_frac=1.,
-                                 col_sample=1., natural_gradient=True, random_state=seed, verbose=False).fit(x32, y)
-        fitted = estimator.pred_dist(x32)
-    stages = [{"location": export_tree(models[0]), "log_scale": export_tree(models[1]), "step": float(step)}
-              for models, step in zip(estimator.base_models, estimator.scalings, strict=True)]
-    return ({"initial": [float(v) for v in estimator.init_params], "stages": stages, "feature_dtype": "float32"},
-            np.column_stack([fitted.loc, fitted.scale]))
+    """Natural-gradient boosting of a Normal under the log score (Duan et al., 2020)."""
+    from sklearn.tree import DecisionTreeRegressor
+    x32, spread = z.astype(np.float32), float(np.std(y))
+    if not spread > 0:
+        raise ValueError("natural-gradient boosting requires a varying training target")
+    initial = [float(np.mean(y)), math.log(spread)]
+    parameters, stages = np.tile(initial, (len(y), 1)), []
+    for _ in range(ROUNDS):
+        error = parameters[:, 0]-y
+        # The Fisher information of (location, log scale) is diag(1/variance, 2).
+        natural = np.column_stack([error, .5*(1-error**2/np.exp(2*parameters[:, 1]))])
+        trees = [DecisionTreeRegressor(criterion="squared_error", max_depth=DEPTH, min_samples_leaf=NGB_LEAF,
+                                       random_state=seed).fit(x32, column) for column in natural.T]
+        update = np.column_stack([tree.predict(x32) for tree in trees])
+        step = _line_search(update, parameters, y)
+        parameters = parameters - NGB_RATE*step*update
+        stages.append({"location": export_tree(trees[0]), "log_scale": export_tree(trees[1]), "step": step})
+        if np.mean(np.linalg.norm(update, axis=1)) < NGB_TOLERANCE:
+            break
+    return ({"initial": initial, "stages": stages, "feature_dtype": "float32",
+             "training_nll": _normal_loss(parameters, y), "marginal_training_nll": _normal_loss(np.tile(initial, (len(y), 1)), y)},
+            np.column_stack([parameters[:, 0], np.exp(parameters[:, 1])]))
 
 
 def _ngb_replay(payload, z):
@@ -222,13 +256,14 @@ register(Family(
     requires=("catboost",), parameters=dict(CAT),
     uncertainty=unavailable("BOOSTED_POINT_ESTIMATE_HAS_NO_PREDICTIVE_DISTRIBUTION"), tolerance=1e-9, license="Apache-2.0"))
 register(Family(
-    key="ngboost", number=20, capability="natural_gradient_boosting", label="NGBoost Normal distribution · saved dataset",
-    scope="Bounded CPU natural-gradient boosting of a Normal distribution on admitted saved data: 32 stages of depth-2 trees for location and log scale, learning rate 0.05, full batches, 20–256 training rows and 16 fits. The standard deviation is a model output, NOT a calibrated interval; Gaussian log score, CRPS and 90% coverage are reported against the unconditional training Normal. Allocation, promotion and trading remain unapproved.",
-    kind="FORWARD_RETURN_DISTRIBUTION_ESTIMATE", fit=_ngb_fit, replay=_ngb_replay, backend="ngboost.NGBRegressor",
-    requires=("ngboost", "sklearn"), outputs=("prediction", "sd"), scaled=("sd",),
-    parameters={"distribution": "Normal", "n_estimators": ROUNDS, "learning_rate": NGB_RATE, "max_depth": DEPTH,
-                "min_samples_leaf": NGB_LEAF, "minibatch_frac": 1., "col_sample": 1., "natural_gradient": True},
-    uncertainty=_ngb_uncertainty, score=_ngb_score, tolerance=1e-9, license="Apache-2.0"))
+    key="ngboost", number=20, capability="natural_gradient_boosting", label="NGBoost algorithm · Normal distribution",
+    scope="Bounded CPU natural-gradient boosting of a Normal distribution on admitted saved data: at most 32 stages of depth-2 trees for location and log scale, learning rate 0.05, full batches, NGBoost line search, 20–256 training rows and 16 fits. The published algorithm is implemented here on scikit-learn trees; the ngboost package is not a dependency. The standard deviation is a model output, NOT a calibrated interval; Gaussian log score, CRPS and 90% coverage are reported against the unconditional training Normal. Allocation, promotion and trading remain unapproved.",
+    kind="FORWARD_RETURN_DISTRIBUTION_ESTIMATE", fit=_ngb_fit, replay=_ngb_replay,
+    backend="gig natural-gradient Normal boosting on sklearn.tree.DecisionTreeRegressor",
+    outputs=("prediction", "sd"), scaled=("sd",),
+    parameters={"distribution": "Normal", "score": "log", "n_estimators": ROUNDS, "learning_rate": NGB_RATE, "max_depth": DEPTH,
+                "min_samples_leaf": NGB_LEAF, "natural_gradient": True, "tolerance": NGB_TOLERANCE},
+    uncertainty=_ngb_uncertainty, score=_ngb_score, tolerance=1e-9))
 register(Family(
     key="ebm", number=21, capability="explainable_boosting_machine", label="Explainable boosting machine · saved dataset",
     scope="Bounded CPU explainable boosting machine on admitted saved data: additive per-feature shape functions on at most 32 bins plus at most two pair terms chosen on the training fold only, one bag, at most 200 rounds with a seeded 15% training-fold stopping split, 20–256 training rows and 16 fits. Bins and scores are exported to JSON and replayed without the library; shape functions describe the fit, not causes." + _RESEARCH,

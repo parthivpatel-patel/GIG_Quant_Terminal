@@ -470,12 +470,12 @@ rejected; authored data stays SYNTHETIC. No economic or certification claim.
 
 Twenty-five further inventory families (26 fitted variants) are implemented in
 `gig.ml.bounded` behind one registry: actual scikit-learn, statsmodels, SciPy,
-NumPy, CPU Torch, XGBoost, CatBoost, NGBoost or interpret fits, non-executable JSON replay, per-family re-derivation
+NumPy, CPU Torch, XGBoost, CatBoost or interpret fits (NGBoost is implemented natively), non-executable JSON replay, per-family re-derivation
 checks, purged label-vintage folds, registry-generated workbench entries and
 saved-dataset HTTP integration. Every estimate is uncalibrated and
 research-only; allocation and promotion are rejected. Independent numerical
 references, tamper rejection, causality and persisted replay are covered by
-`tests/test_bounded_families.py`. Inventory: 39 implemented; 17, 18, 20 and 21
+`tests/test_bounded_families.py`. Inventory: 39 implemented; 17, 18 and 21
 need the optional `boosting` extra and report UNAVAILABLE without it; 34
 BLOCKED on event timestamps.
 Authored data stays SYNTHETIC. No economic or certification claim.
