@@ -1225,6 +1225,9 @@
         entries.push(["Speakers", data.speakers.slice(0, 24).map(row => `${row.name} · ${row.role}${row.role_text ? ` (${row.role_text})` : ""}: ${row.turns} turns, ${row.words} words`).join("\n") || "None recognized"]);
         entries.push(["Question-and-answer exchanges", data.exchanges.slice(0, 24).map(row => `${row.analyst}: ${row.answered ? `answered by ${row.responders.join(", ")}` : "no management answer found"} (${row.question_words} / ${row.answer_words} words)`).join("\n") || "None recognized"]);
         entries.push(["Forward-looking sentences", data.forward_looking.slice(0, 24).map(row => `${row.speaker} [${row.cue}${row.hedged ? ", hedged" : ""}]: ${row.sentence} [${row.citation.passage_id.slice(0, 12)}]`).join("\n") || "No cue word found"], ["Cue meaning", "Words appear in the text · not verified or interpreted"]);
+        if (isObject(data.financial_mentions)) {
+          entries.push(["Cited numerical mentions", data.financial_mentions.facts.slice(0, 8).map(fact => `${fact.metric_mention}: ${fact.quoted_decimal} ${fact.unit}`).join("\n") || "None in the annotated turns"], ["Event mentions", data.financial_mentions.event_mentions.slice(0, 8).map(event => `${event.mention}: occurrence ${event.occurrence}`).join("\n") || "None in the annotated turns"], ["Mention coverage", data.financial_mentions.coverage]);
+        }
       }
       if (data.operation === "compare") {
         entries.push(["Comparison", "Text differences with citations · not an interpretation"], ["Unchanged passages", data.unchanged_passages], ["Added / removed", `${data.counts.ADDED} / ${data.counts.REMOVED}`], ["Reworded / number-only", `${data.counts.REWORDED} / ${data.counts.NUMERIC_ONLY}`]);
