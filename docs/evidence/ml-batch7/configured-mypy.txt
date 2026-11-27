@@ -1,0 +1,6 @@
+$ mypy --ignore-missing-imports src/gig/execution/cost_evidence.py src/gig/data/provenance.py src/gig/intel src/gig/service/intel_workspace.py src/gig/service/viz.py src/gig/research_org/director.py src/gig/research_org/treasury_followup.py src/gig/research_org/template_catalog.py src/gig/research_org/observed_experiments.py src/gig/service/market_flow.py src/gig/data/cftc_positions.py src/gig/service/positioning.py src/gig/research_org/equity_experiments.py src/gig/data/equity_positioning.py src/gig/service/equity_positioning.py
+Success: no issues found in 22 source files
+$ mypy --follow-imports=silent --ignore-missing-imports src/gig/ml/gaussian_process.py src/gig/ml/forests.py src/gig/ml/svm.py src/gig/ml/knn.py src/gig/ml/bayesian_linear.py src/gig/ml/binomial_glm.py src/gig/ml/additive_spline.py
+Success: no issues found in 7 source files
+$ mypy --follow-imports=silent --ignore-missing-imports src/gig/financial_intelligence src/gig/service/financial_workspace.py
+Success: no issues found in 10 source files

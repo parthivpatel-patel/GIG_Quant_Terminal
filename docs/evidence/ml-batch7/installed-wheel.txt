@@ -1,0 +1,4 @@
+..............................................................s......          [100%]
+=========================== short test summary info ============================
+SKIPPED [1] ../../../home/ubuntu/wt-batch7/tests/test_native_operations.py:22: optional C++ library not built
+68 passed, 1 skipped, 66 subtests passed in 19.33s
