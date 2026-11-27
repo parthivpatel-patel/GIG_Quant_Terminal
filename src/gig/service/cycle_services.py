@@ -74,6 +74,10 @@ class CycleServices:
         from gig.service.financial_workspace import FinancialIntelligenceWorkspace
         return FinancialIntelligenceWorkspace(self.workspace.base_dir).run(payload)
 
+    def calculator_journal(self, payload: dict[str, Any]) -> Contract:
+        from gig.service.calculator_journal import CalculatorJournalWorkspace
+        return CalculatorJournalWorkspace(self.workspace.base_dir).run(payload)
+
     def research_dataset(self, payload: dict[str, Any]) -> Contract:
         return self._datasets().build(payload)
 

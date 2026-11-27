@@ -99,6 +99,13 @@ class TranscriptTests(Base):
             self.assertIn(mention["sentence"], cited)
             self.assertEqual(mention["occurrence_state"], "STATED_IN_TEXT_NOT_VERIFIED")
         self.assertEqual(result["hedged_forward_looking"], 2)
+        percent = [fact for fact in result["financial_mentions"]["facts"] if fact["quoted_decimal"] == "12" and fact["unit"] == "PERCENT"]
+        self.assertEqual([(fact["metric_mention"], fact["truth_state"]) for fact in percent], [("revenue", "UNKNOWN")])
+        cited = raw[percent[0]["provenance"]["source_start"]:percent[0]["provenance"]["source_end"]].decode()
+        self.assertEqual(cited, "12%")
+        self.assertIn("dividend", [event["mention"].lower() for event in result["financial_mentions"]["event_mentions"]])
+        self.assertTrue(all(event["occurrence"] == "UNKNOWN" for event in result["financial_mentions"]["event_mentions"]))
+        self.assertEqual((result["financial_mentions"]["coverage"], result["sentiment_state"]), ("ALL_SPEAKER_PASSAGES", "NOT_SCORED"))
         self.assertEqual((result["sentiment_state"], result["generative_state"], result["trading_approved"]),
                          ("NOT_SCORED", "UNAVAILABLE", False))
 

@@ -445,6 +445,14 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
+for (const kind of ["calculator-save", "calculator-replay"]) {
+  get("analytics-kind").value = "workspace-" + kind;
+  const before = calls.length;
+  await get("analytics-kind").dispatch("change"); await settle();
+  assert.equal(calls.length, before, "Calculator journal selection cannot submit automatically");
+  await get("run-analysis").dispatch("click"); await settle();
+  checked(`${kind} uses the local calculator journal`, () => assert.equal(calls.at(-1).url, "/api/v1/workspace/calculator-journal"));
+}
 const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify", "financial-html", "financial-statements", "financial-digest", "financial-watch", "financial-watch-check", "financial-investigate", "financial-call", "financial-transcript", "financial-compare", "financial-record-replay"];
 for (const kind of financialActions) {
   get("analytics-kind").value = "workspace-" + kind;

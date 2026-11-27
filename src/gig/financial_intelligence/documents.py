@@ -3,8 +3,9 @@
 Both read admitted immutable documents only and are extractive: speaker turns,
 question-and-answer exchanges and forward-looking sentences are located by
 fixed rules and quoted with citations; a comparison aligns the passages of two
-documents and reports what was added, removed, reworded or renumbered. No
-statement is interpreted, scored for sentiment or checked against the world.
+documents and reports what was added, removed, reworded or renumbered.
+Numerical and event mentions use the existing rule parser and stay cited.
+Nothing is scored for sentiment or checked against the world.
 """
 from __future__ import annotations
 
@@ -13,6 +14,7 @@ from decimal import Decimal
 from difflib import SequenceMatcher
 from typing import Any
 
+from gig.financial_intelligence import nlp
 from gig.financial_intelligence.research import IMPLEMENTATION, statements
 from gig.financial_intelligence.store import FinancialCorpus, digest
 from gig.timestamps import aware_timestamp
@@ -66,6 +68,7 @@ def transcript(corpus: FinancialCorpus, document_id: str) -> dict[str, Any]:
     turns: list[dict[str, Any]] = []
     section, labelled, preamble = "UNLABELLED", False, 0
     mentions: list[dict[str, Any]] = []
+    spoken: list[dict[str, Any]] = []
     for passage in document["passages"]:
         marker = SECTIONS.get(passage["text"].strip().strip(".:").strip().lower())
         if marker:
@@ -90,6 +93,7 @@ def transcript(corpus: FinancialCorpus, document_id: str) -> dict[str, Any]:
         words = len(WORD.findall(text))
         turn["words"] += words
         turn["citations"].append(_citation(passage))
+        spoken.append(passage)
         speakers[turn["speaker"]]["words"] += words
         offset = len(passage["text"])-len(text)
         for sentence in SENTENCE.finditer(text):
@@ -132,6 +136,9 @@ def transcript(corpus: FinancialCorpus, document_id: str) -> dict[str, Any]:
     total = sum(turn["words"] for turn in turns)
     by_role = {role: sum(turn["words"] for turn in turns if turn["role"] == role)
                for role in ("MANAGEMENT", "ANALYST", "OPERATOR", "UNKNOWN")}
+    annotated = spoken[:20]
+    parsed = nlp.extract(annotated) if annotated else {"implementation": nlp.IMPLEMENTATION, "facts": [], "event_mentions": [],
+                                                       "entity_mentions": [], "unsupported_mentions": []}
     metadata = document["metadata"]
     roster = sorted(speakers.values(), key=lambda row: (-row["words"], row["name"]))
     body = {"implementation": IMPLEMENTATION, "operation": "transcript", "document_id": metadata["document_id"],
@@ -146,6 +153,13 @@ def transcript(corpus: FinancialCorpus, document_id: str) -> dict[str, Any]:
             "forward_looking": mentions, "forward_looking_truncated": len(mentions) == MAX_MENTIONS,
             "hedged_forward_looking": sum(m["hedged"] for m in mentions),
             "speaker_identity_state": "LABEL_TEXT_ONLY_NOT_VERIFIED", "sentiment_state": "NOT_SCORED",
+            "financial_mentions": {"implementation": parsed["implementation"],
+                                   "coverage": "ALL_SPEAKER_PASSAGES" if len(spoken) <= 20 else "FIRST_20_SPEAKER_PASSAGES",
+                                   "speaker_passages": len(spoken), "passages_annotated": len(annotated),
+                                   "facts": parsed["facts"], "event_mentions": parsed["event_mentions"],
+                                   "entity_mentions": parsed["entity_mentions"],
+                                   "unsupported_mentions": parsed["unsupported_mentions"],
+                                   "truth_state": "UNKNOWN", "issuer_linking_state": "UNKNOWN"},
             "content_truth_state": "UNKNOWN", "generative_state": "UNAVAILABLE", "trading_approved": False,
             "limitations": LIMITS}
     return {**body, "record_id": digest(body)}
