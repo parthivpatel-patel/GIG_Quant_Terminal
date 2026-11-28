@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from gig.timestamps import aware_timestamp
 IMPLEMENTATION = "gig.research-screen.v1"
 OPTIONS_LINK = "gig.research-screen.options-link.v1"
 OPTIONS_SCAN = "gig.research-screen.options-scan.v1"
+OPTIONS_STRUCTURES = "gig.research-screen.options-structures.v1"
 FI_ENRICH = "gig.research-screen.fi-enrich.v1"
 STANCES = ("RESEARCH_BUY", "RESEARCH_HOLD", "RESEARCH_SELL")
 EVENTS = ("ENTER_LONG", "EXIT_LONG", "ENTER_SHORT", "EXIT_SHORT", "CONTINUE", "FLIP", "ENTER_HOLD")
@@ -90,7 +92,9 @@ def _number(value: Any, name: str, *, low: float, high: float) -> float:
     return number
 
 
-def label_rows(rows: list[dict[str, Any]], *, buy_threshold: float, sell_threshold: float) -> list[dict[str, Any]]:
+def label_rows(rows: list[dict[str, Any]], *, buy_threshold: float, sell_threshold: float,
+               ttl_seconds: int | None = None, signal_as_of: str | None = None,
+               now: str | None = None) -> list[dict[str, Any]]:
     if buy_threshold <= sell_threshold:
         raise ValueError("buy_threshold must exceed sell_threshold")
     labeled = []
@@ -111,15 +115,40 @@ def label_rows(rows: list[dict[str, Any]], *, buy_threshold: float, sell_thresho
             "trading_approved": False,
             "confidence": {"state": "UNKNOWN", "value": None},
             "uncertainty": {"state": "NOT_CALIBRATED", "value": None},
+            "opportunity_rank": None,
+            "expires_at": None,
+            "expiration_state": "UNKNOWN",
         })
     actionable = [row for row in labeled if row["stance"] != "RESEARCH_HOLD"]
     total = sum(abs(row["prediction"]) for row in actionable)
+    peak = max((abs(row["prediction"]) for row in actionable), default=0.0)
     for row in labeled:
         if row["stance"] == "RESEARCH_HOLD" or total <= 0:
             row["research_weight"] = 0.0
         else:
             signed = abs(row["prediction"]) / total
             row["research_weight"] = signed if row["stance"] == "RESEARCH_BUY" else -signed
+        if peak > 0 and row["stance"] != "RESEARCH_HOLD":
+            row["confidence"] = {
+                "state": "UNCALIBRATED_RELATIVE_ABS_SCORE",
+                "value": abs(row["prediction"]) / peak,
+            }
+    ranked = sorted(actionable, key=lambda item: (-abs(item["research_weight"]), item["instrument_id"]))
+    for index, row in enumerate(ranked, start=1):
+        row["opportunity_rank"] = index
+    if ttl_seconds is not None:
+        if signal_as_of is None:
+            raise ValueError("signal_as_of is required when ttl_seconds is set")
+        if ttl_seconds < 1:
+            raise ValueError("ttl_seconds must be a positive integer")
+        origin = aware_timestamp(signal_as_of)
+        expires = origin + timedelta(seconds=int(ttl_seconds))
+        clock = aware_timestamp(now) if now is not None else origin
+        expires_at = expires.isoformat()
+        state = "EXPIRED" if clock > expires else "ACTIVE"
+        for row in labeled:
+            row["expires_at"] = expires_at
+            row["expiration_state"] = state if row["stance"] != "RESEARCH_HOLD" else "NOT_APPLICABLE"
     return labeled
 
 
@@ -172,13 +201,21 @@ def build_screen(signal: dict[str, Any], request: dict[str, Any],
                  previous: dict[str, Any] | None) -> dict[str, Any]:
     if not signal.get("usable_for_portfolio") or not signal.get("rows"):
         raise ValueError("signal is not usable for a research screen")
-    rows = label_rows(signal["rows"], buy_threshold=request["buy_threshold"],
-                      sell_threshold=request["sell_threshold"])
+    rows = label_rows(
+        signal["rows"], buy_threshold=request["buy_threshold"],
+        sell_threshold=request["sell_threshold"],
+        ttl_seconds=request.get("ttl_seconds"),
+        signal_as_of=signal["signal_as_of"],
+        now=request.get("now"),
+    )
     prior_rows = previous["rows"] if previous is not None else None
     events = timing_events(rows, prior_rows)
     buys = sum(row["stance"] == "RESEARCH_BUY" for row in rows)
     sells = sum(row["stance"] == "RESEARCH_SELL" for row in rows)
     holds = sum(row["stance"] == "RESEARCH_HOLD" for row in rows)
+    expired = any(row.get("expiration_state") == "EXPIRED" for row in rows)
+    ranked = [row for row in rows if row.get("opportunity_rank") is not None]
+    ranked.sort(key=lambda item: item["opportunity_rank"])
     return {
         "schema_version": IMPLEMENTATION,
         "request": request,
@@ -190,24 +227,38 @@ def build_screen(signal: dict[str, Any], request: dict[str, Any],
         "input_classification": signal["input_classification"],
         "previous_screen_id": request.get("previous_screen_id"),
         "rows": rows,
+        "opportunity_ranking": [
+            {"instrument_id": row["instrument_id"], "opportunity_rank": row["opportunity_rank"],
+             "stance": row["stance"], "research_weight": row["research_weight"],
+             "confidence": row["confidence"], "expiration_state": row["expiration_state"],
+             "expires_at": row["expires_at"], "trading_approved": False}
+            for row in ranked
+        ],
         "timing": events,
         "metrics": {
             "instruments": len(rows),
             "research_buys": buys,
             "research_sells": sells,
             "research_holds": holds,
+            "ranked_opportunities": len(ranked),
+            "signal_expired": expired,
             "timing_entries": sum(e["event"].startswith("ENTER_") for e in events),
             "timing_exits": sum(e["event"].startswith("EXIT_") for e in events),
             "timing_flips": sum(e["event"] == "FLIP" for e in events),
             "trading_approved": False,
         },
-        "usable_for_portfolio": signal["usable_for_portfolio"] and any(row["stance"] != "RESEARCH_HOLD" for row in rows),
+        "usable_for_portfolio": (
+            signal["usable_for_portfolio"] and not expired
+            and any(row["stance"] != "RESEARCH_HOLD" for row in rows)
+        ),
         "trading_approved": False,
         "economically_validated": False,
         "method": "CENTERED_RANK_THRESHOLD_STANCE_V1",
         "notes": [
             "RESEARCH_BUY / RESEARCH_SELL / RESEARCH_HOLD are threshold labels on an uncalibrated ensemble score.",
             "research_weight is a relative research share among actionable names, not an order size.",
+            "opportunity_rank orders actionable names by absolute research_weight; confidence is uncalibrated relative abs score.",
+            "ttl_seconds expires actionable stances after signal_as_of; expired screens are not usable_for_portfolio.",
             "Timing events compare two saved screens only; they are not live market monitors.",
             "No broker order, allocation approval or funded certification is established.",
         ],
@@ -224,24 +275,56 @@ class ResearchScreenWorkspace:
         return self.workspace._path("research-screens/" + name)
 
     def discover(self, payload: dict[str, Any]) -> Contract:
-        """Fit an ensemble from saved model runs, then label research stances in one step."""
+        """Score saved evidence, then label research stances in one step.
+
+        Accepts exactly one of ``run_ids``, ``dataset_id``, or ``pair_run_id``.
+        """
         fields = _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations",
-                                   "buy_threshold", "sell_threshold", "previous_screen_id"},
-                         {"run_ids", "now"})
-        signal_payload: dict[str, Any] = {"run_ids": fields["run_ids"], "now": fields["now"]}
-        for key in ("lookback", "min_ic_observations"):
-            if key in fields:
-                signal_payload[key] = fields[key]
-        signal_contract = self.signals.run(signal_payload)
+                                   "buy_threshold", "sell_threshold", "previous_screen_id",
+                                   "ttl_seconds", "dataset_id", "mode", "momentum_lookback",
+                                   "reversion_lookback", "momentum_weight", "reversion_weight",
+                                   "pair_run_id"},
+                         {"now"})
+        sources = [key for key in ("run_ids", "dataset_id", "pair_run_id") if key in fields]
+        if len(sources) != 1:
+            raise ValueError("discover requires exactly one of run_ids, dataset_id, or pair_run_id")
+        if "dataset_id" in fields:
+            signal_payload = {key: fields[key] for key in fields
+                              if key in {"dataset_id", "now", "mode", "momentum_lookback",
+                                         "reversion_lookback", "momentum_weight", "reversion_weight"}}
+            signal_contract = self.signals.run_from_dataset(signal_payload)
+            discovery_op = "from-dataset"
+        elif "pair_run_id" in fields:
+            signal_contract = self.signals.run_from_pairs({
+                "pair_run_id": fields["pair_run_id"], "now": fields["now"],
+            })
+            discovery_op = "from-pairs"
+        else:
+            signal_payload = {"run_ids": fields["run_ids"], "now": fields["now"]}
+            for key in ("lookback", "min_ic_observations"):
+                if key in fields:
+                    signal_payload[key] = fields[key]
+            signal_contract = self.signals.run(signal_payload)
+            discovery_op = "from-runs"
         signal = signal_contract.to_dict()
         if signal["state"] != State.AVAILABLE.value or not isinstance(signal.get("data"), dict):
             return signal_contract
+        discovery: dict[str, Any] = {
+            "operation": discovery_op, "scoring_state": signal["data"]["scoring_state"],
+        }
+        if discovery_op == "from-runs":
+            discovery["run_ids"] = list(signal["data"]["run_ids"])
+        elif discovery_op == "from-pairs":
+            discovery["pair_run_id"] = signal["data"]["pair_run_id"]
+        else:
+            discovery["dataset_id"] = signal["data"]["dataset_id"]
+            discovery["mode"] = signal["data"]["request"]["mode"]
         screen_payload: dict[str, Any] = {
             "signal_id": signal["data"]["signal_id"],
-            "discovery": {"operation": "from-runs", "run_ids": list(signal["data"]["run_ids"]),
-                          "scoring_state": signal["data"]["scoring_state"]},
+            "discovery": discovery,
+            "now": fields["now"],
         }
-        for key in ("buy_threshold", "sell_threshold", "previous_screen_id"):
+        for key in ("buy_threshold", "sell_threshold", "previous_screen_id", "ttl_seconds"):
             if key in fields:
                 screen_payload[key] = fields[key]
         return self.run(screen_payload)
@@ -264,7 +347,8 @@ class ResearchScreenWorkspace:
         )
 
     def run(self, payload: dict[str, Any]) -> Contract:
-        fields = _fields(payload, {"signal_id", "buy_threshold", "sell_threshold", "previous_screen_id", "discovery"},
+        fields = _fields(payload, {"signal_id", "buy_threshold", "sell_threshold", "previous_screen_id",
+                                   "discovery", "ttl_seconds", "now"},
                          {"signal_id"})
         request = {
             "signal_id": sha256(fields["signal_id"]),
@@ -273,12 +357,26 @@ class ResearchScreenWorkspace:
         }
         if "previous_screen_id" in fields:
             request["previous_screen_id"] = sha256(fields["previous_screen_id"])
+        if "ttl_seconds" in fields:
+            ttl = int(fields["ttl_seconds"])
+            if ttl < 1:
+                raise ValueError("ttl_seconds must be a positive integer")
+            request["ttl_seconds"] = ttl
+        if "now" in fields:
+            request["now"] = aware_timestamp(fields["now"]).isoformat()
         discovery = fields.get("discovery")
         if discovery is not None:
-            if not isinstance(discovery, dict) or discovery.get("operation") != "from-runs":
-                raise ValueError("discovery must record a from-runs operation")
-            if not isinstance(discovery.get("run_ids"), list) or not discovery["run_ids"]:
-                raise ValueError("discovery requires the ensemble run identities")
+            if not isinstance(discovery, dict) or discovery.get("operation") not in {
+                    "from-runs", "from-dataset", "from-pairs"}:
+                raise ValueError("discovery must record a from-runs, from-dataset, or from-pairs operation")
+            if discovery["operation"] == "from-runs":
+                if not isinstance(discovery.get("run_ids"), list) or not discovery["run_ids"]:
+                    raise ValueError("discovery requires the ensemble run identities")
+            elif discovery["operation"] == "from-pairs":
+                if not isinstance(discovery.get("pair_run_id"), str) or not discovery["pair_run_id"]:
+                    raise ValueError("discovery requires the pair run identity")
+            elif not isinstance(discovery.get("dataset_id"), str) or not discovery["dataset_id"]:
+                raise ValueError("discovery requires the dataset identity")
         try:
             signal = self.signals.load(str(request["signal_id"]))
             previous = self.load(str(request["previous_screen_id"])) if "previous_screen_id" in request else None
@@ -295,9 +393,24 @@ class ResearchScreenWorkspace:
                 raise ValueError("previous screen must precede the current evaluation time")
         body = build_screen(signal, request, previous)
         if discovery is not None:
-            body["discovery"] = {"operation": "from-runs", "signal_id": signal["signal_id"],
-                                 "run_ids": list(discovery["run_ids"]),
-                                 "scoring_state": discovery.get("scoring_state")}
+            if discovery["operation"] == "from-dataset":
+                body["discovery"] = {
+                    "operation": "from-dataset", "signal_id": signal["signal_id"],
+                    "dataset_id": discovery["dataset_id"], "mode": discovery.get("mode"),
+                    "scoring_state": discovery.get("scoring_state"),
+                }
+            elif discovery["operation"] == "from-pairs":
+                body["discovery"] = {
+                    "operation": "from-pairs", "signal_id": signal["signal_id"],
+                    "pair_run_id": discovery["pair_run_id"],
+                    "scoring_state": discovery.get("scoring_state"),
+                }
+            else:
+                body["discovery"] = {
+                    "operation": "from-runs", "signal_id": signal["signal_id"],
+                    "run_ids": list(discovery["run_ids"]),
+                    "scoring_state": discovery.get("scoring_state"),
+                }
         identity = _hash(body)
         document = {**body, "screen_id": identity}
         result = self._contract(document)
@@ -349,7 +462,8 @@ class ResearchScreenWorkspace:
 
     def monitor(self, payload: dict[str, Any]) -> Contract:
         """Chain screens across successive saved signals for research-only monitoring."""
-        fields = _fields(payload, {"signal_ids", "buy_threshold", "sell_threshold"}, {"signal_ids"})
+        fields = _fields(payload, {"signal_ids", "buy_threshold", "sell_threshold", "ttl_seconds", "now"},
+                         {"signal_ids"})
         ids = fields["signal_ids"]
         if not isinstance(ids, list) or not 2 <= len(ids) <= 32 or len(set(ids)) != len(ids):
             raise ValueError("monitor requires two to thirty-two distinct signal identities")
@@ -357,7 +471,7 @@ class ResearchScreenWorkspace:
         previous_id: str | None = None
         for signal_id in ids:
             request: dict[str, Any] = {"signal_id": signal_id}
-            for key in ("buy_threshold", "sell_threshold"):
+            for key in ("buy_threshold", "sell_threshold", "ttl_seconds", "now"):
                 if key in fields:
                     request[key] = fields[key]
             if previous_id is not None:
@@ -484,6 +598,15 @@ class ResearchScreenWorkspace:
                                       classification="UNAVAILABLE", scope="workspace.research-screen.options",
                                       error=public_error("DATA_UNAVAILABLE"))
             linked = option_candidate(screen["rows"], options["underlying_id"])
+            term = options.get("term_structure") or []
+            skew = options.get("skew") or []
+            vts_rows = (options.get("vts") or {}).get("rows") or []
+            atm_iv = term[0].get("implied_volatility") if term else None
+            skew_secant = next((item.get("value") for item in skew if item.get("value") is not None), None)
+            term_slope = next((item.get("value") for item in vts_rows if item.get("value") is not None), None)
+            parts = [abs(float(value)) for value in (skew_secant, term_slope) if value is not None]
+            opportunity = (sum(parts) / len(parts)) if parts else None
+            surface_state = (options.get("surface") or {}).get("state")
             rows.append({
                 "options_run_id": options["run_id"],
                 "underlying_id": options["underlying_id"],
@@ -491,10 +614,35 @@ class ResearchScreenWorkspace:
                 "option_candidate": linked["option_candidate"],
                 "research_weight": linked["research_weight"],
                 "admitted_option_quotes": options.get("metrics", {}).get("admitted_quotes", 0),
+                "atm_implied_volatility": atm_iv,
+                "skew_secant": skew_secant,
+                "term_structure_slope": term_slope,
+                "iv_opportunity_score": opportunity,
+                "iv_opportunity_rank": None,
+                "surface_state": surface_state,
+                "confidence": {
+                    "state": "UNCALIBRATED_RELATIVE_ABS_SCORE",
+                    "value": opportunity,
+                    "method": "MEAN_ABS_SKEW_AND_TERM_SLOPE",
+                },
                 "trading_approved": False,
             })
+        scored = sorted(
+            (row for row in rows if row["iv_opportunity_score"] is not None),
+            key=lambda row: (-float(row["iv_opportunity_score"]), row["underlying_id"]),
+        )
+        for index, row in enumerate(scored, start=1):
+            row["iv_opportunity_rank"] = index
         actionable = [row for row in rows if row["option_candidate"] in
                       {"RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE"}]
+        ranked_actionable = sorted(
+            actionable,
+            key=lambda row: (
+                row["iv_opportunity_rank"] is None,
+                row["iv_opportunity_rank"] if row["iv_opportunity_rank"] is not None else 10**9,
+                row["underlying_id"],
+            ),
+        )
         body = {
             "schema_version": OPTIONS_SCAN,
             "as_of": screen["as_of"],
@@ -505,18 +653,20 @@ class ResearchScreenWorkspace:
             "input_classification": screen["input_classification"],
             "options_run_ids": [sha256(i) for i in ids],
             "rows": rows,
-            "actionable": actionable,
+            "actionable": ranked_actionable,
             "options_trading_approved": False,
             "trading_approved": False,
             "economically_validated": False,
             "usable_for_portfolio": False,
             "notes": [
                 "Options scan maps each saved options run onto the equity research screen by underlying identity.",
+                "IV opportunity scores use absolute skew secant and adjacent-expiry ATM IV slope; uncalibrated only.",
                 "Candidates are research labels only; no priced order, OPRA entitlement, or broker path is created.",
             ],
             "metrics": {
                 "scanned": len(rows),
                 "actionable": len(actionable),
+                "ranked_iv_opportunities": len(scored),
                 "calls": sum(1 for row in actionable if row["option_candidate"] == "RESEARCH_CALL_CANDIDATE"),
                 "puts": sum(1 for row in actionable if row["option_candidate"] == "RESEARCH_PUT_CANDIDATE"),
                 "trading_approved": False,
@@ -535,6 +685,146 @@ class ResearchScreenWorkspace:
             model_identity=identity,
             model_version=OPTIONS_SCAN,
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_SCAN",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def discover_option_structures(self, payload: dict[str, Any]) -> Contract:
+        """Discover same-expiry verticals on equity-linked options opportunities.
+
+        BUY screens prefer debit call verticals; SELL screens prefer debit put
+        verticals. Profiles are expiry-only research diagnostics, not orders.
+        """
+        fields = _fields(payload, {"screen_id", "options_run_ids", "width_strikes"},
+                         {"screen_id", "options_run_ids"})
+        ids = fields["options_run_ids"]
+        if not isinstance(ids, list) or not 1 <= len(ids) <= 16 or len(set(ids)) != len(ids):
+            raise ValueError("structure discovery requires one to sixteen distinct options run identities")
+        width = int(fields.get("width_strikes", 1))
+        if not 1 <= width <= 5:
+            raise ValueError("width_strikes must lie between 1 and 5")
+        try:
+            screen = self.load(fields["screen_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen.options",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        from gig.options.exotics import strategy as option_strategy
+        workspace = OptionsWorkspace(self.base_dir)
+        structures: list[dict[str, Any]] = []
+        for options_run_id in ids:
+            try:
+                options = workspace.load(options_run_id)
+            except FileNotFoundError:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                      classification="UNAVAILABLE", scope="workspace.research-screen.options",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            linked = option_candidate(screen["rows"], options["underlying_id"])
+            if linked["option_candidate"] not in {"RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE"}:
+                continue
+            right = "CALL" if linked["option_candidate"] == "RESEARCH_CALL_CANDIDATE" else "PUT"
+            admitted = [
+                row for row in options.get("rows", [])
+                if row.get("right") == right and row.get("state") == "AVAILABLE"
+                and row.get("midpoint") is not None and row.get("strike") is not None
+                and row.get("expiry") is not None
+            ]
+            by_expiry: dict[str, list[dict[str, Any]]] = {}
+            for row in admitted:
+                by_expiry.setdefault(row["expiry"], []).append(row)
+            for expiry, quotes in sorted(by_expiry.items()):
+                ordered = sorted(quotes, key=lambda item: float(item["strike"]))
+                if len(ordered) <= width:
+                    continue
+                for index in range(len(ordered) - width):
+                    low, high = ordered[index], ordered[index + width]
+                    low_strike = float(low["strike"])
+                    high_strike = float(high["strike"])
+                    low_mid = float(low["midpoint"])
+                    high_mid = float(high["midpoint"])
+                    if right == "CALL":
+                        long_strike, short_strike = low_strike, high_strike
+                        long_mid, short_mid = low_mid, high_mid
+                        structure = "DEBIT_CALL_VERTICAL"
+                        kind = "CALL"
+                    else:
+                        long_strike, short_strike = high_strike, low_strike
+                        long_mid, short_mid = high_mid, low_mid
+                        structure = "DEBIT_PUT_VERTICAL"
+                        kind = "PUT"
+                    legs = [
+                        {"kind": kind, "strike": long_strike, "quantity": 1, "premium": long_mid},
+                        {"kind": kind, "strike": short_strike, "quantity": -1, "premium": short_mid},
+                    ]
+                    multiplier = low.get("multiplier")
+                    profile = option_strategy(
+                        legs, multiplier=float(multiplier) if multiplier is not None else 1.0)
+                    structures.append({
+                        "options_run_id": options["run_id"],
+                        "underlying_id": options["underlying_id"],
+                        "equity_stance": linked["equity_stance"],
+                        "option_candidate": linked["option_candidate"],
+                        "structure": structure,
+                        "expiry": expiry,
+                        "long_strike": long_strike,
+                        "short_strike": short_strike,
+                        "width": high_strike - low_strike,
+                        "net_premium": profile["net_premium"],
+                        "premium_direction": profile["premium_direction"],
+                        "max_profit": profile["max_profit"],
+                        "max_loss": profile["max_loss"],
+                        "breakevens": profile["breakevens"],
+                        "trading_approved": False,
+                        "options_trading_approved": False,
+                    })
+        ranked = sorted(
+            structures,
+            key=lambda row: (
+                -(float(row["max_profit"]) if row["max_profit"] is not None else -1e18),
+                row["underlying_id"], row["expiry"], row["long_strike"],
+            ),
+        )
+        for index, row in enumerate(ranked, start=1):
+            row["structure_rank"] = index
+        body = {
+            "schema_version": OPTIONS_STRUCTURES,
+            "as_of": screen["as_of"],
+            "screen_id": screen["screen_id"],
+            "dataset_id": screen["dataset_id"],
+            "signal_id": screen["signal_id"],
+            "source": screen["source"],
+            "input_classification": screen["input_classification"],
+            "options_run_ids": [sha256(i) for i in ids],
+            "request": {"width_strikes": width},
+            "rows": ranked,
+            "options_trading_approved": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "usable_for_portfolio": False,
+            "notes": [
+                "Structures are same-expiry debit verticals linked to equity research stances.",
+                "P&L profiles are exact expiry payoffs on midpoint premiums; no financing, fees, or margin.",
+                "No OPRA entitlement, broker path, or trading approval is established.",
+            ],
+            "metrics": {
+                "structures": len(ranked),
+                "call_verticals": sum(1 for row in ranked if row["structure"] == "DEBIT_CALL_VERTICAL"),
+                "put_verticals": sum(1 for row in ranked if row["structure"] == "DEBIT_PUT_VERTICAL"),
+                "trading_approved": False,
+            },
+        }
+        identity = _hash(body)
+        document = {**body, "structures_id": identity}
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved multi-leg options structure discovery"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.options",
+            source_identity=document["dataset_id"],
+            model_identity=identity,
+            model_version=OPTIONS_STRUCTURES,
+            evidence_state="HASH_VERIFIED_RESEARCH_OPTIONS_STRUCTURES",
             readiness="RESEARCH_ONLY",
         )
 

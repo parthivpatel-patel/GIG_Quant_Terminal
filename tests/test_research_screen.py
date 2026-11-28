@@ -43,7 +43,17 @@ class ScreenUnitTests(unittest.TestCase):
         self.assertLess(labeled[2]["research_weight"], 0.0)
         self.assertAlmostEqual(abs(labeled[0]["research_weight"]) + abs(labeled[2]["research_weight"]), 1.0)
         self.assertEqual(labeled[1]["research_weight"], 0.0)
+        self.assertEqual(labeled[2]["opportunity_rank"], 1)  # |−0.5| > |0.4|
+        self.assertEqual(labeled[0]["opportunity_rank"], 2)
+        self.assertIsNone(labeled[1]["opportunity_rank"])
+        self.assertEqual(labeled[2]["confidence"]["state"], "UNCALIBRATED_RELATIVE_ABS_SCORE")
+        self.assertAlmostEqual(labeled[2]["confidence"]["value"], 1.0)
         self.assertFalse(any(row["trading_approved"] for row in labeled))
+        expired = label_rows(
+            rows, buy_threshold=0.25, sell_threshold=-0.25, ttl_seconds=60,
+            signal_as_of="2024-01-01T00:00:00Z", now="2024-01-01T00:02:00Z",
+        )
+        self.assertEqual(expired[0]["expiration_state"], "EXPIRED")
         with self.assertRaisesRegex(ValueError, "buy_threshold"):
             label_rows(rows, buy_threshold=-0.1, sell_threshold=0.1)
         previous = [{"instrument_id": "US:AAA", "stance": "RESEARCH_HOLD"},
@@ -82,6 +92,67 @@ class ScreenFlowTests(unittest.TestCase):
             "run_ids": [run["run_id"]], "now": self.now, "lookback": 20, "min_ic_observations": 5,
         }).to_dict()["data"]
         self.screens = ResearchScreenWorkspace(self.base)
+
+    def test_discover_from_dataset_factor_ranks(self):
+        discovered = self.screens.discover({
+            "dataset_id": self.dataset["dataset_id"], "now": self.now,
+            "mode": "momentum", "momentum_lookback": 10, "reversion_lookback": 5,
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()
+        EnvelopeSchema.model_validate(discovered)
+        self.assertEqual(discovered["state"], "AVAILABLE", discovered)
+        self.assertEqual(discovered["data"]["discovery"]["operation"], "from-dataset")
+        self.assertTrue(discovered["data"]["opportunity_ranking"])
+        self.assertFalse(discovered["data"]["trading_approved"])
+        signal = SignalWorkspace(self.base).load(discovered["data"]["signal_id"])
+        self.assertEqual(signal["schema_version"], "cs-factor-rank-v1")
+        self.assertTrue(all(
+            row["prediction_kind"] == "CROSS_SECTIONAL_FACTOR_CENTERED_RANK_SCORE"
+            for row in signal["rows"]
+        ))
+
+    def test_discover_market_neutral_momentum_factor(self):
+        discovered = self.screens.discover({
+            "dataset_id": self.dataset["dataset_id"], "now": self.now,
+            "mode": "market_neutral_momentum", "momentum_lookback": 10,
+            "reversion_lookback": 5, "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()
+        EnvelopeSchema.model_validate(discovered)
+        self.assertEqual(discovered["state"], "AVAILABLE", discovered)
+        self.assertEqual(discovered["data"]["discovery"]["mode"], "market_neutral_momentum")
+        signal = SignalWorkspace(self.base).load(discovered["data"]["signal_id"])
+        self.assertEqual(signal["method"], "MARKET_NEUTRAL_RESIDUAL_MOMENTUM_CENTERED_RANK_V1")
+        self.assertFalse(signal["trading_approved"])
+        predictions = [row["prediction"] for row in signal["rows"]]
+        self.assertGreater(max(predictions), min(predictions))
+
+    def test_discover_from_pairs_projects_weights(self):
+        from gig.service.pairs_workspace import PairsResearchWorkspace
+        from test_persisted_data import seed_persisted_fixture
+        from test_persisted_pairs import pair_bars
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_persisted_fixture(root, periods=120, rows=pair_bars())
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            pair_run = PairsResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "training_window": 60,
+                "test_size": 15, "embargo": 1, "entry_z": 0., "cost_bps": 12., "borrow_bps": 50.,
+            }).to_dict()
+            self.assertEqual(pair_run["state"], "AVAILABLE", pair_run)
+            screens = ResearchScreenWorkspace(root)
+            discovered = screens.discover({
+                "pair_run_id": pair_run["data"]["run_id"], "now": request["as_of"],
+                "buy_threshold": 0.01, "sell_threshold": -0.01,
+            }).to_dict()
+            EnvelopeSchema.model_validate(discovered)
+            self.assertEqual(discovered["state"], "AVAILABLE", discovered)
+            self.assertEqual(discovered["data"]["discovery"]["operation"], "from-pairs")
+            self.assertFalse(discovered["data"]["trading_approved"])
+            signal = SignalWorkspace(root).load(discovered["data"]["signal_id"])
+            self.assertEqual(signal["schema_version"], "pair-weight-signal-v1")
+            self.assertEqual(signal["method"], "PAIR_PROPOSAL_CENTERED_WEIGHT_SCORE_V1")
+            self.assertTrue(signal["usable_for_portfolio"])
 
     def test_enrich_mentions_matches_exchange_qualified_symbols(self):
         screen = self.screens.run({
@@ -208,6 +279,23 @@ class ScreenFlowTests(unittest.TestCase):
         self.assertEqual(scanned["data"]["metrics"]["scanned"], 2)
         self.assertFalse(scanned["data"]["trading_approved"])
         self.assertEqual(len(scanned["data"]["rows"]), 2)
+        self.assertTrue(all("iv_opportunity_score" in row for row in scanned["data"]["rows"]))
+        ranked = [row["iv_opportunity_rank"] for row in scanned["data"]["rows"]
+                  if row["iv_opportunity_rank"] is not None]
+        self.assertEqual(sorted(ranked), list(range(1, len(ranked) + 1)))
+        structures = self.screens.discover_option_structures({
+            "screen_id": screen["screen_id"], "options_run_ids": runs, "width_strikes": 1,
+        }).to_dict()
+        EnvelopeSchema.model_validate(structures)
+        self.assertEqual(structures["state"], "AVAILABLE", structures)
+        self.assertFalse(structures["data"]["trading_approved"])
+        self.assertGreaterEqual(structures["data"]["metrics"]["structures"], 1)
+        self.assertTrue(all(row["structure"] in {"DEBIT_CALL_VERTICAL", "DEBIT_PUT_VERTICAL"}
+                            for row in structures["data"]["rows"]))
+        self.assertEqual(
+            [row["structure_rank"] for row in structures["data"]["rows"]],
+            list(range(1, len(structures["data"]["rows"]) + 1)),
+        )
 
 
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):

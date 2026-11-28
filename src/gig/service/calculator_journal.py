@@ -34,6 +34,9 @@ DATASET_BINDINGS = {
 }
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
 SIZE_BINDINGS = frozenset({"historical-var-components"})
+SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
+OPTIONS_BINDINGS = frozenset({"svi-smile", "option-greeks-advanced"})
+SIZE_RECORD_BINDINGS = frozenset({"conditional-stress"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
     id TEXT PRIMARY KEY,
@@ -206,9 +209,11 @@ class CalculatorJournalWorkspace:
 
     def run(self, payload: dict[str, Any]) -> Contract:
         if not isinstance(payload, dict) or payload.get("operation") not in (
-                "save", "replay", "from-dataset", "from-record", "from-size"):
+                "save", "replay", "from-dataset", "from-record", "from-size", "from-screen",
+                "from-options", "from-size-record"):
             raise ValueError(
-                "calculator journal operation must be save, replay, from-dataset, from-record or from-size")
+                "calculator journal operation must be save, replay, from-dataset, from-record, "
+                "from-size, from-screen, from-options or from-size-record")
         try:
             if payload["operation"] == "save":
                 fields = _fields(payload, {"operation", "kind", "inputs"}, {"operation", "kind", "inputs"})
@@ -221,6 +226,12 @@ class CalculatorJournalWorkspace:
                 return self._contract(self._from_record(payload))
             if payload["operation"] == "from-size":
                 return self._contract(self._from_size(payload))
+            if payload["operation"] == "from-screen":
+                return self._contract(self._from_screen(payload))
+            if payload["operation"] == "from-options":
+                return self._contract(self._from_options(payload))
+            if payload["operation"] == "from-size-record":
+                return self._contract(self._from_size_record(payload))
             fields = _fields(payload, {"operation", "record_id"}, {"operation", "record_id"})
             return self._contract(self.journal.replay(fields["record_id"]))
         except FileNotFoundError:
@@ -323,4 +334,233 @@ class CalculatorJournalWorkspace:
             "trading_approved": False,
         }
         return self.journal.save(kind, {**inputs, "asset_returns": matrix, "weights": weights},
+                                 source=source)
+
+    def _from_screen(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Bind a research screen and Ledoit-Wolf covariance into allocation research.
+
+        Black-Litterman views are absolute unit views on actionable names using
+        research_weight as the uncalibrated view return. Risk parity uses equal
+        risk budgets over the covariance instruments. Neither path approves trading.
+        """
+        fields = _fields(payload, {"operation", "screen_id", "record_id", "kind", "inputs"},
+                         {"operation", "screen_id", "record_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in SCREEN_BINDINGS:
+            raise ValueError("calculator cannot be bound to a research screen")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict):
+            raise ValueError("calculator inputs must be an object")
+        parent = self.journal.replay(fields["record_id"])
+        if parent["kind"] != "ledoit-wolf" or "covariance" not in parent["result"]:
+            raise ValueError("covariance must come from a saved Ledoit-Wolf record")
+        parent_source = parent.get("source")
+        if not isinstance(parent_source, dict) or "instruments" not in parent_source:
+            raise ValueError("Ledoit-Wolf record must pin its instrument order")
+        instruments = list(parent_source["instruments"])
+        covariance = parent["result"]["covariance"]
+        if len(covariance) != len(instruments):
+            raise ValueError("covariance dimension does not match pinned instruments")
+        from gig.service.research_screen import ResearchScreenWorkspace
+        screen = ResearchScreenWorkspace(self.directory).load(fields["screen_id"])
+        if screen.get("dataset_id") != parent_source.get("dataset_id"):
+            raise ValueError("screen and covariance must share one dataset identity")
+        by_name = {row["instrument_id"]: row for row in screen["rows"]}
+        if any(name not in by_name for name in instruments):
+            raise ValueError("covariance instruments must appear on the research screen")
+        count = len(instruments)
+        market_weights = [1.0 / count] * count
+        bound: dict[str, Any] = {"covariance": covariance}
+        if kind == "risk-parity":
+            if any(key in inputs for key in ("covariance", "budgets")):
+                raise ValueError("calculator inputs must leave covariance and budgets unbound")
+            bound["budgets"] = list(market_weights)
+            bound.update(inputs)
+        else:
+            if any(key in inputs for key in
+                   ("covariance", "market_weights", "views", "view_returns")):
+                raise ValueError(
+                    "calculator inputs must leave covariance, market_weights, views and "
+                    "view_returns unbound")
+            views: list[list[float]] = []
+            view_returns: list[float] = []
+            for index, name in enumerate(instruments):
+                row = by_name[name]
+                if row.get("stance") == "RESEARCH_HOLD" or float(row.get("research_weight", 0)) == 0.0:
+                    continue
+                vector = [0.0] * count
+                vector[index] = 1.0
+                views.append(vector)
+                view_returns.append(float(row["research_weight"]))
+            if not views:
+                raise ValueError("screen has no actionable research views for Black-Litterman")
+            bound.update({
+                "market_weights": market_weights,
+                "views": views,
+                "view_returns": view_returns,
+                **inputs,
+            })
+        source = {
+            "screen_id": screen["screen_id"],
+            "parent_record_id": parent["record_id"],
+            "parent_kind": "ledoit-wolf",
+            "dataset_id": screen["dataset_id"],
+            "dataset_classification": parent_source.get("dataset_classification",
+                                                       screen.get("input_classification")),
+            "instruments": instruments,
+            "argument": "covariance",
+            "extraction": "RESEARCH_SCREEN_VIEWS_PINNED_LEDOIT_WOLF_COVARIANCE",
+            "trading_approved": False,
+            "view_count": len(bound.get("views", [])),
+        }
+        return self.journal.save(kind, bound, source=source)
+
+    def _from_options(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Bind a saved options research run into SVI or higher-order Greeks.
+
+        SVI uses admitted CALL rows with finite IV and log-forward moneyness;
+        total variance is ``iv**2 * ttm``. Greeks bind one admitted contract's
+        inverted IV. Research-only; no OPRA or trading path.
+        """
+        fields = _fields(payload, {"operation", "options_run_id", "kind", "expiry", "contract_id", "inputs"},
+                         {"operation", "options_run_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in OPTIONS_BINDINGS:
+            raise ValueError("calculator cannot be bound to a saved options run")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict):
+            raise ValueError("calculator inputs must be an object")
+        from gig.service.options_workspace import OptionsWorkspace
+        options = OptionsWorkspace(self.directory).load(fields["options_run_id"])
+        if kind == "option-greeks-advanced":
+            if any(key in inputs for key in ("spot", "strike", "vol", "ttm", "call", "rate", "div")):
+                raise ValueError(
+                    "calculator inputs must leave spot, strike, vol, ttm, call, rate and div unbound")
+            contract_id = fields.get("contract_id")
+            rows = [
+                row for row in options.get("rows", [])
+                if row.get("state") == "AVAILABLE" and row.get("implied_volatility") is not None
+                and row.get("ttm") is not None and float(row["ttm"]) > 0
+                and row.get("strike") is not None
+            ]
+            if contract_id is not None:
+                rows = [row for row in rows if row.get("contract_id") == contract_id]
+            if not rows:
+                raise ValueError("options run has no admitted contract for higher-order Greeks")
+            selected = min(rows, key=lambda row: abs(float(row.get("log_forward_moneyness") or 0.0)))
+            request = options.get("request") or {}
+            bound = {
+                "spot": float(options["spot"]),
+                "strike": float(selected["strike"]),
+                "rate": float(request.get("rate", 0.0)),
+                "div": float(request.get("dividend_yield", 0.0)),
+                "vol": float(selected["implied_volatility"]),
+                "ttm": float(selected["ttm"]),
+                "call": selected.get("right") == "CALL",
+                **inputs,
+            }
+            source = {
+                "options_run_id": options["run_id"],
+                "underlying_id": options["underlying_id"],
+                "contract_id": selected["contract_id"],
+                "expiry": selected.get("expiry"),
+                "argument": "spot/strike/vol/ttm",
+                "extraction": "ADMITTED_OPTION_IV_HIGHER_ORDER_GREEKS",
+                "trading_approved": False,
+                "options_trading_approved": False,
+            }
+            return self.journal.save(kind, bound, source=source)
+        if any(key in inputs for key in ("log_moneyness", "total_variance")):
+            raise ValueError("calculator inputs must leave log_moneyness and total_variance unbound")
+        rows = [row for row in options.get("rows", [])
+                if row.get("right") == "CALL" and row.get("state") == "AVAILABLE"
+                and row.get("implied_volatility") is not None
+                and row.get("log_forward_moneyness") is not None
+                and row.get("ttm") is not None and float(row["ttm"]) > 0]
+        if "expiry" in fields:
+            expiry = fields["expiry"]
+            rows = [row for row in rows if row.get("expiry") == expiry]
+        else:
+            expiries = sorted({row["expiry"] for row in rows})
+            if not expiries:
+                raise ValueError("options run has no admitted CALL smile for SVI")
+            expiry = expiries[0]
+            rows = [row for row in rows if row.get("expiry") == expiry]
+        ordered = sorted(rows, key=lambda row: float(row["log_forward_moneyness"]))
+        if len(ordered) < 5:
+            raise ValueError("SVI binding needs at least five admitted CALL quotes on one expiry")
+        log_moneyness = [float(row["log_forward_moneyness"]) for row in ordered]
+        if len(set(log_moneyness)) != len(log_moneyness):
+            raise ValueError("options smile has duplicate log-moneyness on the selected expiry")
+        total_variance = [
+            float(row["implied_volatility"]) ** 2 * float(row["ttm"]) for row in ordered
+        ]
+        source = {
+            "options_run_id": options["run_id"],
+            "underlying_id": options["underlying_id"],
+            "expiry": expiry,
+            "quotes": len(ordered),
+            "argument": "log_moneyness/total_variance",
+            "extraction": "ADMITTED_CALL_IV_TOTAL_VARIANCE_ONE_EXPIRY",
+            "trading_approved": False,
+            "options_trading_approved": False,
+        }
+        return self.journal.save(kind, {**inputs, "log_moneyness": log_moneyness,
+                                        "total_variance": total_variance}, source=source)
+
+    def _from_size_record(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Bind research sizes and a Ledoit-Wolf covariance into conditional stress.
+
+        Weights follow signed size notionals over portfolio notional. Covariance
+        stays pinned from the parent record. Caller supplies shocked_assets/shocks.
+        """
+        fields = _fields(payload, {"operation", "size_id", "record_id", "kind", "inputs"},
+                         {"operation", "size_id", "record_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in SIZE_RECORD_BINDINGS:
+            raise ValueError("calculator cannot bind research sizes with a covariance record")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict) or any(key in inputs for key in ("weights", "covariance")):
+            raise ValueError("calculator inputs must leave weights and covariance unbound")
+        if "shocked_assets" not in inputs or "shocks" not in inputs:
+            raise ValueError("conditional stress requires shocked_assets and shocks")
+        from gig.service.research_strategy import ResearchStrategyWorkspace
+        sized = ResearchStrategyWorkspace(self.directory).load_size(fields["size_id"])
+        parent = self.journal.replay(fields["record_id"])
+        if parent["kind"] != "ledoit-wolf" or "covariance" not in parent["result"]:
+            raise ValueError("covariance must come from a saved Ledoit-Wolf record")
+        parent_source = parent.get("source")
+        if not isinstance(parent_source, dict) or "instruments" not in parent_source:
+            raise ValueError("Ledoit-Wolf record must pin its instrument order")
+        instruments = list(parent_source["instruments"])
+        size_weights = {
+            row["instrument_id"]: (
+                float(row["target_notional"]) / float(sized["request"]["portfolio_notional"])
+                if row["side"] == "buy"
+                else -float(row["target_notional"]) / float(sized["request"]["portfolio_notional"])
+            )
+            for row in sized["rows"]
+        }
+        if any(name not in size_weights for name in instruments):
+            raise ValueError("covariance instruments must appear in the research size")
+        if sized["dataset_id"] != parent_source.get("dataset_id"):
+            raise ValueError("size and covariance must share one dataset identity")
+        weights = [size_weights[name] for name in instruments]
+        covariance = parent["result"]["covariance"]
+        if len(covariance) != len(instruments):
+            raise ValueError("covariance dimension does not match pinned instruments")
+        source = {
+            "size_id": sized["size_id"],
+            "screen_id": sized["screen_id"],
+            "parent_record_id": parent["record_id"],
+            "parent_kind": "ledoit-wolf",
+            "dataset_id": sized["dataset_id"],
+            "dataset_classification": parent_source.get("dataset_classification",
+                                                       sized.get("input_classification")),
+            "instruments": instruments,
+            "argument": "weights/covariance",
+            "extraction": "RESEARCH_SIZE_WEIGHTS_PINNED_LEDOIT_WOLF_COVARIANCE",
+            "trading_approved": False,
+        }
+        return self.journal.save(kind, {**inputs, "weights": weights, "covariance": covariance},
                                  source=source)

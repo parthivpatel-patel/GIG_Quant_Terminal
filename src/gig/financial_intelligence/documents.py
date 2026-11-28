@@ -355,3 +355,81 @@ def compare(corpus: FinancialCorpus, base_document_id: str, revised_document_id:
                             "Statement value changes compare parsed mentions, not verified issuer restatements",
                             "No language model generated or interpreted any text"]}
     return {**body, "record_id": digest(body)}
+
+
+def entity_graph(corpus: FinancialCorpus, document_ids: list[str], *, profile: str = "v1") -> dict[str, Any]:
+    """Undirected co-mention graph of parsed entity strings across admitted documents.
+
+    An edge means two mentions appear in the same passage. Nodes and edges are
+    lexical only: not issuer resolution, competitor truth, or supply-chain fact.
+    """
+    if not isinstance(document_ids, list) or not 1 <= len(document_ids) <= 16 or len(set(document_ids)) != len(document_ids):
+        raise ValueError("entity graph requires one to sixteen distinct document identities")
+    if not isinstance(profile, str) or profile not in {"v1", "v2"}:
+        raise ValueError("nlp_profile must be v1 or v2")
+    documents_loaded = [corpus.document(identity) for identity in document_ids]
+    node_counts: Counter[str] = Counter()
+    edge_counts: Counter[tuple[str, str]] = Counter()
+    document_hits: dict[str, set[str]] = {}
+    for document in documents_loaded:
+        identity = document["metadata"]["document_id"]
+        parsed = nlp.extract(document["passages"], profile=profile)
+        for _passage_id, mentions in _passage_entities(parsed.get("entity_mentions", [])).items():
+            names = sorted({mention for mention in mentions if mention})
+            for name in names:
+                node_counts[name] += 1
+                document_hits.setdefault(name, set()).add(identity)
+            for left_index, left in enumerate(names):
+                for right in names[left_index + 1:]:
+                    edge_counts[(left, right)] += 1
+    nodes = [{
+        "mention": name,
+        "passage_mentions": count,
+        "document_count": len(document_hits.get(name, ())),
+        "document_ids": sorted(document_hits.get(name, ())),
+        "link_state": "UNKNOWN_NO_ISSUER_AUTHORITY",
+        "instrument_identity_state": "UNKNOWN",
+    } for name, count in sorted(node_counts.items(), key=lambda item: (-item[1], item[0]))]
+    edges = [{
+        "source": left, "target": right, "co_passage_count": count,
+        "relation": "CO_MENTION_SAME_PASSAGE",
+        "relation_truth_state": "UNKNOWN",
+    } for (left, right), count in sorted(edge_counts.items(), key=lambda item: (-item[1], item[0]))]
+    stamps = [document["metadata"]["known_at"] for document in documents_loaded]
+    classifications = {document["metadata"]["classification"] for document in documents_loaded}
+    body = {
+        "implementation": IMPLEMENTATION, "operation": "entity-graph",
+        "document_ids": [document["metadata"]["document_id"] for document in documents_loaded],
+        "as_of": max(stamps, key=aware_timestamp),
+        "classification": "SYNTHETIC" if "SYNTHETIC" in classifications else "HISTORICAL",
+        "nlp_profile": profile,
+        "nodes": nodes[:200], "nodes_truncated": len(nodes) > 200,
+        "edges": edges[:400], "edges_truncated": len(edges) > 400,
+        "graph_kind": "LEXICAL_CO_MENTION_NOT_ISSUER_OR_SUPPLY_CHAIN_GRAPH",
+        "issuer_identity_state": "UNKNOWN", "content_truth_state": "UNKNOWN",
+        "generative_state": "UNAVAILABLE", "trading_approved": False,
+        "metrics": {
+            "documents": len(documents_loaded), "nodes": len(nodes), "edges": len(edges),
+            "trading_approved": False,
+        },
+        "limitations": [
+            "Nodes are exact parsed mention strings; aliases are not merged.",
+            "Edges are same-passage co-occurrence only; they are not competitor or supply-chain facts.",
+            "No issuer authority, instrument identity, or market impact is established.",
+        ],
+    }
+    return {**body, "record_id": digest(body)}
+
+
+def _passage_entities(entity_mentions: list[dict[str, Any]]) -> dict[str, list[str]]:
+    grouped: dict[str, list[str]] = {}
+    for entity in entity_mentions:
+        if not isinstance(entity, dict):
+            continue
+        mention = entity.get("mention")
+        provenance = entity.get("provenance") or {}
+        passage_id = provenance.get("passage_id")
+        if not isinstance(mention, str) or not mention or not isinstance(passage_id, str):
+            continue
+        grouped.setdefault(passage_id, []).append(mention)
+    return grouped

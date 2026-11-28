@@ -23,10 +23,10 @@
   const validStates = new Set(["AVAILABLE", "UNAVAILABLE", "UNKNOWN", "ERROR", "STALE"]);
   const workspaceActions = { "workspace-bars": "bars", "workspace-news": "news", "workspace-research": "research", "workspace-simulate": "simulate", "workspace-ingest": "ingest", "workspace-treasury": "ingest", "workspace-universe": "universe", "workspace-train-sequence": "train-sequence", "workspace-predict-sequence": "predict-sequence", "workspace-finbert": "finbert", "workspace-execution-engine": "execution-engine" };
   Object.assign(workspaceActions, { "workspace-pipeline-bars": "bars", "workspace-pipeline-universe": "universe", "workspace-research-dataset": "research-dataset", "workspace-research-model": "research-model", "workspace-research-gpr": "research-model", "workspace-research-rf": "research-model", "workspace-research-xt": "research-model", "workspace-research-svr": "research-model", "workspace-research-knn": "research-model", "workspace-research-bayes": "research-model", "workspace-research-gam": "research-model", "workspace-research-glm": "research-model", "workspace-research-predict": "research-predict", "workspace-research-allocate": "research-allocate", "workspace-research-prepare": "research-prepare", "workspace-portfolio-accounting": "portfolio-accounting", "workspace-offline-dispatch": "execution-engine", "workspace-offline-fill": "execution-engine", "workspace-schedule-twap": "execution-engine", "workspace-advance-clock": "execution-engine" });
-  Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-research-screen": "research-screen", "workspace-research-discover": "research-screen", "workspace-research-options": "research-screen", "workspace-research-options-scan": "research-screen", "workspace-research-monitor": "research-screen", "workspace-research-enrich": "research-screen", "workspace-screen-replay": "screen-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-screen": "research-allocate", "workspace-allocate-pairs": "research-allocate", "workspace-research-strategy": "research-strategy", "workspace-research-size": "research-strategy", "workspace-research-cycle": "research-strategy", "workspace-research-watch": "research-strategy", "workspace-strategy-replay": "research-strategy", "workspace-size-replay": "research-strategy", "workspace-cycle-replay": "research-strategy", "workspace-watch-replay": "research-strategy" });
+  Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-research-signals-pairs": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-research-screen": "research-screen", "workspace-research-discover": "research-screen", "workspace-research-factor": "research-screen", "workspace-research-pairs": "research-screen", "workspace-research-options": "research-screen", "workspace-research-options-scan": "research-screen", "workspace-research-options-structures": "research-screen", "workspace-research-monitor": "research-screen", "workspace-research-enrich": "research-screen", "workspace-screen-replay": "screen-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-screen": "research-allocate", "workspace-allocate-pairs": "research-allocate", "workspace-research-strategy": "research-strategy", "workspace-research-size": "research-strategy", "workspace-research-cycle": "research-strategy", "workspace-research-watch": "research-strategy", "workspace-research-exit-eval": "research-strategy", "workspace-research-feedback": "research-strategy", "workspace-research-invalidate": "research-strategy", "workspace-research-schedule": "research-strategy", "workspace-research-schedule-tick": "research-strategy", "workspace-research-due-schedules": "research-strategy", "workspace-research-tick-due": "research-strategy", "workspace-strategy-replay": "research-strategy", "workspace-size-replay": "research-strategy", "workspace-cycle-replay": "research-strategy", "workspace-watch-replay": "research-strategy", "workspace-exit-eval-replay": "research-strategy", "workspace-feedback-replay": "research-strategy", "workspace-invalidate-replay": "research-strategy" });
   Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence", "workspace-financial-verify": "financial-intelligence", "workspace-financial-latent": "financial-intelligence", "workspace-financial-hybrid": "financial-intelligence", "workspace-financial-facts": "financial-intelligence", "workspace-financial-entity-protocol": "financial-intelligence", "workspace-financial-entities": "financial-intelligence" });
-  const financialResearchKinds = ["workspace-financial-html", "workspace-financial-statements", "workspace-financial-digest", "workspace-financial-watch", "workspace-financial-watch-check", "workspace-financial-investigate", "workspace-financial-call", "workspace-financial-transcript", "workspace-financial-compare", "workspace-financial-mention-diff", "workspace-financial-record-replay"];
-  const calculatorJournalKinds = ["workspace-calculator-save", "workspace-calculator-replay", "workspace-calculator-dataset", "workspace-calculator-covariance", "workspace-calculator-size"];
+  const financialResearchKinds = ["workspace-financial-html", "workspace-financial-statements", "workspace-financial-digest", "workspace-financial-watch", "workspace-financial-watch-check", "workspace-financial-investigate", "workspace-financial-call", "workspace-financial-transcript", "workspace-financial-compare", "workspace-financial-mention-diff", "workspace-financial-entity-graph", "workspace-financial-record-replay"];
+  const calculatorJournalKinds = ["workspace-calculator-save", "workspace-calculator-replay", "workspace-calculator-dataset", "workspace-calculator-covariance", "workspace-calculator-size", "workspace-calculator-screen", "workspace-calculator-options", "workspace-calculator-size-record"];
   for (const kind of financialResearchKinds) workspaceActions[kind] = "financial-intelligence";
   for (const kind of calculatorJournalKinds) workspaceActions[kind] = "calculator-journal";
   workspaceActions["workspace-options-overlay"] = "options-overlay";
@@ -118,7 +118,7 @@
   workspaceActions["workspace-lifecycle-dividend-cancel"] = "funded-lifecycle";
   workspaceActions["workspace-funded-factor-risk"] = "funded-risk";
   for (const operation of ["fetch", "admit", "replay"]) workspaceActions["workspace-equity-" + operation] = "equity-reference";
-  const workflowReferences = { calculator_record_id: null, financial_snapshot_id: null, financial_passage_id: null, financial_verification_id: null, financial_document_id: null, financial_base_document_id: null, financial_record_id: null, financial_watch_id: null, equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, screen_id: null, strategy_id: null, size_id: null, cycle_id: null, prepared_client_ids: [] };
+  const workflowReferences = { calculator_record_id: null, financial_snapshot_id: null, financial_passage_id: null, financial_verification_id: null, financial_document_id: null, financial_base_document_id: null, financial_record_id: null, financial_watch_id: null, equity_snapshot_id: null, lifecycle_action_hash: null, statement_hash: null, statement_report_id: null, observed_snapshot_id: null, observed_report_id: null, observed_evaluation_id: null, funded_snapshot_id: null, funded_risk_id: null, economic_report_id: null, microstructure_snapshot_id: null, microstructure_report_id: null, checkpoint_id: null, overlay_id: null, dataset_id: null, run_id: null, allocation_id: null, pair_run_id: null, options_snapshot_id: null, options_run_id: null, signal_id: null, screen_id: null, strategy_id: null, size_id: null, cycle_id: null, schedule_id: null, tick_id: null, prepared_client_ids: [] };
   const comparisonResults = [];
 
   workspaceActions["workspace-depth"] = "depth";
@@ -861,6 +861,7 @@
   examples["workspace-financial-transcript"] = { operation: "transcript", document_id: "0".repeat(64) };
   examples["workspace-financial-compare"] = { operation: "compare", base_document_id: "0".repeat(64), revised_document_id: "0".repeat(64) };
   examples["workspace-financial-mention-diff"] = { operation: "mention-diff", base_document_id: "0".repeat(64), revised_document_id: "0".repeat(64), nlp_profile: "v1" };
+  examples["workspace-financial-entity-graph"] = { operation: "entity-graph", document_ids: ["0".repeat(64)], nlp_profile: "v1" };
   examples["workspace-financial-record-replay"] = { operation: "research-replay", record_id: "0".repeat(64) };
   examples["workspace-financial-replay"] = { operation: "replay", snapshot_id: "0".repeat(64) };
   examples["workspace-financial-verify"] = { operation: "verify-citation", snapshot_id: "0".repeat(64), passage_id: "0".repeat(64) };
@@ -878,6 +879,9 @@
   examples["workspace-calculator-dataset"] = { operation: "from-dataset", dataset_id: "0".repeat(64), kind: "stationary-bootstrap", instrument_id: "US:AAA", field: "return_1", inputs: { mean_block: 5, replications: 100, seed: 1, confidence: .95 } };
   examples["workspace-calculator-covariance"] = { operation: "from-record", record_id: "0".repeat(64), kind: "hierarchical-risk-parity", inputs: {} };
   examples["workspace-calculator-size"] = { operation: "from-size", size_id: "0".repeat(64), kind: "historical-var-components", field: "return_1", inputs: { confidence: .95 } };
+  examples["workspace-calculator-screen"] = { operation: "from-screen", screen_id: "0".repeat(64), record_id: "0".repeat(64), kind: "black-litterman", inputs: { risk_aversion: 2.5, tau: 0.05 } };
+  examples["workspace-calculator-options"] = { operation: "from-options", options_run_id: "0".repeat(64), kind: "svi-smile", inputs: {} };
+  examples["workspace-calculator-size-record"] = { operation: "from-size-record", size_id: "0".repeat(64), record_id: "0".repeat(64), kind: "conditional-stress", inputs: { shocked_assets: [0], shocks: [-0.05] } };
   examples["workspace-research-gpr"] = { dataset_id: "0".repeat(64), model: "gaussian_process", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-model"] = { dataset_id: "0".repeat(64), model: "ridge", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-predict"] = { run_id: "0".repeat(64), dataset_id: "0".repeat(64) };
@@ -895,8 +899,10 @@
   examples["workspace-signals-replay"] = { signal_id: "0".repeat(64) };
   examples["workspace-research-screen"] = { signal_id: "0".repeat(64), buy_threshold: .25, sell_threshold: -.25 };
   examples["workspace-research-discover"] = { operation: "from-runs", run_ids: ["0".repeat(64)], now: pipelineStamp(79), lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25 };
+  examples["workspace-research-factor"] = { operation: "from-dataset", dataset_id: "0".repeat(64), now: pipelineStamp(79), mode: "market_neutral_momentum", momentum_lookback: 20, reversion_lookback: 5, momentum_weight: .5, reversion_weight: .5, buy_threshold: .25, sell_threshold: -.25 };
   examples["workspace-research-options"] = { operation: "link-options", screen_id: "0".repeat(64), options_run_id: "0".repeat(64) };
   examples["workspace-research-options-scan"] = { operation: "scan-options", screen_id: "0".repeat(64), options_run_ids: ["0".repeat(64), "1".repeat(64)] };
+  examples["workspace-research-options-structures"] = { operation: "options-structures", screen_id: "0".repeat(64), options_run_ids: ["0".repeat(64)], width_strikes: 1 };
   examples["workspace-research-monitor"] = { operation: "monitor", signal_ids: ["0".repeat(64), "1".repeat(64)], buy_threshold: .25, sell_threshold: -.25 };
   examples["workspace-research-enrich"] = { operation: "enrich-mentions", screen_id: "0".repeat(64), document_id: "0".repeat(64), nlp_profile: "v2" };
   examples["workspace-screen-replay"] = { screen_id: "0".repeat(64) };
@@ -908,7 +914,7 @@
   examples["workspace-allocate-screen"] = { ...examples["workspace-research-allocate"], screen_id: "0".repeat(64) };
   delete examples["workspace-allocate-screen"].run_id;
   examples["workspace-research-strategy"] = { ...examples["workspace-allocate-screen"], operation: "simulate", fill: true };
-  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", max_expected_shortfall: "0.05", annualization: 252 };
+  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", max_expected_shortfall: "0.05", max_adv_participation: "0.1", adv_lookback_bars: 20, previous_size_id: "0".repeat(64), max_size_turnover: "0.2", annualization: 252 };
   examples["workspace-research-cycle"] = { ...examples["workspace-allocate-screen"], operation: "cycle", run_ids: ["0".repeat(64)], lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25, portfolio_notional: "100000", max_name_notional: "25000", vol_scale: "1", fill: true };
   delete examples["workspace-research-cycle"].screen_id;
   examples["workspace-strategy-replay"] = { operation: "replay", strategy_id: "0".repeat(64) };
@@ -916,6 +922,18 @@
   examples["workspace-cycle-replay"] = { operation: "cycle-replay", cycle_id: "0".repeat(64) };
   examples["workspace-research-watch"] = { operation: "watch", signal_ids: ["0".repeat(64), "1".repeat(64)], buy_threshold: .25, sell_threshold: -.25, now: "2024-01-02T00:00:00Z", portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, vol_scale: "1", options_run_ids: ["0".repeat(64)], document_id: "0".repeat(64), nlp_profile: "v2" };
   examples["workspace-watch-replay"] = { operation: "watch-replay", watch_id: "0".repeat(64) };
+  examples["workspace-research-exit-eval"] = { operation: "exit-eval", size_id: "0".repeat(64), stop_loss_pct: "0.05", take_profit_pct: "0.1", horizon_bars: 20 };
+  examples["workspace-exit-eval-replay"] = { operation: "exit-eval-replay", exit_eval_id: "0".repeat(64) };
+  examples["workspace-research-feedback"] = { operation: "feedback", exit_eval_ids: ["0".repeat(64)] };
+  examples["workspace-feedback-replay"] = { operation: "feedback-replay", feedback_id: "0".repeat(64) };
+  examples["workspace-research-invalidate"] = { operation: "invalidate", screen_id: "0".repeat(64), reason: "MANUAL", now: "2026-03-22T20:00:00+00:00" };
+  examples["workspace-invalidate-replay"] = { operation: "invalidate-replay", invalidation_id: "0".repeat(64) };
+  examples["workspace-research-schedule"] = { operation: "schedule", action: "cycle", cadence_seconds: 3600, max_ticks: 8, now: "2026-03-22T20:00:00+00:00", request: { dataset_id: "0".repeat(64), mode: "market_neutral_momentum", momentum_lookback: 20, reversion_lookback: 5, buy_threshold: .25, sell_threshold: -.25, portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, vol_scale: "1", initial_cash: "100000", n_long: 2, n_short: 2, gross_leverage: "1", max_name_weight: "0.5", max_age_seconds: 86400, annualization: 252, metadata: {}, limits: {}, fill: true } };
+  examples["workspace-research-schedule-tick"] = { operation: "schedule-tick", schedule_id: "0".repeat(64), now: "2026-03-22T21:00:00+00:00" };
+  examples["workspace-research-due-schedules"] = { operation: "due-schedules", now: "2026-03-22T21:00:00+00:00", limit: 32 };
+  examples["workspace-research-tick-due"] = { operation: "tick-due", now: "2026-03-22T21:00:00+00:00", limit: 8 };
+  examples["workspace-research-pairs"] = { operation: "from-pairs", pair_run_id: "0".repeat(64), now: pipelineStamp(79), buy_threshold: .01, sell_threshold: -.01 };
+  examples["workspace-research-signals-pairs"] = { operation: "from-pairs", pair_run_id: "0".repeat(64), now: pipelineStamp(79) };
   examples["workspace-allocate-pairs"] = { ...examples["workspace-research-allocate"], pair_run_id: "0".repeat(64) };
   delete examples["workspace-allocate-pairs"].run_id;
   examples["workspace-options-overlay"] = { checkpoint_id: "0".repeat(64), options_run_id: "0".repeat(64), now: pipelineStamp(79), max_age_seconds: 3600, limits: { max_abs_delta_notional: 100000, max_abs_gamma_dollar: 100000, max_abs_vega_per_point: 100000, max_abs_scenario_loss: 100000 } };
@@ -981,6 +999,7 @@
     const example = JSON.parse(JSON.stringify(examples[kind]));
     if (["workspace-financial-search", "workspace-financial-answer", "workspace-financial-latent", "workspace-financial-hybrid", "workspace-financial-facts", "workspace-financial-entities", "workspace-financial-digest", "workspace-financial-watch", "workspace-financial-watch-check", "workspace-financial-investigate"].includes(kind)) example.as_of = new Date().toISOString();
     if (["workspace-financial-statements", "workspace-financial-transcript"].includes(kind) && workflowReferences.financial_document_id) example.document_id = workflowReferences.financial_document_id;
+    if (kind === "workspace-financial-entity-graph" && workflowReferences.financial_document_id) example.document_ids = [workflowReferences.financial_document_id];
     if (["workspace-financial-compare", "workspace-financial-mention-diff"].includes(kind) && workflowReferences.financial_base_document_id) Object.assign(example, { base_document_id: workflowReferences.financial_base_document_id, revised_document_id: workflowReferences.financial_document_id });
     if (kind === "workspace-financial-watch-check" && workflowReferences.financial_watch_id) example.watch_id = workflowReferences.financial_watch_id;
     if (kind === "workspace-financial-record-replay" && workflowReferences.financial_record_id) example.record_id = workflowReferences.financial_record_id;
@@ -988,6 +1007,11 @@
     if (kind === "workspace-calculator-dataset" && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (kind === "workspace-calculator-covariance" && workflowReferences.calculator_record_id) example.record_id = workflowReferences.calculator_record_id;
     if (kind === "workspace-calculator-size" && workflowReferences.size_id) example.size_id = workflowReferences.size_id;
+    if (kind === "workspace-calculator-screen" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
+    if (kind === "workspace-calculator-screen" && workflowReferences.calculator_record_id) example.record_id = workflowReferences.calculator_record_id;
+    if (kind === "workspace-calculator-options" && workflowReferences.options_run_id) example.options_run_id = workflowReferences.options_run_id;
+    if (kind === "workspace-calculator-size-record" && workflowReferences.size_id) example.size_id = workflowReferences.size_id;
+    if (kind === "workspace-calculator-size-record" && workflowReferences.calculator_record_id) example.record_id = workflowReferences.calculator_record_id;
     if (kind === "workspace-financial-replay" && workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
     if (kind === "workspace-financial-verify") {
       if (workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
@@ -1014,6 +1038,7 @@
     if (kind === "workspace-allocate-screen" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-strategy" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-size" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
+    if (kind === "workspace-research-size" && workflowReferences.size_id) example.previous_size_id = workflowReferences.size_id;
     if (kind === "workspace-research-cycle" && workflowReferences.run_id) example.run_ids = [workflowReferences.run_id];
     if (kind === "workspace-research-enrich" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-enrich" && workflowReferences.financial_document_id) example.document_id = workflowReferences.financial_document_id;
@@ -1023,12 +1048,24 @@
     if (kind === "workspace-research-watch" && workflowReferences.signal_id && workflowReferences.signal_id_prev) example.signal_ids = [workflowReferences.signal_id_prev, workflowReferences.signal_id];
     if (kind === "workspace-research-watch" && workflowReferences.options_run_id) example.options_run_ids = [workflowReferences.options_run_id];
     if (kind === "workspace-watch-replay" && workflowReferences.watch_id) example.watch_id = workflowReferences.watch_id;
+    if (kind === "workspace-research-exit-eval" && workflowReferences.size_id) example.size_id = workflowReferences.size_id;
+    if (kind === "workspace-exit-eval-replay" && workflowReferences.exit_eval_id) example.exit_eval_id = workflowReferences.exit_eval_id;
+    if (kind === "workspace-research-feedback" && workflowReferences.exit_eval_id) example.exit_eval_ids = [workflowReferences.exit_eval_id];
+    if (kind === "workspace-feedback-replay" && workflowReferences.feedback_id) example.feedback_id = workflowReferences.feedback_id;
+    if (kind === "workspace-research-invalidate" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
+    if (kind === "workspace-invalidate-replay" && workflowReferences.invalidation_id) example.invalidation_id = workflowReferences.invalidation_id;
+    if (kind === "workspace-research-schedule" && workflowReferences.dataset_id) example.request.dataset_id = workflowReferences.dataset_id;
+    if (kind === "workspace-research-schedule-tick" && workflowReferences.schedule_id) example.schedule_id = workflowReferences.schedule_id;
+    if ((kind === "workspace-research-pairs" || kind === "workspace-research-signals-pairs") && workflowReferences.pair_run_id) example.pair_run_id = workflowReferences.pair_run_id;
     if (kind === "workspace-research-screen" && workflowReferences.signal_id) example.signal_id = workflowReferences.signal_id;
     if (kind === "workspace-research-discover" && workflowReferences.run_id) example.run_ids = [workflowReferences.run_id];
+    if (kind === "workspace-research-factor" && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
     if (kind === "workspace-research-options" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-options" && workflowReferences.options_run_id) example.options_run_id = workflowReferences.options_run_id;
     if (kind === "workspace-research-options-scan" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-options-scan" && workflowReferences.options_run_id) example.options_run_ids = [workflowReferences.options_run_id];
+    if (kind === "workspace-research-options-structures" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
+    if (kind === "workspace-research-options-structures" && workflowReferences.options_run_id) example.options_run_ids = [workflowReferences.options_run_id];
     if (kind === "workspace-screen-replay" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-screen" && workflowReferences.screen_id) example.previous_screen_id = workflowReferences.screen_id;
     if (kind === "workspace-allocate-pairs" && workflowReferences.pair_run_id) example.pair_run_id = workflowReferences.pair_run_id;
@@ -1056,11 +1093,15 @@
     if (kind === "workspace-financial-watch-check") $("run-analysis").textContent = "Check saved watch now";
     if (kind === "workspace-financial-record-replay") $("run-analysis").textContent = "Replay saved research record";
     if (kind === "workspace-financial-mention-diff") $("run-analysis").textContent = "Compare cited mentions";
+    if (kind === "workspace-financial-entity-graph") $("run-analysis").textContent = "Build entity co-mention graph";
     if (kind === "workspace-calculator-save") $("run-analysis").textContent = "Save calculation";
     if (kind === "workspace-calculator-replay") $("run-analysis").textContent = "Replay saved calculation";
     if (kind === "workspace-calculator-dataset") $("run-analysis").textContent = "Calculate from saved dataset";
     if (kind === "workspace-calculator-covariance") $("run-analysis").textContent = "Allocate from saved covariance";
     if (kind === "workspace-calculator-size") $("run-analysis").textContent = "Risk from research sizes";
+    if (kind === "workspace-calculator-screen") $("run-analysis").textContent = "Allocate from research screen";
+    if (kind === "workspace-calculator-options") $("run-analysis").textContent = "Fit SVI from options run";
+    if (kind === "workspace-calculator-size-record") $("run-analysis").textContent = "Stress from research sizes";
     if (kind === "workspace-research-predict") $("run-analysis").textContent = "Replay saved model";
     if (kind === "workspace-research-allocate") $("run-analysis").textContent = "Construct offline targets";
     if (kind === "workspace-research-prepare") $("run-analysis").textContent = "Prepare offline target intents";
@@ -1069,7 +1110,7 @@
     if (kind === "workspace-offline-fill") $("run-analysis").textContent = "Apply explicit simulated fill";
     if (kind === "workspace-schedule-twap") $("run-analysis").textContent = "Save offline TWAP schedule";
     if (kind === "workspace-advance-clock") $("run-analysis").textContent = "Advance explicit simulation clock";
-    const sprint5Labels = { "workspace-options-overlay": "Evaluate hypothetical options overlay", "workspace-options-overlay-replay": "Replay saved options overlay", "workspace-pairs-research": "Run saved-data pair research", "workspace-pairs-replay": "Replay saved pair experiment", "workspace-options-admit": "Admit authored options fixture", "workspace-options-research": "Run historical options research", "workspace-options-replay": "Replay saved options research", "workspace-research-signals": "Score saved OOS model evidence", "workspace-signals-replay": "Replay saved research scores", "workspace-research-screen": "Label research buy/hold/sell", "workspace-research-discover": "Discover from saved model runs", "workspace-research-options": "Link options research candidates", "workspace-research-options-scan": "Scan options opportunities", "workspace-research-monitor": "Monitor successive research screens", "workspace-research-enrich": "Enrich screen with FI mentions", "workspace-screen-replay": "Replay research screen", "workspace-allocate-signals": "Construct targets from research scores", "workspace-allocate-screen": "Construct targets from research screen", "workspace-research-strategy": "Simulate offline strategy", "workspace-research-size": "Size research positions", "workspace-research-cycle": "Run research opportunity cycle", "workspace-strategy-replay": "Replay strategy simulation", "workspace-size-replay": "Replay research position sizes", "workspace-cycle-replay": "Replay research opportunity cycle", "workspace-research-watch": "Watch then size and scan", "workspace-watch-replay": "Replay research watch pass", "workspace-allocate-pairs": "Construct targets from eligible pair" };
+    const sprint5Labels = { "workspace-options-overlay": "Evaluate hypothetical options overlay", "workspace-options-overlay-replay": "Replay saved options overlay", "workspace-pairs-research": "Run saved-data pair research", "workspace-pairs-replay": "Replay saved pair experiment", "workspace-options-admit": "Admit authored options fixture", "workspace-options-research": "Run historical options research", "workspace-options-replay": "Replay saved options research", "workspace-research-signals": "Score saved OOS model evidence", "workspace-signals-replay": "Replay saved research scores", "workspace-research-screen": "Label research buy/hold/sell", "workspace-research-discover": "Discover from saved model runs", "workspace-research-factor": "Discover market-neutral or momentum factors", "workspace-research-options": "Link options research candidates", "workspace-research-options-scan": "Scan options opportunities", "workspace-research-options-structures": "Discover multi-leg option structures", "workspace-research-monitor": "Monitor successive research screens", "workspace-research-enrich": "Enrich screen with FI mentions", "workspace-screen-replay": "Replay research screen", "workspace-allocate-signals": "Construct targets from research scores", "workspace-allocate-screen": "Construct targets from research screen", "workspace-research-strategy": "Simulate offline strategy", "workspace-research-size": "Size research positions", "workspace-research-cycle": "Run research opportunity cycle", "workspace-strategy-replay": "Replay strategy simulation", "workspace-size-replay": "Replay research position sizes", "workspace-cycle-replay": "Replay research opportunity cycle", "workspace-research-watch": "Watch then size and scan", "workspace-research-exit-eval": "Evaluate stop/take-profit paths", "workspace-research-feedback": "Aggregate exit-path feedback", "workspace-research-invalidate": "Invalidate research lineage", "workspace-research-schedule": "Schedule research scan", "workspace-research-schedule-tick": "Tick research schedule", "workspace-research-due-schedules": "List due research schedules", "workspace-research-tick-due": "Tick all due schedules", "workspace-research-pairs": "Discover from pair research", "workspace-research-signals-pairs": "Score pair research weights", "workspace-watch-replay": "Replay research watch pass", "workspace-exit-eval-replay": "Replay exit evaluation", "workspace-feedback-replay": "Replay strategy feedback", "workspace-invalidate-replay": "Replay strategy invalidation", "workspace-allocate-pairs": "Construct targets from eligible pair" };
     if (sprint5Labels[kind]) $("run-analysis").textContent = sprint5Labels[kind];
     const specialScopes = {
       "workspace-funded-initialize": "Initialize a separate SIMULATED USD cash account using the existing offline OMS and durable outbox classes. Cash is explicit and cannot be reset. No brokerage connection or real order is involved.",
@@ -1104,6 +1145,7 @@
       "workspace-research-discover": "Build the IC-weighted ensemble from saved model runs and label research buy/hold/sell in one step. Still research-only; no order or trading approval.",
       "workspace-research-options": "Join a saved equity research screen to a saved European options run. CALL/PUT candidates follow RESEARCH_BUY/SELL only. No order or trading approval.",
       "workspace-research-options-scan": "Scan multiple saved options runs against one equity research screen and list CALL/PUT research candidates. No order or trading approval.",
+      "workspace-research-options-structures": "Discover same-expiry debit call/put verticals on equity-linked options opportunities using midpoint premiums. Expiry P&L only; no order or trading approval.",
       "workspace-research-monitor": "Chain saved signals into successive research screens and summarize entry/exit timing. Not a live feed. No order or trading approval.",
       "workspace-research-enrich": "Match Financial Intelligence entity mentions onto a saved research screen by exact lexical overlap. Mentions stay unlinked to issuers. No order or trading approval.",
       "workspace-screen-replay": "Reload a saved research screen and recompute its labels from the pinned signal. Any difference is an integrity failure.",
@@ -1117,6 +1159,18 @@
       "workspace-cycle-replay": "Reload a saved research opportunity cycle by identity. Replay does not approve trading.",
       "workspace-research-watch": "Explicit watch pass: monitor successive saved signals, optional FI enrich, size the latest screen, optionally scan options. Not a live subscription; broker stays off.",
       "workspace-watch-replay": "Reload a saved research watch pass by identity. Replay does not approve trading.",
+      "workspace-research-exit-eval": "Walk the saved return panel after a research size decision and mark first stop-loss, take-profit, or horizon. Research-only; not a broker exit.",
+      "workspace-research-feedback": "Aggregate one or more saved exit evaluations into descriptive stop/take-profit rates. Research diagnostics only.",
+      "workspace-research-invalidate": "Record a permanent research invalidation for a screen or size lineage. Blocks later size and simulate.",
+      "workspace-research-schedule": "Persist a bounded research scan schedule (cycle or watch). Cadence is advisory; ticks are explicit. Broker stays off.",
+      "workspace-research-schedule-tick": "Execute one due schedule tick under an explicit clock. Returns STALE when not yet due.",
+      "workspace-research-due-schedules": "Inventory schedules due at an explicit clock for agent orchestration. Does not execute ticks.",
+      "workspace-research-tick-due": "Execute one schedule-tick for each due plan under a shared agent clock. Bounded batch; broker stays off.",
+      "workspace-research-pairs": "Project saved statistical-arbitrage pair weights into a research buy/hold/sell screen.",
+      "workspace-research-signals-pairs": "Center latest AVAILABLE pair proposal weights into unapproved research scores.",
+      "workspace-exit-eval-replay": "Reload a saved stop/take-profit evaluation by identity.",
+      "workspace-feedback-replay": "Reload saved strategy performance feedback by identity.",
+      "workspace-invalidate-replay": "Reload a saved research strategy invalidation by identity.",
       "workspace-allocate-pairs": "Construct explicit constrained offline targets from an eligible saved pair proposal. Missing, rejected or inactive proposals return unavailable rather than manufacturing a trade.",
       "workspace-depth": "Persist an explicitly authored SYNTHETIC multi-level book. No depth is inferred from bars or connected to a provider. After submission, choose Admitted market depth and instrument SYN101 with its explicit replay cutoff.",
       "workspace-treasury": "Submitting this action fetches historical par yields from the fixed official Treasury public endpoint and persists original XML under CC0-1.0 with attribution. No credentials or broker connection. Select provider evidence in Markets after acquisition. Acquisition freshness does not mean current market quotes.",
@@ -1148,6 +1202,7 @@
       "workspace-financial-transcript": "Read speaker turns, prepared remarks, question-and-answer exchanges and forward-looking sentences from one admitted document, each cited to its source bytes. Roles come only from speaker labels and cues are fixed word lists; nothing is interpreted, scored for sentiment or verified.",
       "workspace-financial-compare": "Compare two admitted documents passage by passage: added, removed, reworded and number-only changes with citations, plus statement values that differ. Differences are between texts, not verified restatements; a moved passage shows as removed and added.",
       "workspace-financial-mention-diff": "Compare parsed percent, money, event and entity mentions in the first 20 passages of two admitted documents. A difference is a mention present on one side, not a verified restatement. v1 is the default parser; v2 is only used when nlp_profile is v2. Symbols stay source text.",
+      "workspace-financial-entity-graph": "Build an undirected lexical co-mention graph across admitted documents. Edges are same-passage co-occurrence only; not issuer resolution, competitor truth, or trading signals.",
       "workspace-financial-record-replay": "Recompute a saved statement, digest, watch, watch check, investigation, transcript, comparison or mention difference from its pinned documents and saved queries. Any difference is reported as an integrity failure; nothing new is fitted or fetched.",
       "workspace-financial-verify": "Read-only research citation check. First select a successful saved query and passage. Replays the pinned query and checks original source bytes; it writes no new state and performs no fit. Hash integrity does not establish financial truth, source authenticity, rights, freshness, signatures or trading approval.",
       "workspace-financial-entities": "Use the explicit version-2 financial mention profile on cited source text. Complete qualified symbols and share classes remain unverified mentions; unsupported whole candidates are never partially linked. Saved snapshots pin their profile; published version-1 results retain their original rules.",
@@ -1201,6 +1256,9 @@
     specialScopes["workspace-calculator-dataset"] = "Copy one instrument series, or an aligned return panel for Ledoit-Wolf or minimum-CVaR, from a saved dataset. Missing values are not filled. Replay uses the pinned numbers. No order or trading approval.";
     specialScopes["workspace-calculator-covariance"] = "Allocate hierarchical risk parity or maximum diversification from a pinned Ledoit-Wolf covariance record. Dataset panel is not reread. No order or trading approval.";
     specialScopes["workspace-calculator-size"] = "Bind research position sizes into historical VaR components on the aligned dataset return panel. Weights are signed notionals over portfolio notional. No order or trading approval.";
+    specialScopes["workspace-calculator-screen"] = "Bind a research screen and pinned Ledoit-Wolf covariance into Black-Litterman views or equal-budget risk parity. Views use research_weight; research-only, no trading approval.";
+    specialScopes["workspace-calculator-options"] = "Fit raw SVI on one admitted CALL expiry from a saved options research run. Uses IV total variance; research-only, no OPRA or trading approval.";
+    specialScopes["workspace-calculator-size-record"] = "Bind research sizes and a pinned Ledoit-Wolf covariance into conditional stress. Caller supplies shocked assets and shocks; research-only.";
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
   }
   async function runAnalysis() {
@@ -1245,6 +1303,11 @@
         if (action === "research-strategy" && identity(result.data.size_id)) workflowReferences.size_id = result.data.size_id;
         if (action === "research-strategy" && identity(result.data.cycle_id)) workflowReferences.cycle_id = result.data.cycle_id;
         if (action === "research-strategy" && identity(result.data.watch_id)) workflowReferences.watch_id = result.data.watch_id;
+        if (action === "research-strategy" && identity(result.data.exit_eval_id)) workflowReferences.exit_eval_id = result.data.exit_eval_id;
+        if (action === "research-strategy" && identity(result.data.feedback_id)) workflowReferences.feedback_id = result.data.feedback_id;
+        if (action === "research-strategy" && identity(result.data.invalidation_id)) workflowReferences.invalidation_id = result.data.invalidation_id;
+        if (action === "research-strategy" && identity(result.data.schedule_id)) workflowReferences.schedule_id = result.data.schedule_id;
+        if (action === "research-strategy" && identity(result.data.tick_id)) workflowReferences.tick_id = result.data.tick_id;
         if (action === "research-strategy" && identity(result.data.screen_id)) workflowReferences.screen_id = result.data.screen_id;
         if (action === "portfolio-accounting" && identity(result.data.checkpoint_id)) { workflowReferences.checkpoint_id = result.data.checkpoint_id; workflowReferences.overlay_id = null; }
         if (action === "options-overlay" && identity(result.data.overlay_id)) workflowReferences.overlay_id = result.data.overlay_id;
@@ -1273,7 +1336,7 @@
         if (action === "research-allocate" && identity(result.data.allocation_id)) { workflowReferences.allocation_id = result.data.allocation_id; workflowReferences.prepared_client_ids = []; }
         if (action === "research-prepare" && Array.isArray(result.data.prepared_client_ids)) workflowReferences.prepared_client_ids = result.data.prepared_client_ids.filter(value => typeof value === "string" && value.length <= 128);
         if (action === "depth" && typeof result.data.instrument_id === "string") $("depth-instrument").value = result.data.instrument_id;
-        $("workflow-identities").textContent = ["calculator_record_id", "financial_snapshot_id", "financial_passage_id", "financial_verification_id", "financial_document_id", "financial_base_document_id", "financial_record_id", "financial_watch_id", "equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "screen_id", "strategy_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
+        $("workflow-identities").textContent = ["calculator_record_id", "financial_snapshot_id", "financial_passage_id", "financial_verification_id", "financial_document_id", "financial_base_document_id", "financial_record_id", "financial_watch_id", "equity_snapshot_id", "dataset_id", "run_id", "pair_run_id", "options_snapshot_id", "options_run_id", "signal_id", "screen_id", "strategy_id", "schedule_id", "allocation_id", "checkpoint_id", "overlay_id", "funded_snapshot_id", "funded_risk_id", "economic_report_id", "microstructure_snapshot_id", "microstructure_report_id", "lifecycle_action_hash", "statement_hash", "statement_report_id", "observed_snapshot_id", "observed_report_id", "observed_evaluation_id"].map(key => `${human(key)}: ${workflowReferences[key] || "No successful result selected"}`).join("\n");
       }
       output.textContent = `${response.ok ? "" : `HTTP ${response.status}\n`}${result.state}${action ? " · Local workspace action; no broker orders" : " · Research calculation"}\n${JSON.stringify(result, null, 2)}`;
       if (action && response.ok && result.state === "AVAILABLE" && state.mode === "local") await loadSection();

@@ -242,6 +242,140 @@ class DatasetBindingTests(unittest.TestCase):
             self.workspace.run({"operation": "from-record", "record_id": covariance["record_id"],
                                 "kind": "hierarchical-risk-parity", "inputs": {"covariance": [[1, 0], [0, 1]]}})
 
+    def test_from_screen_binds_black_litterman_and_risk_parity(self):
+        from gig.service.persisted_research import PersistedResearchWorkspace
+        from gig.service.research_screen import ResearchScreenWorkspace
+        from gig.service.signal_workspace import SignalWorkspace
+        from test_persisted_flow_http import seed_flow
+
+        request = seed_flow(self.root)
+        dataset = PersistedDatasetWorkspace(self.root).build(request).to_dict()["data"]
+        run = PersistedResearchWorkspace(self.root).run({
+            "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+            "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+        }).to_dict()["data"]
+        signal = SignalWorkspace(self.root).run({
+            "run_ids": [run["run_id"]], "now": request["as_of"],
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        screen = ResearchScreenWorkspace(self.root).run({
+            "signal_id": signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        instruments = [row["instrument_id"] for row in screen["rows"][:2]]
+        self.assertEqual(len(instruments), 2)
+        covariance = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": dataset["dataset_id"],
+            "kind": "ledoit-wolf", "instruments": instruments, "field": "return_1", "inputs": {},
+        }).to_dict()["data"]
+        litterman = self.workspace.run({
+            "operation": "from-screen", "screen_id": screen["screen_id"],
+            "record_id": covariance["record_id"], "kind": "black-litterman",
+            "inputs": {"risk_aversion": 2.5, "tau": 0.05},
+        }).to_dict()
+        self.assertEqual(litterman["state"], "AVAILABLE", litterman)
+        self.assertFalse(litterman["data"]["trading_approved"])
+        self.assertEqual(len(litterman["data"]["result"]["expected_excess_returns"]), 2)
+        self.assertGreaterEqual(litterman["data"]["source"]["view_count"], 1)
+        parity = self.workspace.run({
+            "operation": "from-screen", "screen_id": screen["screen_id"],
+            "record_id": covariance["record_id"], "kind": "risk-parity", "inputs": {},
+        }).to_dict()
+        self.assertEqual(parity["state"], "AVAILABLE", parity)
+        self.assertAlmostEqual(sum(parity["data"]["result"]["weights"]), 1.0, places=6)
+        self.assertFalse(parity["data"]["trading_approved"])
+
+    def test_from_options_fits_svi_on_admitted_call_slice(self):
+        from gig.options.analytics import black_scholes
+        from gig.service.options_workspace import OptionsWorkspace
+        from test_options_workspace import option_fixture, option_request
+
+        options = OptionsWorkspace(self.root)
+        fixture = option_fixture(underlying_id="US:OPT", source="authored-svi-bind")
+        expiry = next(quote["expiry"] for quote in fixture["quotes"] if quote["right"] == "CALL")
+        event = fixture["event_at"]
+        from gig.timestamps import aware_timestamp
+        ttm = (aware_timestamp(expiry).value - aware_timestamp(event).value) / (365 * 86400 * 1_000_000_000)
+        for strike in (80, 95, 105, 120):
+            mid = float(black_scholes(100, strike, .02, .01, .2, ttm, True)["price"])
+            fixture["quotes"].append({
+                "contract_id": f"SYN100-extra-{strike}-CALL", "expiry": expiry,
+                "strike": strike, "right": "CALL", "multiplier": 100, "style": "EUROPEAN",
+                "bid": mid - .01, "ask": mid + .01, "volume": 10, "open_interest": 100,
+            })
+        calls = [quote for quote in fixture["quotes"]
+                 if quote["right"] == "CALL" and quote["expiry"] == expiry]
+        self.assertGreaterEqual(len(calls), 5)
+        request = option_request(
+            underlying_id="US:OPT", source=fixture["source"],
+            positions=[{"contract_id": calls[0]["contract_id"], "quantity": 1}],
+        )
+        options.ingest(fixture)
+        run = options.run(request).to_dict()
+        self.assertEqual(run["state"], "AVAILABLE", run)
+        fitted = self.workspace.run({
+            "operation": "from-options", "options_run_id": run["data"]["run_id"],
+            "kind": "svi-smile", "expiry": expiry, "inputs": {},
+        }).to_dict()
+        self.assertEqual(fitted["state"], "AVAILABLE", fitted)
+        self.assertFalse(fitted["data"]["trading_approved"])
+        self.assertIn("parameters", fitted["data"]["result"])
+        self.assertEqual(fitted["data"]["source"]["extraction"],
+                         "ADMITTED_CALL_IV_TOTAL_VARIANCE_ONE_EXPIRY")
+        self.assertGreaterEqual(fitted["data"]["source"]["quotes"], 5)
+        greeks = self.workspace.run({
+            "operation": "from-options", "options_run_id": run["data"]["run_id"],
+            "kind": "option-greeks-advanced", "contract_id": calls[0]["contract_id"],
+            "inputs": {},
+        }).to_dict()
+        self.assertEqual(greeks["state"], "AVAILABLE", greeks)
+        self.assertFalse(greeks["data"]["trading_approved"])
+        self.assertIn("vanna", greeks["data"]["result"])
+        self.assertEqual(greeks["data"]["source"]["extraction"],
+                         "ADMITTED_OPTION_IV_HIGHER_ORDER_GREEKS")
+
+    def test_from_size_record_runs_conditional_stress(self):
+        from gig.service.persisted_research import PersistedResearchWorkspace
+        from gig.service.research_screen import ResearchScreenWorkspace
+        from gig.service.research_strategy import ResearchStrategyWorkspace
+        from gig.service.signal_workspace import SignalWorkspace
+        from test_persisted_flow_http import seed_flow
+
+        request = seed_flow(self.root)
+        dataset = PersistedDatasetWorkspace(self.root).build(request).to_dict()["data"]
+        run = PersistedResearchWorkspace(self.root).run({
+            "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+            "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+        }).to_dict()["data"]
+        signal = SignalWorkspace(self.root).run({
+            "run_ids": [run["run_id"]], "now": request["as_of"],
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        screen = ResearchScreenWorkspace(self.root).run({
+            "signal_id": signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        sized = ResearchStrategyWorkspace(self.root).size({
+            "screen_id": screen["screen_id"], "now": request["as_of"],
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        instruments = [row["instrument_id"] for row in sized["data"]["rows"][:2]]
+        self.assertEqual(len(instruments), 2)
+        covariance = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": dataset["dataset_id"],
+            "kind": "ledoit-wolf", "instruments": instruments, "field": "return_1", "inputs": {},
+        }).to_dict()["data"]
+        stressed = self.workspace.run({
+            "operation": "from-size-record", "size_id": sized["data"]["size_id"],
+            "record_id": covariance["record_id"], "kind": "conditional-stress",
+            "inputs": {"shocked_assets": [0], "shocks": [-0.05]},
+        }).to_dict()
+        self.assertEqual(stressed["state"], "AVAILABLE", stressed)
+        self.assertFalse(stressed["data"]["trading_approved"])
+        self.assertIn("portfolio_return", stressed["data"]["result"])
+        self.assertEqual(stressed["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_WEIGHTS_PINNED_LEDOIT_WOLF_COVARIANCE")
+
 
 if __name__ == "__main__":
     unittest.main()

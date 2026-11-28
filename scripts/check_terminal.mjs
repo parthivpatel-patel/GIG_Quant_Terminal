@@ -12,7 +12,7 @@ const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
 assert.equal(new Set(ids).size, ids.length, "HTML IDs must be unique");
 for (const match of html.matchAll(/\bfor="([^"]+)"/g)) assert(ids.includes(match[1]), `Missing label target ${match[1]}`);
 for (const match of source.matchAll(/\$\("([^"]+)"\)/g)) assert(ids.includes(match[1]), `Missing DOM reference ${match[1]}`);
-assert(!/\b(?:innerHTML|outerHTML|eval)\b/.test(source), "Provider content must not use HTML execution sinks");
+assert(!/\b(?:innerHTML|outerHTML)\b|\beval\s*\(/.test(source), "Provider content must not use HTML execution sinks");
 assert(!/https?:\/\//.test(html), "No external asset fetches in the terminal shell");
 
 let clickedDownloads = [];
@@ -445,7 +445,7 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
-for (const kind of ["calculator-save", "calculator-replay", "calculator-dataset", "calculator-covariance", "calculator-size"]) {
+for (const kind of ["calculator-save", "calculator-replay", "calculator-dataset", "calculator-covariance", "calculator-size", "calculator-screen", "calculator-options", "calculator-size-record"]) {
   get("analytics-kind").value = "workspace-" + kind;
   const before = calls.length;
   await get("analytics-kind").dispatch("change"); await settle();
@@ -453,7 +453,7 @@ for (const kind of ["calculator-save", "calculator-replay", "calculator-dataset"
   await get("run-analysis").dispatch("click"); await settle();
   checked(`${kind} uses the local calculator journal`, () => assert.equal(calls.at(-1).url, "/api/v1/workspace/calculator-journal"));
 }
-const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify", "financial-html", "financial-statements", "financial-digest", "financial-watch", "financial-watch-check", "financial-investigate", "financial-call", "financial-transcript", "financial-compare", "financial-mention-diff", "financial-record-replay"];
+const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify", "financial-html", "financial-statements", "financial-digest", "financial-watch", "financial-watch-check", "financial-investigate", "financial-call", "financial-transcript", "financial-compare", "financial-mention-diff", "financial-entity-graph", "financial-record-replay"];
 for (const kind of financialActions) {
   get("analytics-kind").value = "workspace-" + kind;
   const before = calls.length;
@@ -546,7 +546,7 @@ checked("failed depth request clears previous levels", () => assert.equal(get("d
 await get("context-expand").dispatch("click");
 checked("full provenance has an explicit accessible toggle", () => assert.equal(get("context-expand").getAttribute("aria-expanded"), "true"));
 checked("camera starts paused under reduced-motion fallback", () => assert.equal(get("orbit-toggle").getAttribute("aria-pressed"), "false"));
-const sprint5Actions = { "pairs-research": "pairs-research", "pairs-replay": "pairs-replay", "options-admit": "options-admit", "options-research": "options-research", "options-replay": "options-replay", "research-signals": "research-signals", "signals-replay": "signals-replay", "research-screen": "research-screen", "research-discover": "research-screen", "research-options": "research-screen", "research-options-scan": "research-screen", "research-monitor": "research-screen", "research-enrich": "research-screen", "screen-replay": "screen-replay", "allocate-signals": "research-allocate", "allocate-screen": "research-allocate", "research-strategy": "research-strategy", "research-size": "research-strategy", "research-cycle": "research-strategy", "research-watch": "research-strategy", "strategy-replay": "research-strategy", "size-replay": "research-strategy", "cycle-replay": "research-strategy", "watch-replay": "research-strategy", "allocate-pairs": "research-allocate" };
+const sprint5Actions = { "pairs-research": "pairs-research", "pairs-replay": "pairs-replay", "options-admit": "options-admit", "options-research": "options-research", "options-replay": "options-replay", "research-signals": "research-signals", "research-signals-pairs": "research-signals", "signals-replay": "signals-replay", "research-screen": "research-screen", "research-discover": "research-screen", "research-factor": "research-screen", "research-pairs": "research-screen", "research-options": "research-screen", "research-options-scan": "research-screen", "research-options-structures": "research-screen", "research-monitor": "research-screen", "research-enrich": "research-screen", "screen-replay": "screen-replay", "allocate-signals": "research-allocate", "allocate-screen": "research-allocate", "research-strategy": "research-strategy", "research-size": "research-strategy", "research-cycle": "research-strategy", "research-watch": "research-strategy", "research-exit-eval": "research-strategy", "research-feedback": "research-strategy", "research-invalidate": "research-strategy", "research-schedule": "research-strategy", "research-schedule-tick": "research-strategy", "research-due-schedules": "research-strategy", "research-tick-due": "research-strategy", "strategy-replay": "research-strategy", "size-replay": "research-strategy", "cycle-replay": "research-strategy", "watch-replay": "research-strategy", "exit-eval-replay": "research-strategy", "feedback-replay": "research-strategy", "invalidate-replay": "research-strategy", "allocate-pairs": "research-allocate" };
 replyOverride = { body: localUnavailable() };
 for (const [kind, endpoint] of Object.entries(sprint5Actions)) {
   get("analytics-kind").value = "workspace-" + kind;

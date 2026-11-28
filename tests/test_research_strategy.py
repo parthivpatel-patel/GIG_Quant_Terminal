@@ -104,6 +104,104 @@ class StrategyTests(unittest.TestCase):
                 "lot_size": 1, "vol_scale": "1", "target_volatility": "0.15",
             })
 
+    def test_size_applies_max_gross_exposure_cap(self):
+        baseline = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(baseline["state"], "AVAILABLE", baseline)
+        gross = float(baseline["data"]["metrics"]["gross_exposure"])
+        self.assertGreater(gross, 0.0)
+        capped = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_gross_exposure": str(max(gross * 0.5, 0.01)),
+        }).to_dict()
+        self.assertEqual(capped["state"], "AVAILABLE", capped)
+        self.assertTrue(capped["data"]["request"]["gross_exposure_cap_applied"])
+        self.assertLessEqual(float(capped["data"]["metrics"]["gross_exposure"]) + 1e-9,
+                             float(capped["data"]["request"]["max_gross_exposure"]) + 1e-6)
+        self.assertFalse(capped["data"]["trading_approved"])
+
+    def test_exit_eval_and_regime_aware_sizing(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "regime_short_bars": 10, "regime_long_bars": 40, "annualization": 252,
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        self.assertIn("TRAILING_VOL_REGIME", sized["data"]["request"]["vol_scale_source"])
+        self.assertEqual(sized["data"]["risk"]["data"]["regime"]["method"],
+                         "DESCRIPTIVE_TRAILING_VOLATILITY_NOT_HMM")
+        evaluated = self.strategies.exit_eval({
+            "size_id": sized["data"]["size_id"],
+            "stop_loss_pct": "0.5", "take_profit_pct": "0.5", "horizon_bars": 5,
+        }).to_dict()
+        EnvelopeSchema.model_validate(evaluated)
+        self.assertEqual(evaluated["state"], "AVAILABLE", evaluated)
+        self.assertFalse(evaluated["data"]["trading_approved"])
+        self.assertTrue(evaluated["data"]["rows"])
+        self.assertTrue(all(row["outcome"] in {
+            "STOP_LOSS", "TAKE_PROFIT", "HORIZON", "NO_FORWARD_PATH",
+        } for row in evaluated["data"]["rows"]))
+        replayed = self.strategies.replay_exit_eval({
+            "exit_eval_id": evaluated["data"]["exit_eval_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["exit_eval_id"], evaluated["data"]["exit_eval_id"])
+        feedback = self.strategies.feedback({
+            "exit_eval_ids": [evaluated["data"]["exit_eval_id"]],
+        }).to_dict()
+        EnvelopeSchema.model_validate(feedback)
+        self.assertEqual(feedback["state"], "AVAILABLE", feedback)
+        self.assertFalse(feedback["data"]["trading_approved"])
+        self.assertEqual(feedback["data"]["metrics"]["evaluations"], 1)
+        self.assertGreaterEqual(feedback["data"]["metrics"]["names"], 1)
+        again = self.strategies.replay_feedback({
+            "feedback_id": feedback["data"]["feedback_id"],
+        }).to_dict()
+        self.assertEqual(again["data"]["feedback_id"], feedback["data"]["feedback_id"])
+
+    def test_invalidate_blocks_later_size_and_simulate(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        invalidated = self.strategies.invalidate({
+            "size_id": sized["data"]["size_id"], "reason": "MANUAL", "now": self.now,
+            "notes": "research stop after feedback review",
+        }).to_dict()
+        EnvelopeSchema.model_validate(invalidated)
+        self.assertEqual(invalidated["state"], "AVAILABLE", invalidated)
+        self.assertFalse(invalidated["data"]["usable_for_simulation"])
+        self.assertFalse(invalidated["data"]["trading_approved"])
+        blocked_size = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(blocked_size["state"], "UNAVAILABLE")
+        blocked_sim = self.strategies.run(self.payload).to_dict()
+        self.assertEqual(blocked_sim["state"], "UNAVAILABLE")
+        blocked_exit = self.strategies.exit_eval({
+            "size_id": sized["data"]["size_id"],
+            "stop_loss_pct": "0.1", "take_profit_pct": "0.2", "horizon_bars": 3,
+        }).to_dict()
+        self.assertEqual(blocked_exit["state"], "UNAVAILABLE")
+        replayed = self.strategies.replay_invalidation({
+            "invalidation_id": invalidated["data"]["invalidation_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["invalidation_id"],
+                         invalidated["data"]["invalidation_id"])
+        with self.assertRaisesRegex(ValueError, "already invalidated"):
+            self.strategies.invalidate({
+                "screen_id": self.screen["screen_id"], "reason": "MANUAL", "now": self.now,
+            })
+
     def test_calculator_journal_binds_historical_var_from_size(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
@@ -153,6 +251,70 @@ class StrategyTests(unittest.TestCase):
         self.assertTrue(gated["data"]["risk"]["data"]["expected_shortfall_bound_applied"])
         self.assertFalse(gated["data"]["trading_approved"])
 
+    def test_size_applies_max_size_turnover_blend(self):
+        first = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "0.2",
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        measured = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "previous_size_id": first["data"]["size_id"],
+        }).to_dict()
+        self.assertEqual(measured["state"], "AVAILABLE", measured)
+        self.assertGreater(float(measured["data"]["metrics"]["size_turnover_nav"]), 0.05)
+        second = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "previous_size_id": first["data"]["size_id"],
+            "max_size_turnover": "0.05",
+        }).to_dict()
+        EnvelopeSchema.model_validate(second)
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        self.assertTrue(second["data"]["request"]["size_turnover_cap_applied"])
+        self.assertLessEqual(float(second["data"]["metrics"]["size_turnover_nav"]), 0.05 + 1e-9)
+        self.assertEqual(second["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertFalse(second["data"]["trading_approved"])
+
+    def test_size_applies_max_adv_participation(self):
+        probe = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(probe["state"], "AVAILABLE", probe)
+        # First call without a cap to materialize ADV, then choose a tight but
+        # non-zero participation that still leaves lot sizes.
+        soft = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_adv_participation": "1", "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(soft["state"], "AVAILABLE", soft)
+        adv_values = [float(row["adv_dollar"]) for row in soft["data"]["rows"]]
+        self.assertTrue(adv_values)
+        # Cap at ~10% of the smallest ADV so at least one name is reduced.
+        participation = max(min(adv_values) * 0.1 / max(adv_values), 1e-6)
+        gated = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_adv_participation": str(participation), "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(gated["state"], "AVAILABLE", gated)
+        self.assertTrue(gated["data"]["request"]["adv_participation_cap_applied"])
+        self.assertTrue(any(row.get("adv_capped") for row in gated["data"]["rows"]))
+        self.assertLess(
+            float(gated["data"]["metrics"]["gross_notional"]),
+            float(probe["data"]["metrics"]["gross_notional"]) + 1e-12,
+        )
+        self.assertFalse(gated["data"]["trading_approved"])
+
     def test_cycle_discovers_sizes_and_simulates(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -184,6 +346,116 @@ class StrategyTests(unittest.TestCase):
             replayed = ResearchStrategyWorkspace(root).replay_cycle(
                 {"cycle_id": body["cycle_id"]}).to_dict()
             self.assertEqual(replayed["data"]["cycle_id"], body["cycle_id"])
+
+    def test_cycle_market_neutral_factor_and_schedule_tick(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            now = request["as_of"]
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            strategies = ResearchStrategyWorkspace(root)
+            payload = allocation_request("", now)
+            del payload["run_id"]
+            payload.update(
+                dataset_id=dataset["dataset_id"], mode="market_neutral_momentum",
+                momentum_lookback=10, reversion_lookback=5,
+                buy_threshold=0.0, sell_threshold=-0.01,
+                portfolio_notional="100000", max_name_notional="8000",
+                max_turnover=0.3, max_transaction_cost="100", fill=True, vol_scale="1",
+            )
+            cycled = strategies.cycle(payload).to_dict()
+            EnvelopeSchema.model_validate(cycled)
+            self.assertEqual(cycled["state"], "AVAILABLE", cycled)
+            self.assertEqual(cycled["data"]["discovery"]["mode"], "market_neutral_momentum")
+            self.assertFalse(cycled["data"]["trading_approved"])
+            self.assertTrue(cycled["data"]["fills"])
+
+            def _scheduled_workspace(name: str):
+                path = root / name
+                path.mkdir()
+                seed = seed_flow(path)
+                stamp = seed["as_of"]
+                saved = PersistedDatasetWorkspace(path).build(seed).to_dict()["data"]
+                workspace = ResearchStrategyWorkspace(path)
+                body = allocation_request("", stamp)
+                del body["run_id"]
+                body.update(
+                    dataset_id=saved["dataset_id"], mode="market_neutral_momentum",
+                    momentum_lookback=10, reversion_lookback=5,
+                    buy_threshold=0.0, sell_threshold=-0.01,
+                    portfolio_notional="100000", max_name_notional="8000",
+                    max_turnover=0.3, max_transaction_cost="100", fill=True, vol_scale="1",
+                )
+                return workspace, stamp, {key: value for key, value in body.items() if key != "now"}
+
+            scheduled, schedule_now, schedule_request = _scheduled_workspace("scheduled")
+            planned = scheduled.schedule({
+                "action": "cycle", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": schedule_now, "request": schedule_request,
+            }).to_dict()
+            EnvelopeSchema.model_validate(planned)
+            self.assertEqual(planned["state"], "AVAILABLE", planned)
+            schedule_id = planned["data"]["schedule_id"]
+            due_before = scheduled.due_schedules({"now": schedule_now, "limit": 8}).to_dict()
+            self.assertEqual(due_before["state"], "AVAILABLE")
+            self.assertTrue(any(row["schedule_id"] == schedule_id for row in due_before["data"]["rows"]))
+            early = scheduled.tick_schedule({
+                "schedule_id": schedule_id, "now": schedule_now,
+            }).to_dict()
+            self.assertEqual(early["state"], "AVAILABLE", early)
+            self.assertEqual(early["data"]["tick_index"], 1)
+            self.assertEqual(early["data"]["action"], "cycle")
+            self.assertFalse(early["data"]["trading_approved"])
+            exhausted = scheduled.tick_schedule({
+                "schedule_id": schedule_id,
+                "now": (pd.Timestamp(schedule_now) + pd.Timedelta(hours=2)).isoformat(),
+            }).to_dict()
+            self.assertEqual(exhausted["state"], "UNAVAILABLE")
+            due_after = scheduled.due_schedules({
+                "now": (pd.Timestamp(schedule_now) + pd.Timedelta(hours=2)).isoformat(),
+                "limit": 8,
+            }).to_dict()
+            EnvelopeSchema.model_validate(due_after)
+            self.assertFalse(due_after["data"]["trading_approved"])
+            self.assertTrue(all(row["schedule_id"] != schedule_id for row in due_after["data"]["rows"]))
+
+            stale_ws, stale_now, stale_request = _scheduled_workspace("stale-sched")
+            pending = stale_ws.schedule({
+                "action": "cycle", "cadence_seconds": 7200, "max_ticks": 2,
+                "now": stale_now, "request": stale_request,
+            }).to_dict()
+            self.assertEqual(pending["state"], "AVAILABLE", pending)
+            first = stale_ws.tick_schedule({
+                "schedule_id": pending["data"]["schedule_id"], "now": stale_now,
+            }).to_dict()
+            self.assertEqual(first["state"], "AVAILABLE", first)
+            stale = stale_ws.tick_schedule({
+                "schedule_id": pending["data"]["schedule_id"],
+                "now": (pd.Timestamp(stale_now) + pd.Timedelta(hours=1)).isoformat(),
+            }).to_dict()
+            self.assertEqual(stale["state"], "STALE")
+            self.assertEqual(stale["data"]["tick_state"], "NOT_DUE")
+
+            batch_ws, batch_now, batch_request = _scheduled_workspace("tick-due")
+            planned_a = batch_ws.schedule({
+                "action": "cycle", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": batch_now, "request": batch_request,
+            }).to_dict()
+            planned_b = batch_ws.schedule({
+                "action": "cycle", "cadence_seconds": 7200, "max_ticks": 1,
+                "now": batch_now, "request": {**batch_request, "n_long": 1, "n_short": 1},
+            }).to_dict()
+            self.assertEqual(planned_a["state"], "AVAILABLE", planned_a)
+            self.assertEqual(planned_b["state"], "AVAILABLE", planned_b)
+            # One tick at a time: filled cycles leave OMS state that blocks a second same-clock cycle.
+            batched = batch_ws.tick_due_schedules({"now": batch_now, "limit": 1}).to_dict()
+            EnvelopeSchema.model_validate(batched)
+            self.assertEqual(batched["state"], "AVAILABLE", batched)
+            self.assertEqual(batched["data"]["metrics"]["attempted"], 1)
+            self.assertEqual(batched["data"]["metrics"]["available"], 1)
+            self.assertFalse(batched["data"]["trading_approved"])
+            remaining = batch_ws.due_schedules({"now": batch_now, "limit": 8}).to_dict()
+            self.assertEqual(remaining["data"]["metrics"]["due"], 1)
 
     def test_watch_monitors_sizes_and_optionally_scans(self):
         first_signal_id = self.screen["signal_id"]

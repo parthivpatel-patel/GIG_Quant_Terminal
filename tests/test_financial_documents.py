@@ -61,6 +61,45 @@ class Base(unittest.TestCase):
                                        "license": "GIG-AUTHORED"})["document_id"]
 
 
+class EntityGraphTests(Base):
+    def test_co_mention_graph_is_lexical_only(self):
+        first = self.text(
+            "graph-a",
+            "NYSE:AAA and NASDAQ:BBB discussed supply terms. NYSE:AAA remains cautious.",
+        )
+        second = self.text(
+            "graph-b",
+            "NASDAQ:BBB and NYSE:CCC signed a research note. Federal Reserve commentary was cited.",
+        )
+        graph = documents.entity_graph(self.corpus, [first, second])
+        self.assertEqual(graph["operation"], "entity-graph")
+        self.assertFalse(graph["trading_approved"])
+        self.assertEqual(graph["graph_kind"], "LEXICAL_CO_MENTION_NOT_ISSUER_OR_SUPPLY_CHAIN_GRAPH")
+        self.assertGreaterEqual(graph["metrics"]["nodes"], 2)
+        self.assertGreaterEqual(graph["metrics"]["edges"], 1)
+        saved = research.save(self.corpus, graph)
+        again = research.replay(self.corpus, saved["record_id"])
+        self.assertEqual(again["record_id"], saved["record_id"])
+        workspace = FinancialIntelligenceWorkspace(self.root)
+        admitted = [
+            workspace.run({
+                "operation": "admit-authored", "source_id": "ws-a", "title": "ws-a",
+                "text": "NYSE:AAA and NASDAQ:BBB discussed supply terms.",
+                "license": "GIG-AUTHORED",
+            }).to_dict()["data"]["document_id"],
+            workspace.run({
+                "operation": "admit-authored", "source_id": "ws-b", "title": "ws-b",
+                "text": "NASDAQ:BBB and NYSE:CCC signed a research note.",
+                "license": "GIG-AUTHORED",
+            }).to_dict()["data"]["document_id"],
+        ]
+        via_workspace = workspace.run({
+            "operation": "entity-graph", "document_ids": admitted,
+        }).to_dict()
+        self.assertEqual(via_workspace["state"], "AVAILABLE", via_workspace)
+        self.assertFalse(via_workspace["data"]["trading_approved"])
+
+
 class TranscriptTests(Base):
     def test_speakers_sections_and_exchanges_follow_the_labels(self):
         result = documents.transcript(self.corpus, self.text("call", CALL))
