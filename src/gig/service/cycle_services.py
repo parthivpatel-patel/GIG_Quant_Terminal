@@ -154,6 +154,9 @@ class CycleServices:
         if isinstance(payload, dict) and payload.get("operation") == "scan-options":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().scan_options(body)
+        if isinstance(payload, dict) and payload.get("operation") == "options-structures":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().discover_option_structures(body)
         if isinstance(payload, dict) and payload.get("operation") == "monitor":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().monitor(body)

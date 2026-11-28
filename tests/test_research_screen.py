@@ -240,6 +240,19 @@ class ScreenFlowTests(unittest.TestCase):
         ranked = [row["iv_opportunity_rank"] for row in scanned["data"]["rows"]
                   if row["iv_opportunity_rank"] is not None]
         self.assertEqual(sorted(ranked), list(range(1, len(ranked) + 1)))
+        structures = self.screens.discover_option_structures({
+            "screen_id": screen["screen_id"], "options_run_ids": runs, "width_strikes": 1,
+        }).to_dict()
+        EnvelopeSchema.model_validate(structures)
+        self.assertEqual(structures["state"], "AVAILABLE", structures)
+        self.assertFalse(structures["data"]["trading_approved"])
+        self.assertGreaterEqual(structures["data"]["metrics"]["structures"], 1)
+        self.assertTrue(all(row["structure"] in {"DEBIT_CALL_VERTICAL", "DEBIT_PUT_VERTICAL"}
+                            for row in structures["data"]["rows"]))
+        self.assertEqual(
+            [row["structure_rank"] for row in structures["data"]["rows"]],
+            list(range(1, len(structures["data"]["rows"]) + 1)),
+        )
 
 
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):

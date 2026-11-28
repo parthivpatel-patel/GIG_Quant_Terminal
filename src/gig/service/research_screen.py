@@ -24,6 +24,7 @@ from gig.timestamps import aware_timestamp
 IMPLEMENTATION = "gig.research-screen.v1"
 OPTIONS_LINK = "gig.research-screen.options-link.v1"
 OPTIONS_SCAN = "gig.research-screen.options-scan.v1"
+OPTIONS_STRUCTURES = "gig.research-screen.options-structures.v1"
 FI_ENRICH = "gig.research-screen.fi-enrich.v1"
 STANCES = ("RESEARCH_BUY", "RESEARCH_HOLD", "RESEARCH_SELL")
 EVENTS = ("ENTER_LONG", "EXIT_LONG", "ENTER_SHORT", "EXIT_SHORT", "CONTINUE", "FLIP", "ENTER_HOLD")
@@ -664,6 +665,142 @@ class ResearchScreenWorkspace:
             model_identity=identity,
             model_version=OPTIONS_SCAN,
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_SCAN",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def discover_option_structures(self, payload: dict[str, Any]) -> Contract:
+        """Discover same-expiry verticals on equity-linked options opportunities.
+
+        BUY screens prefer debit call verticals; SELL screens prefer debit put
+        verticals. Profiles are expiry-only research diagnostics, not orders.
+        """
+        fields = _fields(payload, {"screen_id", "options_run_ids", "width_strikes"},
+                         {"screen_id", "options_run_ids"})
+        ids = fields["options_run_ids"]
+        if not isinstance(ids, list) or not 1 <= len(ids) <= 16 or len(set(ids)) != len(ids):
+            raise ValueError("structure discovery requires one to sixteen distinct options run identities")
+        width = int(fields.get("width_strikes", 1))
+        if not 1 <= width <= 5:
+            raise ValueError("width_strikes must lie between 1 and 5")
+        try:
+            screen = self.load(fields["screen_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen.options",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        from gig.options.exotics import strategy as option_strategy
+        workspace = OptionsWorkspace(self.base_dir)
+        structures: list[dict[str, Any]] = []
+        for options_run_id in ids:
+            try:
+                options = workspace.load(options_run_id)
+            except FileNotFoundError:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                      classification="UNAVAILABLE", scope="workspace.research-screen.options",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            linked = option_candidate(screen["rows"], options["underlying_id"])
+            if linked["option_candidate"] not in {"RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE"}:
+                continue
+            right = "CALL" if linked["option_candidate"] == "RESEARCH_CALL_CANDIDATE" else "PUT"
+            admitted = [
+                row for row in options.get("rows", [])
+                if row.get("right") == right and row.get("state") == "AVAILABLE"
+                and row.get("midpoint") is not None and row.get("strike") is not None
+                and row.get("expiry") is not None
+            ]
+            by_expiry: dict[str, list[dict[str, Any]]] = {}
+            for row in admitted:
+                by_expiry.setdefault(row["expiry"], []).append(row)
+            for expiry, quotes in sorted(by_expiry.items()):
+                ordered = sorted(quotes, key=lambda item: float(item["strike"]))
+                if len(ordered) <= width:
+                    continue
+                for index in range(len(ordered) - width):
+                    low, high = ordered[index], ordered[index + width]
+                    if right == "CALL":
+                        legs = [
+                            {"kind": "CALL", "strike": float(low["strike"]), "quantity": 1,
+                             "premium": float(low["midpoint"])},
+                            {"kind": "CALL", "strike": float(high["strike"]), "quantity": -1,
+                             "premium": float(high["midpoint"])},
+                        ]
+                        structure = "DEBIT_CALL_VERTICAL"
+                    else:
+                        legs = [
+                            {"kind": "PUT", "strike": float(high["strike"]), "quantity": 1,
+                             "premium": float(high["midpoint"])},
+                            {"kind": "PUT", "strike": float(low["strike"]), "quantity": -1,
+                             "premium": float(low["midpoint"])},
+                        ]
+                        structure = "DEBIT_PUT_VERTICAL"
+                    profile = option_strategy(legs, multiplier=float(low.get("multiplier") or 1))
+                    structures.append({
+                        "options_run_id": options["run_id"],
+                        "underlying_id": options["underlying_id"],
+                        "equity_stance": linked["equity_stance"],
+                        "option_candidate": linked["option_candidate"],
+                        "structure": structure,
+                        "expiry": expiry,
+                        "long_strike": float(legs[0]["strike"]),
+                        "short_strike": float(legs[1]["strike"]),
+                        "width": float(high["strike"]) - float(low["strike"]),
+                        "net_premium": profile["net_premium"],
+                        "premium_direction": profile["premium_direction"],
+                        "max_profit": profile["max_profit"],
+                        "max_loss": profile["max_loss"],
+                        "breakevens": profile["breakevens"],
+                        "trading_approved": False,
+                        "options_trading_approved": False,
+                    })
+        ranked = sorted(
+            structures,
+            key=lambda row: (
+                -(float(row["max_profit"]) if row["max_profit"] is not None else -1e18),
+                row["underlying_id"], row["expiry"], row["long_strike"],
+            ),
+        )
+        for index, row in enumerate(ranked, start=1):
+            row["structure_rank"] = index
+        body = {
+            "schema_version": OPTIONS_STRUCTURES,
+            "as_of": screen["as_of"],
+            "screen_id": screen["screen_id"],
+            "dataset_id": screen["dataset_id"],
+            "signal_id": screen["signal_id"],
+            "source": screen["source"],
+            "input_classification": screen["input_classification"],
+            "options_run_ids": [sha256(i) for i in ids],
+            "request": {"width_strikes": width},
+            "rows": ranked,
+            "options_trading_approved": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "usable_for_portfolio": False,
+            "notes": [
+                "Structures are same-expiry debit verticals linked to equity research stances.",
+                "P&L profiles are exact expiry payoffs on midpoint premiums; no financing, fees, or margin.",
+                "No OPRA entitlement, broker path, or trading approval is established.",
+            ],
+            "metrics": {
+                "structures": len(ranked),
+                "call_verticals": sum(1 for row in ranked if row["structure"] == "DEBIT_CALL_VERTICAL"),
+                "put_verticals": sum(1 for row in ranked if row["structure"] == "DEBIT_PUT_VERTICAL"),
+                "trading_approved": False,
+            },
+        }
+        identity = _hash(body)
+        document = {**body, "structures_id": identity}
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved multi-leg options structure discovery"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.options",
+            source_identity=document["dataset_id"],
+            model_identity=identity,
+            model_version=OPTIONS_STRUCTURES,
+            evidence_state="HASH_VERIFIED_RESEARCH_OPTIONS_STRUCTURES",
             readiness="RESEARCH_ONLY",
         )
 
