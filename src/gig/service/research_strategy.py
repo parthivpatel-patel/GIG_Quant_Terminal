@@ -180,7 +180,7 @@ class ResearchStrategyWorkspace:
                    "target_volatility", "max_expected_shortfall", "initial_cash", "n_long", "n_short",
                    "gross_leverage", "max_name_weight", "lot_size", "max_age_seconds", "annualization",
                    "metadata", "limits", "commission_bps", "slippage_bps", "price_tick", "max_turnover",
-                   "max_transaction_cost", "fill"}
+                   "max_transaction_cost", "fill", "document_id", "nlp_profile"}
         fields = _fields(payload, allowed, {"run_ids", "now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -198,6 +198,21 @@ class ResearchStrategyWorkspace:
                                   error=discovered.get("error"),
                                   readiness="RESEARCH_ONLY")
         screen = discovered["data"]
+        enrich_data = None
+        if "document_id" in fields:
+            enrich_payload = {"screen_id": screen["screen_id"], "document_id": fields["document_id"]}
+            if "nlp_profile" in fields:
+                enrich_payload["nlp_profile"] = fields["nlp_profile"]
+            enriched = self.screens.enrich_mentions(enrich_payload).to_dict()
+            if enriched["state"] != State.AVAILABLE.value or not isinstance(enriched.get("data"), dict):
+                return Contract.admit(enriched["state"], enriched.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=enriched["provenance"]["classification"],
+                                      as_of=enriched["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=enriched.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            enrich_data = enriched["data"]
         size_payload = {
             "screen_id": screen["screen_id"], "now": fields["now"],
             "portfolio_notional": fields["portfolio_notional"],
@@ -217,11 +232,10 @@ class ResearchStrategyWorkspace:
                                   scope="workspace.research-strategy",
                                   error=sized.get("error"),
                                   readiness="RESEARCH_ONLY")
-        simulate_payload = {key: fields[key] for key in fields
-                            if key not in {"run_ids", "lookback", "min_ic_observations",
-                                           "buy_threshold", "sell_threshold", "previous_screen_id",
-                                           "portfolio_notional", "max_name_notional", "vol_scale",
-                                           "target_volatility"}}
+        size_only = {"run_ids", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
+                     "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
+                     "target_volatility", "max_expected_shortfall", "document_id", "nlp_profile"}
+        simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
         if simulated["state"] != State.AVAILABLE.value or not isinstance(simulated.get("data"), dict):
@@ -240,12 +254,14 @@ class ResearchStrategyWorkspace:
             "screen_id": screen["screen_id"],
             "signal_id": screen["signal_id"],
             "size_id": sized["data"]["size_id"],
+            "enrichment_id": enrich_data.get("enrichment_id") if enrich_data is not None else None,
             "strategy_id": strategy["strategy_id"],
             "allocation_id": strategy["allocation_id"],
             "source": screen["source"],
             "input_classification": screen["input_classification"],
             "discovery": screen.get("discovery"),
             "size_metrics": sized["data"]["metrics"],
+            "fi_metrics": enrich_data["metrics"] if enrich_data is not None else None,
             "strategy_metrics": strategy["metrics"],
             "prepared_client_ids": strategy["prepared_client_ids"],
             "fills": strategy["fills"],
@@ -258,12 +274,13 @@ class ResearchStrategyWorkspace:
                 "research_buys": screen["metrics"]["research_buys"],
                 "research_sells": screen["metrics"]["research_sells"],
                 "sized_names": sized["data"]["metrics"]["names"],
+                "fi_matched": (enrich_data["metrics"]["matched_count"] if enrich_data is not None else 0),
                 "prepared_orders": strategy["metrics"]["prepared_orders"],
                 "filled_orders": strategy["metrics"]["filled_orders"],
                 "trading_approved": False,
             },
             "notes": [
-                "Research cycle chains discovery, position sizing, and offline simulation.",
+                "Research cycle chains discovery, optional FI enrich, position sizing, and offline simulation.",
                 "Sizing is advisory relative to the separate allocation/OMS simulation path.",
                 "Broker connectivity stays disabled; trading stays unapproved.",
             ],
