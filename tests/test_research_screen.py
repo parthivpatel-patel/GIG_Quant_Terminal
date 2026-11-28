@@ -126,6 +126,34 @@ class ScreenFlowTests(unittest.TestCase):
         predictions = [row["prediction"] for row in signal["rows"]]
         self.assertGreater(max(predictions), min(predictions))
 
+    def test_discover_from_pairs_projects_weights(self):
+        from gig.service.pairs_workspace import PairsResearchWorkspace
+        from test_persisted_pairs import pair_bars
+        from test_persisted_data import seed_persisted_fixture
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_persisted_fixture(root, periods=120, rows=pair_bars())
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            pair_run = PairsResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "training_window": 60,
+                "test_size": 15, "embargo": 1, "entry_z": 0., "cost_bps": 12., "borrow_bps": 50.,
+            }).to_dict()
+            self.assertEqual(pair_run["state"], "AVAILABLE", pair_run)
+            screens = ResearchScreenWorkspace(root)
+            discovered = screens.discover({
+                "pair_run_id": pair_run["data"]["run_id"], "now": request["as_of"],
+                "buy_threshold": 0.01, "sell_threshold": -0.01,
+            }).to_dict()
+            EnvelopeSchema.model_validate(discovered)
+            self.assertEqual(discovered["state"], "AVAILABLE", discovered)
+            self.assertEqual(discovered["data"]["discovery"]["operation"], "from-pairs")
+            self.assertFalse(discovered["data"]["trading_approved"])
+            signal = SignalWorkspace(root).load(discovered["data"]["signal_id"])
+            self.assertEqual(signal["schema_version"], "pair-weight-signal-v1")
+            self.assertEqual(signal["method"], "PAIR_PROPOSAL_CENTERED_WEIGHT_SCORE_V1")
+            self.assertTrue(signal["usable_for_portfolio"])
+
     def test_enrich_mentions_matches_exchange_qualified_symbols(self):
         screen = self.screens.run({
             "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,

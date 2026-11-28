@@ -372,6 +372,27 @@ class StrategyTests(unittest.TestCase):
             self.assertEqual(stale["state"], "STALE")
             self.assertEqual(stale["data"]["tick_state"], "NOT_DUE")
 
+            batch_ws, batch_now, batch_request = _scheduled_workspace("tick-due")
+            planned_a = batch_ws.schedule({
+                "action": "cycle", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": batch_now, "request": batch_request,
+            }).to_dict()
+            planned_b = batch_ws.schedule({
+                "action": "cycle", "cadence_seconds": 7200, "max_ticks": 1,
+                "now": batch_now, "request": {**batch_request, "n_long": 1, "n_short": 1},
+            }).to_dict()
+            self.assertEqual(planned_a["state"], "AVAILABLE", planned_a)
+            self.assertEqual(planned_b["state"], "AVAILABLE", planned_b)
+            # One tick at a time: filled cycles leave OMS state that blocks a second same-clock cycle.
+            batched = batch_ws.tick_due_schedules({"now": batch_now, "limit": 1}).to_dict()
+            EnvelopeSchema.model_validate(batched)
+            self.assertEqual(batched["state"], "AVAILABLE", batched)
+            self.assertEqual(batched["data"]["metrics"]["attempted"], 1)
+            self.assertEqual(batched["data"]["metrics"]["available"], 1)
+            self.assertFalse(batched["data"]["trading_approved"])
+            remaining = batch_ws.due_schedules({"now": batch_now, "limit": 8}).to_dict()
+            self.assertEqual(remaining["data"]["metrics"]["due"], 1)
+
     def test_watch_monitors_sizes_and_optionally_scans(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)

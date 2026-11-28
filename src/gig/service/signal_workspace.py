@@ -22,11 +22,85 @@ from gig.service.workspace import TerminalWorkspace, _age, _fields
 from gig.timestamps import aware_timestamp
 
 IMPLEMENTATION = "pit-oos-rank-ic-v1"
-SCHEMAS = frozenset({IMPLEMENTATION, FACTOR_SCHEMA})
+PAIRS_SCHEMA = "pair-weight-signal-v1"
+SCHEMAS = frozenset({IMPLEMENTATION, FACTOR_SCHEMA, PAIRS_SCHEMA})
+PREDICTION_KIND_PAIRS = "UNAPPROVED_PAIR_TARGET_WEIGHT_SCORE"
 
 
 def _hash(value):
     return hashlib.sha256(dumps(value).encode()).hexdigest()
+
+
+def score_pair_run(pair_run: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
+    """Collapse latest available pair proposals into centered research scores."""
+    now = aware_timestamp(request["now"])
+    proposals = [
+        proposal for proposal in pair_run.get("proposals", [])
+        if proposal.get("state") == "AVAILABLE"
+        and aware_timestamp(proposal["timestamp"]) <= now
+        and isinstance(proposal.get("weights"), dict)
+    ]
+    if not proposals:
+        raise ValueError("no available pair proposals at or before now")
+    latest = max(aware_timestamp(proposal["timestamp"]) for proposal in proposals)
+    weights: dict[str, float] = {}
+    for proposal in proposals:
+        if aware_timestamp(proposal["timestamp"]) != latest:
+            continue
+        for symbol, weight in proposal["weights"].items():
+            value = float(weight)
+            if not np.isfinite(value):
+                raise ValueError("pair proposal weights must be finite")
+            weights[symbol] = weights.get(symbol, 0.0) + value
+    if len(weights) < 2:
+        raise ValueError("pair proposals must cover at least two instruments")
+    series = pd.Series(weights, dtype=float).sort_index()
+    if series.nunique(dropna=False) < 2:
+        raise ValueError("pair weights lack cross-sectional variation")
+    centered = series - float(series.mean())
+    decision = latest.isoformat()
+    rows = [{
+        "instrument_id": symbol,
+        "timestamp": decision,
+        "prediction": float(centered[symbol]),
+        "prediction_kind": PREDICTION_KIND_PAIRS,
+        "trading_approved": False,
+        "confidence": {"state": "UNKNOWN", "value": None},
+        "uncertainty": {"state": "NOT_CALIBRATED", "value": None},
+    } for symbol in centered.index]
+    usable = bool(rows and max(r["prediction"] for r in rows) > min(r["prediction"] for r in rows))
+    return {
+        "schema_version": PAIRS_SCHEMA,
+        "request": request,
+        "as_of": now.isoformat(),
+        "dataset_id": pair_run["dataset_id"],
+        "source": pair_run["source"],
+        "input_classification": pair_run["input_classification"],
+        "signal_as_of": decision,
+        "run_ids": [],
+        "model_ids": list(pair_run.get("model_ids", [])),
+        "pair_run_id": pair_run["run_id"],
+        "rows": rows,
+        "diagnostics": [{
+            "factor": "pair_weights",
+            "proposals": len(proposals),
+            "instruments": len(rows),
+            "confidence": {"state": "UNKNOWN", "value": None,
+                           "method": "NO_PROBABILITY_CALIBRATION"},
+        }],
+        "scoring_state": "AVAILABLE" if usable else "UNKNOWN",
+        "usable_for_portfolio": usable,
+        "trading_approved": False,
+        "economically_validated": False,
+        "metrics": {"eligible_models": 0, "instruments": len(rows), "trading_approved": False},
+        "method": "PAIR_PROPOSAL_CENTERED_WEIGHT_SCORE_V1",
+        "library_versions": {"numpy": np.__version__, "pandas": pd.__version__},
+        "notes": [
+            "Pair scores sum latest AVAILABLE proposal weights per instrument, then center.",
+            "They inherit Engle–Granger / Kalman research caveats from the pair run.",
+            "No broker order or trading approval is established.",
+        ],
+    }
 
 
 def score_runs(runs, dataset, request):
@@ -157,10 +231,15 @@ class SignalWorkspace:
     @staticmethod
     def _contract(document, state=State.AVAILABLE):
         schema = document.get("schema_version", IMPLEMENTATION)
-        title = ("Unapproved cross-sectional factor research ranks"
-                 if schema == FACTOR_SCHEMA else "Unapproved IC-aware research ensemble")
-        evidence = ("HASH_VERIFIED_CS_FACTOR_RESEARCH"
-                    if schema == FACTOR_SCHEMA else "HASH_VERIFIED_PIT_OOS_RESEARCH")
+        if schema == FACTOR_SCHEMA:
+            title = "Unapproved cross-sectional factor research ranks"
+            evidence = "HASH_VERIFIED_CS_FACTOR_RESEARCH"
+        elif schema == PAIRS_SCHEMA:
+            title = "Unapproved statistical-arbitrage pair weight scores"
+            evidence = "HASH_VERIFIED_PAIR_WEIGHT_RESEARCH"
+        else:
+            title = "Unapproved IC-aware research ensemble"
+            evidence = "HASH_VERIFIED_PIT_OOS_RESEARCH"
         return Contract.admit(state, {**document, "title": title}
             if state in {State.AVAILABLE, State.STALE} else None, source=document["source"],
             classification="MODEL_ESTIMATE", as_of=document["as_of"], scope="workspace.research-signals",
@@ -189,6 +268,9 @@ class SignalWorkspace:
         if isinstance(payload, dict) and payload.get("operation") == "from-dataset":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self.run_from_dataset(body)
+        if isinstance(payload, dict) and payload.get("operation") == "from-pairs":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self.run_from_pairs(body)
         fields = _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations",
                                    "max_ic_drift_psi", "operation"},
                          {"run_ids", "now"})
@@ -242,6 +324,22 @@ class SignalWorkspace:
                                   error=public_error("DATA_UNAVAILABLE"))
         return self._persist(score_factor_dataset(dataset, request))
 
+    def run_from_pairs(self, payload: dict[str, Any]) -> Contract:
+        """Project saved pair-target weights into unapproved research scores."""
+        fields = _fields(payload, {"pair_run_id", "now"}, {"pair_run_id", "now"})
+        request = {
+            "pair_run_id": sha256(fields["pair_run_id"]),
+            "now": aware_timestamp(fields["now"]).isoformat(),
+        }
+        try:
+            from gig.service.pairs_workspace import PairsResearchWorkspace
+            pair_run = PairsResearchWorkspace(self.base_dir).load(request["pair_run_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-signals",
+                                  classification="UNAVAILABLE", scope="workspace.research-signals",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._persist(score_pair_run(pair_run, request))
+
     def load(self, signal_id: str) -> dict[str, Any]:
         identity = sha256(signal_id)
         document = loads(self._path("runs/" + identity + ".json").read_bytes())
@@ -256,6 +354,12 @@ class SignalWorkspace:
         dataset = PersistedDatasetWorkspace(self.base_dir).load(document["dataset_id"])
         if schema == FACTOR_SCHEMA:
             if score_factor_dataset(dataset, document["request"]) != body:
+                raise ValueError("signal evidence differs from deterministic replay")
+            return document
+        if schema == PAIRS_SCHEMA:
+            from gig.service.pairs_workspace import PairsResearchWorkspace
+            pair_run = PairsResearchWorkspace(self.base_dir).load(document["request"]["pair_run_id"])
+            if score_pair_run(pair_run, document["request"]) != body:
                 raise ValueError("signal evidence differs from deterministic replay")
             return document
         runs = [PersistedResearchWorkspace(self.base_dir).load(i) for i in document["run_ids"]]

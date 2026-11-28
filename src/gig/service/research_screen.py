@@ -275,23 +275,31 @@ class ResearchScreenWorkspace:
         return self.workspace._path("research-screens/" + name)
 
     def discover(self, payload: dict[str, Any]) -> Contract:
-        """Fit an ensemble from saved model runs, then label research stances in one step."""
+        """Score saved evidence, then label research stances in one step.
+
+        Accepts exactly one of ``run_ids``, ``dataset_id``, or ``pair_run_id``.
+        """
         fields = _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations",
                                    "buy_threshold", "sell_threshold", "previous_screen_id",
                                    "ttl_seconds", "dataset_id", "mode", "momentum_lookback",
-                                   "reversion_lookback", "momentum_weight", "reversion_weight"},
+                                   "reversion_lookback", "momentum_weight", "reversion_weight",
+                                   "pair_run_id"},
                          {"now"})
-        if "run_ids" in fields and "dataset_id" in fields:
-            raise ValueError("provide run_ids or dataset_id, not both")
+        sources = [key for key in ("run_ids", "dataset_id", "pair_run_id") if key in fields]
+        if len(sources) != 1:
+            raise ValueError("discover requires exactly one of run_ids, dataset_id, or pair_run_id")
         if "dataset_id" in fields:
             signal_payload = {key: fields[key] for key in fields
                               if key in {"dataset_id", "now", "mode", "momentum_lookback",
                                          "reversion_lookback", "momentum_weight", "reversion_weight"}}
             signal_contract = self.signals.run_from_dataset(signal_payload)
             discovery_op = "from-dataset"
+        elif "pair_run_id" in fields:
+            signal_contract = self.signals.run_from_pairs({
+                "pair_run_id": fields["pair_run_id"], "now": fields["now"],
+            })
+            discovery_op = "from-pairs"
         else:
-            if "run_ids" not in fields:
-                raise ValueError("discover requires run_ids or dataset_id")
             signal_payload = {"run_ids": fields["run_ids"], "now": fields["now"]}
             for key in ("lookback", "min_ic_observations"):
                 if key in fields:
@@ -306,6 +314,8 @@ class ResearchScreenWorkspace:
         }
         if discovery_op == "from-runs":
             discovery["run_ids"] = list(signal["data"]["run_ids"])
+        elif discovery_op == "from-pairs":
+            discovery["pair_run_id"] = signal["data"]["pair_run_id"]
         else:
             discovery["dataset_id"] = signal["data"]["dataset_id"]
             discovery["mode"] = signal["data"]["request"]["mode"]
@@ -356,11 +366,15 @@ class ResearchScreenWorkspace:
             request["now"] = aware_timestamp(fields["now"]).isoformat()
         discovery = fields.get("discovery")
         if discovery is not None:
-            if not isinstance(discovery, dict) or discovery.get("operation") not in {"from-runs", "from-dataset"}:
-                raise ValueError("discovery must record a from-runs or from-dataset operation")
+            if not isinstance(discovery, dict) or discovery.get("operation") not in {
+                    "from-runs", "from-dataset", "from-pairs"}:
+                raise ValueError("discovery must record a from-runs, from-dataset, or from-pairs operation")
             if discovery["operation"] == "from-runs":
                 if not isinstance(discovery.get("run_ids"), list) or not discovery["run_ids"]:
                     raise ValueError("discovery requires the ensemble run identities")
+            elif discovery["operation"] == "from-pairs":
+                if not isinstance(discovery.get("pair_run_id"), str) or not discovery["pair_run_id"]:
+                    raise ValueError("discovery requires the pair run identity")
             elif not isinstance(discovery.get("dataset_id"), str) or not discovery["dataset_id"]:
                 raise ValueError("discovery requires the dataset identity")
         try:
@@ -383,6 +397,12 @@ class ResearchScreenWorkspace:
                 body["discovery"] = {
                     "operation": "from-dataset", "signal_id": signal["signal_id"],
                     "dataset_id": discovery["dataset_id"], "mode": discovery.get("mode"),
+                    "scoring_state": discovery.get("scoring_state"),
+                }
+            elif discovery["operation"] == "from-pairs":
+                body["discovery"] = {
+                    "operation": "from-pairs", "signal_id": signal["signal_id"],
+                    "pair_run_id": discovery["pair_run_id"],
                     "scoring_state": discovery.get("scoring_state"),
                 }
             else:

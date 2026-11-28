@@ -135,6 +135,9 @@ class CycleServices:
         if isinstance(payload, dict) and payload.get("operation") == "from-dataset":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._signals().run_from_dataset(body)
+        if isinstance(payload, dict) and payload.get("operation") == "from-pairs":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._signals().run_from_pairs(body)
         return self._signals().run(payload)
 
     def signals_replay(self, payload: dict[str, Any]) -> Contract:
@@ -145,7 +148,7 @@ class CycleServices:
         return ResearchScreenWorkspace(self.workspace.base_dir)
 
     def research_screen(self, payload: dict[str, Any]) -> Contract:
-        if isinstance(payload, dict) and payload.get("operation") in {"from-runs", "from-dataset"}:
+        if isinstance(payload, dict) and payload.get("operation") in {"from-runs", "from-dataset", "from-pairs"}:
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().discover(body)
         if isinstance(payload, dict) and payload.get("operation") == "link-options":
@@ -209,12 +212,14 @@ class CycleServices:
             return self._strategies().tick_schedule(body)
         if operation == "due-schedules":
             return self._strategies().due_schedules(body)
+        if operation == "tick-due":
+            return self._strategies().tick_due_schedules(body)
         if operation != "simulate":
             raise ValueError(
                 "research strategy operation must be simulate, size, size-replay, cycle, "
                 "cycle-replay, watch, watch-replay, exit-eval, exit-eval-replay, feedback, "
                 "feedback-replay, invalidate, invalidate-replay, schedule, schedule-tick, "
-                "due-schedules, or replay")
+                "due-schedules, tick-due, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):

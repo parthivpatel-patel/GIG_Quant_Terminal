@@ -186,28 +186,30 @@ class ResearchStrategyWorkspace:
     def cycle(self, payload: dict[str, Any]) -> Contract:
         """One research cycle: discover → size → offline simulate.
 
-        Discovery accepts saved model ``run_ids`` or a factor ``dataset_id``
-        (including ``market_neutral_momentum``). Broker connectivity stays
-        disabled. The cycle never grants trading approval.
+        Discovery accepts saved model ``run_ids``, a factor ``dataset_id``
+        (including ``market_neutral_momentum``), or a ``pair_run_id``. Broker
+        connectivity stays disabled. The cycle never grants trading approval.
         """
-        allowed = {"run_ids", "dataset_id", "mode", "momentum_lookback", "reversion_lookback",
-                   "momentum_weight", "reversion_weight", "now", "lookback", "min_ic_observations",
-                   "buy_threshold", "sell_threshold", "previous_screen_id", "portfolio_notional",
-                   "max_name_notional", "vol_scale", "target_volatility", "max_expected_shortfall",
-                   "regime_short_bars", "regime_long_bars", "max_gross_exposure", "initial_cash",
-                   "n_long", "n_short", "gross_leverage", "max_name_weight", "lot_size",
-                   "max_age_seconds", "annualization", "metadata", "limits", "commission_bps",
-                   "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost", "fill",
-                   "document_id", "nlp_profile"}
+        allowed = {"run_ids", "dataset_id", "pair_run_id", "mode", "momentum_lookback",
+                   "reversion_lookback", "momentum_weight", "reversion_weight", "now", "lookback",
+                   "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id",
+                   "portfolio_notional", "max_name_notional", "vol_scale", "target_volatility",
+                   "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
+                   "max_gross_exposure", "initial_cash", "n_long", "n_short", "gross_leverage",
+                   "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata",
+                   "limits", "commission_bps", "slippage_bps", "price_tick", "max_turnover",
+                   "max_transaction_cost", "fill", "document_id", "nlp_profile"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
                                             "annualization", "metadata", "limits"})
-        if ("run_ids" in fields) == ("dataset_id" in fields):
-            raise ValueError("cycle requires exactly one of run_ids or dataset_id")
-        discover_keys = {"run_ids", "dataset_id", "mode", "momentum_lookback", "reversion_lookback",
-                         "momentum_weight", "reversion_weight", "now", "lookback",
-                         "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id"}
+        sources = [key for key in ("run_ids", "dataset_id", "pair_run_id") if key in fields]
+        if len(sources) != 1:
+            raise ValueError("cycle requires exactly one of run_ids, dataset_id, or pair_run_id")
+        discover_keys = {"run_ids", "dataset_id", "pair_run_id", "mode", "momentum_lookback",
+                         "reversion_lookback", "momentum_weight", "reversion_weight", "now",
+                         "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
+                         "previous_screen_id"}
         discover_payload = {key: fields[key] for key in fields if key in discover_keys}
         discovered = self.screens.discover(discover_payload).to_dict()
         if discovered["state"] != State.AVAILABLE.value or not isinstance(discovered.get("data"), dict):
@@ -253,12 +255,12 @@ class ResearchStrategyWorkspace:
                                   scope="workspace.research-strategy",
                                   error=sized.get("error"),
                                   readiness="RESEARCH_ONLY")
-        size_only = {"run_ids", "dataset_id", "mode", "momentum_lookback", "reversion_lookback",
-                     "momentum_weight", "reversion_weight", "lookback", "min_ic_observations",
-                     "buy_threshold", "sell_threshold", "previous_screen_id", "portfolio_notional",
-                     "max_name_notional", "vol_scale", "target_volatility", "max_expected_shortfall",
-                     "regime_short_bars", "regime_long_bars", "max_gross_exposure", "document_id",
-                     "nlp_profile"}
+        size_only = {"run_ids", "dataset_id", "pair_run_id", "mode", "momentum_lookback",
+                     "reversion_lookback", "momentum_weight", "reversion_weight", "lookback",
+                     "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id",
+                     "portfolio_notional", "max_name_notional", "vol_scale", "target_volatility",
+                     "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
+                     "max_gross_exposure", "document_id", "nlp_profile"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -1003,38 +1005,15 @@ class ResearchStrategyWorkspace:
         """List hash-verified schedules that are due at ``now`` for agent ticks.
 
         Advisory inventory only. Does not execute ticks, start workers, or
-        approve trading. Agents must call ``schedule-tick`` explicitly per row.
+        approve trading. Agents must call ``schedule-tick`` explicitly per row
+        (or ``tick-due`` for a bounded batch).
         """
         fields = _fields(payload, {"now", "limit"}, {"now"})
         clock = aware_timestamp(fields["now"])
         limit = int(fields.get("limit", 32))
         if not 1 <= limit <= 128:
             raise ValueError("limit must lie between 1 and 128")
-        directory = self._path("schedules")
-        rows: list[dict[str, Any]] = []
-        if directory.is_dir():
-            for path in sorted(directory.glob("*.json")):
-                if path.name.endswith(".pointer.json"):
-                    continue
-                try:
-                    plan = self.load_schedule_state(path.stem)
-                except (FileNotFoundError, ValueError):
-                    continue
-                if int(plan["ticks_completed"]) >= int(plan["max_ticks"]):
-                    continue
-                due = aware_timestamp(plan["next_due"])
-                if clock < due:
-                    continue
-                rows.append({
-                    "schedule_id": plan["schedule_id"],
-                    "action": plan["action"],
-                    "next_due": plan["next_due"],
-                    "ticks_completed": plan["ticks_completed"],
-                    "max_ticks": plan["max_ticks"],
-                    "dataset_id": plan["dataset_id"],
-                })
-                if len(rows) >= limit:
-                    break
+        rows = self._due_schedule_rows(clock, limit)
         body = {
             "schema_version": "gig.research-strategy.due-schedules.v1",
             "as_of": clock.isoformat(),
@@ -1060,6 +1039,100 @@ class ResearchStrategyWorkspace:
             model_identity=_hash({"as_of": clock.isoformat(), "rows": rows}),
             model_version="gig.research-strategy.due-schedules.v1",
             evidence_state="HASH_VERIFIED_RESEARCH_STRATEGY_DUE_SCHEDULES",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def _due_schedule_rows(self, clock, limit: int) -> list[dict[str, Any]]:
+        directory = self._path("schedules")
+        rows: list[dict[str, Any]] = []
+        if not directory.is_dir():
+            return rows
+        for path in sorted(directory.glob("*.json")):
+            if path.name.endswith(".pointer.json"):
+                continue
+            try:
+                plan = self.load_schedule_state(path.stem)
+            except (FileNotFoundError, ValueError):
+                continue
+            if int(plan["ticks_completed"]) >= int(plan["max_ticks"]):
+                continue
+            due = aware_timestamp(plan["next_due"])
+            if clock < due:
+                continue
+            rows.append({
+                "schedule_id": plan["schedule_id"],
+                "action": plan["action"],
+                "next_due": plan["next_due"],
+                "ticks_completed": plan["ticks_completed"],
+                "max_ticks": plan["max_ticks"],
+                "dataset_id": plan["dataset_id"],
+            })
+            if len(rows) >= limit:
+                break
+        return rows
+
+    def tick_due_schedules(self, payload: dict[str, Any]) -> Contract:
+        """Execute one tick for each due schedule under an explicit agent clock.
+
+        Bounded batch for orchestrators. Failures are recorded per schedule;
+        the batch itself stays research-only and never starts a worker.
+        """
+        fields = _fields(payload, {"now", "limit"}, {"now"})
+        clock = aware_timestamp(fields["now"])
+        limit = int(fields.get("limit", 8))
+        if not 1 <= limit <= 32:
+            raise ValueError("limit must lie between 1 and 32")
+        due = self._due_schedule_rows(clock, limit)
+        ticks: list[dict[str, Any]] = []
+        for row in due:
+            result = self.tick_schedule({
+                "schedule_id": row["schedule_id"], "now": clock.isoformat(),
+            }).to_dict()
+            entry: dict[str, Any] = {
+                "schedule_id": row["schedule_id"],
+                "action": row["action"],
+                "state": result["state"],
+            }
+            data = result.get("data")
+            if isinstance(data, dict):
+                entry["tick_id"] = data.get("tick_id")
+                entry["tick_index"] = data.get("tick_index")
+                entry["cycle_id"] = data.get("cycle_id")
+                entry["watch_id"] = data.get("watch_id")
+            if result.get("error") is not None:
+                entry["error"] = result["error"]
+            ticks.append(entry)
+        available = sum(1 for tick in ticks if tick["state"] == State.AVAILABLE.value)
+        body = {
+            "schema_version": "gig.research-strategy.tick-due.v1",
+            "as_of": clock.isoformat(),
+            "dataset_id": "tick-due",
+            "source": "persisted-research-strategy-schedule",
+            "input_classification": "MODEL_ESTIMATE",
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "ticks": ticks,
+            "metrics": {
+                "attempted": len(ticks),
+                "available": available,
+                "trading_approved": False,
+            },
+            "notes": [
+                "tick-due runs one explicit schedule-tick per due plan under a shared clock.",
+                "Per-schedule failures do not abort the batch inventory.",
+                "No background worker or trading approval is established.",
+            ],
+        }
+        return Contract.admit(
+            State.AVAILABLE, body, source=body["source"],
+            classification="MODEL_ESTIMATE", as_of=clock.isoformat(),
+            scope="workspace.research-strategy",
+            source_identity="tick-due",
+            model_identity=_hash({"as_of": clock.isoformat(), "ticks": ticks}),
+            model_version="gig.research-strategy.tick-due.v1",
+            evidence_state="HASH_VERIFIED_RESEARCH_STRATEGY_TICK_DUE",
             readiness="RESEARCH_ONLY",
         )
 
