@@ -181,6 +181,34 @@ class ScreenFlowTests(unittest.TestCase):
         }).to_dict()
         self.assertEqual(missing["state"], "UNAVAILABLE")
 
+    def test_options_scan_lists_candidates_across_saved_runs(self):
+        screen = self.screens.run({
+            "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        options = OptionsWorkspace(self.base)
+        runs = []
+        for row in screen["rows"][:2]:
+            underlying = row["instrument_id"]
+            fixture = option_fixture(underlying_id=underlying, source=f"authored-{underlying}")
+            for quote in fixture["quotes"]:
+                quote["contract_id"] = quote["contract_id"].replace("SYN100", underlying.replace(":", ""))
+            request = option_request(underlying_id=underlying, source=fixture["source"], positions=[
+                {"contract_id": fixture["quotes"][0]["contract_id"], "quantity": 1},
+                {"contract_id": fixture["quotes"][1]["contract_id"], "quantity": -1},
+            ])
+            options.ingest(fixture)
+            result = options.run(request).to_dict()
+            self.assertEqual(result["state"], "AVAILABLE", result)
+            runs.append(result["data"]["run_id"])
+        scanned = self.screens.scan_options({
+            "screen_id": screen["screen_id"], "options_run_ids": runs,
+        }).to_dict()
+        EnvelopeSchema.model_validate(scanned)
+        self.assertEqual(scanned["state"], "AVAILABLE", scanned)
+        self.assertEqual(scanned["data"]["metrics"]["scanned"], 2)
+        self.assertFalse(scanned["data"]["trading_approved"])
+        self.assertEqual(len(scanned["data"]["rows"]), 2)
+
 
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def test_discover_allocates_and_prepares_offline_targets(self):
