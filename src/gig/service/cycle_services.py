@@ -243,13 +243,18 @@ class CycleServices:
             return self._strategies().cost_rebalance(body)
         if operation == "cost-rebalance-replay":
             return self._strategies().replay_rebalance(body)
+        if operation == "factor-exposure":
+            return self._strategies().factor_exposure(body)
+        if operation == "factor-exposure-replay":
+            return self._strategies().replay_factor_exposure(body)
         if operation != "simulate":
             raise ValueError(
                 "research strategy operation must be simulate, size, size-replay, cycle, "
                 "cycle-replay, watch, watch-replay, exit-eval, exit-eval-replay, feedback, "
                 "feedback-replay, invalidate, invalidate-replay, schedule, schedule-tick, "
                 "due-schedules, tick-due, estimate-cost, estimate-cost-replay, "
-                "cost-rebalance, cost-rebalance-replay, or replay")
+                "cost-rebalance, cost-rebalance-replay, factor-exposure, "
+                "factor-exposure-replay, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):

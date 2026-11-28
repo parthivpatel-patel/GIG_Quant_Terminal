@@ -40,6 +40,7 @@ SCHEDULE = "gig.research-strategy.schedule.v1"
 TICK = "gig.research-strategy.schedule-tick.v1"
 COST = "gig.research-strategy.estimate-cost.v1"
 COST_REBALANCE = "gig.research-strategy.cost-rebalance.v1"
+FACTOR_EXPOSURE = "gig.research-strategy.factor-exposure.v1"
 _INVALIDATION_REASONS = frozenset({
     "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP", "ALPHA_DECAY",
 })
@@ -2547,6 +2548,195 @@ class ResearchStrategyWorkspace:
                               evidence="HASH_VERIFIED_RESEARCH_COST_REBALANCE",
                               identity_key="rebalance_id")
 
+    def factor_exposure(self, payload: dict[str, Any]) -> Contract:
+        """Attribute PCA factor risk for a saved size book from its dataset panel.
+
+        Fits ``Σ = BB′ + D`` on aligned return_1 rows, reports ex-ante vol,
+        systematic/specific shares, factor loadings, and trailing equal-weight
+        market beta. Optional ``max_ex_ante_vol`` / ``max_systematic_share`` flag
+        research breaches without approving or blocking trading.
+        """
+        fields = _fields(payload, {"size_id", "now", "n_factors", "min_obs", "lookback",
+                                   "shrinkage", "max_ex_ante_vol", "max_systematic_share",
+                                   "annualization"},
+                         {"size_id", "now"})
+        try:
+            sized = self.load_size(fields["size_id"])
+            dataset = PersistedDatasetWorkspace(self.base_dir).load(sized["dataset_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=sized["screen_id"], size_id=sized["size_id"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        at = aware_timestamp(fields["now"])
+        n_factors = int(fields.get("n_factors", 3))
+        if not 1 <= n_factors <= 8:
+            raise ValueError("n_factors must lie between 1 and 8")
+        min_obs = int(fields.get("min_obs", 40))
+        if not 20 <= min_obs <= 252:
+            raise ValueError("min_obs must lie between 20 and 252")
+        lookback = int(fields.get("lookback", min(63, min_obs)))
+        if not 5 <= lookback <= 252:
+            raise ValueError("lookback must lie between 5 and 252")
+        shrinkage = float(fields.get("shrinkage", 0.15))
+        if not 0.0 <= shrinkage <= 1.0:
+            raise ValueError("shrinkage must lie between 0 and 1")
+        annualization = int(fields.get("annualization", 252))
+        if annualization < 1:
+            raise ValueError("annualization must be a positive integer")
+        portfolio = Decimal(sized["request"]["portfolio_notional"])
+        if portfolio <= 0:
+            raise ValueError("sized portfolio_notional must be positive")
+        weights = pd.Series({
+            row["instrument_id"]: float(
+                Decimal(row["target_notional"]) * (Decimal(1) if row["side"] == "buy" else Decimal(-1))
+                / portfolio)
+            for row in sized["rows"]
+        }, dtype=float)
+        if weights.empty or float(weights.abs().sum()) <= 0:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        panel = pd.DataFrame(dataset["panel_rows"])
+        if "return_1" not in panel.columns:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        symbols = sorted(weights.index.tolist())
+        complete = panel.pivot(index="timestamp", columns="instrument_id", values="return_1").reindex(
+            columns=symbols).dropna()
+        if len(complete) < min_obs:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        from gig.risk.exposures import factor_exposures
+        from gig.risk.factor_model import fit_statistical_risk_model, risk_report
+        report = risk_report(weights, complete, n_factors=n_factors, shrinkage=shrinkage)
+        if not report.get("available"):
+            # Fallback with explicit min_obs for shorter research panels.
+            model = fit_statistical_risk_model(
+                complete, n_factors=n_factors, min_obs=min_obs, shrinkage=shrinkage)
+            if model is None:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            decomposition = model.decompose(weights)
+            book_exposure = model.factor_exposure(weights)
+            report = {
+                "available": True,
+                "n_obs": model.n_obs,
+                "n_factors": model.n_factors,
+                "explained": model.explained,
+                "ex_ante_vol": decomposition["ex_ante_vol"],
+                "systematic_share": decomposition["systematic_share"],
+                "specific_share": decomposition["specific_share"],
+                "factor_exposure": {str(k): float(v) for k, v in book_exposure.items()},
+                "shrinkage": shrinkage,
+                "equation": "Σ = BB′ + D",
+            }
+        window = min(lookback, len(complete))
+        trailing = factor_exposures(weights, complete, pd.Series(dtype=object), window=window)
+        breaches: list[str] = []
+        if "max_ex_ante_vol" in fields:
+            bound = _positive(fields["max_ex_ante_vol"], "max_ex_ante_vol")
+            if bound > Decimal("5"):
+                raise ValueError("max_ex_ante_vol exceeds the research bound")
+            if report.get("ex_ante_vol") is not None and Decimal(str(report["ex_ante_vol"])) > bound:
+                breaches.append("MAX_EX_ANTE_VOL")
+        if "max_systematic_share" in fields:
+            share_bound = float(fields["max_systematic_share"])
+            if not 0 < share_bound <= 1:
+                raise ValueError("max_systematic_share must lie in (0, 1]")
+            sys_share = report.get("systematic_share")
+            if sys_share is not None and sys_share == sys_share and float(sys_share) > share_bound:
+                breaches.append("MAX_SYSTEMATIC_SHARE")
+        body = {
+            "schema_version": FACTOR_EXPOSURE,
+            "as_of": at.isoformat(),
+            "dataset_id": sized["dataset_id"],
+            "screen_id": sized["screen_id"],
+            "size_id": sized["size_id"],
+            "source": sized["source"],
+            "input_classification": sized["input_classification"],
+            "request": {
+                "n_factors": n_factors,
+                "min_obs": min_obs,
+                "lookback": lookback,
+                "shrinkage": shrinkage,
+                "annualization": annualization,
+                "max_ex_ante_vol": None if "max_ex_ante_vol" not in fields
+                else str(_positive(fields["max_ex_ante_vol"], "max_ex_ante_vol")),
+                "max_systematic_share": None if "max_systematic_share" not in fields
+                else float(fields["max_systematic_share"]),
+            },
+            "weights": {name: float(weights[name]) for name in symbols},
+            "report": report,
+            "trailing": {
+                "lookback": window,
+                "trailing_beta": trailing.get("trailing_beta"),
+                "net": trailing.get("net"),
+                "gross": trailing.get("gross"),
+                "n_long": trailing.get("n_long"),
+                "n_short": trailing.get("n_short"),
+                "method": "EQUAL_WEIGHT_UNIVERSE_TRAILING_BETA",
+            },
+            "breaches": breaches,
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {
+                "names": len(symbols),
+                "ex_ante_vol": report.get("ex_ante_vol"),
+                "systematic_share": report.get("systematic_share"),
+                "trailing_beta": trailing.get("trailing_beta"),
+                "breach_count": len(breaches),
+                "trading_approved": False,
+            },
+            "notes": [
+                "Factor exposures are a descriptive PCA risk attribution on the sized research book.",
+                "Σ = BB′ + D uses asymptotic principal components; not a licensed Barra/Axioma model.",
+                "Optional max_ex_ante_vol / max_systematic_share only flag research breaches.",
+                "No broker order, OMS prepare, or trading approval is established.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "exposure_id": identity}
+        self._path("factor-exposures").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("factor-exposures/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research factor exposure attribution",
+                              model_version=FACTOR_EXPOSURE,
+                              evidence="HASH_VERIFIED_RESEARCH_FACTOR_EXPOSURE",
+                              identity_key="exposure_id")
+
+    def load_factor_exposure(self, exposure_id: str) -> dict[str, Any]:
+        identity = sha256(exposure_id)
+        path = self._path("factor-exposures/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research factor exposure unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "exposure_id"}
+        if (document.get("exposure_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != FACTOR_EXPOSURE):
+            raise ValueError("factor exposure artifact integrity mismatch")
+        return document
+
+    def replay_factor_exposure(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"exposure_id"}, {"exposure_id"})
+        try:
+            document = self.load_factor_exposure(payload["exposure_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research factor exposure attribution",
+                              model_version=FACTOR_EXPOSURE,
+                              evidence="HASH_VERIFIED_RESEARCH_FACTOR_EXPOSURE",
+                              identity_key="exposure_id")
 
     def load(self, strategy_id: str) -> dict[str, Any]:
         identity = sha256(strategy_id)
