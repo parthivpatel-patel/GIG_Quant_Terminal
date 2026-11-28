@@ -1146,6 +1146,97 @@ class StrategyTests(unittest.TestCase):
         state = self.strategies.load_schedule_state(planned["data"]["schedule_id"])
         self.assertEqual(state["last_exposure_id"], tick["data"]["exposure_id"])
 
+    def test_schedule_ticks_attach_factor_rebalance_and_materialize(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+            "now": self.now, "request": watch_request,
+            "factor_exposure": True, "n_factors": 2, "min_obs": 40, "lookback": 40,
+            "factor_rebalance": True, "factor_rebalance_mode": "SHRINK_TO_VOL",
+            "max_ex_ante_vol": "0.025", "materialize_rebalance": True,
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        self.assertTrue(planned["data"]["factor_rebalance"])
+        self.assertTrue(planned["data"]["materialize_rebalance"])
+        self.assertEqual(
+            planned["data"]["factor_rebalance_request"]["mode"], "SHRINK_TO_VOL")
+        tick = self.strategies.tick_schedule({
+            "schedule_id": planned["data"]["schedule_id"], "now": self.now,
+        }).to_dict()
+        self.assertEqual(tick["state"], "AVAILABLE", tick)
+        self.assertTrue(tick["data"]["factor_rebalance_id"])
+        self.assertTrue(tick["data"]["metrics"]["factor_rebalance_attached"])
+        self.assertTrue(tick["data"]["metrics"]["materialize_rebalance_attached"])
+        self.assertTrue(tick["data"]["source_size_id"])
+        self.assertNotEqual(tick["data"]["size_id"], tick["data"]["source_size_id"])
+        sized = self.strategies.replay_size({"size_id": tick["data"]["size_id"]}).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        self.assertEqual(
+            sized["data"]["factor_rebalance_id"], tick["data"]["factor_rebalance_id"])
+        self.assertEqual(sized["data"]["previous_size_id"], tick["data"]["source_size_id"])
+        self.assertEqual(sized["data"]["request"]["materialized_from"], "FACTOR_REBALANCE")
+        state = self.strategies.load_schedule_state(planned["data"]["schedule_id"])
+        self.assertEqual(state["last_size_id"], tick["data"]["size_id"])
+        self.assertEqual(
+            state["last_factor_rebalance_id"], tick["data"]["factor_rebalance_id"])
+        with self.assertRaisesRegex(ValueError, "materialize_rebalance requires"):
+            self.strategies.schedule({
+                "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": self.now, "request": watch_request,
+                "materialize_rebalance": True,
+            })
+        with self.assertRaisesRegex(ValueError, "max_ex_ante_vol"):
+            self.strategies.schedule({
+                "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": self.now, "request": watch_request,
+                "factor_rebalance": True,
+            })
+
+    def test_schedule_ticks_materialize_cost_rebalance(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+            "now": self.now, "request": watch_request,
+            "cost_rebalance": True, "rebalance_mode": "SKIP_BELOW_COST",
+            "min_trade_notional": "1", "materialize_rebalance": True,
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        tick = self.strategies.tick_schedule({
+            "schedule_id": planned["data"]["schedule_id"], "now": self.now,
+        }).to_dict()
+        self.assertEqual(tick["state"], "AVAILABLE", tick)
+        self.assertTrue(tick["data"]["rebalance_id"])
+        self.assertTrue(tick["data"]["metrics"]["materialize_rebalance_attached"])
+        self.assertTrue(tick["data"]["source_size_id"])
+        sized = self.strategies.replay_size({"size_id": tick["data"]["size_id"]}).to_dict()
+        self.assertEqual(sized["data"]["request"]["materialized_from"], "COST_REBALANCE")
+        self.assertEqual(sized["data"]["previous_size_id"], tick["data"]["source_size_id"])
+        self.assertEqual(sized["data"]["rebalance_id"], tick["data"]["rebalance_id"])
+
     def test_schedule_tick_soft_skips_when_ic_ir_decayed(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)
