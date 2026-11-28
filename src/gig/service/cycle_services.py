@@ -192,10 +192,15 @@ class CycleServices:
             return self._strategies().exit_eval(body)
         if operation == "exit-eval-replay":
             return self._strategies().replay_exit_eval(body)
+        if operation == "feedback":
+            return self._strategies().feedback(body)
+        if operation == "feedback-replay":
+            return self._strategies().replay_feedback(body)
         if operation != "simulate":
             raise ValueError(
                 "research strategy operation must be simulate, size, size-replay, cycle, "
-                "cycle-replay, watch, watch-replay, exit-eval, exit-eval-replay, or replay")
+                "cycle-replay, watch, watch-replay, exit-eval, exit-eval-replay, feedback, "
+                "feedback-replay, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):

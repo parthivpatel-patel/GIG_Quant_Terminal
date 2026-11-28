@@ -151,6 +151,18 @@ class StrategyTests(unittest.TestCase):
             "exit_eval_id": evaluated["data"]["exit_eval_id"],
         }).to_dict()
         self.assertEqual(replayed["data"]["exit_eval_id"], evaluated["data"]["exit_eval_id"])
+        feedback = self.strategies.feedback({
+            "exit_eval_ids": [evaluated["data"]["exit_eval_id"]],
+        }).to_dict()
+        EnvelopeSchema.model_validate(feedback)
+        self.assertEqual(feedback["state"], "AVAILABLE", feedback)
+        self.assertFalse(feedback["data"]["trading_approved"])
+        self.assertEqual(feedback["data"]["metrics"]["evaluations"], 1)
+        self.assertGreaterEqual(feedback["data"]["metrics"]["names"], 1)
+        again = self.strategies.replay_feedback({
+            "feedback_id": feedback["data"]["feedback_id"],
+        }).to_dict()
+        self.assertEqual(again["data"]["feedback_id"], feedback["data"]["feedback_id"])
 
     def test_calculator_journal_binds_historical_var_from_size(self):
         sized = self.strategies.size({

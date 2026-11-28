@@ -34,6 +34,7 @@ SIZING = "gig.research-strategy.sizing.v1"
 CYCLE = "gig.research-strategy.cycle.v1"
 WATCH = "gig.research-strategy.watch.v1"
 EXIT_EVAL = "gig.research-strategy.exit-eval.v1"
+FEEDBACK = "gig.research-strategy.feedback.v1"
 
 
 def _hash(value: Any) -> str:
@@ -587,6 +588,94 @@ class ResearchStrategyWorkspace:
                               model_version=EXIT_EVAL,
                               evidence="HASH_VERIFIED_RESEARCH_EXIT_EVALUATION",
                               identity_key="exit_eval_id")
+
+    def feedback(self, payload: dict[str, Any]) -> Contract:
+        """Aggregate historical exit-eval outcomes into research performance feedback."""
+        fields = _fields(payload, {"exit_eval_ids"}, {"exit_eval_ids"})
+        ids = fields["exit_eval_ids"]
+        if not isinstance(ids, list) or not 1 <= len(ids) <= 32 or len(set(ids)) != len(ids):
+            raise ValueError("feedback requires one to thirty-two distinct exit evaluation identities")
+        evaluations: list[dict[str, Any]] = []
+        try:
+            for identity in ids:
+                evaluations.append(self.load_exit_eval(identity))
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        dataset_ids = {item["dataset_id"] for item in evaluations}
+        if len(dataset_ids) != 1:
+            raise ValueError("exit evaluations must share one dataset identity")
+        totals = {"STOP_LOSS": 0, "TAKE_PROFIT": 0, "HORIZON": 0, "NO_FORWARD_PATH": 0, "names": 0}
+        path_returns: list[float] = []
+        for item in evaluations:
+            for key in ("STOP_LOSS", "TAKE_PROFIT", "HORIZON", "NO_FORWARD_PATH"):
+                totals[key] += int(item["metrics"].get(key, 0))
+            totals["names"] += int(item["metrics"].get("names", 0))
+            for row in item["rows"]:
+                if row.get("path_return") is not None:
+                    path_returns.append(float(row["path_return"]))
+        observed = totals["STOP_LOSS"] + totals["TAKE_PROFIT"] + totals["HORIZON"]
+        mean_path = (sum(path_returns) / len(path_returns)) if path_returns else None
+        body = {
+            "schema_version": FEEDBACK,
+            "as_of": max(item["as_of"] for item in evaluations),
+            "dataset_id": next(iter(dataset_ids)),
+            "exit_eval_ids": [sha256(i) for i in ids],
+            "source": evaluations[-1]["source"],
+            "input_classification": evaluations[-1]["input_classification"],
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {
+                **totals,
+                "evaluations": len(evaluations),
+                "observed_paths": observed,
+                "take_profit_rate": (totals["TAKE_PROFIT"] / observed) if observed else None,
+                "stop_loss_rate": (totals["STOP_LOSS"] / observed) if observed else None,
+                "mean_path_return": mean_path,
+                "trading_approved": False,
+            },
+            "notes": [
+                "Feedback aggregates saved exit-eval path outcomes only.",
+                "Rates are descriptive research diagnostics, not calibrated expectancy.",
+                "No broker order or trading approval is established.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "feedback_id": identity}
+        self._path("feedback").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("feedback/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research strategy performance feedback",
+                              model_version=FEEDBACK,
+                              evidence="HASH_VERIFIED_RESEARCH_STRATEGY_FEEDBACK",
+                              identity_key="feedback_id")
+
+    def load_feedback(self, feedback_id: str) -> dict[str, Any]:
+        identity = sha256(feedback_id)
+        path = self._path("feedback/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research strategy feedback unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "feedback_id"}
+        if (document.get("feedback_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != FEEDBACK):
+            raise ValueError("research strategy feedback integrity mismatch")
+        return document
+
+    def replay_feedback(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"feedback_id"}, {"feedback_id"})
+        try:
+            document = self.load_feedback(payload["feedback_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research strategy performance feedback",
+                              model_version=FEEDBACK,
+                              evidence="HASH_VERIFIED_RESEARCH_STRATEGY_FEEDBACK",
+                              identity_key="feedback_id")
 
     def size(self, payload: dict[str, Any]) -> Contract:
         """Convert screen research weights into capped research lot sizes.
