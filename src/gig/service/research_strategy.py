@@ -2325,9 +2325,7 @@ class ResearchStrategyWorkspace:
             notional = abs(signed)
             quantity = (notional / price) if price > 0 else Decimal(0)
             action, skip_reason = actions.get(name, ("KEEP", None))
-            if action == "TRADE":
-                trades_proposed += 1
-            elif action == "SHRINK":
+            if action == "TRADE" or action == "SHRINK":
                 trades_proposed += 1
             elif action == "SKIP":
                 trades_skipped += 1
