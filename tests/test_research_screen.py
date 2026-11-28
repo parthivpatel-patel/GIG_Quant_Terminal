@@ -128,8 +128,8 @@ class ScreenFlowTests(unittest.TestCase):
 
     def test_discover_from_pairs_projects_weights(self):
         from gig.service.pairs_workspace import PairsResearchWorkspace
-        from test_persisted_pairs import pair_bars
         from test_persisted_data import seed_persisted_fixture
+        from test_persisted_pairs import pair_bars
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
