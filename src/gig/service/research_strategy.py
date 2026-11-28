@@ -961,7 +961,8 @@ class ResearchStrategyWorkspace:
                                    "max_one_way_bps", "max_cost_nav", "alpha_scale",
                                    "factor_exposure", "n_factors", "min_obs", "lookback",
                                    "shrinkage", "max_ex_ante_vol", "max_systematic_share",
-                                   "annualization", "factor_breach_action"},
+                                   "annualization", "factor_breach_action",
+                                   "factor_attribution", "attribution_horizon_bars"},
                          {"action", "cadence_seconds", "now", "request"})
         action = fields["action"]
         if action not in _SCHEDULE_ACTIONS:
@@ -1035,6 +1036,26 @@ class ResearchStrategyWorkspace:
             # Soft-stop needs at least one research breach bound to evaluate.
             raise ValueError(
                 "factor_breach_action requires max_ex_ante_vol or max_systematic_share")
+        do_attr = fields.get("factor_attribution", False)
+        if not isinstance(do_attr, bool):
+            raise ValueError("factor_attribution must be a boolean")
+        attribution_request: dict[str, Any] | None = None
+        if do_attr:
+            horizon_raw = fields.get("attribution_horizon_bars")
+            if horizon_raw is None and exit_request is not None:
+                horizon_raw = exit_request["horizon_bars"]
+            if horizon_raw is None and "horizon_bars" in fields:
+                horizon_raw = fields["horizon_bars"]
+            if horizon_raw is None:
+                raise ValueError(
+                    "factor_attribution requires attribution_horizon_bars or horizon_bars")
+            attr_horizon = int(horizon_raw)
+            if not 1 <= attr_horizon <= 252:
+                raise ValueError("attribution_horizon_bars must lie between 1 and 252")
+            attribution_request = {"horizon_bars": attr_horizon}
+            for key in ("n_factors", "min_obs", "lookback", "shrinkage", "annualization"):
+                if key in fields:
+                    attribution_request[key] = fields[key]
         decay_action = fields.get("alpha_decay_action", "soft_skip")
         if decay_action not in {"soft_skip", "invalidate"}:
             raise ValueError("alpha_decay_action must be soft_skip or invalidate")
@@ -1067,6 +1088,8 @@ class ResearchStrategyWorkspace:
             "factor_exposure": do_factor,
             "factor_exposure_request": factor_request,
             "factor_breach_action": factor_breach_action if do_factor else None,
+            "factor_attribution": do_attr,
+            "factor_attribution_request": attribution_request,
             "min_ic_ir": min_ir,
             "min_ic_half_life_steps": min_hl,
             "alpha_decay_action": decay_action,
@@ -1080,6 +1103,7 @@ class ResearchStrategyWorkspace:
                         "feedback_every_n_ticks": feedback_every,
                         "cost_rebalance": do_rebalance,
                         "factor_exposure": do_factor,
+                        "factor_attribution": do_attr,
                         "factor_breach_gated": bool(
                             do_factor and factor_request
                             and any(key in factor_request
@@ -1093,6 +1117,7 @@ class ResearchStrategyWorkspace:
                 "Optional cost_rebalance proposes KEEP/TRADE/SKIP/SHRINK from each tick size+TCA.",
                 "Optional factor_exposure attributes PCA risk on each tick size_id.",
                 "Optional factor_breach_action soft-stops or invalidates when exposure breaches trip.",
+                "Optional factor_attribution walks ex-post PCA path PnL on each tick size_id.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background worker, broker path, or trading approval is established.",
             ],
@@ -1323,6 +1348,17 @@ class ResearchStrategyWorkspace:
             if attributed["state"] == State.AVAILABLE.value and isinstance(attributed.get("data"), dict):
                 exposure_id = attributed["data"]["exposure_id"]
                 factor_breaches = list(attributed["data"].get("breaches") or [])
+        attribution_id = None
+        if (plan.get("factor_attribution") and result.get("size_id")
+                and plan.get("factor_attribution_request")):
+            attr_payload: dict[str, Any] = {
+                "size_id": result["size_id"],
+                "now": clock.isoformat(),
+                **plan["factor_attribution_request"],
+            }
+            path_attr = self.factor_attribution(attr_payload).to_dict()
+            if path_attr["state"] == State.AVAILABLE.value and isinstance(path_attr.get("data"), dict):
+                attribution_id = path_attr["data"]["attribution_id"]
         decay = self._alpha_decay_tripped(plan, result.get("screen_id"))
         invalidation_id = None
         if decay is not None and decay["alpha_decay_action"] == "invalidate" and result.get("screen_id"):
@@ -1364,6 +1400,7 @@ class ResearchStrategyWorkspace:
             "feedback_id": feedback_id,
             "rebalance_id": rebalance_id,
             "exposure_id": exposure_id,
+            "attribution_id": attribution_id,
             "factor_breaches": factor_breaches,
             "strategy_id": result.get("strategy_id"),
             "invalidation_id": invalidation_id,
@@ -1383,6 +1420,7 @@ class ResearchStrategyWorkspace:
                 "feedback_attached": feedback_id is not None,
                 "cost_rebalance_attached": rebalance_id is not None,
                 "factor_exposure_attached": exposure_id is not None,
+                "factor_attribution_attached": attribution_id is not None,
                 "factor_breached": factor_breached,
                 "factor_breach_action": plan.get("factor_breach_action") if factor_breached else None,
                 "exit_eval_count": len(exit_eval_ids),
@@ -1395,7 +1433,7 @@ class ResearchStrategyWorkspace:
                 "next_due advances by cadence_seconds from the tick clock.",
                 "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
-                "Optional exit_eval, feedback, cost_rebalance, and factor_exposure hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
+                "Optional exit_eval, feedback, cost_rebalance, factor_exposure, and factor_attribution hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
                 "Optional factor_breach_action soft-stops or invalidates when exposure breaches trip.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background scheduler or trading approval is established.",
@@ -1418,6 +1456,8 @@ class ResearchStrategyWorkspace:
             "last_feedback_id": feedback_id if feedback_id is not None else plan.get("last_feedback_id"),
             "last_rebalance_id": rebalance_id if rebalance_id is not None else plan.get("last_rebalance_id"),
             "last_exposure_id": exposure_id if exposure_id is not None else plan.get("last_exposure_id"),
+            "last_attribution_id": (
+                attribution_id if attribution_id is not None else plan.get("last_attribution_id")),
             "alpha_decayed": bool(decay is not None or plan.get("alpha_decayed")),
             "alpha_decay_tick_id": identity if decay is not None else plan.get("alpha_decay_tick_id"),
             "factor_breached": bool(factor_breached or plan.get("factor_breached")),
@@ -1448,6 +1488,7 @@ class ResearchStrategyWorkspace:
                     "last_feedback_id": pointer.get("last_feedback_id"),
                     "last_rebalance_id": pointer.get("last_rebalance_id"),
                     "last_exposure_id": pointer.get("last_exposure_id"),
+                    "last_attribution_id": pointer.get("last_attribution_id"),
                     "alpha_decayed": pointer.get("alpha_decayed", False),
                     "alpha_decay_tick_id": pointer.get("alpha_decay_tick_id"),
                     "factor_breached": pointer.get("factor_breached", False),
@@ -1455,7 +1496,6 @@ class ResearchStrategyWorkspace:
                     "factor_breaches": pointer.get("factor_breaches") or [],
                     "invalidation_id": pointer.get("invalidation_id")}
         return plan
-
     def due_schedules(self, payload: dict[str, Any]) -> Contract:
         """List hash-verified schedules that are due at ``now`` for agent ticks.
 

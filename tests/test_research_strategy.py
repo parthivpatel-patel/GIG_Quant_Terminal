@@ -1105,6 +1105,55 @@ class StrategyTests(unittest.TestCase):
         state = self.strategies.load_schedule_state(planned["data"]["schedule_id"])
         self.assertEqual(state["last_exposure_id"], tick["data"]["exposure_id"])
 
+    def test_schedule_ticks_attach_factor_attribution(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1", "max_age_seconds": 10_000_000,
+        }
+        # Tick earlier than the panel tip so path attribution observes forward bars.
+        earlier = (pd.Timestamp(self.now) - pd.Timedelta(days=10)).isoformat()
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+            "now": earlier, "request": watch_request,
+            "factor_attribution": True, "attribution_horizon_bars": 5,
+            "n_factors": 2, "min_obs": 40, "lookback": 40,
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        self.assertTrue(planned["data"]["factor_attribution"])
+        self.assertEqual(planned["data"]["factor_attribution_request"]["horizon_bars"], 5)
+        tick = self.strategies.tick_schedule({
+            "schedule_id": planned["data"]["schedule_id"], "now": earlier,
+        }).to_dict()
+        self.assertEqual(tick["state"], "AVAILABLE", tick)
+        self.assertTrue(tick["data"]["size_id"])
+        self.assertTrue(tick["data"]["attribution_id"])
+        self.assertTrue(tick["data"]["metrics"]["factor_attribution_attached"])
+        self.assertFalse(tick["data"]["trading_approved"])
+        replayed = self.strategies.replay_factor_attribution({
+            "attribution_id": tick["data"]["attribution_id"],
+        }).to_dict()
+        self.assertEqual(replayed["state"], "AVAILABLE", replayed)
+        self.assertEqual(
+            replayed["data"]["attribution_id"], tick["data"]["attribution_id"])
+        self.assertGreaterEqual(replayed["data"]["metrics"]["bars_observed"], 1)
+        state = self.strategies.load_schedule_state(planned["data"]["schedule_id"])
+        self.assertEqual(state["last_attribution_id"], tick["data"]["attribution_id"])
+        with self.assertRaisesRegex(ValueError, "attribution_horizon_bars or horizon_bars"):
+            self.strategies.schedule({
+                "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": earlier, "request": watch_request,
+                "factor_attribution": True,
+            })
+
     def test_schedule_tick_soft_skips_when_ic_ir_decayed(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)
