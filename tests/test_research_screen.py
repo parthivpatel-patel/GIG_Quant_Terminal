@@ -43,7 +43,17 @@ class ScreenUnitTests(unittest.TestCase):
         self.assertLess(labeled[2]["research_weight"], 0.0)
         self.assertAlmostEqual(abs(labeled[0]["research_weight"]) + abs(labeled[2]["research_weight"]), 1.0)
         self.assertEqual(labeled[1]["research_weight"], 0.0)
+        self.assertEqual(labeled[2]["opportunity_rank"], 1)  # |−0.5| > |0.4|
+        self.assertEqual(labeled[0]["opportunity_rank"], 2)
+        self.assertIsNone(labeled[1]["opportunity_rank"])
+        self.assertEqual(labeled[2]["confidence"]["state"], "UNCALIBRATED_RELATIVE_ABS_SCORE")
+        self.assertAlmostEqual(labeled[2]["confidence"]["value"], 1.0)
         self.assertFalse(any(row["trading_approved"] for row in labeled))
+        expired = label_rows(
+            rows, buy_threshold=0.25, sell_threshold=-0.25, ttl_seconds=60,
+            signal_as_of="2024-01-01T00:00:00Z", now="2024-01-01T00:02:00Z",
+        )
+        self.assertEqual(expired[0]["expiration_state"], "EXPIRED")
         with self.assertRaisesRegex(ValueError, "buy_threshold"):
             label_rows(rows, buy_threshold=-0.1, sell_threshold=0.1)
         previous = [{"instrument_id": "US:AAA", "stance": "RESEARCH_HOLD"},

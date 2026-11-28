@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -90,7 +91,9 @@ def _number(value: Any, name: str, *, low: float, high: float) -> float:
     return number
 
 
-def label_rows(rows: list[dict[str, Any]], *, buy_threshold: float, sell_threshold: float) -> list[dict[str, Any]]:
+def label_rows(rows: list[dict[str, Any]], *, buy_threshold: float, sell_threshold: float,
+               ttl_seconds: int | None = None, signal_as_of: str | None = None,
+               now: str | None = None) -> list[dict[str, Any]]:
     if buy_threshold <= sell_threshold:
         raise ValueError("buy_threshold must exceed sell_threshold")
     labeled = []
@@ -111,15 +114,40 @@ def label_rows(rows: list[dict[str, Any]], *, buy_threshold: float, sell_thresho
             "trading_approved": False,
             "confidence": {"state": "UNKNOWN", "value": None},
             "uncertainty": {"state": "NOT_CALIBRATED", "value": None},
+            "opportunity_rank": None,
+            "expires_at": None,
+            "expiration_state": "UNKNOWN",
         })
     actionable = [row for row in labeled if row["stance"] != "RESEARCH_HOLD"]
     total = sum(abs(row["prediction"]) for row in actionable)
+    peak = max((abs(row["prediction"]) for row in actionable), default=0.0)
     for row in labeled:
         if row["stance"] == "RESEARCH_HOLD" or total <= 0:
             row["research_weight"] = 0.0
         else:
             signed = abs(row["prediction"]) / total
             row["research_weight"] = signed if row["stance"] == "RESEARCH_BUY" else -signed
+        if peak > 0 and row["stance"] != "RESEARCH_HOLD":
+            row["confidence"] = {
+                "state": "UNCALIBRATED_RELATIVE_ABS_SCORE",
+                "value": abs(row["prediction"]) / peak,
+            }
+    ranked = sorted(actionable, key=lambda item: (-abs(item["research_weight"]), item["instrument_id"]))
+    for index, row in enumerate(ranked, start=1):
+        row["opportunity_rank"] = index
+    if ttl_seconds is not None:
+        if signal_as_of is None:
+            raise ValueError("signal_as_of is required when ttl_seconds is set")
+        if ttl_seconds < 1:
+            raise ValueError("ttl_seconds must be a positive integer")
+        origin = aware_timestamp(signal_as_of)
+        expires = origin + timedelta(seconds=int(ttl_seconds))
+        clock = aware_timestamp(now) if now is not None else origin
+        expires_at = expires.isoformat()
+        state = "EXPIRED" if clock > expires else "ACTIVE"
+        for row in labeled:
+            row["expires_at"] = expires_at
+            row["expiration_state"] = state if row["stance"] != "RESEARCH_HOLD" else "NOT_APPLICABLE"
     return labeled
 
 
@@ -172,13 +200,21 @@ def build_screen(signal: dict[str, Any], request: dict[str, Any],
                  previous: dict[str, Any] | None) -> dict[str, Any]:
     if not signal.get("usable_for_portfolio") or not signal.get("rows"):
         raise ValueError("signal is not usable for a research screen")
-    rows = label_rows(signal["rows"], buy_threshold=request["buy_threshold"],
-                      sell_threshold=request["sell_threshold"])
+    rows = label_rows(
+        signal["rows"], buy_threshold=request["buy_threshold"],
+        sell_threshold=request["sell_threshold"],
+        ttl_seconds=request.get("ttl_seconds"),
+        signal_as_of=signal["signal_as_of"],
+        now=request.get("now"),
+    )
     prior_rows = previous["rows"] if previous is not None else None
     events = timing_events(rows, prior_rows)
     buys = sum(row["stance"] == "RESEARCH_BUY" for row in rows)
     sells = sum(row["stance"] == "RESEARCH_SELL" for row in rows)
     holds = sum(row["stance"] == "RESEARCH_HOLD" for row in rows)
+    expired = any(row.get("expiration_state") == "EXPIRED" for row in rows)
+    ranked = [row for row in rows if row.get("opportunity_rank") is not None]
+    ranked.sort(key=lambda item: item["opportunity_rank"])
     return {
         "schema_version": IMPLEMENTATION,
         "request": request,
@@ -190,24 +226,38 @@ def build_screen(signal: dict[str, Any], request: dict[str, Any],
         "input_classification": signal["input_classification"],
         "previous_screen_id": request.get("previous_screen_id"),
         "rows": rows,
+        "opportunity_ranking": [
+            {"instrument_id": row["instrument_id"], "opportunity_rank": row["opportunity_rank"],
+             "stance": row["stance"], "research_weight": row["research_weight"],
+             "confidence": row["confidence"], "expiration_state": row["expiration_state"],
+             "expires_at": row["expires_at"], "trading_approved": False}
+            for row in ranked
+        ],
         "timing": events,
         "metrics": {
             "instruments": len(rows),
             "research_buys": buys,
             "research_sells": sells,
             "research_holds": holds,
+            "ranked_opportunities": len(ranked),
+            "signal_expired": expired,
             "timing_entries": sum(e["event"].startswith("ENTER_") for e in events),
             "timing_exits": sum(e["event"].startswith("EXIT_") for e in events),
             "timing_flips": sum(e["event"] == "FLIP" for e in events),
             "trading_approved": False,
         },
-        "usable_for_portfolio": signal["usable_for_portfolio"] and any(row["stance"] != "RESEARCH_HOLD" for row in rows),
+        "usable_for_portfolio": (
+            signal["usable_for_portfolio"] and not expired
+            and any(row["stance"] != "RESEARCH_HOLD" for row in rows)
+        ),
         "trading_approved": False,
         "economically_validated": False,
         "method": "CENTERED_RANK_THRESHOLD_STANCE_V1",
         "notes": [
             "RESEARCH_BUY / RESEARCH_SELL / RESEARCH_HOLD are threshold labels on an uncalibrated ensemble score.",
             "research_weight is a relative research share among actionable names, not an order size.",
+            "opportunity_rank orders actionable names by absolute research_weight; confidence is uncalibrated relative abs score.",
+            "ttl_seconds expires actionable stances after signal_as_of; expired screens are not usable_for_portfolio.",
             "Timing events compare two saved screens only; they are not live market monitors.",
             "No broker order, allocation approval or funded certification is established.",
         ],
@@ -226,7 +276,8 @@ class ResearchScreenWorkspace:
     def discover(self, payload: dict[str, Any]) -> Contract:
         """Fit an ensemble from saved model runs, then label research stances in one step."""
         fields = _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations",
-                                   "buy_threshold", "sell_threshold", "previous_screen_id"},
+                                   "buy_threshold", "sell_threshold", "previous_screen_id",
+                                   "ttl_seconds"},
                          {"run_ids", "now"})
         signal_payload: dict[str, Any] = {"run_ids": fields["run_ids"], "now": fields["now"]}
         for key in ("lookback", "min_ic_observations"):
@@ -240,8 +291,9 @@ class ResearchScreenWorkspace:
             "signal_id": signal["data"]["signal_id"],
             "discovery": {"operation": "from-runs", "run_ids": list(signal["data"]["run_ids"]),
                           "scoring_state": signal["data"]["scoring_state"]},
+            "now": fields["now"],
         }
-        for key in ("buy_threshold", "sell_threshold", "previous_screen_id"):
+        for key in ("buy_threshold", "sell_threshold", "previous_screen_id", "ttl_seconds"):
             if key in fields:
                 screen_payload[key] = fields[key]
         return self.run(screen_payload)
@@ -264,7 +316,8 @@ class ResearchScreenWorkspace:
         )
 
     def run(self, payload: dict[str, Any]) -> Contract:
-        fields = _fields(payload, {"signal_id", "buy_threshold", "sell_threshold", "previous_screen_id", "discovery"},
+        fields = _fields(payload, {"signal_id", "buy_threshold", "sell_threshold", "previous_screen_id",
+                                   "discovery", "ttl_seconds", "now"},
                          {"signal_id"})
         request = {
             "signal_id": sha256(fields["signal_id"]),
@@ -273,6 +326,13 @@ class ResearchScreenWorkspace:
         }
         if "previous_screen_id" in fields:
             request["previous_screen_id"] = sha256(fields["previous_screen_id"])
+        if "ttl_seconds" in fields:
+            ttl = int(fields["ttl_seconds"])
+            if ttl < 1:
+                raise ValueError("ttl_seconds must be a positive integer")
+            request["ttl_seconds"] = ttl
+        if "now" in fields:
+            request["now"] = aware_timestamp(fields["now"]).isoformat()
         discovery = fields.get("discovery")
         if discovery is not None:
             if not isinstance(discovery, dict) or discovery.get("operation") != "from-runs":
@@ -349,7 +409,8 @@ class ResearchScreenWorkspace:
 
     def monitor(self, payload: dict[str, Any]) -> Contract:
         """Chain screens across successive saved signals for research-only monitoring."""
-        fields = _fields(payload, {"signal_ids", "buy_threshold", "sell_threshold"}, {"signal_ids"})
+        fields = _fields(payload, {"signal_ids", "buy_threshold", "sell_threshold", "ttl_seconds", "now"},
+                         {"signal_ids"})
         ids = fields["signal_ids"]
         if not isinstance(ids, list) or not 2 <= len(ids) <= 32 or len(set(ids)) != len(ids):
             raise ValueError("monitor requires two to thirty-two distinct signal identities")
@@ -357,7 +418,7 @@ class ResearchScreenWorkspace:
         previous_id: str | None = None
         for signal_id in ids:
             request: dict[str, Any] = {"signal_id": signal_id}
-            for key in ("buy_threshold", "sell_threshold"):
+            for key in ("buy_threshold", "sell_threshold", "ttl_seconds", "now"):
                 if key in fields:
                     request[key] = fields[key]
             if previous_id is not None:

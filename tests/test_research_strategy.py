@@ -104,6 +104,33 @@ class StrategyTests(unittest.TestCase):
                 "lot_size": 1, "vol_scale": "1", "target_volatility": "0.15",
             })
 
+    def test_exit_eval_and_regime_aware_sizing(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "regime_short_bars": 10, "regime_long_bars": 40, "annualization": 252,
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        self.assertIn("TRAILING_VOL_REGIME", sized["data"]["request"]["vol_scale_source"])
+        self.assertEqual(sized["data"]["risk"]["data"]["regime"]["method"],
+                         "DESCRIPTIVE_TRAILING_VOLATILITY_NOT_HMM")
+        evaluated = self.strategies.exit_eval({
+            "size_id": sized["data"]["size_id"],
+            "stop_loss_pct": "0.5", "take_profit_pct": "0.5", "horizon_bars": 5,
+        }).to_dict()
+        EnvelopeSchema.model_validate(evaluated)
+        self.assertEqual(evaluated["state"], "AVAILABLE", evaluated)
+        self.assertFalse(evaluated["data"]["trading_approved"])
+        self.assertTrue(evaluated["data"]["rows"])
+        self.assertTrue(all(row["outcome"] in {
+            "STOP_LOSS", "TAKE_PROFIT", "HORIZON", "NO_FORWARD_PATH",
+        } for row in evaluated["data"]["rows"]))
+        replayed = self.strategies.replay_exit_eval({
+            "exit_eval_id": evaluated["data"]["exit_eval_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["exit_eval_id"], evaluated["data"]["exit_eval_id"])
+
     def test_calculator_journal_binds_historical_var_from_size(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
