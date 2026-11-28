@@ -31,6 +31,7 @@ from gig.timestamps import aware_timestamp
 IMPLEMENTATION = "gig.research-strategy.v1"
 SIZING = "gig.research-strategy.sizing.v1"
 CYCLE = "gig.research-strategy.cycle.v1"
+WATCH = "gig.research-strategy.watch.v1"
 
 
 def _hash(value: Any) -> str:
@@ -298,6 +299,125 @@ class ResearchStrategyWorkspace:
                               model_version=CYCLE,
                               evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_CYCLE",
                               identity_key="cycle_id")
+
+    def watch(self, payload: dict[str, Any]) -> Contract:
+        """Research watch pass: monitor successive signals, size latest, optional options scan.
+
+        Explicit caller invocation only — not a live market subscription.
+        """
+        allowed = {"signal_ids", "buy_threshold", "sell_threshold", "now", "portfolio_notional",
+                   "max_name_notional", "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
+                   "annualization", "options_run_ids"}
+        fields = _fields(payload, allowed, {"signal_ids", "now", "portfolio_notional",
+                                            "max_name_notional", "lot_size"})
+        monitor_payload = {key: fields[key] for key in fields
+                           if key in {"signal_ids", "buy_threshold", "sell_threshold"}}
+        monitored = self.screens.monitor(monitor_payload).to_dict()
+        if monitored["state"] != State.AVAILABLE.value or not isinstance(monitored.get("data"), dict):
+            return Contract.admit(monitored["state"], monitored.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=monitored["provenance"]["classification"],
+                                  as_of=monitored["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=monitored.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        monitor = monitored["data"]
+        screen_id = monitor["latest_screen_id"]
+        size_payload = {
+            "screen_id": screen_id, "now": fields["now"],
+            "portfolio_notional": fields["portfolio_notional"],
+            "max_name_notional": fields["max_name_notional"],
+            "lot_size": fields["lot_size"],
+        }
+        for key in ("max_age_seconds", "vol_scale", "target_volatility", "annualization"):
+            if key in fields:
+                size_payload[key] = fields[key]
+        sized = self.size(size_payload).to_dict()
+        if sized["state"] != State.AVAILABLE.value or not isinstance(sized.get("data"), dict):
+            return Contract.admit(sized["state"], sized.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=sized["provenance"]["classification"],
+                                  as_of=sized["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=sized.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        scan_data = None
+        if "options_run_ids" in fields:
+            scanned = self.screens.scan_options({
+                "screen_id": screen_id, "options_run_ids": fields["options_run_ids"],
+            }).to_dict()
+            if scanned["state"] != State.AVAILABLE.value or not isinstance(scanned.get("data"), dict):
+                return Contract.admit(scanned["state"], scanned.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=scanned["provenance"]["classification"],
+                                      as_of=scanned["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=scanned.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            scan_data = scanned["data"]
+        body = {
+            "schema_version": WATCH,
+            "as_of": sized["data"]["as_of"],
+            "dataset_id": monitor["dataset_id"],
+            "monitor_id": monitor["monitor_id"],
+            "screen_id": screen_id,
+            "size_id": sized["data"]["size_id"],
+            "scan_id": scan_data["scan_id"] if scan_data is not None else None,
+            "source": monitor["source"],
+            "input_classification": monitor["input_classification"],
+            "timeline": monitor["timeline"],
+            "size_metrics": sized["data"]["metrics"],
+            "options_metrics": scan_data["metrics"] if scan_data is not None else None,
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "SIMULATED_PLAN",
+            "metrics": {
+                "screens": monitor["metrics"]["screens"],
+                "timing_entries": monitor["metrics"]["timing_entries"],
+                "timing_exits": monitor["metrics"]["timing_exits"],
+                "sized_names": sized["data"]["metrics"]["names"],
+                "options_actionable": (scan_data["metrics"]["actionable"] if scan_data is not None else 0),
+                "trading_approved": False,
+            },
+            "notes": [
+                "Watch pass chains monitor → size → optional options scan on explicit request.",
+                "It is not a live market subscription or broker order path.",
+                "Trading stays unapproved.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "watch_id": identity}
+        self._path("watches").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("watches/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research opportunity watch pass",
+                              model_version=WATCH,
+                              evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_WATCH",
+                              identity_key="watch_id")
+
+    def load_watch(self, watch_id: str) -> dict[str, Any]:
+        identity = sha256(watch_id)
+        path = self._path("watches/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research watch unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "watch_id"}
+        if document.get("watch_id") != identity or _hash(body) != identity or body.get("schema_version") != WATCH:
+            raise ValueError("research watch artifact integrity mismatch")
+        return document
+
+    def replay_watch(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"watch_id"}, {"watch_id"})
+        try:
+            document = self.load_watch(payload["watch_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research opportunity watch pass",
+                              model_version=WATCH,
+                              evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_WATCH",
+                              identity_key="watch_id")
 
     def size(self, payload: dict[str, Any]) -> Contract:
         """Convert screen research weights into capped research lot sizes.

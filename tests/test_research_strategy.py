@@ -6,14 +6,17 @@ import unittest
 from pathlib import Path
 
 import httpx
+import pandas as pd
 
 from gig.service.app import create_app
 from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
+from gig.service.options_workspace import OptionsWorkspace
 from gig.service.persisted_research import PersistedResearchWorkspace
 from gig.service.research_screen import ResearchScreenWorkspace
 from gig.service.research_strategy import ResearchStrategyWorkspace
 from gig.service.signal_workspace import SignalWorkspace
+from test_options_workspace import option_fixture, option_request
 from test_persisted_flow_http import allocation_request, seed_flow
 
 
@@ -130,6 +133,41 @@ class StrategyTests(unittest.TestCase):
             replayed = ResearchStrategyWorkspace(root).replay_cycle(
                 {"cycle_id": body["cycle_id"]}).to_dict()
             self.assertEqual(replayed["data"]["cycle_id"], body["cycle_id"])
+
+    def test_watch_monitors_sizes_and_optionally_scans(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        underlying = self.screen["rows"][0]["instrument_id"]
+        options = OptionsWorkspace(self.base)
+        fixture = option_fixture(underlying_id=underlying)
+        options.ingest(fixture)
+        option_run = options.run(option_request(underlying_id=underlying)).to_dict()["data"]
+        watched = self.strategies.watch({
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "now": later, "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "options_run_ids": [option_run["run_id"]],
+        }).to_dict()
+        EnvelopeSchema.model_validate(watched)
+        self.assertEqual(watched["state"], "AVAILABLE", watched)
+        body = watched["data"]
+        self.assertFalse(body["trading_approved"])
+        self.assertFalse(body["broker_connected"])
+        self.assertTrue(body["monitor_id"])
+        self.assertTrue(body["size_id"])
+        self.assertTrue(body["scan_id"])
+        self.assertEqual(body["metrics"]["screens"], 2)
+        self.assertGreaterEqual(body["metrics"]["options_actionable"], 0)
+        replayed = self.strategies.replay_watch({"watch_id": body["watch_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["watch_id"], body["watch_id"])
+        missing = self.strategies.replay_watch({"watch_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
 
 
 class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):
