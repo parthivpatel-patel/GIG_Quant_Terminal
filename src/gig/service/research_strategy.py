@@ -39,6 +39,7 @@ INVALIDATION = "gig.research-strategy.invalidation.v1"
 SCHEDULE = "gig.research-strategy.schedule.v1"
 TICK = "gig.research-strategy.schedule-tick.v1"
 COST = "gig.research-strategy.estimate-cost.v1"
+COST_REBALANCE = "gig.research-strategy.cost-rebalance.v1"
 _INVALIDATION_REASONS = frozenset({
     "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP", "ALPHA_DECAY",
 })
@@ -201,7 +202,9 @@ class ResearchStrategyWorkspace:
                    "gross_leverage", "max_name_weight", "lot_size", "max_age_seconds",
                    "annualization", "metadata", "limits", "commission_bps", "slippage_bps",
                    "price_tick", "max_turnover", "max_transaction_cost", "fill", "document_id",
-                   "nlp_profile", "estimate_cost", "spread_bps", "impact_eta", "findings_id"}
+                   "nlp_profile", "estimate_cost", "spread_bps", "impact_eta", "findings_id",
+                   "cost_rebalance", "rebalance_mode",
+                   "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -284,6 +287,49 @@ class ResearchStrategyWorkspace:
                                       error=costed.get("error"),
                                       readiness="RESEARCH_ONLY")
             cost_data = costed["data"]
+        rebalance = fields.get("cost_rebalance", False)
+        if not isinstance(rebalance, bool):
+            raise ValueError("cost_rebalance must be a boolean")
+        rebalance_data = None
+        if rebalance:
+            if cost_data is None:
+                # ensure cost exists when rebalance requested without estimate_cost
+                cost_payload = {
+                    "size_id": sized["data"]["size_id"], "now": fields["now"],
+                }
+                for key in ("previous_size_id", "spread_bps", "commission_bps", "impact_eta",
+                            "adv_lookback_bars"):
+                    if key in fields:
+                        cost_payload[key] = fields[key]
+                costed = self.estimate_cost(cost_payload).to_dict()
+                if costed["state"] != State.AVAILABLE.value or not isinstance(costed.get("data"), dict):
+                    return Contract.admit(costed["state"], costed.get("data"),
+                                          source="persisted-research-strategy",
+                                          classification=costed["provenance"]["classification"],
+                                          as_of=costed["provenance"].get("as_of"),
+                                          scope="workspace.research-strategy",
+                                          error=costed.get("error"),
+                                          readiness="RESEARCH_ONLY")
+                cost_data = costed["data"]
+            reb_payload: dict[str, Any] = {
+                "size_id": sized["data"]["size_id"],
+                "cost_id": cost_data["cost_id"],
+                "now": fields["now"],
+                "mode": fields.get("rebalance_mode", "SKIP_BELOW_COST"),
+            }
+            for key in ("min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"):
+                if key in fields:
+                    reb_payload[key] = fields[key]
+            rebalanced = self.cost_rebalance(reb_payload).to_dict()
+            if rebalanced["state"] != State.AVAILABLE.value or not isinstance(rebalanced.get("data"), dict):
+                return Contract.admit(rebalanced["state"], rebalanced.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=rebalanced["provenance"]["classification"],
+                                      as_of=rebalanced["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=rebalanced.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            rebalance_data = rebalanced["data"]
         size_only = {"run_ids", "dataset_id", "pair_run_id", "mode", "momentum_lookback",
                      "reversion_lookback", "momentum_weight", "reversion_weight", "lookback",
                      "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id",
@@ -291,7 +337,9 @@ class ResearchStrategyWorkspace:
                      "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                      "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
                      "previous_size_id", "max_size_turnover", "document_id", "nlp_profile",
-                     "estimate_cost", "spread_bps", "impact_eta", "findings_id"}
+                     "estimate_cost", "spread_bps", "impact_eta", "findings_id",
+                     "cost_rebalance", "rebalance_mode",
+                     "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -312,6 +360,7 @@ class ResearchStrategyWorkspace:
             "signal_id": screen["signal_id"],
             "size_id": sized["data"]["size_id"],
             "cost_id": cost_data["cost_id"] if cost_data is not None else None,
+            "rebalance_id": rebalance_data["rebalance_id"] if rebalance_data is not None else None,
             "enrichment_id": enrich_data.get("enrichment_id") if enrich_data is not None else None,
             "strategy_id": strategy["strategy_id"],
             "allocation_id": strategy["allocation_id"],
@@ -320,6 +369,7 @@ class ResearchStrategyWorkspace:
             "discovery": screen.get("discovery"),
             "size_metrics": sized["data"]["metrics"],
             "cost_metrics": cost_data["metrics"] if cost_data is not None else None,
+            "rebalance_metrics": rebalance_data["metrics"] if rebalance_data is not None else None,
             "fi_metrics": enrich_data["metrics"] if enrich_data is not None else None,
             "strategy_metrics": strategy["metrics"],
             "prepared_client_ids": strategy["prepared_client_ids"],
@@ -336,12 +386,14 @@ class ResearchStrategyWorkspace:
                 "fi_matched": (enrich_data["metrics"]["matched_count"] if enrich_data is not None else 0),
                 "estimated_cost_nav": (
                     None if cost_data is None else cost_data["metrics"]["cost_nav"]),
+                "rebalance_trades_skipped": (
+                    None if rebalance_data is None else rebalance_data["metrics"]["trades_skipped"]),
                 "prepared_orders": strategy["metrics"]["prepared_orders"],
                 "filled_orders": strategy["metrics"]["filled_orders"],
                 "trading_approved": False,
             },
             "notes": [
-                "Research cycle chains discovery, optional FI enrich, position sizing, optional pre-trade TCA, and offline simulation.",
+                "Research cycle chains discovery, optional FI enrich, position sizing, optional pre-trade TCA, optional cost-aware rebalance, and offline simulation.",
                 "Discovery may use model ensembles or cross-sectional factor ranks including market-neutral momentum.",
                 "Sizing is advisory relative to the separate allocation/OMS simulation path.",
                 "Pre-trade costs stay ESTIMATED and are never mixed with simulated fills.",
@@ -2082,6 +2134,317 @@ class ResearchStrategyWorkspace:
                               model_version=COST,
                               evidence="HASH_VERIFIED_RESEARCH_PRETRADE_COST",
                               identity_key="cost_id")
+
+    def cost_rebalance(self, payload: dict[str, Any]) -> Contract:
+        """Propose a cost-aware research book from a sized target and TCA estimate.
+
+        Modes skip expensive or tiny trades, shrink turnover when cost_nav exceeds a
+        bound, or gate trades whose ESTIMATED cost exceeds an uncalibrated alpha budget.
+        Emits a research proposal only — no OMS prepare, broker, or trading approval.
+        """
+        modes = frozenset({"SKIP_BELOW_COST", "SHRINK_TO_COST", "ALPHA_COST_GATE"})
+        fields = _fields(payload, {"size_id", "cost_id", "now", "mode", "previous_size_id",
+                                   "spread_bps", "commission_bps", "impact_eta",
+                                   "adv_lookback_bars", "min_trade_notional", "max_one_way_bps",
+                                   "max_cost_nav", "alpha_scale"},
+                         {"size_id", "now", "mode"})
+        mode = fields["mode"]
+        if mode not in modes:
+            raise ValueError("mode must be SKIP_BELOW_COST, SHRINK_TO_COST, or ALPHA_COST_GATE")
+        try:
+            sized = self.load_size(fields["size_id"])
+            if "cost_id" in fields:
+                cost = self.load_cost(fields["cost_id"])
+            else:
+                cost_payload = {"size_id": fields["size_id"], "now": fields["now"]}
+                for key in ("previous_size_id", "spread_bps", "commission_bps", "impact_eta",
+                            "adv_lookback_bars"):
+                    if key in fields:
+                        cost_payload[key] = fields[key]
+                costed = self.estimate_cost(cost_payload).to_dict()
+                if costed["state"] != State.AVAILABLE.value or not isinstance(costed.get("data"), dict):
+                    return Contract.admit(costed["state"], costed.get("data"),
+                                          source="persisted-research-strategy",
+                                          classification=costed["provenance"]["classification"],
+                                          as_of=costed["provenance"].get("as_of"),
+                                          scope="workspace.research-strategy",
+                                          error=costed.get("error"),
+                                          readiness="RESEARCH_ONLY")
+                cost = costed["data"]
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if cost["size_id"] != sized["size_id"]:
+            raise ValueError("cost_id must reference the same size_id")
+        if cost["dataset_id"] != sized["dataset_id"]:
+            raise ValueError("cost_id must share the size dataset")
+        if self._invalidation_hits(screen_id=sized["screen_id"], size_id=sized["size_id"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        previous = None
+        previous_id = cost.get("previous_size_id")
+        if previous_id:
+            try:
+                previous = self.load_size(previous_id)
+            except FileNotFoundError:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            if previous["dataset_id"] != sized["dataset_id"]:
+                raise ValueError("previous_size_id must share the size dataset")
+            if self._invalidation_hits(size_id=previous["size_id"]):
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+        at = aware_timestamp(fields["now"])
+        portfolio = Decimal(sized["request"]["portfolio_notional"])
+        target = {
+            row["instrument_id"]: Decimal(row["target_notional"]) * (
+                Decimal(1) if row["side"] == "buy" else Decimal(-1))
+            for row in sized["rows"]
+        }
+        weights = {row["instrument_id"]: Decimal(str(row.get("research_weight", 0)))
+                   for row in sized["rows"]}
+        marks = {row["instrument_id"]: row for row in sized["rows"]}
+        prior: dict[str, Decimal] = {}
+        if previous is not None:
+            prior = {
+                row["instrument_id"]: Decimal(row["target_notional"]) * (
+                    Decimal(1) if row["side"] == "buy" else Decimal(-1))
+                for row in previous["rows"]
+            }
+            for row in previous["rows"]:
+                marks.setdefault(row["instrument_id"], row)
+        cost_by_name = {row["instrument_id"]: row for row in cost["rows"]}
+        min_trade = Decimal(str(fields.get("min_trade_notional", "0")))
+        if min_trade < 0 or not min_trade.is_finite():
+            raise ValueError("min_trade_notional must be a non-negative decimal")
+        max_bps = None
+        if "max_one_way_bps" in fields:
+            max_bps = _positive(fields["max_one_way_bps"], "max_one_way_bps")
+            if max_bps > Decimal("10_000"):
+                raise ValueError("max_one_way_bps must lie in (0, 10000]")
+        max_cost_nav: Decimal | None = None
+        if mode == "SHRINK_TO_COST":
+            max_cost_nav = _positive(fields.get("max_cost_nav", "0.001"), "max_cost_nav")
+            if max_cost_nav > Decimal("1"):
+                raise ValueError("max_cost_nav must lie in (0, 1]")
+        alpha_scale: Decimal | None = None
+        if mode == "ALPHA_COST_GATE":
+            alpha_scale = _positive(fields.get("alpha_scale", "0.01"), "alpha_scale")
+            if alpha_scale > Decimal("10"):
+                raise ValueError("alpha_scale must lie in (0, 10]")
+
+        proposed = dict(target)
+        actions: dict[str, tuple[str, str | None]] = {}
+        cost_nav = Decimal(cost["metrics"]["cost_nav"])
+        scale = Decimal(1)
+
+        if mode == "SHRINK_TO_COST":
+            assert max_cost_nav is not None
+            if cost_nav > max_cost_nav and cost_nav > 0:
+                scale = max_cost_nav / cost_nav
+                if scale > 1:
+                    scale = Decimal(1)
+                for name in set(target) | set(prior):
+                    delta = target.get(name, Decimal(0)) - prior.get(name, Decimal(0))
+                    proposed[name] = prior.get(name, Decimal(0)) + scale * delta
+                for name in set(proposed):
+                    if proposed[name] == 0 and name not in target and name not in prior:
+                        del proposed[name]
+
+        for name in set(target) | set(prior) | set(cost_by_name):
+            tgt = target.get(name, Decimal(0))
+            prv = prior.get(name, Decimal(0))
+            prop = proposed.get(name, tgt)
+            delta = tgt - prv
+            trade_notional = abs(delta)
+            skip_reason = None
+            action = "KEEP"
+            if trade_notional == 0 and abs(prop - prv) == 0:
+                action = "KEEP"
+                proposed[name] = prv
+            elif mode == "SHRINK_TO_COST":
+                if scale < 1 and trade_notional > 0:
+                    action = "SHRINK"
+                    skip_reason = "COST_NAV_SHRINK"
+                elif abs(prop - prv) > 0:
+                    action = "TRADE"
+                else:
+                    action = "KEEP"
+            elif mode == "SKIP_BELOW_COST":
+                row = cost_by_name.get(name)
+                if row is None or trade_notional == 0:
+                    action = "KEEP" if abs(tgt - prv) == 0 else "TRADE"
+                    proposed[name] = tgt
+                else:
+                    one_way = Decimal(row["one_way_bps"])
+                    notional = Decimal(row["trade_notional"])
+                    if min_trade > 0 and notional < min_trade:
+                        action, skip_reason = "SKIP", "BELOW_MIN_TRADE_NOTIONAL"
+                        proposed[name] = prv
+                    elif max_bps is not None and one_way > max_bps:
+                        action, skip_reason = "SKIP", "ABOVE_MAX_ONE_WAY_BPS"
+                        proposed[name] = prv
+                    else:
+                        action = "TRADE"
+                        proposed[name] = tgt
+            else:  # ALPHA_COST_GATE
+                assert alpha_scale is not None
+                row = cost_by_name.get(name)
+                if row is None or trade_notional == 0:
+                    action = "KEEP" if abs(tgt - prv) == 0 else "TRADE"
+                    proposed[name] = tgt
+                else:
+                    trade_est = (Decimal(row["transaction_fees"]) + Decimal(row["spread_cost"])
+                                 + Decimal(row["market_impact"]))
+                    weight = abs(weights.get(name, Decimal(0)))
+                    budget = weight * alpha_scale * portfolio
+                    if trade_est > budget:
+                        action, skip_reason = "SKIP", "ALPHA_COST_GATE"
+                        proposed[name] = prv
+                    else:
+                        action = "TRADE"
+                        proposed[name] = tgt
+            actions[name] = (action, skip_reason)
+
+        rows_out: list[dict[str, Any]] = []
+        trades_proposed = 0
+        trades_skipped = 0
+        total_est = Decimal(0)
+        trade_notional_sum = Decimal(0)
+        for name in sorted(set(proposed) | set(actions)):
+            signed = proposed.get(name, Decimal(0))
+            if signed == 0 and name not in target and name not in prior:
+                continue
+            mark = marks.get(name)
+            if mark is None:
+                continue
+            price = Decimal(mark["reference_price"])
+            notional = abs(signed)
+            quantity = (notional / price) if price > 0 else Decimal(0)
+            action, skip_reason = actions.get(name, ("KEEP", None))
+            if action == "TRADE" or action == "SHRINK":
+                trades_proposed += 1
+            elif action == "SKIP":
+                trades_skipped += 1
+            row_cost = cost_by_name.get(name)
+            est: Decimal | None = None
+            trade_n: Decimal | None = None
+            if row_cost is not None and action in {"TRADE", "SHRINK"}:
+                base_est = (Decimal(row_cost["transaction_fees"]) + Decimal(row_cost["spread_cost"])
+                            + Decimal(row_cost["market_impact"]))
+                est = base_est * scale if action == "SHRINK" else base_est
+                trade_n = abs(signed - prior.get(name, Decimal(0)))
+                total_est += est
+                trade_notional_sum += trade_n
+            elif row_cost is not None and action == "SKIP":
+                trade_n = Decimal(row_cost["trade_notional"])
+            entry = {
+                "instrument_id": name,
+                "side": "buy" if signed > 0 else ("sell" if signed < 0 else "flat"),
+                "target_notional": str(notional),
+                "quantity": str(quantity),
+                "reference_price": str(price),
+                "action": action,
+                "trade_notional": None if trade_n is None else str(trade_n),
+                "estimated_cost": None if est is None else str(est),
+                "skip_reason": skip_reason,
+                "research_weight": float(weights.get(name, Decimal(0))),
+                "trading_approved": False,
+            }
+            rows_out.append(entry)
+        # Drop pure flat KEEP zeros with no prior/target interest
+        rows_out = [r for r in rows_out if not (
+            r["side"] == "flat" and r["action"] == "KEEP" and Decimal(r["target_notional"]) == 0)]
+        turnover = Decimal(0)
+        for name in set(proposed) | set(prior):
+            turnover += abs(proposed.get(name, Decimal(0)) - prior.get(name, Decimal(0)))
+        turnover = turnover / Decimal(2)
+        turnover_nav = turnover / portfolio if portfolio > 0 else Decimal(0)
+        body = {
+            "schema_version": COST_REBALANCE,
+            "as_of": at.isoformat(),
+            "dataset_id": sized["dataset_id"],
+            "screen_id": sized["screen_id"],
+            "signal_id": sized["signal_id"],
+            "size_id": sized["size_id"],
+            "previous_size_id": previous["size_id"] if previous is not None else None,
+            "cost_id": cost["cost_id"],
+            "source": sized["source"],
+            "input_classification": sized["input_classification"],
+            "request": {
+                "mode": mode,
+                "min_trade_notional": str(min_trade),
+                "max_one_way_bps": None if max_bps is None else str(max_bps),
+                "max_cost_nav": None if max_cost_nav is None else str(max_cost_nav),
+                "alpha_scale": None if alpha_scale is None else str(alpha_scale),
+                "shrink_scale": str(scale),
+                "portfolio_notional": str(portfolio),
+                "trade_basis": cost["request"]["trade_basis"],
+            },
+            "rows": rows_out,
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {
+                "names": len(rows_out),
+                "trades_proposed": trades_proposed,
+                "trades_skipped": trades_skipped,
+                "turnover_nav": str(turnover_nav),
+                "trade_notional": str(trade_notional_sum),
+                "total_estimated_cost": str(total_est),
+                "cost_nav": str(total_est / portfolio if portfolio > 0 else Decimal(0)),
+                "input_cost_nav": str(cost_nav),
+                "evidence_class": "ESTIMATED",
+                "trading_approved": False,
+            },
+            "notes": [
+                "Cost-aware rebalance proposes KEEP/TRADE/SKIP/SHRINK actions from ESTIMATED TCA.",
+                "ALPHA_COST_GATE uses uncalibrated research_weight × alpha_scale × portfolio as a dollar budget.",
+                "Proposals never prepare OMS intents, connect a broker, or approve trading.",
+                "Sized books are not rewritten; this artifact is advisory relative to size_id.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "rebalance_id": identity}
+        self._path("rebalances").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("rebalances/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research cost-aware rebalance proposal",
+                              model_version=COST_REBALANCE,
+                              evidence="HASH_VERIFIED_RESEARCH_COST_REBALANCE",
+                              identity_key="rebalance_id")
+
+    def load_rebalance(self, rebalance_id: str) -> dict[str, Any]:
+        identity = sha256(rebalance_id)
+        path = self._path("rebalances/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research cost rebalance unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "rebalance_id"}
+        if (document.get("rebalance_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != COST_REBALANCE):
+            raise ValueError("cost rebalance artifact integrity mismatch")
+        return document
+
+    def replay_rebalance(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"rebalance_id"}, {"rebalance_id"})
+        try:
+            document = self.load_rebalance(payload["rebalance_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research cost-aware rebalance proposal",
+                              model_version=COST_REBALANCE,
+                              evidence="HASH_VERIFIED_RESEARCH_COST_REBALANCE",
+                              identity_key="rebalance_id")
+
 
     def load(self, strategy_id: str) -> dict[str, Any]:
         identity = sha256(strategy_id)

@@ -278,6 +278,90 @@ class StrategyTests(unittest.TestCase):
         missing = self.strategies.replay_cost({"cost_id": "0" * 64}).to_dict()
         self.assertEqual(missing["state"], "UNAVAILABLE")
 
+
+    def test_cost_rebalance_skip_shrink_and_alpha_gate(self):
+        first = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "0.2",
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        second = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "previous_size_id": first["data"]["size_id"],
+        }).to_dict()
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        cost = self.strategies.estimate_cost({
+            "size_id": second["data"]["size_id"], "now": self.now,
+            "previous_size_id": first["data"]["size_id"],
+            "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(cost["state"], "AVAILABLE", cost)
+        # Force skips via huge min_trade_notional
+        skipped = self.strategies.cost_rebalance({
+            "size_id": second["data"]["size_id"], "cost_id": cost["data"]["cost_id"],
+            "now": self.now, "mode": "SKIP_BELOW_COST",
+            "min_trade_notional": "1e18",
+        }).to_dict()
+        EnvelopeSchema.model_validate(skipped)
+        self.assertEqual(skipped["state"], "AVAILABLE", skipped)
+        self.assertFalse(skipped["data"]["trading_approved"])
+        self.assertGreaterEqual(skipped["data"]["metrics"]["trades_skipped"], 1)
+        self.assertTrue(any(r["action"] == "SKIP" for r in skipped["data"]["rows"]))
+        # Shrink when max_cost_nav is tiny
+        shrunk = self.strategies.cost_rebalance({
+            "size_id": second["data"]["size_id"], "cost_id": cost["data"]["cost_id"],
+            "now": self.now, "mode": "SHRINK_TO_COST", "max_cost_nav": "1e-12",
+        }).to_dict()
+        self.assertEqual(shrunk["state"], "AVAILABLE", shrunk)
+        self.assertLess(
+            float(shrunk["data"]["request"]["shrink_scale"]) + 1e-18, 1.0)
+        self.assertTrue(any(r["action"] == "SHRINK" for r in shrunk["data"]["rows"]))
+        # Alpha gate with tiny scale skips
+        gated = self.strategies.cost_rebalance({
+            "size_id": second["data"]["size_id"], "cost_id": cost["data"]["cost_id"],
+            "now": self.now, "mode": "ALPHA_COST_GATE", "alpha_scale": "1e-18",
+        }).to_dict()
+        self.assertEqual(gated["state"], "AVAILABLE", gated)
+        self.assertGreaterEqual(gated["data"]["metrics"]["trades_skipped"], 1)
+        replayed = self.strategies.replay_rebalance({
+            "rebalance_id": skipped["data"]["rebalance_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["rebalance_id"], skipped["data"]["rebalance_id"])
+        missing = self.strategies.replay_rebalance({"rebalance_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+
+    def test_cycle_can_attach_cost_rebalance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            now = request["as_of"]
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            run = PersistedResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+                "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+            }).to_dict()["data"]
+            payload = allocation_request("", now)
+            del payload["run_id"]
+            payload.update(
+                run_ids=[run["run_id"]], lookback=20, min_ic_observations=5,
+                buy_threshold=0.0, sell_threshold=-0.01,
+                portfolio_notional="100000", max_name_notional="8000",
+                max_turnover=0.3, max_transaction_cost="100", fill=True,
+                cost_rebalance=True, rebalance_mode="SKIP_BELOW_COST",
+                min_trade_notional="1", adv_lookback_bars=20,
+            )
+            cycled = ResearchStrategyWorkspace(root).cycle(payload).to_dict()
+            EnvelopeSchema.model_validate(cycled)
+            self.assertEqual(cycled["state"], "AVAILABLE", cycled)
+            body = cycled["data"]
+            self.assertTrue(body["cost_id"])
+            self.assertTrue(body["rebalance_id"])
+            self.assertIsNotNone(body["rebalance_metrics"])
+            self.assertFalse(body["trading_approved"])
+
     def test_calculator_journal_binds_liquidity_and_almgren_from_size(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
@@ -892,6 +976,20 @@ class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):
                 })
                 self.assertEqual(cost_replay.status_code, 200, cost_replay.text)
                 self.assertEqual(cost_replay.json()["data"]["cost_id"], cost_body["cost_id"])
+                rebalanced = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "cost-rebalance", "size_id": size_body["size_id"],
+                    "cost_id": cost_body["cost_id"], "now": request["as_of"],
+                    "mode": "SKIP_BELOW_COST", "min_trade_notional": "1",
+                })
+                self.assertEqual(rebalanced.status_code, 200, rebalanced.text)
+                reb_body = rebalanced.json()["data"]
+                self.assertFalse(reb_body["trading_approved"])
+                reb_replay = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "cost-rebalance-replay",
+                    "rebalance_id": reb_body["rebalance_id"],
+                })
+                self.assertEqual(reb_replay.status_code, 200, reb_replay.text)
+                self.assertEqual(reb_replay.json()["data"]["rebalance_id"], reb_body["rebalance_id"])
 
 
 if __name__ == "__main__":
