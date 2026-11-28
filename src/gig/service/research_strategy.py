@@ -13,9 +13,12 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 from gig.artifacts import write_immutable
 from gig.data.validated import PointInTimeStore
 from gig.research.model_pipeline import sha256
+from gig.risk.analytics import portfolio_risk
 from gig.service.allocation_workspace import ResearchAllocationWorkspace
 from gig.service.contracts import Contract, State
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
@@ -173,9 +176,10 @@ class ResearchStrategyWorkspace:
         """
         allowed = {"run_ids", "now", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
                    "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
-                   "initial_cash", "n_long", "n_short", "gross_leverage", "max_name_weight", "lot_size",
-                   "max_age_seconds", "annualization", "metadata", "limits", "commission_bps",
-                   "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost", "fill"}
+                   "target_volatility", "initial_cash", "n_long", "n_short", "gross_leverage",
+                   "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata", "limits",
+                   "commission_bps", "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost",
+                   "fill"}
         fields = _fields(payload, allowed, {"run_ids", "now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -199,7 +203,7 @@ class ResearchStrategyWorkspace:
             "max_name_notional": fields["max_name_notional"],
             "lot_size": fields["lot_size"],
         }
-        for key in ("max_age_seconds", "vol_scale"):
+        for key in ("max_age_seconds", "vol_scale", "target_volatility", "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -214,7 +218,8 @@ class ResearchStrategyWorkspace:
         simulate_payload = {key: fields[key] for key in fields
                             if key not in {"run_ids", "lookback", "min_ic_observations",
                                            "buy_threshold", "sell_threshold", "previous_screen_id",
-                                           "portfolio_notional", "max_name_notional", "vol_scale"}}
+                                           "portfolio_notional", "max_name_notional", "vol_scale",
+                                           "target_volatility"}}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
         if simulated["state"] != State.AVAILABLE.value or not isinstance(simulated.get("data"), dict):
@@ -297,12 +302,16 @@ class ResearchStrategyWorkspace:
     def size(self, payload: dict[str, Any]) -> Contract:
         """Convert screen research weights into capped research lot sizes.
 
-        Prices come from admitted bar evidence. Vol scaling is optional and
-        caller-supplied. No order is prepared or submitted.
+        Prices come from admitted bar evidence. ``vol_scale`` may be caller-
+        supplied, or derived from ``target_volatility`` against the saved
+        dataset return panel. No order is prepared or submitted.
         """
         fields = _fields(payload, {"screen_id", "now", "portfolio_notional", "max_name_notional",
-                                   "lot_size", "max_age_seconds", "vol_scale"},
+                                   "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
+                                   "annualization"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
+        if "vol_scale" in fields and "target_volatility" in fields:
+            raise ValueError("provide vol_scale or target_volatility, not both")
         try:
             screen = self.screens.load(fields["screen_id"])
             dataset = PersistedDatasetWorkspace(self.base_dir).load(screen["dataset_id"])
@@ -319,17 +328,48 @@ class ResearchStrategyWorkspace:
         maximum = int(fields.get("max_age_seconds", 86_400))
         if maximum < 0:
             raise ValueError("max_age_seconds must be non-negative")
+        annualization = int(fields.get("annualization", 252))
+        if annualization < 1:
+            raise ValueError("annualization must be a positive integer")
         scale = Decimal("1")
+        scale_source = "IDENTITY"
+        risk_metrics: dict[str, Any] | None = None
         if "vol_scale" in fields:
             scale = _positive(fields["vol_scale"], "vol_scale")
             if scale > Decimal("10"):
                 raise ValueError("vol_scale exceeds the research bound")
+            scale_source = "CALLER"
         actionable = [row for row in screen["rows"] if float(row["research_weight"]) != 0.0]
         if not actionable:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
         symbols = sorted({row["instrument_id"] for row in actionable})
+        if "target_volatility" in fields:
+            target = _positive(fields["target_volatility"], "target_volatility")
+            if target > Decimal("5"):
+                raise ValueError("target_volatility exceeds the research bound")
+            panel = pd.DataFrame(dataset["panel_rows"])
+            if "return_1" not in panel:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            complete = panel.pivot(index="timestamp", columns="instrument_id", values="return_1").reindex(
+                columns=symbols).dropna()
+            if len(complete) < 20:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            weights = [float(next(row["research_weight"] for row in actionable if row["instrument_id"] == symbol))
+                       for symbol in symbols]
+            risk_metrics = portfolio_risk(complete.to_numpy(), weights, annualization=annualization)
+            realized = Decimal(str(risk_metrics["annualized_volatility"]))
+            if realized <= 0:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            scale = min(target / realized, Decimal("10"))
+            scale_source = "TARGET_VOLATILITY"
         source_policy = dataset["provenance"]["stored_corporate_action_policy"]
         snapshot = PointInTimeStore(self.workspace._path("bars.sqlite"), read_only=True).snapshot(
             at, source=dataset["source"])
@@ -378,6 +418,17 @@ class ResearchStrategyWorkspace:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
+        request = {
+            "portfolio_notional": str(portfolio),
+            "max_name_notional": str(name_cap),
+            "lot_size": lot,
+            "max_age_seconds": maximum,
+            "vol_scale": str(scale),
+            "vol_scale_source": scale_source,
+            "annualization": annualization,
+        }
+        if "target_volatility" in fields:
+            request["target_volatility"] = str(_positive(fields["target_volatility"], "target_volatility"))
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
@@ -386,15 +437,11 @@ class ResearchStrategyWorkspace:
             "signal_id": screen["signal_id"],
             "source": screen["source"],
             "input_classification": screen["input_classification"],
-            "request": {
-                "portfolio_notional": str(portfolio),
-                "max_name_notional": str(name_cap),
-                "lot_size": lot,
-                "max_age_seconds": maximum,
-                "vol_scale": str(scale),
-            },
+            "request": request,
             "rows": sized,
             "marks": marks,
+            "risk": {"state": "AVAILABLE", "data": risk_metrics} if risk_metrics is not None
+            else {"state": "NOT_REQUESTED", "data": None},
             "broker_connected": False,
             "trading_approved": False,
             "economically_validated": False,
@@ -403,11 +450,13 @@ class ResearchStrategyWorkspace:
                 "names": len(sized),
                 "gross_notional": str(sum((Decimal(row["target_notional"]) for row in sized), Decimal(0))),
                 "capped_names": sum(1 for row in sized if row["capped"]),
+                "vol_scale": str(scale),
+                "vol_scale_source": scale_source,
                 "trading_approved": False,
             },
             "notes": [
                 "Position sizes are research lot targets from screen weights and admitted marks.",
-                "max_name_notional caps each name; vol_scale is caller-supplied and not estimated here.",
+                "max_name_notional caps each name; target_volatility scales notionals by realized panel risk.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }
