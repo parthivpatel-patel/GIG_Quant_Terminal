@@ -852,6 +852,52 @@ class StrategyTests(unittest.TestCase):
                 "cost_rebalance": True, "rebalance_mode": "NOT_A_MODE",
             })
 
+    def test_schedule_soft_stops_on_factor_exposure_breach(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 2,
+            "now": self.now, "request": watch_request,
+            "factor_exposure": True, "n_factors": 2, "min_obs": 40, "lookback": 40,
+            "max_ex_ante_vol": "0.000001", "factor_breach_action": "soft_skip",
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        self.assertTrue(planned["data"]["metrics"]["factor_breach_gated"])
+        tick = self.strategies.tick_schedule({
+            "schedule_id": planned["data"]["schedule_id"], "now": self.now,
+        }).to_dict()
+        self.assertEqual(tick["state"], "AVAILABLE", tick)
+        self.assertTrue(tick["data"]["metrics"]["factor_breached"])
+        self.assertTrue(tick["data"]["factor_breaches"])
+        self.assertTrue(tick["data"]["exposure_id"])
+        second_now = (pd.Timestamp(self.now) + pd.Timedelta(hours=1)).isoformat()
+        stale = self.strategies.tick_schedule({
+            "schedule_id": planned["data"]["schedule_id"], "now": second_now,
+        }).to_dict()
+        self.assertEqual(stale["state"], "STALE", stale)
+        self.assertEqual(stale["data"]["tick_state"], "FACTOR_BREACHED")
+        due = self.strategies.due_schedules({"now": second_now}).to_dict()
+        self.assertEqual(due["state"], "AVAILABLE", due)
+        self.assertFalse(any(
+            row["schedule_id"] == planned["data"]["schedule_id"] for row in due["data"]["rows"]))
+        with self.assertRaisesRegex(ValueError, "max_ex_ante_vol or max_systematic_share"):
+            self.strategies.schedule({
+                "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": self.now, "request": watch_request,
+                "factor_exposure": True, "factor_breach_action": "soft_skip",
+            })
+
     def test_schedule_ticks_attach_factor_exposure(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)

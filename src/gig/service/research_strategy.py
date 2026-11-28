@@ -43,6 +43,7 @@ COST_REBALANCE = "gig.research-strategy.cost-rebalance.v1"
 FACTOR_EXPOSURE = "gig.research-strategy.factor-exposure.v1"
 _INVALIDATION_REASONS = frozenset({
     "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP", "ALPHA_DECAY",
+    "FACTOR_BREACH",
 })
 _SCHEDULE_ACTIONS = frozenset({"cycle", "watch"})
 
@@ -919,7 +920,7 @@ class ResearchStrategyWorkspace:
                                    "max_one_way_bps", "max_cost_nav", "alpha_scale",
                                    "factor_exposure", "n_factors", "min_obs", "lookback",
                                    "shrinkage", "max_ex_ante_vol", "max_systematic_share",
-                                   "annualization"},
+                                   "annualization", "factor_breach_action"},
                          {"action", "cadence_seconds", "now", "request"})
         action = fields["action"]
         if action not in _SCHEDULE_ACTIONS:
@@ -982,6 +983,17 @@ class ResearchStrategyWorkspace:
                         "max_ex_ante_vol", "max_systematic_share", "annualization"):
                 if key in fields:
                     factor_request[key] = fields[key]
+        factor_breach_action = fields.get("factor_breach_action", "soft_skip")
+        if factor_breach_action not in {"soft_skip", "invalidate"}:
+            raise ValueError("factor_breach_action must be soft_skip or invalidate")
+        if factor_breach_action == "invalidate" and not do_factor:
+            raise ValueError("factor_breach_action invalidate requires factor_exposure")
+        if (do_factor and factor_breach_action and "factor_breach_action" in fields
+                and not any(key in (factor_request or {})
+                            for key in ("max_ex_ante_vol", "max_systematic_share"))):
+            # Soft-stop needs at least one research breach bound to evaluate.
+            raise ValueError(
+                "factor_breach_action requires max_ex_ante_vol or max_systematic_share")
         decay_action = fields.get("alpha_decay_action", "soft_skip")
         if decay_action not in {"soft_skip", "invalidate"}:
             raise ValueError("alpha_decay_action must be soft_skip or invalidate")
@@ -1013,6 +1025,7 @@ class ResearchStrategyWorkspace:
             "cost_rebalance_request": rebalance_request,
             "factor_exposure": do_factor,
             "factor_exposure_request": factor_request,
+            "factor_breach_action": factor_breach_action if do_factor else None,
             "min_ic_ir": min_ir,
             "min_ic_half_life_steps": min_hl,
             "alpha_decay_action": decay_action,
@@ -1026,6 +1039,10 @@ class ResearchStrategyWorkspace:
                         "feedback_every_n_ticks": feedback_every,
                         "cost_rebalance": do_rebalance,
                         "factor_exposure": do_factor,
+                        "factor_breach_gated": bool(
+                            do_factor and factor_request
+                            and any(key in factor_request
+                                    for key in ("max_ex_ante_vol", "max_systematic_share"))),
                         "alpha_decay_gated": min_ir is not None or min_hl is not None,
                         "trading_approved": False},
             "notes": [
@@ -1034,6 +1051,7 @@ class ResearchStrategyWorkspace:
                 "Optional feedback_every_n_ticks aggregates successful exit-evals into research feedback.",
                 "Optional cost_rebalance proposes KEEP/TRADE/SKIP/SHRINK from each tick size+TCA.",
                 "Optional factor_exposure attributes PCA risk on each tick size_id.",
+                "Optional factor_breach_action soft-stops or invalidates when exposure breaches trip.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background worker, broker path, or trading approval is established.",
             ],
@@ -1156,6 +1174,26 @@ class ResearchStrategyWorkspace:
                 evidence_state="HASH_VERIFIED_RESEARCH_STRATEGY_SCHEDULE_TICK",
                 readiness="RESEARCH_ONLY",
             )
+        if plan.get("factor_breached"):
+            return Contract.admit(
+                State.STALE,
+                {
+                    **plan,
+                    "title": "Research schedule soft-stopped after factor exposure breach",
+                    "tick_state": "FACTOR_BREACHED",
+                    "observed_at": clock.isoformat(),
+                    "trading_approved": False,
+                },
+                source=plan["source"],
+                classification="MODEL_ESTIMATE",
+                as_of=clock.isoformat(),
+                scope="workspace.research-strategy",
+                source_identity=str(plan["dataset_id"]),
+                model_identity=plan["schedule_id"],
+                model_version=TICK,
+                evidence_state="HASH_VERIFIED_RESEARCH_STRATEGY_SCHEDULE_TICK",
+                readiness="RESEARCH_ONLY",
+            )
         if clock < due:
             return Contract.admit(
                 State.STALE,
@@ -1233,6 +1271,7 @@ class ResearchStrategyWorkspace:
             if rebalanced["state"] == State.AVAILABLE.value and isinstance(rebalanced.get("data"), dict):
                 rebalance_id = rebalanced["data"]["rebalance_id"]
         exposure_id = None
+        factor_breaches: list[str] = []
         if plan.get("factor_exposure") and result.get("size_id"):
             exp_payload: dict[str, Any] = {
                 "size_id": result["size_id"],
@@ -1242,6 +1281,7 @@ class ResearchStrategyWorkspace:
             attributed = self.factor_exposure(exp_payload).to_dict()
             if attributed["state"] == State.AVAILABLE.value and isinstance(attributed.get("data"), dict):
                 exposure_id = attributed["data"]["exposure_id"]
+                factor_breaches = list(attributed["data"].get("breaches") or [])
         decay = self._alpha_decay_tripped(plan, result.get("screen_id"))
         invalidation_id = None
         if decay is not None and decay["alpha_decay_action"] == "invalidate" and result.get("screen_id"):
@@ -1250,6 +1290,17 @@ class ResearchStrategyWorkspace:
                 "reason": "ALPHA_DECAY",
                 "now": clock.isoformat(),
                 "notes": "Schedule alpha-decay gate tripped on signal diagnostics",
+            }).to_dict()
+            if invalidated["state"] == State.AVAILABLE.value and isinstance(invalidated.get("data"), dict):
+                invalidation_id = invalidated["data"]["invalidation_id"]
+        factor_breached = bool(factor_breaches)
+        if (factor_breached and plan.get("factor_breach_action") == "invalidate"
+                and result.get("screen_id") and invalidation_id is None):
+            invalidated = self.invalidate({
+                "screen_id": result["screen_id"],
+                "reason": "FACTOR_BREACH",
+                "now": clock.isoformat(),
+                "notes": "Schedule factor-exposure breach gate tripped",
             }).to_dict()
             if invalidated["state"] == State.AVAILABLE.value and isinstance(invalidated.get("data"), dict):
                 invalidation_id = invalidated["data"]["invalidation_id"]
@@ -1272,6 +1323,7 @@ class ResearchStrategyWorkspace:
             "feedback_id": feedback_id,
             "rebalance_id": rebalance_id,
             "exposure_id": exposure_id,
+            "factor_breaches": factor_breaches,
             "strategy_id": result.get("strategy_id"),
             "invalidation_id": invalidation_id,
             "alpha_decay": decay,
@@ -1290,6 +1342,8 @@ class ResearchStrategyWorkspace:
                 "feedback_attached": feedback_id is not None,
                 "cost_rebalance_attached": rebalance_id is not None,
                 "factor_exposure_attached": exposure_id is not None,
+                "factor_breached": factor_breached,
+                "factor_breach_action": plan.get("factor_breach_action") if factor_breached else None,
                 "exit_eval_count": len(exit_eval_ids),
                 "alpha_decayed": decay is not None,
                 "alpha_decay_action": None if decay is None else decay["alpha_decay_action"],
@@ -1301,6 +1355,7 @@ class ResearchStrategyWorkspace:
                 "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
                 "Optional exit_eval, feedback, cost_rebalance, and factor_exposure hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
+                "Optional factor_breach_action soft-stops or invalidates when exposure breaches trip.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background scheduler or trading approval is established.",
             ],
@@ -1324,6 +1379,9 @@ class ResearchStrategyWorkspace:
             "last_exposure_id": exposure_id if exposure_id is not None else plan.get("last_exposure_id"),
             "alpha_decayed": bool(decay is not None or plan.get("alpha_decayed")),
             "alpha_decay_tick_id": identity if decay is not None else plan.get("alpha_decay_tick_id"),
+            "factor_breached": bool(factor_breached or plan.get("factor_breached")),
+            "factor_breach_tick_id": identity if factor_breached else plan.get("factor_breach_tick_id"),
+            "factor_breaches": factor_breaches if factor_breached else plan.get("factor_breaches") or [],
             "invalidation_id": invalidation_id if invalidation_id is not None else plan.get("invalidation_id"),
         }
         pointer_path = self._path("schedules/" + plan["schedule_id"] + ".pointer.json")
@@ -1351,6 +1409,9 @@ class ResearchStrategyWorkspace:
                     "last_exposure_id": pointer.get("last_exposure_id"),
                     "alpha_decayed": pointer.get("alpha_decayed", False),
                     "alpha_decay_tick_id": pointer.get("alpha_decay_tick_id"),
+                    "factor_breached": pointer.get("factor_breached", False),
+                    "factor_breach_tick_id": pointer.get("factor_breach_tick_id"),
+                    "factor_breaches": pointer.get("factor_breaches") or [],
                     "invalidation_id": pointer.get("invalidation_id")}
         return plan
 
@@ -1409,7 +1470,7 @@ class ResearchStrategyWorkspace:
                 continue
             if int(plan["ticks_completed"]) >= int(plan["max_ticks"]):
                 continue
-            if plan.get("alpha_decayed"):
+            if plan.get("alpha_decayed") or plan.get("factor_breached"):
                 continue
             due = aware_timestamp(plan["next_due"])
             if clock < due:
