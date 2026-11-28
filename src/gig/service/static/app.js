@@ -895,7 +895,7 @@
   examples["workspace-advance-clock"] = { operation: "advance-clock", now: pipelineStamp(79), marks: { SYN101: { reference_price: pipelineMarks.SYN101.price, price_asof: pipelineStamp(79) } } };
   examples["workspace-pairs-research"] = { dataset_id: "0".repeat(64), training_window: 30, test_size: 10, embargo: 1, alpha: .05, entry_z: 1.5, cost_bps: 10, borrow_bps: 0, max_gross: .2, process_variance: .00001, observation_variance: .01 };
   examples["workspace-pairs-replay"] = { run_id: "0".repeat(64) };
-  examples["workspace-research-signals"] = { run_ids: ["0".repeat(64)], now: pipelineStamp(79), lookback: 20, min_ic_observations: 5 };
+  examples["workspace-research-signals"] = { run_ids: ["0".repeat(64)], now: pipelineStamp(79), lookback: 20, min_ic_observations: 5, max_ic_drift_psi: 0.25, min_ic_ir: 0.0, min_ic_tstat: 0.0 };
   examples["workspace-signals-replay"] = { signal_id: "0".repeat(64) };
   examples["workspace-research-screen"] = { signal_id: "0".repeat(64), buy_threshold: .25, sell_threshold: -.25 };
   examples["workspace-research-discover"] = { operation: "from-runs", run_ids: ["0".repeat(64)], now: pipelineStamp(79), lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25 };
@@ -1143,7 +1143,7 @@
       "workspace-options-admit": "Explicitly admit an authored SYNTHETIC European BSM chain fixture with quotes, acquisition/knowledge time, spot provenance and contract identities. The fixture is not observed OPRA data and grants no vendor entitlement.",
       "workspace-options-research": "Select an admitted chain at its historical knowledge cutoff. IV, Greeks, surfaces and scenarios are European ACT/365F model estimates under the supplied rate and dividend assumptions. PCR and VTS carry explicit definitions; unavailable CSM remains unavailable.",
       "workspace-options-replay": "Verify and reload a saved options experiment. Original quote identities, modeled assumptions and simulated Greek exposures are retained after restart.",
-      "workspace-research-signals": "Combine saved out-of-sample model evidence using only outcomes known at the decision time. IC diagnostics are research estimates; confidence is not a calibrated probability or trading approval.",
+      "workspace-research-signals": "Combine saved out-of-sample model evidence using only outcomes known at the decision time. Reports IC IR and Newey–West t on the OOS IC path; optional min_ic_ir / min_ic_tstat / max_ic_drift_psi may zero weights. Confidence is not a calibrated probability or trading approval.",
       "workspace-signals-replay": "Reload a hash-verified saved research score. Research scores do not automatically create portfolio targets or approve orders.",
             "workspace-research-screen": "Label RESEARCH_BUY / RESEARCH_HOLD / RESEARCH_SELL from a saved ensemble score with caller thresholds. Timing compares two saved screens. No order or trading approval.",
       "workspace-research-discover": "Build the IC-weighted ensemble from saved model runs and label research buy/hold/sell in one step. Still research-only; no order or trading approval.",

@@ -12,6 +12,7 @@ import pandas as pd
 
 from gig.artifacts import write_immutable
 from gig.research.factor_screen import FACTOR_SCHEMA, score_factor_dataset
+from gig.research.ic import information_ratio, newey_west_tstat
 from gig.research.model_pipeline import integer, sha256
 from gig.research.workflow import drift_report
 from gig.service.contracts import Contract, State
@@ -210,6 +211,25 @@ def score_runs(runs, dataset, request):
             ic_drift = {**ic_drift, "weight_zeroed": False,
                         "max_ic_drift_psi": None if limit is None else float(limit)}
         decay = ic_half_life(ics)
+        ic_series = pd.Series(ics, dtype=float)
+        ic_ir = float(information_ratio(ic_series)) if len(ics) >= 2 else float("nan")
+        _, ic_tstat_nw, ic_pvalue_nw = newey_west_tstat(ic_series)
+        hit_rate = float(np.mean([1.0 if value > 0 else 0.0 for value in ics])) if ics else float("nan")
+        ic_ir_state = "AVAILABLE" if np.isfinite(ic_ir) else "UNKNOWN"
+        ic_nw_state = ("AVAILABLE" if np.isfinite(ic_tstat_nw) and np.isfinite(ic_pvalue_nw)
+                       else "UNKNOWN")
+        ir_limit = request.get("min_ic_ir")
+        tstat_limit = request.get("min_ic_tstat")
+        ir_zeroed = False
+        tstat_zeroed = False
+        if (ir_limit is not None and ic_ir_state == "AVAILABLE"
+                and float(ic_ir) < float(ir_limit)):
+            weight = 0.
+            ir_zeroed = True
+        if (tstat_limit is not None and ic_nw_state == "AVAILABLE"
+                and float(ic_tstat_nw) < float(tstat_limit)):
+            weight = 0.
+            tstat_zeroed = True
         selected = [r for r in run["rows"] if r["timestamp"] == decision]
         if any(r.get("fit_state", "CONVERGED") != "CONVERGED" for r in selected):
             weight = 0.
@@ -221,6 +241,16 @@ def score_runs(runs, dataset, request):
             "two_instrument_dates": sum(r["instruments"] == 2 for r in observations),
             "ic_drift": ic_drift,
             "ic_half_life": decay,
+            "ic_ir": None if not np.isfinite(ic_ir) else ic_ir,
+            "ic_ir_state": ic_ir_state,
+            "ic_tstat_nw": None if not np.isfinite(ic_tstat_nw) else float(ic_tstat_nw),
+            "ic_pvalue_nw": None if not np.isfinite(ic_pvalue_nw) else float(ic_pvalue_nw),
+            "ic_nw_state": ic_nw_state,
+            "ic_hit_rate": None if not np.isfinite(hit_rate) else hit_rate,
+            "min_ic_ir": None if ir_limit is None else float(ir_limit),
+            "min_ic_tstat": None if tstat_limit is None else float(tstat_limit),
+            "ic_ir_weight_zeroed": ir_zeroed,
+            "ic_tstat_weight_zeroed": tstat_zeroed,
             "raw_adaptive_weight": weight, "adaptive_weight": 0.,
             "confidence": {"state": "UNKNOWN", "value": None, "method": "NO_PROBABILITY_CALIBRATION"}})
     total = sum(d["raw_adaptive_weight"] for d in diagnostics)
@@ -254,7 +284,9 @@ def score_runs(runs, dataset, request):
                   "Two-name rank IC takes +/-1; neither IC nor shrinkage is calibrated confidence or economic validation.",
                   "Nonpositive or insufficient IC gets zero ensemble weight; no automatic sign reversal.",
                   "ic_drift is a descriptive PSI on the prior OOS IC path; max_ic_drift_psi may zero a model weight.",
-                  "ic_half_life is a descriptive AR(1) half-life on the OOS IC path, not an alpha lifetime claim."]}
+                  "ic_half_life is a descriptive AR(1) half-life on the OOS IC path, not an alpha lifetime claim.",
+                  "ic_ir annualizes mean/std of the OOS IC path; ic_tstat_nw is Newey–West on that path.",
+                  "min_ic_ir and min_ic_tstat may zero a model weight; they are not calibrated alpha gates."]}
 
 
 class SignalWorkspace:
@@ -309,7 +341,7 @@ class SignalWorkspace:
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self.run_from_pairs(body)
         fields = _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations",
-                                   "max_ic_drift_psi", "operation"},
+                                   "max_ic_drift_psi", "min_ic_ir", "min_ic_tstat", "operation"},
                          {"run_ids", "now"})
         ids = fields["run_ids"]
         if not isinstance(ids, list) or not 1 <= len(ids) <= 8 or len(set(ids)) != len(ids):
@@ -322,6 +354,16 @@ class SignalWorkspace:
             if not np.isfinite(limit) or limit <= 0:
                 raise ValueError("max_ic_drift_psi must be a positive finite decimal")
             request["max_ic_drift_psi"] = limit
+        if "min_ic_ir" in fields:
+            floor = float(fields["min_ic_ir"])
+            if not np.isfinite(floor):
+                raise ValueError("min_ic_ir must be a finite decimal")
+            request["min_ic_ir"] = floor
+        if "min_ic_tstat" in fields:
+            floor = float(fields["min_ic_tstat"])
+            if not np.isfinite(floor):
+                raise ValueError("min_ic_tstat must be a finite decimal")
+            request["min_ic_tstat"] = floor
         if request["min_ic_observations"] > request["lookback"]:
             raise ValueError("minimum IC observations exceeds the selected lookback")
         try:
