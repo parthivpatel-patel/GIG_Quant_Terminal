@@ -592,6 +592,75 @@ class StrategyTests(unittest.TestCase):
             remaining = batch_ws.due_schedules({"now": batch_now, "limit": 8}).to_dict()
             self.assertEqual(remaining["data"]["metrics"]["due"], 1)
 
+
+    def test_schedule_ticks_attach_exit_eval_and_feedback(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 2,
+            "now": self.now, "request": watch_request,
+            "exit_eval": True, "stop_loss_pct": "0.05", "take_profit_pct": "0.10",
+            "horizon_bars": 5, "feedback_every_n_ticks": 2,
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        self.assertTrue(planned["data"]["exit_eval"])
+        self.assertEqual(planned["data"]["feedback_every_n_ticks"], 2)
+        schedule_id = planned["data"]["schedule_id"]
+        first = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": self.now,
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        self.assertTrue(first["data"]["size_id"])
+        self.assertTrue(first["data"]["exit_eval_id"])
+        self.assertIsNone(first["data"]["feedback_id"])
+        self.assertTrue(first["data"]["metrics"]["exit_eval_attached"])
+        self.assertFalse(first["data"]["metrics"]["feedback_attached"])
+        self.assertFalse(first["data"]["trading_approved"])
+        replayed = self.strategies.replay_exit_eval({
+            "exit_eval_id": first["data"]["exit_eval_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["exit_eval_id"], first["data"]["exit_eval_id"])
+        second_now = (pd.Timestamp(self.now) + pd.Timedelta(hours=1)).isoformat()
+        second = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": second_now,
+        }).to_dict()
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        self.assertTrue(second["data"]["exit_eval_id"])
+        self.assertTrue(second["data"]["feedback_id"])
+        self.assertTrue(second["data"]["metrics"]["feedback_attached"])
+        self.assertEqual(second["data"]["metrics"]["exit_eval_count"], 2)
+        feedback = self.strategies.replay_feedback({
+            "feedback_id": second["data"]["feedback_id"],
+        }).to_dict()
+        self.assertEqual(feedback["state"], "AVAILABLE", feedback)
+        self.assertEqual(feedback["data"]["metrics"]["evaluations"], 2)
+        state = self.strategies.load_schedule_state(schedule_id)
+        self.assertEqual(state["last_exit_eval_id"], second["data"]["exit_eval_id"])
+        self.assertEqual(len(state["exit_eval_ids"]), 2)
+        self.assertEqual(state["last_feedback_id"], second["data"]["feedback_id"])
+        # Default schedules still omit exit-eval hooks.
+        plain = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+            "now": self.now, "request": watch_request,
+        }).to_dict()
+        plain_tick = self.strategies.tick_schedule({
+            "schedule_id": plain["data"]["schedule_id"], "now": self.now,
+        }).to_dict()
+        self.assertEqual(plain_tick["state"], "AVAILABLE", plain_tick)
+        self.assertIsNone(plain_tick["data"]["exit_eval_id"])
+        self.assertIsNone(plain_tick["data"]["feedback_id"])
+
     def test_schedule_ticks_chain_previous_size_for_delta_cost(self):
         # Watch ticks avoid OMS prepare conflicts across ticks while still chaining sizes.
         first_signal_id = self.screen["signal_id"]
