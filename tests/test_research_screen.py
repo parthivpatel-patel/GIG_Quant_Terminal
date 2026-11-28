@@ -177,6 +177,13 @@ class ScreenFlowTests(unittest.TestCase):
         instruments = {row["instrument_id"] for row in enriched["data"]["matched_mentions"]}
         self.assertTrue({"US:AAA", "US:BBB"} & instruments)
         self.assertGreaterEqual(enriched["data"]["matched_count"], 1)
+        replayed = self.screens.replay_enrichment({
+            "enrichment_id": enriched["data"]["enrichment_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["enrichment_id"], enriched["data"]["enrichment_id"])
+        self.assertEqual(replayed["data"]["matched_mentions"], enriched["data"]["matched_mentions"])
+        missing = self.screens.replay_enrichment({"enrichment_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
 
     def test_screen_replays_and_refuses_a_future_previous_screen(self):
         first = self.screens.run({
@@ -230,6 +237,13 @@ class ScreenFlowTests(unittest.TestCase):
         self.assertFalse(monitored["data"]["trading_approved"])
         self.assertEqual(len(monitored["data"]["timeline"]), 2)
         self.assertEqual(monitored["data"]["screen_ids"][0], first_screen["screen_id"])
+        replayed = self.screens.replay_monitor({
+            "monitor_id": monitored["data"]["monitor_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["monitor_id"], monitored["data"]["monitor_id"])
+        self.assertEqual(replayed["data"]["timeline"], monitored["data"]["timeline"])
+        missing = self.screens.replay_monitor({"monitor_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
 
     def test_options_link_follows_the_matching_equity_stance(self):
         screen = self.screens.run({
@@ -244,6 +258,11 @@ class ScreenFlowTests(unittest.TestCase):
         }).to_dict()
         self.assertEqual(linked["state"], "AVAILABLE")
         self.assertFalse(linked["data"]["trading_approved"])
+        replayed = self.screens.replay_options_link({
+            "link_id": linked["data"]["link_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["link_id"], linked["data"]["link_id"])
+        self.assertEqual(replayed["data"]["option_candidate"], linked["data"]["option_candidate"])
         self.assertEqual(linked["data"]["underlying_id"], underlying)
         expected = option_candidate(screen["rows"], underlying)["option_candidate"]
         self.assertEqual(linked["data"]["option_candidate"], expected)
@@ -296,6 +315,17 @@ class ScreenFlowTests(unittest.TestCase):
             [row["structure_rank"] for row in structures["data"]["rows"]],
             list(range(1, len(structures["data"]["rows"]) + 1)),
         )
+        scan_replay = self.screens.replay_options_scan({
+            "scan_id": scanned["data"]["scan_id"],
+        }).to_dict()
+        self.assertEqual(scan_replay["data"]["scan_id"], scanned["data"]["scan_id"])
+        self.assertEqual(scan_replay["data"]["rows"], scanned["data"]["rows"])
+        structures_replay = self.screens.replay_option_structures({
+            "structures_id": structures["data"]["structures_id"],
+        }).to_dict()
+        self.assertEqual(structures_replay["data"]["structures_id"],
+                         structures["data"]["structures_id"])
+        self.assertEqual(structures_replay["data"]["rows"], structures["data"]["rows"])
 
 
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):

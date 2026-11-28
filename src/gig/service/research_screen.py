@@ -22,6 +22,7 @@ from gig.service.workspace import TerminalWorkspace, _fields
 from gig.timestamps import aware_timestamp
 
 IMPLEMENTATION = "gig.research-screen.v1"
+MONITOR = "gig.research-screen.monitor.v1"
 OPTIONS_LINK = "gig.research-screen.options-link.v1"
 OPTIONS_SCAN = "gig.research-screen.options-scan.v1"
 OPTIONS_STRUCTURES = "gig.research-screen.options-structures.v1"
@@ -274,6 +275,27 @@ class ResearchScreenWorkspace:
     def _path(self, name: str) -> Path:
         return self.workspace._path("research-screens/" + name)
 
+    def _persist_artifact(self, directory: str, identity_key: str, document: dict[str, Any]) -> dict[str, Any]:
+        """Write a hash-addressed sidecar artifact next to research screens."""
+        identity = document[identity_key]
+        folder = self._path(directory)
+        folder.mkdir(parents=True, exist_ok=True)
+        write_immutable(folder / (identity + ".json"), dumps(document).encode())
+        return document
+
+    def _load_artifact(self, directory: str, identity_key: str, artifact_id: str,
+                       schema: str) -> dict[str, Any]:
+        identity = sha256(artifact_id)
+        path = self._path(directory) / (identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError(f"research screen {identity_key} unavailable")
+        document = loads(path.read_bytes())
+        body = {key: value for key, value in document.items() if key != identity_key}
+        if (document.get(identity_key) != identity or _hash(body) != identity
+                or document.get("schema_version") != schema):
+            raise ValueError(f"{identity_key} artifact integrity mismatch")
+        return document
+
     def discover(self, payload: dict[str, Any]) -> Contract:
         """Score saved evidence, then label research stances in one step.
 
@@ -491,7 +513,7 @@ class ResearchScreenWorkspace:
                      "timing_exits": screen["metrics"]["timing_exits"],
                      "timing_flips": screen["metrics"]["timing_flips"]} for screen in screens]
         body = {
-            "schema_version": IMPLEMENTATION + ".monitor",
+            "schema_version": MONITOR,
             "as_of": screens[-1]["as_of"],
             "dataset_id": screens[-1]["dataset_id"],
             "source": screens[-1]["source"],
@@ -500,6 +522,7 @@ class ResearchScreenWorkspace:
             "screen_ids": [screen["screen_id"] for screen in screens],
             "timeline": timeline,
             "latest_screen_id": screens[-1]["screen_id"],
+            "screen_id": screens[-1]["screen_id"],
             "rows": screens[-1]["rows"],
             "timing": screens[-1]["timing"],
             "metrics": {
@@ -518,7 +541,21 @@ class ResearchScreenWorkspace:
             ],
         }
         identity = _hash(body)
-        document = {**body, "monitor_id": identity, "screen_id": screens[-1]["screen_id"]}
+        document = {**body, "monitor_id": identity}
+        self._persist_artifact("monitors", "monitor_id", document)
+        return self._contract(document)
+
+    def load_monitor(self, monitor_id: str) -> dict[str, Any]:
+        return self._load_artifact("monitors", "monitor_id", monitor_id, MONITOR)
+
+    def replay_monitor(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"monitor_id"}, {"monitor_id"})
+        try:
+            document = self.load_monitor(payload["monitor_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen",
+                                  error=public_error("DATA_UNAVAILABLE"))
         return self._contract(document)
 
     def link_options(self, payload: dict[str, Any]) -> Contract:
@@ -562,6 +599,7 @@ class ResearchScreenWorkspace:
         }
         identity = _hash(body)
         document = {**body, "link_id": identity}
+        self._persist_artifact("options-links", "link_id", document)
         return Contract.admit(
             State.AVAILABLE,
             {**document, "title": "Unapproved equity/options research link"},
@@ -571,6 +609,32 @@ class ResearchScreenWorkspace:
             scope="workspace.research-screen.options",
             source_identity=document["dataset_id"],
             model_identity=identity,
+            model_version=OPTIONS_LINK,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_LINK",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def load_options_link(self, link_id: str) -> dict[str, Any]:
+        return self._load_artifact("options-links", "link_id", link_id, OPTIONS_LINK)
+
+    def replay_options_link(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"link_id"}, {"link_id"})
+        try:
+            document = self.load_options_link(payload["link_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE",
+                                  scope="workspace.research-screen.options",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved equity/options research link"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.options",
+            source_identity=document["dataset_id"],
+            model_identity=document["link_id"],
             model_version=OPTIONS_LINK,
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_LINK",
             readiness="RESEARCH_ONLY",
@@ -674,6 +738,7 @@ class ResearchScreenWorkspace:
         }
         identity = _hash(body)
         document = {**body, "scan_id": identity}
+        self._persist_artifact("options-scans", "scan_id", document)
         return Contract.admit(
             State.AVAILABLE,
             {**document, "title": "Unapproved equity/options research opportunity scan"},
@@ -683,6 +748,32 @@ class ResearchScreenWorkspace:
             scope="workspace.research-screen.options",
             source_identity=document["dataset_id"],
             model_identity=identity,
+            model_version=OPTIONS_SCAN,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_SCAN",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def load_options_scan(self, scan_id: str) -> dict[str, Any]:
+        return self._load_artifact("options-scans", "scan_id", scan_id, OPTIONS_SCAN)
+
+    def replay_options_scan(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"scan_id"}, {"scan_id"})
+        try:
+            document = self.load_options_scan(payload["scan_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE",
+                                  scope="workspace.research-screen.options",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved equity/options research opportunity scan"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.options",
+            source_identity=document["dataset_id"],
+            model_identity=document["scan_id"],
             model_version=OPTIONS_SCAN,
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_SCAN",
             readiness="RESEARCH_ONLY",
@@ -814,6 +905,7 @@ class ResearchScreenWorkspace:
         }
         identity = _hash(body)
         document = {**body, "structures_id": identity}
+        self._persist_artifact("options-structures", "structures_id", document)
         return Contract.admit(
             State.AVAILABLE,
             {**document, "title": "Unapproved multi-leg options structure discovery"},
@@ -823,6 +915,33 @@ class ResearchScreenWorkspace:
             scope="workspace.research-screen.options",
             source_identity=document["dataset_id"],
             model_identity=identity,
+            model_version=OPTIONS_STRUCTURES,
+            evidence_state="HASH_VERIFIED_RESEARCH_OPTIONS_STRUCTURES",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def load_option_structures(self, structures_id: str) -> dict[str, Any]:
+        return self._load_artifact("options-structures", "structures_id", structures_id,
+                                   OPTIONS_STRUCTURES)
+
+    def replay_option_structures(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"structures_id"}, {"structures_id"})
+        try:
+            document = self.load_option_structures(payload["structures_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE",
+                                  scope="workspace.research-screen.options",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved multi-leg options structure discovery"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.options",
+            source_identity=document["dataset_id"],
+            model_identity=document["structures_id"],
             model_version=OPTIONS_STRUCTURES,
             evidence_state="HASH_VERIFIED_RESEARCH_OPTIONS_STRUCTURES",
             readiness="RESEARCH_ONLY",
@@ -871,6 +990,7 @@ class ResearchScreenWorkspace:
         }
         identity = _hash(body)
         document_out = {**body, "enrichment_id": identity}
+        self._persist_artifact("fi-enrichments", "enrichment_id", document_out)
         return Contract.admit(
             State.AVAILABLE,
             {**document_out, "title": "Unapproved FI mention enrichment of a research screen"},
@@ -880,6 +1000,32 @@ class ResearchScreenWorkspace:
             scope="workspace.research-screen.fi",
             source_identity=document_out["dataset_id"],
             model_identity=identity,
+            model_version=FI_ENRICH,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_FI_ENRICHMENT",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def load_enrichment(self, enrichment_id: str) -> dict[str, Any]:
+        return self._load_artifact("fi-enrichments", "enrichment_id", enrichment_id, FI_ENRICH)
+
+    def replay_enrichment(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"enrichment_id"}, {"enrichment_id"})
+        try:
+            document = self.load_enrichment(payload["enrichment_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE",
+                                  scope="workspace.research-screen.fi",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved FI mention enrichment of a research screen"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.fi",
+            source_identity=document["dataset_id"],
+            model_identity=document["enrichment_id"],
             model_version=FI_ENRICH,
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_FI_ENRICHMENT",
             readiness="RESEARCH_ONLY",
