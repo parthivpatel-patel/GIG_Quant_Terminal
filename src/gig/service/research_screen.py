@@ -22,6 +22,7 @@ from gig.timestamps import aware_timestamp
 
 IMPLEMENTATION = "gig.research-screen.v1"
 OPTIONS_LINK = "gig.research-screen.options-link.v1"
+OPTIONS_SCAN = "gig.research-screen.options-scan.v1"
 FI_ENRICH = "gig.research-screen.fi-enrich.v1"
 STANCES = ("RESEARCH_BUY", "RESEARCH_HOLD", "RESEARCH_SELL")
 EVENTS = ("ENTER_LONG", "EXIT_LONG", "ENTER_SHORT", "EXIT_SHORT", "CONTINUE", "FLIP", "ENTER_HOLD")
@@ -458,6 +459,82 @@ class ResearchScreenWorkspace:
             model_identity=identity,
             model_version=OPTIONS_LINK,
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_LINK",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def scan_options(self, payload: dict[str, Any]) -> Contract:
+        """Scan multiple saved options runs against one equity research screen."""
+        fields = _fields(payload, {"screen_id", "options_run_ids"}, {"screen_id", "options_run_ids"})
+        ids = fields["options_run_ids"]
+        if not isinstance(ids, list) or not 1 <= len(ids) <= 32 or len(set(ids)) != len(ids):
+            raise ValueError("options scan requires one to thirty-two distinct options run identities")
+        try:
+            screen = self.load(fields["screen_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen.options",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        workspace = OptionsWorkspace(self.base_dir)
+        rows: list[dict[str, Any]] = []
+        for options_run_id in ids:
+            try:
+                options = workspace.load(options_run_id)
+            except FileNotFoundError:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                      classification="UNAVAILABLE", scope="workspace.research-screen.options",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            linked = option_candidate(screen["rows"], options["underlying_id"])
+            rows.append({
+                "options_run_id": options["run_id"],
+                "underlying_id": options["underlying_id"],
+                "equity_stance": linked["equity_stance"],
+                "option_candidate": linked["option_candidate"],
+                "research_weight": linked["research_weight"],
+                "admitted_option_quotes": options.get("metrics", {}).get("admitted_quotes", 0),
+                "trading_approved": False,
+            })
+        actionable = [row for row in rows if row["option_candidate"] in
+                      {"RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE"}]
+        body = {
+            "schema_version": OPTIONS_SCAN,
+            "as_of": screen["as_of"],
+            "screen_id": screen["screen_id"],
+            "dataset_id": screen["dataset_id"],
+            "signal_id": screen["signal_id"],
+            "source": screen["source"],
+            "input_classification": screen["input_classification"],
+            "options_run_ids": [sha256(i) for i in ids],
+            "rows": rows,
+            "actionable": actionable,
+            "options_trading_approved": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "usable_for_portfolio": False,
+            "notes": [
+                "Options scan maps each saved options run onto the equity research screen by underlying identity.",
+                "Candidates are research labels only; no priced order, OPRA entitlement, or broker path is created.",
+            ],
+            "metrics": {
+                "scanned": len(rows),
+                "actionable": len(actionable),
+                "calls": sum(1 for row in actionable if row["option_candidate"] == "RESEARCH_CALL_CANDIDATE"),
+                "puts": sum(1 for row in actionable if row["option_candidate"] == "RESEARCH_PUT_CANDIDATE"),
+                "trading_approved": False,
+            },
+        }
+        identity = _hash(body)
+        document = {**body, "scan_id": identity}
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved equity/options research opportunity scan"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.options",
+            source_identity=document["dataset_id"],
+            model_identity=identity,
+            model_version=OPTIONS_SCAN,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_SCAN",
             readiness="RESEARCH_ONLY",
         )
 
