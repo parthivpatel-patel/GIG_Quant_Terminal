@@ -10,9 +10,16 @@ import httpx
 from gig.service.app import create_app
 from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
+from gig.service.options_workspace import OptionsWorkspace
 from gig.service.persisted_research import PersistedResearchWorkspace
-from gig.service.research_screen import ResearchScreenWorkspace, label_rows, timing_events
+from gig.service.research_screen import (
+    ResearchScreenWorkspace,
+    label_rows,
+    option_candidate,
+    timing_events,
+)
 from gig.service.signal_workspace import SignalWorkspace
+from test_options_workspace import option_fixture, option_request
 from test_persisted_flow_http import allocation_request, seed_flow
 
 
@@ -42,6 +49,10 @@ class ScreenUnitTests(unittest.TestCase):
         self.assertEqual(events["US:AAA"], "ENTER_LONG")
         self.assertEqual(events["US:BBB"], "ENTER_HOLD")
         self.assertEqual(events["US:CCC"], "CONTINUE")
+        self.assertEqual(option_candidate(labeled, "US:AAA")["option_candidate"], "RESEARCH_CALL_CANDIDATE")
+        self.assertEqual(option_candidate(labeled, "US:CCC")["option_candidate"], "RESEARCH_PUT_CANDIDATE")
+        self.assertEqual(option_candidate(labeled, "US:BBB")["option_candidate"], "RESEARCH_HOLD_NO_OPTION")
+        self.assertEqual(option_candidate(labeled, "US:ZZZ")["option_candidate"], "RESEARCH_NO_OPTION_MATCH")
 
 
 class ScreenFlowTests(unittest.TestCase):
@@ -93,6 +104,27 @@ class ScreenFlowTests(unittest.TestCase):
         self.assertFalse(discovered["data"]["trading_approved"])
         again = self.screens.replay({"screen_id": discovered["data"]["screen_id"]}).to_dict()
         self.assertEqual(again["data"]["rows"], discovered["data"]["rows"])
+
+    def test_options_link_follows_the_matching_equity_stance(self):
+        screen = self.screens.run({
+            "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        underlying = screen["rows"][0]["instrument_id"]
+        options = OptionsWorkspace(self.base)
+        options.ingest(option_fixture(underlying_id=underlying))
+        run = options.run(option_request(underlying_id=underlying)).to_dict()["data"]
+        linked = self.screens.link_options({
+            "screen_id": screen["screen_id"], "options_run_id": run["run_id"],
+        }).to_dict()
+        self.assertEqual(linked["state"], "AVAILABLE")
+        self.assertFalse(linked["data"]["trading_approved"])
+        self.assertEqual(linked["data"]["underlying_id"], underlying)
+        expected = option_candidate(screen["rows"], underlying)["option_candidate"]
+        self.assertEqual(linked["data"]["option_candidate"], expected)
+        missing = self.screens.link_options({
+            "screen_id": screen["screen_id"], "options_run_id": "0" * 64,
+        }).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
 
 
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):

@@ -24,4 +24,10 @@ saved model `run_ids` and `now`. The resulting artifact still pins the
 Replay (`screen-replay`) recomputes the labels from the pinned signal and
 refuses the record if they differ. Offline allocation still consumes the
 `signal_id`; the screen sits beside that path as an explicit research view.
+`operation: "link-options"` joins a saved screen to a saved European options
+research run. When the options `underlying_id` matches a screened instrument,
+`RESEARCH_BUY` becomes a `RESEARCH_CALL_CANDIDATE` and `RESEARCH_SELL` becomes
+a `RESEARCH_PUT_CANDIDATE`. Holds and unmatched underlyings stay explicit.
+The link is not an options order and does not approve trading.
+
 Broker connectivity stays disabled.

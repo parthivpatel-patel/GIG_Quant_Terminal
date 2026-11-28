@@ -14,14 +14,18 @@ from typing import Any
 from gig.artifacts import write_immutable
 from gig.research.model_pipeline import sha256
 from gig.service.contracts import Contract, State
+from gig.service.options_workspace import OptionsWorkspace
 from gig.service.serialization import dumps, loads, public_error
 from gig.service.signal_workspace import SignalWorkspace
 from gig.service.workspace import TerminalWorkspace, _fields
 from gig.timestamps import aware_timestamp
 
 IMPLEMENTATION = "gig.research-screen.v1"
+OPTIONS_LINK = "gig.research-screen.options-link.v1"
 STANCES = ("RESEARCH_BUY", "RESEARCH_HOLD", "RESEARCH_SELL")
 EVENTS = ("ENTER_LONG", "EXIT_LONG", "ENTER_SHORT", "EXIT_SHORT", "CONTINUE", "FLIP", "ENTER_HOLD")
+OPTION_CANDIDATES = ("RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE", "RESEARCH_NO_OPTION_MATCH",
+                     "RESEARCH_HOLD_NO_OPTION")
 
 
 def _hash(value: Any) -> str:
@@ -68,6 +72,22 @@ def label_rows(rows: list[dict[str, Any]], *, buy_threshold: float, sell_thresho
             signed = abs(row["prediction"]) / total
             row["research_weight"] = signed if row["stance"] == "RESEARCH_BUY" else -signed
     return labeled
+
+
+def option_candidate(rows: list[dict[str, Any]], underlying_id: str) -> dict[str, Any]:
+    if not isinstance(underlying_id, str) or not underlying_id or len(underlying_id) > 64:
+        raise ValueError("underlying identity must be a short string")
+    match = next((row for row in rows if row.get("instrument_id") == underlying_id), None)
+    if match is None:
+        return {"option_candidate": "RESEARCH_NO_OPTION_MATCH", "equity_stance": None, "research_weight": 0.0}
+    stance = match["stance"]
+    if stance == "RESEARCH_BUY":
+        return {"option_candidate": "RESEARCH_CALL_CANDIDATE", "equity_stance": stance,
+                "research_weight": float(match["research_weight"])}
+    if stance == "RESEARCH_SELL":
+        return {"option_candidate": "RESEARCH_PUT_CANDIDATE", "equity_stance": stance,
+                "research_weight": float(match["research_weight"])}
+    return {"option_candidate": "RESEARCH_HOLD_NO_OPTION", "equity_stance": stance, "research_weight": 0.0}
 
 
 def timing_events(current: list[dict[str, Any]], previous: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
@@ -275,3 +295,58 @@ class ResearchScreenWorkspace:
                                   classification="UNAVAILABLE", scope="workspace.research-screen",
                                   error=public_error("DATA_UNAVAILABLE"))
         return self._contract(document)
+
+    def link_options(self, payload: dict[str, Any]) -> Contract:
+        """Attach research option candidates to an equity screen. Not an options order."""
+        fields = _fields(payload, {"screen_id", "options_run_id"}, {"screen_id", "options_run_id"})
+        try:
+            screen = self.load(fields["screen_id"])
+            options = OptionsWorkspace(self.base_dir).load(fields["options_run_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen.options",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        underlying = options["underlying_id"]
+        linked = option_candidate(screen["rows"], underlying)
+        quotes = options.get("metrics", {}).get("admitted_quotes", 0)
+        body = {
+            "schema_version": OPTIONS_LINK,
+            "as_of": screen["as_of"],
+            "screen_id": screen["screen_id"],
+            "options_run_id": options["run_id"],
+            "dataset_id": screen["dataset_id"],
+            "signal_id": screen["signal_id"],
+            "source": screen["source"],
+            "input_classification": screen["input_classification"],
+            "underlying_id": underlying,
+            "equity_stance": linked["equity_stance"],
+            "option_candidate": linked["option_candidate"],
+            "research_weight": linked["research_weight"],
+            "admitted_option_quotes": quotes,
+            "options_trading_approved": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "usable_for_portfolio": False,
+            "notes": [
+                "Option candidates follow the equity research stance only; they are not priced entry or exit orders.",
+                "A CALL candidate means the equity screen is RESEARCH_BUY; a PUT candidate means RESEARCH_SELL.",
+                "No broker connectivity, OPRA entitlement or trading approval is established.",
+            ],
+            "metrics": {"trading_approved": False, "option_candidate": linked["option_candidate"],
+                        "admitted_option_quotes": quotes},
+        }
+        identity = _hash(body)
+        document = {**body, "link_id": identity}
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved equity/options research link"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.options",
+            source_identity=document["dataset_id"],
+            model_identity=identity,
+            model_version=OPTIONS_LINK,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_LINK",
+            readiness="RESEARCH_ONLY",
+        )

@@ -145,6 +145,9 @@ class CycleServices:
         if isinstance(payload, dict) and payload.get("operation") == "from-runs":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().discover(body)
+        if isinstance(payload, dict) and payload.get("operation") == "link-options":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().link_options(body)
         return self._screens().run(payload)
 
     def screen_replay(self, payload: dict[str, Any]) -> Contract:
