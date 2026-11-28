@@ -1585,9 +1585,9 @@ class ResearchStrategyWorkspace:
             weight_kind = str(allocation_record["kind"])
             remapped: list[dict[str, Any]] = []
             for row in screen_rows:
-                weight = allocation_weights.get(row["instrument_id"])
+                alloc_weight = allocation_weights.get(row["instrument_id"])
                 updated = dict(row)
-                if weight is None or weight == 0.0:
+                if alloc_weight is None or alloc_weight == 0.0:
                     updated["research_weight"] = 0.0
                 else:
                     sign = 1.0 if float(row.get("research_weight", 0)) >= 0 else -1.0
@@ -1595,7 +1595,7 @@ class ResearchStrategyWorkspace:
                         sign = -1.0
                     elif row.get("stance") == "RESEARCH_BUY":
                         sign = 1.0
-                    updated["research_weight"] = sign * abs(float(weight))
+                    updated["research_weight"] = sign * abs(float(alloc_weight))
                     updated["allocation_weight_source"] = weight_kind
                 remapped.append(updated)
             screen_rows = remapped
