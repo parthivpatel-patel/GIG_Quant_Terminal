@@ -22,10 +22,58 @@ from gig.timestamps import aware_timestamp
 
 IMPLEMENTATION = "gig.research-screen.v1"
 OPTIONS_LINK = "gig.research-screen.options-link.v1"
+FI_ENRICH = "gig.research-screen.fi-enrich.v1"
 STANCES = ("RESEARCH_BUY", "RESEARCH_HOLD", "RESEARCH_SELL")
 EVENTS = ("ENTER_LONG", "EXIT_LONG", "ENTER_SHORT", "EXIT_SHORT", "CONTINUE", "FLIP", "ENTER_HOLD")
 OPTION_CANDIDATES = ("RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE", "RESEARCH_NO_OPTION_MATCH",
                      "RESEARCH_HOLD_NO_OPTION")
+
+
+def match_mentions(rows: list[dict[str, Any]], entity_mentions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Exact string match of FI entity mentions onto screen instrument identities.
+
+    Mentions keep their FI link_state. A match is lexical only; it is not an
+    issuer authority link or a trading signal. Exchange-qualified mentions such
+    as ``NYSE:AAA`` may resolve through the local ticker suffix of ``US:AAA``.
+    """
+    if not isinstance(entity_mentions, list):
+        raise ValueError("entity_mentions must be a list")
+    instruments = {row["instrument_id"] for row in rows}
+    aliases: dict[str, str] = {}
+    for instrument in instruments:
+        aliases[instrument] = instrument
+        aliases[instrument.upper()] = instrument
+        if ":" in instrument:
+            suffix = instrument.split(":", 1)[1]
+            aliases[suffix] = instrument
+            aliases[suffix.upper()] = instrument
+    matched: list[dict[str, Any]] = []
+    for mention in entity_mentions:
+        if not isinstance(mention, dict) or not isinstance(mention.get("mention"), str):
+            raise ValueError("entity mention requires a mention string")
+        candidates = [mention["mention"].strip()]
+        if isinstance(mention.get("symbol_mention"), str) and mention["symbol_mention"].strip():
+            candidates.append(mention["symbol_mention"].strip())
+        text = mention["mention"].strip()
+        if ":" in text:
+            candidates.append(text.split(":", 1)[1].strip())
+        instrument = None
+        for candidate in candidates:
+            instrument = aliases.get(candidate) or aliases.get(candidate.upper())
+            if instrument is not None:
+                break
+        if instrument is None:
+            continue
+        row = next(item for item in rows if item["instrument_id"] == instrument)
+        matched.append({
+            "instrument_id": instrument,
+            "stance": row["stance"],
+            "research_weight": float(row["research_weight"]),
+            "mention": text,
+            "link_state": mention.get("link_state", "UNKNOWN_NO_ISSUER_AUTHORITY"),
+            "trading_approved": False,
+        })
+    return matched
 
 
 def _hash(value: Any) -> str:
@@ -410,5 +458,62 @@ class ResearchScreenWorkspace:
             model_identity=identity,
             model_version=OPTIONS_LINK,
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_OPTIONS_LINK",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def enrich_mentions(self, payload: dict[str, Any]) -> Contract:
+        """Attach Financial Intelligence entity mentions that lexically match screen names."""
+        fields = _fields(payload, {"screen_id", "document_id", "nlp_profile"}, {"screen_id", "document_id"})
+        profile = fields.get("nlp_profile", "v1")
+        try:
+            screen = self.load(fields["screen_id"])
+            from gig.service.financial_workspace import FinancialIntelligenceWorkspace
+            corpus = FinancialIntelligenceWorkspace(self.base_dir).corpus
+            admitted = corpus.document(fields["document_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen.fi",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        from gig.financial_intelligence import nlp
+        extracted = nlp.extract(admitted["passages"], profile=profile)
+        matches = match_mentions(screen["rows"], extracted.get("entity_mentions", []))
+        body = {
+            "schema_version": FI_ENRICH,
+            "as_of": screen["as_of"],
+            "screen_id": screen["screen_id"],
+            "document_id": admitted["metadata"]["document_id"],
+            "dataset_id": screen["dataset_id"],
+            "signal_id": screen["signal_id"],
+            "source": screen["source"],
+            "input_classification": screen["input_classification"],
+            "nlp_profile": profile,
+            "matched_mentions": matches,
+            "entity_mention_count": len(extracted.get("entity_mentions", [])),
+            "matched_count": len(matches),
+            "trading_approved": False,
+            "economically_validated": False,
+            "usable_for_portfolio": False,
+            "notes": [
+                "Matches are exact lexical overlaps between FI entity mentions and screen instrument identities.",
+                "link_state stays UNKNOWN_NO_ISSUER_AUTHORITY unless the FI extract already set another state.",
+                "Enrichment does not change the screen hash, stance, or trading approval.",
+            ],
+            "metrics": {"matched_count": len(matches),
+                        "entity_mention_count": len(extracted.get("entity_mentions", [])),
+                        "trading_approved": False},
+        }
+        identity = _hash(body)
+        document_out = {**body, "enrichment_id": identity}
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document_out, "title": "Unapproved FI mention enrichment of a research screen"},
+            source=document_out["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document_out["as_of"],
+            scope="workspace.research-screen.fi",
+            source_identity=document_out["dataset_id"],
+            model_identity=identity,
+            model_version=FI_ENRICH,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_FI_ENRICHMENT",
             readiness="RESEARCH_ONLY",
         )

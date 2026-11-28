@@ -151,6 +151,9 @@ class CycleServices:
         if isinstance(payload, dict) and payload.get("operation") == "monitor":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().monitor(body)
+        if isinstance(payload, dict) and payload.get("operation") == "enrich-mentions":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().enrich_mentions(body)
         return self._screens().run(payload)
 
     def screen_replay(self, payload: dict[str, Any]) -> Contract:
@@ -167,8 +170,12 @@ class CycleServices:
         body = {key: value for key, value in payload.items() if key != "operation"}
         if operation == "replay":
             return self._strategies().replay(body)
+        if operation == "size":
+            return self._strategies().size(body)
+        if operation == "size-replay":
+            return self._strategies().replay_size(body)
         if operation != "simulate":
-            raise ValueError("research strategy operation must be simulate or replay")
+            raise ValueError("research strategy operation must be simulate, size, size-replay, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):

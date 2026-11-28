@@ -61,6 +61,25 @@ class StrategyTests(unittest.TestCase):
         self.assertEqual(len(filled["data"]["fills"]), len(filled["data"]["prepared_client_ids"]))
         self.assertFalse(filled["data"]["trading_approved"])
 
+    def test_size_caps_name_notional_and_replays(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "5000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        EnvelopeSchema.model_validate(sized)
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        self.assertFalse(sized["data"]["trading_approved"])
+        self.assertFalse(sized["data"]["broker_connected"])
+        self.assertTrue(sized["data"]["rows"])
+        for row in sized["data"]["rows"]:
+            self.assertLessEqual(float(row["target_notional"]), 5000.0 + 1e-9)
+            self.assertFalse(row["trading_approved"])
+        replayed = self.strategies.replay_size({"size_id": sized["data"]["size_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["size_id"], sized["data"]["size_id"])
+        missing = self.strategies.replay_size({"size_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+
 
 class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def test_http_simulate_and_replay(self):
@@ -95,6 +114,20 @@ class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):
                 })
                 self.assertEqual(replay.status_code, 200, replay.text)
                 self.assertEqual(replay.json()["data"]["strategy_id"], body["strategy_id"])
+                sized = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "size", "screen_id": screen_id, "now": request["as_of"],
+                    "portfolio_notional": "100000", "max_name_notional": "8000",
+                    "lot_size": 1, "max_age_seconds": 86400,
+                })
+                self.assertEqual(sized.status_code, 200, sized.text)
+                size_body = sized.json()["data"]
+                self.assertTrue(size_body["rows"])
+                self.assertFalse(size_body["trading_approved"])
+                size_replay = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "size-replay", "size_id": size_body["size_id"],
+                })
+                self.assertEqual(size_replay.status_code, 200, size_replay.text)
+                self.assertEqual(size_replay.json()["data"]["size_id"], size_body["size_id"])
 
 
 if __name__ == "__main__":

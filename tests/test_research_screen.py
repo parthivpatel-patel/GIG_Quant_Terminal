@@ -13,9 +13,11 @@ from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
 from gig.service.options_workspace import OptionsWorkspace
 from gig.service.persisted_research import PersistedResearchWorkspace
+from gig.service.financial_workspace import FinancialIntelligenceWorkspace
 from gig.service.research_screen import (
     ResearchScreenWorkspace,
     label_rows,
+    match_mentions,
     option_candidate,
     timing_events,
 )
@@ -54,6 +56,14 @@ class ScreenUnitTests(unittest.TestCase):
         self.assertEqual(option_candidate(labeled, "US:CCC")["option_candidate"], "RESEARCH_PUT_CANDIDATE")
         self.assertEqual(option_candidate(labeled, "US:BBB")["option_candidate"], "RESEARCH_HOLD_NO_OPTION")
         self.assertEqual(option_candidate(labeled, "US:ZZZ")["option_candidate"], "RESEARCH_NO_OPTION_MATCH")
+        matches = match_mentions(labeled, [
+            {"mention": "NYSE:AAA", "symbol_mention": "AAA",
+             "link_state": "UNKNOWN_NO_ISSUER_AUTHORITY"},
+            {"mention": "Federal Reserve", "link_state": "UNKNOWN_NO_ISSUER_AUTHORITY"},
+        ])
+        self.assertEqual([row["instrument_id"] for row in matches], ["US:AAA"])
+        self.assertEqual(matches[0]["stance"], "RESEARCH_BUY")
+        self.assertFalse(matches[0]["trading_approved"])
 
 
 class ScreenFlowTests(unittest.TestCase):
@@ -72,6 +82,30 @@ class ScreenFlowTests(unittest.TestCase):
             "run_ids": [run["run_id"]], "now": self.now, "lookback": 20, "min_ic_observations": 5,
         }).to_dict()["data"]
         self.screens = ResearchScreenWorkspace(self.base)
+
+    def test_enrich_mentions_matches_exchange_qualified_symbols(self):
+        screen = self.screens.run({
+            "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        fi = FinancialIntelligenceWorkspace(self.base)
+        admitted = fi.run({
+            "operation": "admit-authored",
+            "source_id": "screen-enrich-fixture",
+            "title": "Authored screen enrichment fixture",
+            "text": "Analysts mentioned NYSE:AAA and NASDAQ:BBB during earnings.",
+            "license": "GIG-AUTHORED",
+        }).to_dict()
+        self.assertEqual(admitted["state"], "AVAILABLE", admitted)
+        document_id = admitted["data"]["document_id"]
+        enriched = self.screens.enrich_mentions({
+            "screen_id": screen["screen_id"], "document_id": document_id, "nlp_profile": "v2",
+        }).to_dict()
+        EnvelopeSchema.model_validate(enriched)
+        self.assertEqual(enriched["state"], "AVAILABLE", enriched)
+        self.assertFalse(enriched["data"]["trading_approved"])
+        instruments = {row["instrument_id"] for row in enriched["data"]["matched_mentions"]}
+        self.assertTrue({"US:AAA", "US:BBB"} & instruments)
+        self.assertGreaterEqual(enriched["data"]["matched_count"], 1)
 
     def test_screen_replays_and_refuses_a_future_previous_screen(self):
         first = self.screens.run({
