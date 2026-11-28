@@ -177,10 +177,10 @@ class ResearchStrategyWorkspace:
         """
         allowed = {"run_ids", "now", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
                    "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
-                   "target_volatility", "initial_cash", "n_long", "n_short", "gross_leverage",
-                   "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata", "limits",
-                   "commission_bps", "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost",
-                   "fill"}
+                   "target_volatility", "max_expected_shortfall", "initial_cash", "n_long", "n_short",
+                   "gross_leverage", "max_name_weight", "lot_size", "max_age_seconds", "annualization",
+                   "metadata", "limits", "commission_bps", "slippage_bps", "price_tick", "max_turnover",
+                   "max_transaction_cost", "fill"}
         fields = _fields(payload, allowed, {"run_ids", "now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -204,7 +204,8 @@ class ResearchStrategyWorkspace:
             "max_name_notional": fields["max_name_notional"],
             "lot_size": fields["lot_size"],
         }
-        for key in ("max_age_seconds", "vol_scale", "target_volatility", "annualization"):
+        for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
+                    "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -307,7 +308,7 @@ class ResearchStrategyWorkspace:
         """
         allowed = {"signal_ids", "buy_threshold", "sell_threshold", "now", "portfolio_notional",
                    "max_name_notional", "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
-                   "annualization", "options_run_ids"}
+                   "max_expected_shortfall", "annualization", "options_run_ids"}
         fields = _fields(payload, allowed, {"signal_ids", "now", "portfolio_notional",
                                             "max_name_notional", "lot_size"})
         monitor_payload = {key: fields[key] for key in fields
@@ -329,7 +330,8 @@ class ResearchStrategyWorkspace:
             "max_name_notional": fields["max_name_notional"],
             "lot_size": fields["lot_size"],
         }
-        for key in ("max_age_seconds", "vol_scale", "target_volatility", "annualization"):
+        for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
+                    "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -428,7 +430,7 @@ class ResearchStrategyWorkspace:
         """
         fields = _fields(payload, {"screen_id", "now", "portfolio_notional", "max_name_notional",
                                    "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
-                                   "annualization"},
+                                   "max_expected_shortfall", "annualization"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
         if "vol_scale" in fields and "target_volatility" in fields:
             raise ValueError("provide vol_scale or target_volatility, not both")
@@ -465,10 +467,8 @@ class ResearchStrategyWorkspace:
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
         symbols = sorted({row["instrument_id"] for row in actionable})
-        if "target_volatility" in fields:
-            target = _positive(fields["target_volatility"], "target_volatility")
-            if target > Decimal("5"):
-                raise ValueError("target_volatility exceeds the research bound")
+        need_risk = "target_volatility" in fields or "max_expected_shortfall" in fields
+        if need_risk:
             panel = pd.DataFrame(dataset["panel_rows"])
             if "return_1" not in panel:
                 return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
@@ -483,6 +483,11 @@ class ResearchStrategyWorkspace:
             weights = [float(next(row["research_weight"] for row in actionable if row["instrument_id"] == symbol))
                        for symbol in symbols]
             risk_metrics = portfolio_risk(complete.to_numpy(), weights, annualization=annualization)
+        if "target_volatility" in fields:
+            target = _positive(fields["target_volatility"], "target_volatility")
+            if target > Decimal("5"):
+                raise ValueError("target_volatility exceeds the research bound")
+            assert risk_metrics is not None
             realized = Decimal(str(risk_metrics["annualized_volatility"]))
             if realized <= 0:
                 return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
@@ -490,6 +495,18 @@ class ResearchStrategyWorkspace:
                                       error=public_error("DATA_UNAVAILABLE"))
             scale = min(target / realized, Decimal("10"))
             scale_source = "TARGET_VOLATILITY"
+        if "max_expected_shortfall" in fields:
+            bound = _positive(fields["max_expected_shortfall"], "max_expected_shortfall")
+            if bound > Decimal("5"):
+                raise ValueError("max_expected_shortfall exceeds the research bound")
+            assert risk_metrics is not None
+            expected = Decimal(str(risk_metrics["loss_risk"]["expected_shortfall"]))
+            if expected > 0 and expected > bound:
+                scale = min(scale * (bound / expected), Decimal("10"))
+                scale_source = (scale_source + "+MAX_EXPECTED_SHORTFALL"
+                                if scale_source != "IDENTITY" else "MAX_EXPECTED_SHORTFALL")
+            risk_metrics = {**risk_metrics, "max_expected_shortfall": str(bound),
+                            "expected_shortfall_bound_applied": expected > bound}
         source_policy = dataset["provenance"]["stored_corporate_action_policy"]
         snapshot = PointInTimeStore(self.workspace._path("bars.sqlite"), read_only=True).snapshot(
             at, source=dataset["source"])
@@ -549,6 +566,9 @@ class ResearchStrategyWorkspace:
         }
         if "target_volatility" in fields:
             request["target_volatility"] = str(_positive(fields["target_volatility"], "target_volatility"))
+        if "max_expected_shortfall" in fields:
+            request["max_expected_shortfall"] = str(
+                _positive(fields["max_expected_shortfall"], "max_expected_shortfall"))
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
@@ -576,7 +596,7 @@ class ResearchStrategyWorkspace:
             },
             "notes": [
                 "Position sizes are research lot targets from screen weights and admitted marks.",
-                "max_name_notional caps each name; target_volatility scales notionals by realized panel risk.",
+                "max_name_notional caps each name; target_volatility and max_expected_shortfall scale notionals by panel risk.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }

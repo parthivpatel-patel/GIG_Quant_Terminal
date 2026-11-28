@@ -102,6 +102,31 @@ class StrategyTests(unittest.TestCase):
                 "lot_size": 1, "vol_scale": "1", "target_volatility": "0.15",
             })
 
+    def test_size_applies_max_expected_shortfall_bound(self):
+        probe = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_expected_shortfall": "5", "annualization": 252,
+        }).to_dict()
+        self.assertEqual(probe["state"], "AVAILABLE", probe)
+        expected = float(probe["data"]["risk"]["data"]["loss_risk"]["expected_shortfall"])
+        self.assertGreater(expected, 0.0)
+        bound = str(max(expected * 0.5, 1e-6))
+        gated = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_expected_shortfall": bound, "annualization": 252,
+        }).to_dict()
+        self.assertEqual(gated["state"], "AVAILABLE", gated)
+        self.assertEqual(gated["data"]["risk"]["state"], "AVAILABLE")
+        self.assertIn("MAX_EXPECTED_SHORTFALL", gated["data"]["request"]["vol_scale_source"])
+        self.assertLess(float(gated["data"]["request"]["vol_scale"]),
+                        float(probe["data"]["request"]["vol_scale"]) + 1e-12)
+        self.assertTrue(gated["data"]["risk"]["data"]["expected_shortfall_bound_applied"])
+        self.assertFalse(gated["data"]["trading_approved"])
+
     def test_cycle_discovers_sizes_and_simulates(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
