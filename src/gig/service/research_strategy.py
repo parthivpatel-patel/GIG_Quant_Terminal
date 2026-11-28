@@ -201,7 +201,7 @@ class ResearchStrategyWorkspace:
                    "gross_leverage", "max_name_weight", "lot_size", "max_age_seconds",
                    "annualization", "metadata", "limits", "commission_bps", "slippage_bps",
                    "price_tick", "max_turnover", "max_transaction_cost", "fill", "document_id",
-                   "nlp_profile", "estimate_cost", "spread_bps", "impact_eta"}
+                   "nlp_profile", "estimate_cost", "spread_bps", "impact_eta", "findings_id"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -251,7 +251,7 @@ class ResearchStrategyWorkspace:
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
                     "regime_short_bars", "regime_long_bars", "max_gross_exposure",
                     "max_adv_participation", "previous_size_id", "max_size_turnover",
-                    "annualization"):
+                    "annualization", "findings_id"):
             if key in fields:
                 size_payload[key] = fields[key]
         if "max_adv_participation" in fields and "adv_lookback_bars" in fields:
@@ -291,7 +291,7 @@ class ResearchStrategyWorkspace:
                      "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                      "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
                      "previous_size_id", "max_size_turnover", "document_id", "nlp_profile",
-                     "estimate_cost", "spread_bps", "impact_eta"}
+                     "estimate_cost", "spread_bps", "impact_eta", "findings_id"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -1266,7 +1266,8 @@ class ResearchStrategyWorkspace:
                                    "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
                                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                                    "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
-                                   "previous_size_id", "max_size_turnover", "annualization"},
+                                   "previous_size_id", "max_size_turnover", "annualization",
+                                   "findings_id"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
         if "vol_scale" in fields and "target_volatility" in fields:
             raise ValueError("provide vol_scale or target_volatility, not both")
@@ -1283,10 +1284,14 @@ class ResearchStrategyWorkspace:
             dataset = PersistedDatasetWorkspace(self.base_dir).load(screen["dataset_id"])
             previous_size = (self.load_size(fields["previous_size_id"])
                              if "previous_size_id" in fields else None)
+            findings = (self.screens.load_fi_findings(fields["findings_id"])
+                        if "findings_id" in fields else None)
         except FileNotFoundError:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
+        if findings is not None and findings["screen_id"] != screen["screen_id"]:
+            raise ValueError("findings_id must reference the same screen_id")
         if self._invalidation_hits(screen_id=screen["screen_id"]):
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
@@ -1323,7 +1328,30 @@ class ResearchStrategyWorkspace:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
-        actionable = [row for row in screen["rows"] if float(row["research_weight"]) != 0.0]
+        screen_rows = list(screen["rows"])
+        findings_applied = False
+        if findings is not None:
+            by_name = {row["instrument_id"]: row for row in findings["rows"]}
+            overlaid: list[dict[str, Any]] = []
+            for row in screen_rows:
+                overlay = by_name.get(row["instrument_id"])
+                if overlay is None:
+                    overlaid.append(row)
+                    continue
+                updated = dict(row)
+                if overlay.get("stance_override"):
+                    updated["stance"] = overlay["stance_override"]
+                    updated["research_weight"] = 0.0
+                    updated["fi_gate_reason"] = overlay.get("gate_reason")
+                elif overlay.get("adjusted_weight") is not None:
+                    updated["research_weight"] = float(overlay["adjusted_weight"])
+                    updated["fi_weight_adjusted"] = True
+                if overlay.get("mention_count"):
+                    updated["fi_mention_count"] = int(overlay["mention_count"])
+                overlaid.append(updated)
+            screen_rows = overlaid
+            findings_applied = True
+        actionable = [row for row in screen_rows if float(row["research_weight"]) != 0.0]
         if not actionable:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
@@ -1650,6 +1678,10 @@ class ResearchStrategyWorkspace:
                 request["max_size_turnover"] = str(
                     _positive(fields["max_size_turnover"], "max_size_turnover"))
                 request["size_turnover_cap_applied"] = turnover_cap_applied
+        if findings is not None:
+            request["findings_id"] = findings["findings_id"]
+            request["findings_policy"] = findings["policy"]
+            request["findings_applied"] = findings_applied
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
@@ -1657,6 +1689,7 @@ class ResearchStrategyWorkspace:
             "screen_id": screen["screen_id"],
             "signal_id": screen["signal_id"],
             "previous_size_id": previous_size["size_id"] if previous_size is not None else None,
+            "findings_id": findings["findings_id"] if findings is not None else None,
             "source": screen["source"],
             "input_classification": screen["input_classification"],
             "request": request,
@@ -1681,6 +1714,7 @@ class ResearchStrategyWorkspace:
                 "adv_participation_cap_applied": adv_cap_applied,
                 "size_turnover_nav": None if turnover_nav is None else str(turnover_nav),
                 "size_turnover_cap_applied": turnover_cap_applied,
+                "findings_applied": findings_applied,
                 "trading_approved": False,
             },
             "notes": [
@@ -1688,6 +1722,7 @@ class ResearchStrategyWorkspace:
                 "max_name_notional caps each name; target_volatility, max_expected_shortfall, max_gross_exposure, and max_adv_participation constrain notionals.",
                 "ADV caps use trailing close×volume means from the saved panel; they are descriptive liquidity bounds.",
                 "previous_size_id measures one-way NAV turnover; max_size_turnover blends toward the prior signed notionals.",
+                "Optional findings_id applies FI gate-hold / weight-adjust overlays before sizing; the screen artifact is unchanged.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }

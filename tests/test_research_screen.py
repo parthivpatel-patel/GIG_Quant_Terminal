@@ -21,6 +21,7 @@ from gig.service.research_screen import (
     option_candidate,
     timing_events,
 )
+from gig.service.research_strategy import ResearchStrategyWorkspace
 from gig.service.signal_workspace import SignalWorkspace
 from test_options_workspace import option_fixture, option_request
 from test_persisted_flow_http import allocation_request, seed_flow
@@ -212,6 +213,55 @@ class ScreenFlowTests(unittest.TestCase):
         self.assertEqual(replayed["data"]["findings_id"], body["findings_id"])
         missing = self.screens.replay_fi_findings({"findings_id": "0" * 64}).to_dict()
         self.assertEqual(missing["state"], "UNAVAILABLE")
+
+
+    def test_size_applies_fi_findings_weight_adjust(self):
+        screen = self.screens.run({
+            "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        fi = FinancialIntelligenceWorkspace(self.base)
+        admitted = fi.run({
+            "operation": "admit-authored",
+            "source_id": "size-findings-fixture",
+            "title": "Authored size findings fixture",
+            "text": "Coverage noted NYSE:AAA and NASDAQ:BBB after the print.",
+            "license": "GIG-AUTHORED",
+        }).to_dict()
+        self.assertEqual(admitted["state"], "AVAILABLE", admitted)
+        graph = fi.run({
+            "operation": "entity-graph",
+            "document_ids": [admitted["data"]["document_id"]],
+            "nlp_profile": "v2",
+        }).to_dict()
+        self.assertEqual(graph["state"], "AVAILABLE", graph)
+        findings = self.screens.annotate_fi_findings({
+            "screen_id": screen["screen_id"],
+            "entity_graph_id": graph["data"]["record_id"],
+            "nlp_profile": "v2",
+            "policy": "weight-adjust",
+            "weight_demote": 0.5,
+        }).to_dict()
+        self.assertEqual(findings["state"], "AVAILABLE", findings)
+        baseline = ResearchStrategyWorkspace(self.base).size({
+            "screen_id": screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(baseline["state"], "AVAILABLE", baseline)
+        overlaid = ResearchStrategyWorkspace(self.base).size({
+            "screen_id": screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "findings_id": findings["data"]["findings_id"],
+        }).to_dict()
+        self.assertEqual(overlaid["state"], "AVAILABLE", overlaid)
+        self.assertEqual(overlaid["data"]["findings_id"], findings["data"]["findings_id"])
+        self.assertTrue(overlaid["data"]["metrics"]["findings_applied"])
+        self.assertFalse(overlaid["data"]["trading_approved"])
+        self.assertLessEqual(
+            float(overlaid["data"]["metrics"]["gross_notional"]) + 1e-9,
+            float(baseline["data"]["metrics"]["gross_notional"]),
+        )
 
     def test_enrich_mentions_matches_exchange_qualified_symbols(self):
         screen = self.screens.run({

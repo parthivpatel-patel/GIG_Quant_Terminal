@@ -921,7 +921,7 @@
   examples["workspace-allocate-screen"] = { ...examples["workspace-research-allocate"], screen_id: "0".repeat(64) };
   delete examples["workspace-allocate-screen"].run_id;
   examples["workspace-research-strategy"] = { ...examples["workspace-allocate-screen"], operation: "simulate", fill: true };
-  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", max_expected_shortfall: "0.05", max_adv_participation: "0.1", adv_lookback_bars: 20, previous_size_id: "0".repeat(64), max_size_turnover: "0.2", annualization: 252 };
+  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", max_expected_shortfall: "0.05", max_adv_participation: "0.1", adv_lookback_bars: 20, previous_size_id: "0".repeat(64), max_size_turnover: "0.2", annualization: 252 , findings_id: "0".repeat(64) };
   examples["workspace-research-cycle"] = { ...examples["workspace-allocate-screen"], operation: "cycle", run_ids: ["0".repeat(64)], lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25, portfolio_notional: "100000", max_name_notional: "25000", vol_scale: "1", estimate_cost: true, spread_bps: "4", impact_eta: "0.10", adv_lookback_bars: 20, fill: true };
   delete examples["workspace-research-cycle"].screen_id;
   examples["workspace-strategy-replay"] = { operation: "replay", strategy_id: "0".repeat(64) };
@@ -1047,6 +1047,7 @@
     if (kind === "workspace-allocate-screen" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-strategy" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-size" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
+    if (kind === "workspace-research-size" && workflowReferences.findings_id) example.findings_id = workflowReferences.findings_id;
     if (kind === "workspace-research-size" && workflowReferences.size_id) example.previous_size_id = workflowReferences.size_id;
     if (kind === "workspace-research-cycle" && workflowReferences.run_id) example.run_ids = [workflowReferences.run_id];
     if (kind === "workspace-research-enrich" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
