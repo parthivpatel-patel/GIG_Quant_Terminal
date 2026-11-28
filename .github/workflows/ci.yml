@@ -54,7 +54,7 @@ jobs:
       - name: Financial Intelligence typed boundary
         run: mypy --follow-imports=silent --ignore-missing-imports src/gig/financial_intelligence src/gig/service/financial_workspace.py
       - name: Quantitative calculator typed boundary
-        run: mypy --follow-imports=silent --ignore-missing-imports src/gig/checks.py src/gig/risk/var_models.py src/gig/portfolio/construction.py src/gig/execution/schedule.py src/gig/options/models.py src/gig/research/overfitting.py src/gig/research/cross_section.py src/gig/research/bootstrap.py src/gig/data/bars.py src/gig/microstructure/spreads.py src/gig/options/exotics.py src/gig/risk/stress.py src/gig/portfolio/rebalance.py src/gig/service/quant_analytics.py src/gig/service/calculator_journal.py src/gig/service/research_screen.py
+        run: mypy --follow-imports=silent --ignore-missing-imports src/gig/checks.py src/gig/risk/var_models.py src/gig/portfolio/construction.py src/gig/execution/schedule.py src/gig/options/models.py src/gig/research/overfitting.py src/gig/research/cross_section.py src/gig/research/bootstrap.py src/gig/data/bars.py src/gig/microstructure/spreads.py src/gig/options/exotics.py src/gig/risk/stress.py src/gig/portfolio/rebalance.py src/gig/service/quant_analytics.py src/gig/service/calculator_journal.py src/gig/service/research_screen.py src/gig/service/research_strategy.py
       - name: Tests
         run: python -m pytest -p no:cacheprovider -rs --cov=gig --cov-branch --cov-report=term
       # Last on purpose: the ngboost package downgrades pandas below 3 through lifelines.

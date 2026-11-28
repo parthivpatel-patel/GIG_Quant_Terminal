@@ -156,6 +156,21 @@ class CycleServices:
     def screen_replay(self, payload: dict[str, Any]) -> Contract:
         return self._screens().replay(payload)
 
+    def _strategies(self):
+        from gig.service.research_strategy import ResearchStrategyWorkspace
+        return ResearchStrategyWorkspace(self.workspace.base_dir)
+
+    def research_strategy(self, payload: dict[str, Any]) -> Contract:
+        if not isinstance(payload, dict):
+            raise ValueError("research strategy request must be an object")
+        operation = payload.get("operation", "simulate")
+        body = {key: value for key, value in payload.items() if key != "operation"}
+        if operation == "replay":
+            return self._strategies().replay(body)
+        if operation != "simulate":
+            raise ValueError("research strategy operation must be simulate or replay")
+        return self._strategies().run(body)
+
     def _overlay(self):
         from gig.service.overlay_workspace import OptionsOverlayWorkspace
         return OptionsOverlayWorkspace(self.workspace.base_dir)

@@ -209,6 +209,7 @@ def create_app(cloud_limit: int = 220, cloud_ttl: float = 90.0, *, state_dir: Pa
                    "options-replay": integrations.options_replay, "research-signals": integrations.research_signals,
                    "signals-replay": integrations.signals_replay,
                    "research-screen": integrations.research_screen, "screen-replay": integrations.screen_replay,
+                   "research-strategy": integrations.research_strategy,
                    "options-overlay": integrations.options_overlay, "options-overlay-replay": integrations.overlay_replay,
                    "funded-account": integrations.funded_account,
                    "economic-research": integrations.economic_research, "economic-replay": integrations.economic_replay,
