@@ -118,6 +118,35 @@ class StrategyTests(unittest.TestCase):
                 "lot_size": 1, "calculator_record_id": covariance["record_id"],
             })
 
+    def test_factor_exposure_from_size_and_replays(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        exposure = self.strategies.factor_exposure({
+            "size_id": sized["data"]["size_id"], "now": self.now,
+            "n_factors": 2, "min_obs": 40, "lookback": 40, "shrinkage": 0.15,
+            "max_ex_ante_vol": "5", "max_systematic_share": 1.0,
+        }).to_dict()
+        self.assertEqual(exposure["state"], "AVAILABLE", exposure)
+        self.assertFalse(exposure["data"]["trading_approved"])
+        self.assertTrue(exposure["data"]["report"]["available"])
+        self.assertIn("factor_exposure", exposure["data"]["report"])
+        self.assertIn("trailing_beta", exposure["data"]["trailing"])
+        self.assertEqual(exposure["data"]["size_id"], sized["data"]["size_id"])
+        replayed = self.strategies.replay_factor_exposure({
+            "exposure_id": exposure["data"]["exposure_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["exposure_id"], exposure["data"]["exposure_id"])
+        missing = self.strategies.replay_factor_exposure({"exposure_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+        with self.assertRaisesRegex(ValueError, "n_factors"):
+            self.strategies.factor_exposure({
+                "size_id": sized["data"]["size_id"], "now": self.now, "n_factors": 99,
+            })
+
     def test_size_derives_vol_scale_from_target_volatility(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
