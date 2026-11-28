@@ -717,23 +717,27 @@ class ResearchScreenWorkspace:
                     continue
                 for index in range(len(ordered) - width):
                     low, high = ordered[index], ordered[index + width]
+                    low_strike = float(low["strike"])
+                    high_strike = float(high["strike"])
+                    low_mid = float(low["midpoint"])
+                    high_mid = float(high["midpoint"])
                     if right == "CALL":
-                        legs = [
-                            {"kind": "CALL", "strike": float(low["strike"]), "quantity": 1,
-                             "premium": float(low["midpoint"])},
-                            {"kind": "CALL", "strike": float(high["strike"]), "quantity": -1,
-                             "premium": float(high["midpoint"])},
-                        ]
+                        long_strike, short_strike = low_strike, high_strike
+                        long_mid, short_mid = low_mid, high_mid
                         structure = "DEBIT_CALL_VERTICAL"
+                        kind = "CALL"
                     else:
-                        legs = [
-                            {"kind": "PUT", "strike": float(high["strike"]), "quantity": 1,
-                             "premium": float(high["midpoint"])},
-                            {"kind": "PUT", "strike": float(low["strike"]), "quantity": -1,
-                             "premium": float(low["midpoint"])},
-                        ]
+                        long_strike, short_strike = high_strike, low_strike
+                        long_mid, short_mid = high_mid, low_mid
                         structure = "DEBIT_PUT_VERTICAL"
-                    profile = option_strategy(legs, multiplier=float(low.get("multiplier") or 1))
+                        kind = "PUT"
+                    legs = [
+                        {"kind": kind, "strike": long_strike, "quantity": 1, "premium": long_mid},
+                        {"kind": kind, "strike": short_strike, "quantity": -1, "premium": short_mid},
+                    ]
+                    multiplier = low.get("multiplier")
+                    profile = option_strategy(
+                        legs, multiplier=float(multiplier) if multiplier is not None else 1.0)
                     structures.append({
                         "options_run_id": options["run_id"],
                         "underlying_id": options["underlying_id"],
@@ -741,9 +745,9 @@ class ResearchScreenWorkspace:
                         "option_candidate": linked["option_candidate"],
                         "structure": structure,
                         "expiry": expiry,
-                        "long_strike": float(legs[0]["strike"]),
-                        "short_strike": float(legs[1]["strike"]),
-                        "width": float(high["strike"]) - float(low["strike"]),
+                        "long_strike": long_strike,
+                        "short_strike": short_strike,
+                        "width": high_strike - low_strike,
                         "net_premium": profile["net_premium"],
                         "premium_direction": profile["premium_direction"],
                         "max_profit": profile["max_profit"],
