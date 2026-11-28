@@ -913,7 +913,7 @@
   examples["workspace-strategy-replay"] = { operation: "replay", strategy_id: "0".repeat(64) };
   examples["workspace-size-replay"] = { operation: "size-replay", size_id: "0".repeat(64) };
   examples["workspace-cycle-replay"] = { operation: "cycle-replay", cycle_id: "0".repeat(64) };
-  examples["workspace-research-watch"] = { operation: "watch", signal_ids: ["0".repeat(64), "1".repeat(64)], buy_threshold: .25, sell_threshold: -.25, now: "2024-01-02T00:00:00Z", portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, vol_scale: "1", options_run_ids: ["0".repeat(64)] };
+  examples["workspace-research-watch"] = { operation: "watch", signal_ids: ["0".repeat(64), "1".repeat(64)], buy_threshold: .25, sell_threshold: -.25, now: "2024-01-02T00:00:00Z", portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, vol_scale: "1", options_run_ids: ["0".repeat(64)], document_id: "0".repeat(64), nlp_profile: "v2" };
   examples["workspace-watch-replay"] = { operation: "watch-replay", watch_id: "0".repeat(64) };
   examples["workspace-allocate-pairs"] = { ...examples["workspace-research-allocate"], pair_run_id: "0".repeat(64) };
   delete examples["workspace-allocate-pairs"].run_id;
@@ -1112,7 +1112,7 @@
       "workspace-strategy-replay": "Reload a saved offline strategy simulation. No new orders are created.",
       "workspace-size-replay": "Reload saved research position sizes by identity. Replay does not approve trading.",
       "workspace-cycle-replay": "Reload a saved research opportunity cycle by identity. Replay does not approve trading.",
-      "workspace-research-watch": "Explicit watch pass: monitor successive saved signals, size the latest screen, optionally scan options. Not a live subscription; broker stays off.",
+      "workspace-research-watch": "Explicit watch pass: monitor successive saved signals, optional FI enrich, size the latest screen, optionally scan options. Not a live subscription; broker stays off.",
       "workspace-watch-replay": "Reload a saved research watch pass by identity. Replay does not approve trading.",
       "workspace-allocate-pairs": "Construct explicit constrained offline targets from an eligible saved pair proposal. Missing, rejected or inactive proposals return unavailable rather than manufacturing a trade.",
       "workspace-depth": "Persist an explicitly authored SYNTHETIC multi-level book. No depth is inferred from bars or connected to a provider. After submission, choose Admitted market depth and instrument SYN101 with its explicit replay cutoff.",

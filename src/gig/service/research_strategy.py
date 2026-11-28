@@ -308,7 +308,8 @@ class ResearchStrategyWorkspace:
         """
         allowed = {"signal_ids", "buy_threshold", "sell_threshold", "now", "portfolio_notional",
                    "max_name_notional", "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
-                   "max_expected_shortfall", "annualization", "options_run_ids"}
+                   "max_expected_shortfall", "annualization", "options_run_ids", "document_id",
+                   "nlp_profile"}
         fields = _fields(payload, allowed, {"signal_ids", "now", "portfolio_notional",
                                             "max_name_notional", "lot_size"})
         monitor_payload = {key: fields[key] for key in fields
@@ -324,6 +325,21 @@ class ResearchStrategyWorkspace:
                                   readiness="RESEARCH_ONLY")
         monitor = monitored["data"]
         screen_id = monitor["latest_screen_id"]
+        enrich_data = None
+        if "document_id" in fields:
+            enrich_payload = {"screen_id": screen_id, "document_id": fields["document_id"]}
+            if "nlp_profile" in fields:
+                enrich_payload["nlp_profile"] = fields["nlp_profile"]
+            enriched = self.screens.enrich_mentions(enrich_payload).to_dict()
+            if enriched["state"] != State.AVAILABLE.value or not isinstance(enriched.get("data"), dict):
+                return Contract.admit(enriched["state"], enriched.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=enriched["provenance"]["classification"],
+                                      as_of=enriched["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=enriched.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            enrich_data = enriched["data"]
         size_payload = {
             "screen_id": screen_id, "now": fields["now"],
             "portfolio_notional": fields["portfolio_notional"],
@@ -364,11 +380,13 @@ class ResearchStrategyWorkspace:
             "monitor_id": monitor["monitor_id"],
             "screen_id": screen_id,
             "size_id": sized["data"]["size_id"],
+            "enrichment_id": enrich_data.get("enrichment_id") if enrich_data is not None else None,
             "scan_id": scan_data["scan_id"] if scan_data is not None else None,
             "source": monitor["source"],
             "input_classification": monitor["input_classification"],
             "timeline": monitor["timeline"],
             "size_metrics": sized["data"]["metrics"],
+            "fi_metrics": enrich_data["metrics"] if enrich_data is not None else None,
             "options_metrics": scan_data["metrics"] if scan_data is not None else None,
             "broker_connected": False,
             "trading_approved": False,
@@ -379,11 +397,12 @@ class ResearchStrategyWorkspace:
                 "timing_entries": monitor["metrics"]["timing_entries"],
                 "timing_exits": monitor["metrics"]["timing_exits"],
                 "sized_names": sized["data"]["metrics"]["names"],
+                "fi_matched": (enrich_data["metrics"]["matched_count"] if enrich_data is not None else 0),
                 "options_actionable": (scan_data["metrics"]["actionable"] if scan_data is not None else 0),
                 "trading_approved": False,
             },
             "notes": [
-                "Watch pass chains monitor → size → optional options scan on explicit request.",
+                "Watch pass chains monitor → optional FI enrich → size → optional options scan.",
                 "It is not a live market subscription or broker order path.",
                 "Trading stays unapproved.",
             ],

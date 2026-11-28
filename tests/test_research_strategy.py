@@ -11,6 +11,7 @@ import pandas as pd
 from gig.service.app import create_app
 from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
+from gig.service.financial_workspace import FinancialIntelligenceWorkspace
 from gig.service.options_workspace import OptionsWorkspace
 from gig.service.persisted_research import PersistedResearchWorkspace
 from gig.service.research_screen import ResearchScreenWorkspace
@@ -172,12 +173,23 @@ class StrategyTests(unittest.TestCase):
         fixture = option_fixture(underlying_id=underlying)
         options.ingest(fixture)
         option_run = options.run(option_request(underlying_id=underlying)).to_dict()["data"]
+        names = " and ".join(row["instrument_id"].replace("US:", "NYSE:")
+                             for row in self.screen["rows"][:2])
+        admitted = FinancialIntelligenceWorkspace(self.base).run({
+            "operation": "admit-authored",
+            "source_id": "watch-enrich-fixture",
+            "title": "Authored watch enrichment fixture",
+            "text": f"Analysts mentioned {names} during earnings.",
+            "license": "GIG-AUTHORED",
+        }).to_dict()
+        self.assertEqual(admitted["state"], "AVAILABLE", admitted)
         watched = self.strategies.watch({
             "signal_ids": [first_signal_id, later_signal["signal_id"]],
             "buy_threshold": 0.0, "sell_threshold": -0.01,
             "now": later, "portfolio_notional": "100000", "max_name_notional": "8000",
             "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
             "options_run_ids": [option_run["run_id"]],
+            "document_id": admitted["data"]["document_id"], "nlp_profile": "v2",
         }).to_dict()
         EnvelopeSchema.model_validate(watched)
         self.assertEqual(watched["state"], "AVAILABLE", watched)
@@ -187,7 +199,9 @@ class StrategyTests(unittest.TestCase):
         self.assertTrue(body["monitor_id"])
         self.assertTrue(body["size_id"])
         self.assertTrue(body["scan_id"])
+        self.assertTrue(body["enrichment_id"])
         self.assertEqual(body["metrics"]["screens"], 2)
+        self.assertGreaterEqual(body["metrics"]["fi_matched"], 0)
         self.assertGreaterEqual(body["metrics"]["options_actionable"], 0)
         replayed = self.strategies.replay_watch({"watch_id": body["watch_id"]}).to_dict()
         self.assertEqual(replayed["data"]["watch_id"], body["watch_id"])
