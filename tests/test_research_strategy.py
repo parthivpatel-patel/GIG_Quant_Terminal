@@ -9,6 +9,7 @@ import httpx
 import pandas as pd
 
 from gig.service.app import create_app
+from gig.service.calculator_journal import CalculatorJournalWorkspace
 from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
 from gig.service.financial_workspace import FinancialIntelligenceWorkspace
@@ -102,6 +103,30 @@ class StrategyTests(unittest.TestCase):
                 "portfolio_notional": "100000", "max_name_notional": "5000",
                 "lot_size": 1, "vol_scale": "1", "target_volatility": "0.15",
             })
+
+    def test_calculator_journal_binds_historical_var_from_size(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        journaled = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "historical-var-components", "field": "return_1",
+            "inputs": {"confidence": 0.95},
+        }).to_dict()
+        EnvelopeSchema.model_validate(journaled)
+        self.assertEqual(journaled["state"], "AVAILABLE", journaled)
+        body = journaled["data"]
+        self.assertFalse(body["trading_approved"])
+        self.assertEqual(body["source"]["size_id"], sized["data"]["size_id"])
+        self.assertEqual(body["kind"], "historical-var-components")
+        self.assertIn("expected_shortfall", body["result"])
+        replayed = CalculatorJournalWorkspace(self.base).run({
+            "operation": "replay", "record_id": body["record_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["result"], body["result"])
 
     def test_size_applies_max_expected_shortfall_bound(self):
         probe = self.strategies.size({
