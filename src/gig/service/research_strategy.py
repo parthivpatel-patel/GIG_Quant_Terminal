@@ -961,7 +961,9 @@ class ResearchStrategyWorkspace:
                                    "max_one_way_bps", "max_cost_nav", "alpha_scale",
                                    "factor_exposure", "n_factors", "min_obs", "lookback",
                                    "shrinkage", "max_ex_ante_vol", "max_systematic_share",
-                                   "annualization", "factor_breach_action"},
+                                   "annualization", "factor_breach_action",
+                                   "factor_rebalance", "factor_rebalance_mode",
+                                   "materialize_rebalance"},
                          {"action", "cadence_seconds", "now", "request"})
         action = fields["action"]
         if action not in _SCHEDULE_ACTIONS:
@@ -1035,6 +1037,27 @@ class ResearchStrategyWorkspace:
             # Soft-stop needs at least one research breach bound to evaluate.
             raise ValueError(
                 "factor_breach_action requires max_ex_ante_vol or max_systematic_share")
+        do_factor_reb = fields.get("factor_rebalance", False)
+        if not isinstance(do_factor_reb, bool):
+            raise ValueError("factor_rebalance must be a boolean")
+        factor_reb_modes = frozenset({"SHRINK_TO_VOL"})
+        factor_reb_request: dict[str, Any] | None = None
+        if do_factor_reb:
+            mode = fields.get("factor_rebalance_mode", "SHRINK_TO_VOL")
+            if mode not in factor_reb_modes:
+                raise ValueError("factor_rebalance_mode must be SHRINK_TO_VOL")
+            if "max_ex_ante_vol" not in fields:
+                raise ValueError("factor_rebalance requires max_ex_ante_vol")
+            factor_reb_request = {"mode": mode, "max_ex_ante_vol": fields["max_ex_ante_vol"]}
+            for key in ("n_factors", "min_obs", "lookback", "shrinkage",
+                        "max_systematic_share", "annualization"):
+                if key in fields:
+                    factor_reb_request[key] = fields[key]
+        do_materialize = fields.get("materialize_rebalance", False)
+        if not isinstance(do_materialize, bool):
+            raise ValueError("materialize_rebalance must be a boolean")
+        if do_materialize and not (do_rebalance or do_factor_reb):
+            raise ValueError("materialize_rebalance requires cost_rebalance or factor_rebalance")
         decay_action = fields.get("alpha_decay_action", "soft_skip")
         if decay_action not in {"soft_skip", "invalidate"}:
             raise ValueError("alpha_decay_action must be soft_skip or invalidate")
@@ -1067,6 +1090,9 @@ class ResearchStrategyWorkspace:
             "factor_exposure": do_factor,
             "factor_exposure_request": factor_request,
             "factor_breach_action": factor_breach_action if do_factor else None,
+            "factor_rebalance": do_factor_reb,
+            "factor_rebalance_request": factor_reb_request,
+            "materialize_rebalance": do_materialize,
             "min_ic_ir": min_ir,
             "min_ic_half_life_steps": min_hl,
             "alpha_decay_action": decay_action,
@@ -1080,6 +1106,8 @@ class ResearchStrategyWorkspace:
                         "feedback_every_n_ticks": feedback_every,
                         "cost_rebalance": do_rebalance,
                         "factor_exposure": do_factor,
+                        "factor_rebalance": do_factor_reb,
+                        "materialize_rebalance": do_materialize,
                         "factor_breach_gated": bool(
                             do_factor and factor_request
                             and any(key in factor_request
@@ -1093,11 +1121,12 @@ class ResearchStrategyWorkspace:
                 "Optional cost_rebalance proposes KEEP/TRADE/SKIP/SHRINK from each tick size+TCA.",
                 "Optional factor_exposure attributes PCA risk on each tick size_id.",
                 "Optional factor_breach_action soft-stops or invalidates when exposure breaches trip.",
+                "Optional factor_rebalance proposes SHRINK_TO_VOL from each tick size_id.",
+                "Optional materialize_rebalance promotes a cost/factor proposal into a chained size_id.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background worker, broker path, or trading approval is established.",
             ],
-        }
-        # Pin a stable dataset identity when the template carries one.
+        }        # Pin a stable dataset identity when the template carries one.
         if isinstance(request.get("dataset_id"), str):
             body["dataset_id"] = sha256(request["dataset_id"])
         elif isinstance(request.get("run_ids"), list) and request["run_ids"]:
@@ -1323,6 +1352,42 @@ class ResearchStrategyWorkspace:
             if attributed["state"] == State.AVAILABLE.value and isinstance(attributed.get("data"), dict):
                 exposure_id = attributed["data"]["exposure_id"]
                 factor_breaches = list(attributed["data"].get("breaches") or [])
+        factor_rebalance_id = None
+        if plan.get("factor_rebalance") and result.get("size_id") and plan.get("factor_rebalance_request"):
+            factor_payload: dict[str, Any] = {
+                "size_id": result["size_id"],
+                "now": clock.isoformat(),
+                **plan["factor_rebalance_request"],
+            }
+            if exposure_id is not None:
+                factor_payload["exposure_id"] = exposure_id
+            factor_rebalanced = self.factor_rebalance(factor_payload).to_dict()
+            if (factor_rebalanced["state"] == State.AVAILABLE.value
+                    and isinstance(factor_rebalanced.get("data"), dict)):
+                factor_rebalance_id = factor_rebalanced["data"]["factor_rebalance_id"]
+                if exposure_id is None:
+                    exposure_id = factor_rebalanced["data"].get("exposure_id")
+        source_size_id = result.get("size_id")
+        materialized_size_id = None
+        if plan.get("materialize_rebalance") and source_size_id:
+            mat_payload: dict[str, Any] | None = None
+            # Prefer factor shrink materialization when both proposals exist.
+            if factor_rebalance_id is not None:
+                mat_payload = {
+                    "factor_rebalance_id": factor_rebalance_id,
+                    "now": clock.isoformat(),
+                }
+            elif rebalance_id is not None:
+                mat_payload = {
+                    "rebalance_id": rebalance_id,
+                    "now": clock.isoformat(),
+                }
+            if mat_payload is not None:
+                materialized = self.size_from_rebalance(mat_payload).to_dict()
+                if (materialized["state"] == State.AVAILABLE.value
+                        and isinstance(materialized.get("data"), dict)):
+                    materialized_size_id = materialized["data"]["size_id"]
+                    result = {**result, "size_id": materialized_size_id}
         decay = self._alpha_decay_tripped(plan, result.get("screen_id"))
         invalidation_id = None
         if decay is not None and decay["alpha_decay_action"] == "invalidate" and result.get("screen_id"):
@@ -1345,6 +1410,7 @@ class ResearchStrategyWorkspace:
             }).to_dict()
             if invalidated["state"] == State.AVAILABLE.value and isinstance(invalidated.get("data"), dict):
                 invalidation_id = invalidated["data"]["invalidation_id"]
+        tick_size_id = result.get("size_id")
         body = {
             "schema_version": TICK,
             "as_of": clock.isoformat(),
@@ -1357,12 +1423,14 @@ class ResearchStrategyWorkspace:
             "cycle_id": result.get("cycle_id"),
             "watch_id": result.get("watch_id"),
             "screen_id": result.get("screen_id"),
-            "size_id": result.get("size_id"),
+            "size_id": tick_size_id,
+            "source_size_id": source_size_id if materialized_size_id is not None else None,
             "previous_size_id": request.get("previous_size_id"),
             "cost_id": result.get("cost_id"),
             "exit_eval_id": exit_eval_id,
             "feedback_id": feedback_id,
             "rebalance_id": rebalance_id,
+            "factor_rebalance_id": factor_rebalance_id,
             "exposure_id": exposure_id,
             "factor_breaches": factor_breaches,
             "strategy_id": result.get("strategy_id"),
@@ -1382,6 +1450,8 @@ class ResearchStrategyWorkspace:
                 "exit_eval_attached": exit_eval_id is not None,
                 "feedback_attached": feedback_id is not None,
                 "cost_rebalance_attached": rebalance_id is not None,
+                "factor_rebalance_attached": factor_rebalance_id is not None,
+                "materialize_rebalance_attached": materialized_size_id is not None,
                 "factor_exposure_attached": exposure_id is not None,
                 "factor_breached": factor_breached,
                 "factor_breach_action": plan.get("factor_breach_action") if factor_breached else None,
@@ -1395,7 +1465,8 @@ class ResearchStrategyWorkspace:
                 "next_due advances by cadence_seconds from the tick clock.",
                 "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
-                "Optional exit_eval, feedback, cost_rebalance, and factor_exposure hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
+                "Optional exit_eval, feedback, cost_rebalance, factor_rebalance, and factor_exposure hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
+                "Optional materialize_rebalance promotes a cost or factor proposal into size_id and advances last_size_id.",
                 "Optional factor_breach_action soft-stops or invalidates when exposure breaches trip.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background scheduler or trading approval is established.",
@@ -1411,12 +1482,15 @@ class ResearchStrategyWorkspace:
             "ticks_completed": completed,
             "next_due": next_due,
             "last_tick_id": identity,
-            "last_size_id": result.get("size_id"),
+            "last_size_id": tick_size_id,
             "last_cost_id": result.get("cost_id"),
             "last_exit_eval_id": exit_eval_id if exit_eval_id is not None else plan.get("last_exit_eval_id"),
             "exit_eval_ids": exit_eval_ids,
             "last_feedback_id": feedback_id if feedback_id is not None else plan.get("last_feedback_id"),
             "last_rebalance_id": rebalance_id if rebalance_id is not None else plan.get("last_rebalance_id"),
+            "last_factor_rebalance_id": (
+                factor_rebalance_id if factor_rebalance_id is not None
+                else plan.get("last_factor_rebalance_id")),
             "last_exposure_id": exposure_id if exposure_id is not None else plan.get("last_exposure_id"),
             "alpha_decayed": bool(decay is not None or plan.get("alpha_decayed")),
             "alpha_decay_tick_id": identity if decay is not None else plan.get("alpha_decay_tick_id"),
@@ -1447,6 +1521,7 @@ class ResearchStrategyWorkspace:
                     "exit_eval_ids": pointer.get("exit_eval_ids") or [],
                     "last_feedback_id": pointer.get("last_feedback_id"),
                     "last_rebalance_id": pointer.get("last_rebalance_id"),
+                    "last_factor_rebalance_id": pointer.get("last_factor_rebalance_id"),
                     "last_exposure_id": pointer.get("last_exposure_id"),
                     "alpha_decayed": pointer.get("alpha_decayed", False),
                     "alpha_decay_tick_id": pointer.get("alpha_decay_tick_id"),
