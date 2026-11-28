@@ -16,6 +16,19 @@ and the exact inputs to a local content-addressed journal.
 rejects the record if the result differs. The plain calculation and the
 saved record stay `MODEL_ESTIMATE` / `RESEARCH_ONLY`.
 
+**Calculate from saved dataset** copies numbers from an already saved
+point-in-time dataset and stores those exact numbers. One instrument's
+`return_1` or `close` binds to `cornish-fisher-var`, `stationary-bootstrap`,
+or `roll-spread`. An aligned `return_1` panel of 2–64 instruments binds to
+`ledoit-wolf` or `minimum-cvar`. A timestamp missing every requested return
+is omitted and counted. A timestamp missing only some of them is refused.
+Nothing is imputed. Replay recomputes from the pinned numbers even if the
+dataset file is later removed. The dataset classification is kept beside the
+record and is not upgraded. **Allocate from saved covariance** runs
+`hierarchical-risk-parity` or `maximum-diversification` on the covariance
+inside a saved Ledoit-Wolf record and pins that matrix. The weights remain
+a research estimate. `POST /api/v1/analytics/<kind>` still reads no dataset.
+
 | Kind | Method | Independent reference in `tests/test_quant_analytics.py` |
 | --- | --- | --- |
 | `ledoit-wolf` | Ledoit-Wolf (2004) shrinkage to a scaled identity | scikit-learn `ledoit_wolf` |

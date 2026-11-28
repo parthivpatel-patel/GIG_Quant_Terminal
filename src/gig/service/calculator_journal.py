@@ -2,23 +2,37 @@
 
 Saving is explicit. The record is the calculator kind and the exact inputs.
 Replay runs the calculator again and refuses the record if the result differs.
-Nothing here reads an account, a feed, or an order.
+A saved dataset can supply one series; the extracted numbers are pinned in the
+record. Nothing here reads an account, a feed, or an order.
 """
 from __future__ import annotations
 
 import hashlib
+import math
 import sqlite3
 from contextlib import closing
 from pathlib import Path
 from typing import Any
 
 from gig.service.contracts import Contract, State
+from gig.service.dataset_workspace import PersistedDatasetWorkspace
 from gig.service.quant_analytics import ANALYSES, run
 from gig.service.serialization import dumps, loads, public_error
 from gig.service.workspace import TerminalWorkspace, _fields
 
 IMPLEMENTATION = "gig.calculator-journal.v1"
 MAX_RECORDS = 128
+# The argument is filled from the dataset. The allowed fields are the only
+# panel columns that may be copied, and they are not imputed.
+# argument, allowed panel fields, and whether one column or an aligned matrix is copied.
+DATASET_BINDINGS = {
+    "cornish-fisher-var": ("returns", frozenset({"return_1"}), "series"),
+    "stationary-bootstrap": ("series", frozenset({"return_1", "close"}), "series"),
+    "roll-spread": ("prices", frozenset({"close"}), "series"),
+    "ledoit-wolf": ("returns", frozenset({"return_1"}), "panel"),
+    "minimum-cvar": ("scenarios", frozenset({"return_1"}), "panel"),
+}
+COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
     id TEXT PRIMARY KEY,
@@ -34,6 +48,82 @@ def _identity(value: str) -> str:
     return value
 
 
+def panel_series(rows: Any, instrument_id: str, field: str) -> tuple[list[float], int]:
+    """Copy one instrument column in stored order. Only a leading return warmup may be absent."""
+    if not isinstance(instrument_id, str) or not instrument_id or len(instrument_id) > 64:
+        raise ValueError("instrument identity must be a short string")
+    if field not in {"return_1", "close"}:
+        raise ValueError("dataset field must be return_1 or close")
+    if not isinstance(rows, list):
+        raise ValueError("dataset panel is unavailable")
+    selected = [row for row in rows if isinstance(row, dict) and row.get("instrument_id") == instrument_id]
+    if not selected:
+        raise ValueError("dataset has no panel rows for that instrument")
+    missing: list[int] = []
+    values: list[float] = []
+    for index, row in enumerate(selected):
+        value = row.get(field)
+        if value is None:
+            missing.append(index)
+            continue
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+            raise ValueError("dataset field is not a finite number")
+        values.append(float(value))
+    if field == "return_1":
+        if missing != list(range(len(missing))):
+            raise ValueError("return_1 gap is not a leading warmup")
+    elif missing:
+        raise ValueError("close series has a missing observation")
+    if len(values) < 2:
+        raise ValueError("dataset series is too short")
+    return values, len(missing)
+
+
+def aligned_returns(rows: Any, instrument_ids: Any, field: str) -> tuple[list[list[float]], int]:
+    """Keep timestamps where every requested instrument has a finite return. Do not fill the rest."""
+    if field != "return_1":
+        raise ValueError("aligned returns use return_1")
+    if not isinstance(instrument_ids, list) or not 2 <= len(instrument_ids) <= 64 or len(set(instrument_ids)) != len(instrument_ids):
+        raise ValueError("aligned returns need 2 to 64 distinct instruments")
+    if any(not isinstance(item, str) or not item or len(item) > 64 for item in instrument_ids):
+        raise ValueError("instrument identity must be a short string")
+    if not isinstance(rows, list):
+        raise ValueError("dataset panel is unavailable")
+    order: list[str] = []
+    seen: dict[str, dict[str, Any]] = {}
+    requested = set(instrument_ids)
+    for row in rows:
+        if not isinstance(row, dict) or row.get("instrument_id") not in requested:
+            continue
+        stamp = row.get("timestamp")
+        if not isinstance(stamp, str):
+            raise ValueError("dataset timestamp is unavailable")
+        if stamp not in seen:
+            seen[stamp] = {}
+            order.append(stamp)
+        if row["instrument_id"] in seen[stamp]:
+            raise ValueError("dataset repeats an instrument at one timestamp")
+        seen[stamp][row["instrument_id"]] = row.get(field)
+    matrix: list[list[float]] = []
+    skipped = 0
+    for stamp in order:
+        cells = [seen[stamp].get(ident) for ident in instrument_ids]
+        if all(value is None for value in cells):
+            skipped += 1
+            continue
+        if any(value is None for value in cells):
+            raise ValueError("aligned return panel has a partial observation")
+        numbers: list[float] = []
+        for value in cells:
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+                raise ValueError("dataset field is not a finite number")
+            numbers.append(float(value))
+        matrix.append(numbers)
+    if len(matrix) < 2:
+        raise ValueError("dataset series is too short")
+    return matrix, skipped
+
+
 class CalculatorJournal:
     def __init__(self, directory: Path):
         self.path = TerminalWorkspace(directory)._path("calculator-journal")/"journal.sqlite"
@@ -47,15 +137,19 @@ class CalculatorJournal:
             db.executescript(SCHEMA)
         return db
 
-    def save(self, kind: str, inputs: dict[str, Any]) -> dict[str, Any]:
+    def save(self, kind: str, inputs: dict[str, Any], *, source: dict[str, Any] | None = None) -> dict[str, Any]:
         if kind not in ANALYSES:
             raise ValueError("unsupported calculator")
         if not isinstance(inputs, dict):
             raise ValueError("calculator inputs must be an object")
+        if source is not None and not isinstance(source, dict):
+            raise ValueError("calculator source must be an object")
         result = run(kind, inputs)
         body = {"implementation": IMPLEMENTATION, "operation": "calculator", "kind": kind, "inputs": inputs,
                 "result": result, "classification": "MODEL_ESTIMATE", "trading_approved": False,
                 "generative_state": "UNAVAILABLE", "persistence": "LOCAL_CONTENT_ADDRESSED_RECORD"}
+        if source is not None:
+            body["source"] = source
         wire = dumps(body)
         identity = hashlib.sha256(wire.encode()).hexdigest()
         with closing(self._connect(write=True)) as db:
@@ -98,6 +192,7 @@ class CalculatorJournal:
 
 class CalculatorJournalWorkspace:
     def __init__(self, directory: Path):
+        self.directory = directory
         self.journal = CalculatorJournal(directory)
 
     @staticmethod
@@ -109,15 +204,75 @@ class CalculatorJournalWorkspace:
                               error=public_error("DATA_UNAVAILABLE") if state == State.UNAVAILABLE else None)
 
     def run(self, payload: dict[str, Any]) -> Contract:
-        if not isinstance(payload, dict) or payload.get("operation") not in ("save", "replay"):
-            raise ValueError("calculator journal operation must be save or replay")
+        if not isinstance(payload, dict) or payload.get("operation") not in ("save", "replay", "from-dataset", "from-record"):
+            raise ValueError("calculator journal operation must be save, replay, from-dataset or from-record")
         try:
             if payload["operation"] == "save":
                 fields = _fields(payload, {"operation", "kind", "inputs"}, {"operation", "kind", "inputs"})
                 if not isinstance(fields["kind"], str):
                     raise ValueError("calculator kind must be a string")
                 return self._contract(self.journal.save(fields["kind"], fields["inputs"]))
+            if payload["operation"] == "from-dataset":
+                return self._contract(self._from_dataset(payload))
+            if payload["operation"] == "from-record":
+                return self._contract(self._from_record(payload))
             fields = _fields(payload, {"operation", "record_id"}, {"operation", "record_id"})
             return self._contract(self.journal.replay(fields["record_id"]))
         except FileNotFoundError:
             return self._contract(None, state=State.UNAVAILABLE)
+
+    def _from_dataset(self, payload: dict[str, Any]) -> dict[str, Any]:
+        fields = _fields(payload, {"operation", "dataset_id", "kind", "instrument_id", "instruments", "field", "inputs"},
+                         {"operation", "dataset_id", "kind", "field", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in DATASET_BINDINGS:
+            raise ValueError("calculator cannot be bound to a saved dataset")
+        argument, allowed_fields, mode = DATASET_BINDINGS[kind]
+        if fields["field"] not in allowed_fields:
+            raise ValueError("dataset field is not valid for that calculator")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict) or argument in inputs:
+            raise ValueError("calculator inputs must leave the dataset argument unbound")
+        has_one = "instrument_id" in fields
+        has_many = "instruments" in fields
+        if mode == "series" and (not has_one or has_many):
+            raise ValueError("this calculator binds one instrument_id")
+        if mode == "panel" and (not has_many or has_one):
+            raise ValueError("this calculator binds an instruments list")
+        document = PersistedDatasetWorkspace(self.directory).load(fields["dataset_id"])
+        if mode == "series":
+            series, skipped = panel_series(document["panel_rows"], fields["instrument_id"], fields["field"])
+            source = {"dataset_id": document["dataset_id"], "dataset_classification": document["classification"],
+                      "instrument_id": fields["instrument_id"], "field": fields["field"], "argument": argument,
+                      "observations": len(series), "leading_missing_observations": skipped,
+                      "extraction": "PANEL_ROWS_IN_STORED_ORDER_NO_IMPUTATION"}
+            return self.journal.save(kind, {**inputs, argument: series}, source=source)
+        matrix, skipped = aligned_returns(document["panel_rows"], fields["instruments"], fields["field"])
+        source = {"dataset_id": document["dataset_id"], "dataset_classification": document["classification"],
+                  "instruments": list(fields["instruments"]), "field": fields["field"], "argument": argument,
+                  "observations": len(matrix), "assets": len(fields["instruments"]),
+                  "skipped_all_missing_timestamps": skipped,
+                  "extraction": "ALIGNED_RETURN_PANEL_NO_IMPUTATION"}
+        return self.journal.save(kind, {**inputs, argument: matrix}, source=source)
+
+    def _from_record(self, payload: dict[str, Any]) -> dict[str, Any]:
+        fields = _fields(payload, {"operation", "record_id", "kind", "inputs"},
+                         {"operation", "record_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in COVARIANCE_BINDINGS:
+            raise ValueError("calculator cannot bind a saved covariance")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict) or "covariance" in inputs:
+            raise ValueError("calculator inputs must leave the covariance unbound")
+        parent = self.journal.replay(fields["record_id"])
+        if parent["kind"] != "ledoit-wolf" or "covariance" not in parent["result"]:
+            raise ValueError("covariance must come from a saved Ledoit-Wolf record")
+        covariance = parent["result"]["covariance"]
+        source = {"parent_record_id": parent["record_id"], "parent_kind": "ledoit-wolf",
+                  "argument": "covariance", "extraction": "PINNED_LEDOIT_WOLF_COVARIANCE"}
+        parent_source = parent.get("source")
+        if isinstance(parent_source, dict):
+            for key in ("dataset_id", "dataset_classification", "instruments"):
+                if key in parent_source:
+                    source[key] = parent_source[key]
+        return self.journal.save(kind, {**inputs, "covariance": covariance}, source=source)

@@ -445,7 +445,7 @@ checked("synthetic demonstrations cannot impersonate a selected local model engi
   assert.equal(get("analysis-engine").value, "default");
   assert(!calls.at(-1).url.includes("engine="));
 });
-for (const kind of ["calculator-save", "calculator-replay"]) {
+for (const kind of ["calculator-save", "calculator-replay", "calculator-dataset", "calculator-covariance"]) {
   get("analytics-kind").value = "workspace-" + kind;
   const before = calls.length;
   await get("analytics-kind").dispatch("change"); await settle();

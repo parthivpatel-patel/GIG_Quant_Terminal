@@ -26,7 +26,7 @@
   Object.assign(workspaceActions, { "workspace-pairs-research": "pairs-research", "workspace-pairs-replay": "pairs-replay", "workspace-options-admit": "options-admit", "workspace-options-research": "options-research", "workspace-options-replay": "options-replay", "workspace-research-signals": "research-signals", "workspace-signals-replay": "signals-replay", "workspace-allocate-signals": "research-allocate", "workspace-allocate-pairs": "research-allocate" });
   Object.assign(workspaceActions, { "workspace-financial-reference": "financial-intelligence", "workspace-financial-search": "financial-intelligence", "workspace-financial-answer": "financial-intelligence", "workspace-financial-replay": "financial-intelligence", "workspace-financial-verify": "financial-intelligence", "workspace-financial-latent": "financial-intelligence", "workspace-financial-hybrid": "financial-intelligence", "workspace-financial-facts": "financial-intelligence", "workspace-financial-entity-protocol": "financial-intelligence", "workspace-financial-entities": "financial-intelligence" });
   const financialResearchKinds = ["workspace-financial-html", "workspace-financial-statements", "workspace-financial-digest", "workspace-financial-watch", "workspace-financial-watch-check", "workspace-financial-investigate", "workspace-financial-call", "workspace-financial-transcript", "workspace-financial-compare", "workspace-financial-mention-diff", "workspace-financial-record-replay"];
-  const calculatorJournalKinds = ["workspace-calculator-save", "workspace-calculator-replay"];
+  const calculatorJournalKinds = ["workspace-calculator-save", "workspace-calculator-replay", "workspace-calculator-dataset", "workspace-calculator-covariance"];
   for (const kind of financialResearchKinds) workspaceActions[kind] = "financial-intelligence";
   for (const kind of calculatorJournalKinds) workspaceActions[kind] = "calculator-journal";
   workspaceActions["workspace-options-overlay"] = "options-overlay";
@@ -867,6 +867,8 @@
   for (const [key, , , example] of quantAnalytics) examples[key] = example;
   examples["workspace-calculator-save"] = { operation: "save", kind: "track-record-length", inputs: { sharpe: .1, benchmark: 0, skew: -.5, kurtosis: 5, confidence: .95 } };
   examples["workspace-calculator-replay"] = { operation: "replay", record_id: "0".repeat(64) };
+  examples["workspace-calculator-dataset"] = { operation: "from-dataset", dataset_id: "0".repeat(64), kind: "stationary-bootstrap", instrument_id: "US:AAA", field: "return_1", inputs: { mean_block: 5, replications: 100, seed: 1, confidence: .95 } };
+  examples["workspace-calculator-covariance"] = { operation: "from-record", record_id: "0".repeat(64), kind: "hierarchical-risk-parity", inputs: {} };
   examples["workspace-research-gpr"] = { dataset_id: "0".repeat(64), model: "gaussian_process", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-model"] = { dataset_id: "0".repeat(64), model: "ridge", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
   examples["workspace-research-predict"] = { run_id: "0".repeat(64), dataset_id: "0".repeat(64) };
@@ -956,6 +958,8 @@
     if (kind === "workspace-financial-watch-check" && workflowReferences.financial_watch_id) example.watch_id = workflowReferences.financial_watch_id;
     if (kind === "workspace-financial-record-replay" && workflowReferences.financial_record_id) example.record_id = workflowReferences.financial_record_id;
     if (kind === "workspace-calculator-replay" && workflowReferences.calculator_record_id) example.record_id = workflowReferences.calculator_record_id;
+    if (kind === "workspace-calculator-dataset" && workflowReferences.dataset_id) example.dataset_id = workflowReferences.dataset_id;
+    if (kind === "workspace-calculator-covariance" && workflowReferences.calculator_record_id) example.record_id = workflowReferences.calculator_record_id;
     if (kind === "workspace-financial-replay" && workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
     if (kind === "workspace-financial-verify") {
       if (workflowReferences.financial_snapshot_id) example.snapshot_id = workflowReferences.financial_snapshot_id;
@@ -1006,6 +1010,8 @@
     if (kind === "workspace-financial-mention-diff") $("run-analysis").textContent = "Compare cited mentions";
     if (kind === "workspace-calculator-save") $("run-analysis").textContent = "Save calculation";
     if (kind === "workspace-calculator-replay") $("run-analysis").textContent = "Replay saved calculation";
+    if (kind === "workspace-calculator-dataset") $("run-analysis").textContent = "Calculate from saved dataset";
+    if (kind === "workspace-calculator-covariance") $("run-analysis").textContent = "Allocate from saved covariance";
     if (kind === "workspace-research-predict") $("run-analysis").textContent = "Replay saved model";
     if (kind === "workspace-research-allocate") $("run-analysis").textContent = "Construct offline targets";
     if (kind === "workspace-research-prepare") $("run-analysis").textContent = "Prepare offline target intents";
@@ -1127,6 +1133,7 @@
     for (const [key, , scope] of quantAnalytics) specialScopes[key] = scope;
     specialScopes["workspace-calculator-save"] = "Save one registry calculation under the hash of its kind and inputs. Replay recomputes it. No order, allocation or trading approval.";
     specialScopes["workspace-calculator-replay"] = "Recompute a saved calculation from its pinned inputs. Any difference is an integrity failure. Nothing new is fitted or fetched.";
+    specialScopes["workspace-calculator-dataset"] = "Copy one instrument series, or an aligned return panel for Ledoit-Wolf or minimum-CVaR, from a saved dataset. Missing values are not filled. Replay uses the pinned numbers. No order or trading approval.";
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
   }
   async function runAnalysis() {
@@ -1250,6 +1257,10 @@
       }
       if (data.operation === "calculator") {
         entries.push(["Saved calculation", data.record_id], ["Calculator", data.kind], ["Persistence", "Local content-addressed record"], ["Replay", data.replay_state || "Saved from these inputs"]);
+        if (isObject(data.source)) {
+          if (data.source.dataset_id) entries.push(["Dataset", data.source.dataset_id], ["Series", data.source.instrument_id || (data.source.instruments || []).join(", ")], ["Field", data.source.field], ["Dataset classification", data.source.dataset_classification]);
+          if (data.source.parent_record_id) entries.push(["Covariance record", data.source.parent_record_id]);
+        }
         if (Array.isArray(data.result?.headline)) data.result.headline.forEach(row => entries.push([row.label, row.value]));
       }
       if (data.operation === "investigation") {
