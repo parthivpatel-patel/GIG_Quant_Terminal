@@ -916,7 +916,10 @@ class ResearchStrategyWorkspace:
                                    "feedback_every_n_ticks",
                                    "min_ic_ir", "min_ic_half_life_steps", "alpha_decay_action",
                                    "cost_rebalance", "rebalance_mode", "min_trade_notional",
-                                   "max_one_way_bps", "max_cost_nav", "alpha_scale"},
+                                   "max_one_way_bps", "max_cost_nav", "alpha_scale",
+                                   "factor_exposure", "n_factors", "min_obs", "lookback",
+                                   "shrinkage", "max_ex_ante_vol", "max_systematic_share",
+                                   "annualization"},
                          {"action", "cadence_seconds", "now", "request"})
         action = fields["action"]
         if action not in _SCHEDULE_ACTIONS:
@@ -969,6 +972,16 @@ class ResearchStrategyWorkspace:
             for key in ("min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"):
                 if key in fields:
                     rebalance_request[key] = fields[key]
+        do_factor = fields.get("factor_exposure", False)
+        if not isinstance(do_factor, bool):
+            raise ValueError("factor_exposure must be a boolean")
+        factor_request: dict[str, Any] | None = None
+        if do_factor:
+            factor_request = {}
+            for key in ("n_factors", "min_obs", "lookback", "shrinkage",
+                        "max_ex_ante_vol", "max_systematic_share", "annualization"):
+                if key in fields:
+                    factor_request[key] = fields[key]
         decay_action = fields.get("alpha_decay_action", "soft_skip")
         if decay_action not in {"soft_skip", "invalidate"}:
             raise ValueError("alpha_decay_action must be soft_skip or invalidate")
@@ -998,6 +1011,8 @@ class ResearchStrategyWorkspace:
             "feedback_every_n_ticks": feedback_every,
             "cost_rebalance": do_rebalance,
             "cost_rebalance_request": rebalance_request,
+            "factor_exposure": do_factor,
+            "factor_exposure_request": factor_request,
             "min_ic_ir": min_ir,
             "min_ic_half_life_steps": min_hl,
             "alpha_decay_action": decay_action,
@@ -1010,6 +1025,7 @@ class ResearchStrategyWorkspace:
             "metrics": {"ticks_completed": 0, "exit_eval": do_exit,
                         "feedback_every_n_ticks": feedback_every,
                         "cost_rebalance": do_rebalance,
+                        "factor_exposure": do_factor,
                         "alpha_decay_gated": min_ir is not None or min_hl is not None,
                         "trading_approved": False},
             "notes": [
@@ -1017,6 +1033,7 @@ class ResearchStrategyWorkspace:
                 "Optional exit_eval runs stop/take path diagnostics on each tick size_id.",
                 "Optional feedback_every_n_ticks aggregates successful exit-evals into research feedback.",
                 "Optional cost_rebalance proposes KEEP/TRADE/SKIP/SHRINK from each tick size+TCA.",
+                "Optional factor_exposure attributes PCA risk on each tick size_id.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background worker, broker path, or trading approval is established.",
             ],
@@ -1215,6 +1232,16 @@ class ResearchStrategyWorkspace:
             rebalanced = self.cost_rebalance(reb_payload).to_dict()
             if rebalanced["state"] == State.AVAILABLE.value and isinstance(rebalanced.get("data"), dict):
                 rebalance_id = rebalanced["data"]["rebalance_id"]
+        exposure_id = None
+        if plan.get("factor_exposure") and result.get("size_id"):
+            exp_payload: dict[str, Any] = {
+                "size_id": result["size_id"],
+                "now": clock.isoformat(),
+                **(plan.get("factor_exposure_request") or {}),
+            }
+            attributed = self.factor_exposure(exp_payload).to_dict()
+            if attributed["state"] == State.AVAILABLE.value and isinstance(attributed.get("data"), dict):
+                exposure_id = attributed["data"]["exposure_id"]
         decay = self._alpha_decay_tripped(plan, result.get("screen_id"))
         invalidation_id = None
         if decay is not None and decay["alpha_decay_action"] == "invalidate" and result.get("screen_id"):
@@ -1244,6 +1271,7 @@ class ResearchStrategyWorkspace:
             "exit_eval_id": exit_eval_id,
             "feedback_id": feedback_id,
             "rebalance_id": rebalance_id,
+            "exposure_id": exposure_id,
             "strategy_id": result.get("strategy_id"),
             "invalidation_id": invalidation_id,
             "alpha_decay": decay,
@@ -1261,6 +1289,7 @@ class ResearchStrategyWorkspace:
                 "exit_eval_attached": exit_eval_id is not None,
                 "feedback_attached": feedback_id is not None,
                 "cost_rebalance_attached": rebalance_id is not None,
+                "factor_exposure_attached": exposure_id is not None,
                 "exit_eval_count": len(exit_eval_ids),
                 "alpha_decayed": decay is not None,
                 "alpha_decay_action": None if decay is None else decay["alpha_decay_action"],
@@ -1271,7 +1300,7 @@ class ResearchStrategyWorkspace:
                 "next_due advances by cadence_seconds from the tick clock.",
                 "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
-                "Optional exit_eval, feedback, and cost_rebalance hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
+                "Optional exit_eval, feedback, cost_rebalance, and factor_exposure hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background scheduler or trading approval is established.",
             ],
@@ -1292,6 +1321,7 @@ class ResearchStrategyWorkspace:
             "exit_eval_ids": exit_eval_ids,
             "last_feedback_id": feedback_id if feedback_id is not None else plan.get("last_feedback_id"),
             "last_rebalance_id": rebalance_id if rebalance_id is not None else plan.get("last_rebalance_id"),
+            "last_exposure_id": exposure_id if exposure_id is not None else plan.get("last_exposure_id"),
             "alpha_decayed": bool(decay is not None or plan.get("alpha_decayed")),
             "alpha_decay_tick_id": identity if decay is not None else plan.get("alpha_decay_tick_id"),
             "invalidation_id": invalidation_id if invalidation_id is not None else plan.get("invalidation_id"),
@@ -1318,6 +1348,7 @@ class ResearchStrategyWorkspace:
                     "exit_eval_ids": pointer.get("exit_eval_ids") or [],
                     "last_feedback_id": pointer.get("last_feedback_id"),
                     "last_rebalance_id": pointer.get("last_rebalance_id"),
+                    "last_exposure_id": pointer.get("last_exposure_id"),
                     "alpha_decayed": pointer.get("alpha_decayed", False),
                     "alpha_decay_tick_id": pointer.get("alpha_decay_tick_id"),
                     "invalidation_id": pointer.get("invalidation_id")}
