@@ -913,7 +913,9 @@ class ResearchStrategyWorkspace:
         fields = _fields(payload, {"action", "cadence_seconds", "now", "request", "max_ticks",
                                    "exit_eval", "stop_loss_pct", "take_profit_pct", "horizon_bars",
                                    "feedback_every_n_ticks",
-                                   "min_ic_ir", "min_ic_half_life_steps", "alpha_decay_action"},
+                                   "min_ic_ir", "min_ic_half_life_steps", "alpha_decay_action",
+                                   "cost_rebalance", "rebalance_mode", "min_trade_notional",
+                                   "max_one_way_bps", "max_cost_nav", "alpha_scale"},
                          {"action", "cadence_seconds", "now", "request"})
         action = fields["action"]
         if action not in _SCHEDULE_ACTIONS:
@@ -952,6 +954,20 @@ class ResearchStrategyWorkspace:
                 "take_profit_pct": str(take),
                 "horizon_bars": horizon,
             }
+        do_rebalance = fields.get("cost_rebalance", False)
+        if not isinstance(do_rebalance, bool):
+            raise ValueError("cost_rebalance must be a boolean")
+        rebalance_modes = frozenset({"SKIP_BELOW_COST", "SHRINK_TO_COST", "ALPHA_COST_GATE"})
+        rebalance_request: dict[str, Any] | None = None
+        if do_rebalance:
+            mode = fields.get("rebalance_mode", "SKIP_BELOW_COST")
+            if mode not in rebalance_modes:
+                raise ValueError(
+                    "rebalance_mode must be SKIP_BELOW_COST, SHRINK_TO_COST, or ALPHA_COST_GATE")
+            rebalance_request = {"mode": mode}
+            for key in ("min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"):
+                if key in fields:
+                    rebalance_request[key] = fields[key]
         decay_action = fields.get("alpha_decay_action", "soft_skip")
         if decay_action not in {"soft_skip", "invalidate"}:
             raise ValueError("alpha_decay_action must be soft_skip or invalidate")
@@ -979,6 +995,8 @@ class ResearchStrategyWorkspace:
             "exit_eval": do_exit,
             "exit_eval_request": exit_request,
             "feedback_every_n_ticks": feedback_every,
+            "cost_rebalance": do_rebalance,
+            "cost_rebalance_request": rebalance_request,
             "min_ic_ir": min_ir,
             "min_ic_half_life_steps": min_hl,
             "alpha_decay_action": decay_action,
@@ -990,12 +1008,14 @@ class ResearchStrategyWorkspace:
             "classification": "MODEL_ESTIMATE",
             "metrics": {"ticks_completed": 0, "exit_eval": do_exit,
                         "feedback_every_n_ticks": feedback_every,
+                        "cost_rebalance": do_rebalance,
                         "alpha_decay_gated": min_ir is not None or min_hl is not None,
                         "trading_approved": False},
             "notes": [
                 "Schedules are durable research plans; ticks are explicit and CPU-local.",
                 "Optional exit_eval runs stop/take path diagnostics on each tick size_id.",
                 "Optional feedback_every_n_ticks aggregates successful exit-evals into research feedback.",
+                "Optional cost_rebalance proposes KEEP/TRADE/SKIP/SHRINK from each tick size+TCA.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background worker, broker path, or trading approval is established.",
             ],
@@ -1159,6 +1179,7 @@ class ResearchStrategyWorkspace:
         next_due = (clock + timedelta(seconds=int(plan["cadence_seconds"]))).isoformat()
         exit_eval_id = None
         feedback_id = None
+        rebalance_id = None
         exit_eval_ids = list(plan.get("exit_eval_ids") or [])
         if plan.get("exit_eval") and result.get("size_id") and plan.get("exit_eval_request"):
             eval_payload = {
@@ -1177,6 +1198,22 @@ class ResearchStrategyWorkspace:
                     fed = self.feedback({"exit_eval_ids": window}).to_dict()
                     if fed["state"] == State.AVAILABLE.value and isinstance(fed.get("data"), dict):
                         feedback_id = fed["data"]["feedback_id"]
+        if plan.get("cost_rebalance") and result.get("size_id") and plan.get("cost_rebalance_request"):
+            reb_payload: dict[str, Any] = {
+                "size_id": result["size_id"],
+                "now": clock.isoformat(),
+                **plan["cost_rebalance_request"],
+            }
+            if result.get("cost_id"):
+                reb_payload["cost_id"] = result["cost_id"]
+            elif request.get("previous_size_id"):
+                reb_payload["previous_size_id"] = request["previous_size_id"]
+            for key in ("spread_bps", "commission_bps", "impact_eta", "adv_lookback_bars"):
+                if key in plan["request"]:
+                    reb_payload[key] = plan["request"][key]
+            rebalanced = self.cost_rebalance(reb_payload).to_dict()
+            if rebalanced["state"] == State.AVAILABLE.value and isinstance(rebalanced.get("data"), dict):
+                rebalance_id = rebalanced["data"]["rebalance_id"]
         decay = self._alpha_decay_tripped(plan, result.get("screen_id"))
         invalidation_id = None
         if decay is not None and decay["alpha_decay_action"] == "invalidate" and result.get("screen_id"):
@@ -1205,6 +1242,7 @@ class ResearchStrategyWorkspace:
             "cost_id": result.get("cost_id"),
             "exit_eval_id": exit_eval_id,
             "feedback_id": feedback_id,
+            "rebalance_id": rebalance_id,
             "strategy_id": result.get("strategy_id"),
             "invalidation_id": invalidation_id,
             "alpha_decay": decay,
@@ -1221,6 +1259,7 @@ class ResearchStrategyWorkspace:
                 "size_chained": bool(request.get("previous_size_id")),
                 "exit_eval_attached": exit_eval_id is not None,
                 "feedback_attached": feedback_id is not None,
+                "cost_rebalance_attached": rebalance_id is not None,
                 "exit_eval_count": len(exit_eval_ids),
                 "alpha_decayed": decay is not None,
                 "alpha_decay_action": None if decay is None else decay["alpha_decay_action"],
@@ -1231,7 +1270,7 @@ class ResearchStrategyWorkspace:
                 "next_due advances by cadence_seconds from the tick clock.",
                 "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
-                "Optional exit_eval and feedback hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
+                "Optional exit_eval, feedback, and cost_rebalance hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
                 "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background scheduler or trading approval is established.",
             ],
@@ -1251,6 +1290,7 @@ class ResearchStrategyWorkspace:
             "last_exit_eval_id": exit_eval_id if exit_eval_id is not None else plan.get("last_exit_eval_id"),
             "exit_eval_ids": exit_eval_ids,
             "last_feedback_id": feedback_id if feedback_id is not None else plan.get("last_feedback_id"),
+            "last_rebalance_id": rebalance_id if rebalance_id is not None else plan.get("last_rebalance_id"),
             "alpha_decayed": bool(decay is not None or plan.get("alpha_decayed")),
             "alpha_decay_tick_id": identity if decay is not None else plan.get("alpha_decay_tick_id"),
             "invalidation_id": invalidation_id if invalidation_id is not None else plan.get("invalidation_id"),
@@ -1276,6 +1316,7 @@ class ResearchStrategyWorkspace:
                     "last_exit_eval_id": pointer.get("last_exit_eval_id"),
                     "exit_eval_ids": pointer.get("exit_eval_ids") or [],
                     "last_feedback_id": pointer.get("last_feedback_id"),
+                    "last_rebalance_id": pointer.get("last_rebalance_id"),
                     "alpha_decayed": pointer.get("alpha_decayed", False),
                     "alpha_decay_tick_id": pointer.get("alpha_decay_tick_id"),
                     "invalidation_id": pointer.get("invalidation_id")}

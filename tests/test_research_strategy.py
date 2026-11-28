@@ -745,6 +745,51 @@ class StrategyTests(unittest.TestCase):
         self.assertIsNone(plain_tick["data"]["exit_eval_id"])
         self.assertIsNone(plain_tick["data"]["feedback_id"])
 
+    def test_schedule_ticks_attach_cost_rebalance(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+            "now": self.now, "request": watch_request,
+            "cost_rebalance": True, "rebalance_mode": "SKIP_BELOW_COST",
+            "min_trade_notional": "100",
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        self.assertTrue(planned["data"]["cost_rebalance"])
+        self.assertEqual(planned["data"]["cost_rebalance_request"]["mode"], "SKIP_BELOW_COST")
+        tick = self.strategies.tick_schedule({
+            "schedule_id": planned["data"]["schedule_id"], "now": self.now,
+        }).to_dict()
+        self.assertEqual(tick["state"], "AVAILABLE", tick)
+        self.assertTrue(tick["data"]["size_id"])
+        self.assertTrue(tick["data"]["rebalance_id"])
+        self.assertTrue(tick["data"]["metrics"]["cost_rebalance_attached"])
+        self.assertFalse(tick["data"]["trading_approved"])
+        replayed = self.strategies.replay_rebalance({
+            "rebalance_id": tick["data"]["rebalance_id"],
+        }).to_dict()
+        self.assertEqual(replayed["state"], "AVAILABLE", replayed)
+        self.assertEqual(replayed["data"]["rebalance_id"], tick["data"]["rebalance_id"])
+        state = self.strategies.load_schedule_state(planned["data"]["schedule_id"])
+        self.assertEqual(state["last_rebalance_id"], tick["data"]["rebalance_id"])
+        with self.assertRaisesRegex(ValueError, "rebalance_mode"):
+            self.strategies.schedule({
+                "action": "watch", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": self.now, "request": watch_request,
+                "cost_rebalance": True, "rebalance_mode": "NOT_A_MODE",
+            })
+
     def test_schedule_tick_soft_skips_when_ic_ir_decayed(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)
