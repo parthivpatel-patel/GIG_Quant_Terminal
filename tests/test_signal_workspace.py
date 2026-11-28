@@ -53,6 +53,10 @@ class SignalScoringReferenceTests(unittest.TestCase):
         self.assertFalse(result["diagnostics"][0]["ic_drift"]["weight_zeroed"])
         self.assertEqual(result["diagnostics"][0]["ic_half_life"]["state"], "UNKNOWN")
         self.assertEqual(result["diagnostics"][0]["ic_half_life"]["method"], "AR1_ABS_PHI_HALF_LIFE")
+        # Constant IC path has zero std => IR/NW stay UNKNOWN; hit rate is still descriptive.
+        self.assertEqual(result["diagnostics"][0]["ic_ir_state"], "UNKNOWN")
+        self.assertIsNone(result["diagnostics"][0]["ic_ir"])
+        self.assertEqual(result["diagnostics"][0]["ic_hit_rate"], 1.0)
         self.assertFalse(result["trading_approved"])
 
     def test_ic_half_life_ar1_reference(self):
@@ -69,6 +73,63 @@ class SignalScoringReferenceTests(unittest.TestCase):
         self.assertAlmostEqual(report["half_life_steps"], 1.0, places=6)
         short = ic_half_life([0.1, -0.2, 0.3])
         self.assertEqual(short["state"], "UNKNOWN")
+
+    def test_ic_ir_and_newey_west_gate_zero_weights(self):
+        from gig.research.ic import information_ratio, newey_west_tstat
+
+        times = pd.date_range("2026-01-01T00:00:00Z", periods=24)
+        rows, labels = [], []
+        fixed_targets = {"A": 0.0, "B": 0.01, "C": 0.02}
+        for index, stamp in enumerate(times):
+            # Rotate prediction ranks vs fixed symbol targets so OOS IC varies.
+            order = (("A", "B", "C"), ("A", "C", "B"), ("B", "A", "C"))[index % 3]
+            for i, symbol in enumerate(order):
+                rows.append({
+                    "instrument_id": symbol, "timestamp": stamp.isoformat(),
+                    "prediction": float(i), "model_id": "fixture-model",
+                })
+            for symbol, target in fixed_targets.items():
+                labels.append({
+                    "instrument_id": symbol, "timestamp": stamp.isoformat(),
+                    "target": target,
+                    "label_end": (stamp + pd.Timedelta(hours=1)).isoformat(),
+                    "label_vintages": [{
+                        "target": target,
+                        "label_end": (stamp + pd.Timedelta(hours=1)).isoformat(),
+                        "knowledge_at": (stamp + pd.Timedelta(hours=1)).isoformat(),
+                    }],
+                })
+        dataset = {
+            "dataset_id": "fixture-dataset-ir", "source": "authored-scoring-reference",
+            "classification": "SYNTHETIC", "rows": labels,
+        }
+        runs = [{
+            "run_id": "fixture-run-ir", "rows": rows, "model_ids": ["fixture-model"],
+            "model": "reference", "prediction_kind": "AUTHORED_NUMERICAL_REFERENCE",
+        }]
+        request = {
+            "now": times[-1].isoformat(), "run_ids": ["fixture-run-ir"],
+            "lookback": 20, "min_ic_observations": 5,
+        }
+        result = score_runs(runs, dataset, request)
+        diagnostic = result["diagnostics"][0]
+        ics = [row["ic"] for row in diagnostic["dates"]]
+        self.assertGreaterEqual(len(ics), 8)
+        expected_ir = information_ratio(pd.Series(ics, dtype=float))
+        _, expected_t, expected_p = newey_west_tstat(pd.Series(ics, dtype=float))
+        self.assertEqual(diagnostic["ic_ir_state"], "AVAILABLE")
+        self.assertAlmostEqual(diagnostic["ic_ir"], expected_ir, places=8)
+        self.assertEqual(diagnostic["ic_nw_state"], "AVAILABLE")
+        self.assertAlmostEqual(diagnostic["ic_tstat_nw"], expected_t, places=8)
+        self.assertAlmostEqual(diagnostic["ic_pvalue_nw"], expected_p, places=8)
+        self.assertGreater(diagnostic["raw_adaptive_weight"], 0.0)
+        gated = score_runs(runs, dataset, {**request, "min_ic_ir": expected_ir + 1.0})
+        self.assertEqual(gated["diagnostics"][0]["raw_adaptive_weight"], 0.0)
+        self.assertTrue(gated["diagnostics"][0]["ic_ir_weight_zeroed"])
+        self.assertEqual(gated["scoring_state"], "UNKNOWN")
+        gated_t = score_runs(runs, dataset, {**request, "min_ic_tstat": expected_t + 10.0})
+        self.assertEqual(gated_t["diagnostics"][0]["raw_adaptive_weight"], 0.0)
+        self.assertTrue(gated_t["diagnostics"][0]["ic_tstat_weight_zeroed"])
 
     def test_later_revisions_and_current_outcome_do_not_change_earlier_signal(self):
         runs, dataset, request = scoring_fixture()
