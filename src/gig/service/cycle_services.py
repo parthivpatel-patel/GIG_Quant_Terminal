@@ -137,6 +137,16 @@ class CycleServices:
     def signals_replay(self, payload: dict[str, Any]) -> Contract:
         return self._signals().replay(payload)
 
+    def _screens(self):
+        from gig.service.research_screen import ResearchScreenWorkspace
+        return ResearchScreenWorkspace(self.workspace.base_dir)
+
+    def research_screen(self, payload: dict[str, Any]) -> Contract:
+        return self._screens().run(payload)
+
+    def screen_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._screens().replay(payload)
+
     def _overlay(self):
         from gig.service.overlay_workspace import OptionsOverlayWorkspace
         return OptionsOverlayWorkspace(self.workspace.base_dir)
