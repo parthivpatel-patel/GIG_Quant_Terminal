@@ -322,6 +322,16 @@ class DatasetBindingTests(unittest.TestCase):
         self.assertEqual(fitted["data"]["source"]["extraction"],
                          "ADMITTED_CALL_IV_TOTAL_VARIANCE_ONE_EXPIRY")
         self.assertGreaterEqual(fitted["data"]["source"]["quotes"], 5)
+        greeks = self.workspace.run({
+            "operation": "from-options", "options_run_id": run["data"]["run_id"],
+            "kind": "option-greeks-advanced", "contract_id": calls[0]["contract_id"],
+            "inputs": {},
+        }).to_dict()
+        self.assertEqual(greeks["state"], "AVAILABLE", greeks)
+        self.assertFalse(greeks["data"]["trading_approved"])
+        self.assertIn("vanna", greeks["data"]["result"])
+        self.assertEqual(greeks["data"]["source"]["extraction"],
+                         "ADMITTED_OPTION_IV_HIGHER_ORDER_GREEKS")
 
     def test_from_size_record_runs_conditional_stress(self):
         from gig.service.persisted_research import PersistedResearchWorkspace

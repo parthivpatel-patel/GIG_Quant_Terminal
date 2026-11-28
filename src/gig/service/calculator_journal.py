@@ -35,7 +35,7 @@ DATASET_BINDINGS = {
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
 SIZE_BINDINGS = frozenset({"historical-var-components"})
 SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
-OPTIONS_BINDINGS = frozenset({"svi-smile"})
+OPTIONS_BINDINGS = frozenset({"svi-smile", "option-greeks-advanced"})
 SIZE_RECORD_BINDINGS = frozenset({"conditional-stress"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
@@ -416,21 +416,62 @@ class CalculatorJournalWorkspace:
         return self.journal.save(kind, bound, source=source)
 
     def _from_options(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Bind one expiry of a saved options research run into an SVI smile fit.
+        """Bind a saved options research run into SVI or higher-order Greeks.
 
-        Uses admitted CALL rows with finite IV and log-forward moneyness.
-        Total variance is ``iv**2 * ttm``. Research-only; no OPRA or trading path.
+        SVI uses admitted CALL rows with finite IV and log-forward moneyness;
+        total variance is ``iv**2 * ttm``. Greeks bind one admitted contract's
+        inverted IV. Research-only; no OPRA or trading path.
         """
-        fields = _fields(payload, {"operation", "options_run_id", "kind", "expiry", "inputs"},
+        fields = _fields(payload, {"operation", "options_run_id", "kind", "expiry", "contract_id", "inputs"},
                          {"operation", "options_run_id", "kind", "inputs"})
         kind = fields["kind"]
         if not isinstance(kind, str) or kind not in OPTIONS_BINDINGS:
             raise ValueError("calculator cannot be bound to a saved options run")
         inputs = fields["inputs"]
-        if not isinstance(inputs, dict) or "log_moneyness" in inputs or "total_variance" in inputs:
-            raise ValueError("calculator inputs must leave log_moneyness and total_variance unbound")
+        if not isinstance(inputs, dict):
+            raise ValueError("calculator inputs must be an object")
         from gig.service.options_workspace import OptionsWorkspace
         options = OptionsWorkspace(self.directory).load(fields["options_run_id"])
+        if kind == "option-greeks-advanced":
+            if any(key in inputs for key in ("spot", "strike", "vol", "ttm", "call", "rate", "div")):
+                raise ValueError(
+                    "calculator inputs must leave spot, strike, vol, ttm, call, rate and div unbound")
+            contract_id = fields.get("contract_id")
+            rows = [
+                row for row in options.get("rows", [])
+                if row.get("state") == "AVAILABLE" and row.get("implied_volatility") is not None
+                and row.get("ttm") is not None and float(row["ttm"]) > 0
+                and row.get("strike") is not None
+            ]
+            if contract_id is not None:
+                rows = [row for row in rows if row.get("contract_id") == contract_id]
+            if not rows:
+                raise ValueError("options run has no admitted contract for higher-order Greeks")
+            selected = min(rows, key=lambda row: abs(float(row.get("log_forward_moneyness") or 0.0)))
+            request = options.get("request") or {}
+            bound = {
+                "spot": float(options["spot"]),
+                "strike": float(selected["strike"]),
+                "rate": float(request.get("rate", 0.0)),
+                "div": float(request.get("dividend_yield", 0.0)),
+                "vol": float(selected["implied_volatility"]),
+                "ttm": float(selected["ttm"]),
+                "call": selected.get("right") == "CALL",
+                **inputs,
+            }
+            source = {
+                "options_run_id": options["run_id"],
+                "underlying_id": options["underlying_id"],
+                "contract_id": selected["contract_id"],
+                "expiry": selected.get("expiry"),
+                "argument": "spot/strike/vol/ttm",
+                "extraction": "ADMITTED_OPTION_IV_HIGHER_ORDER_GREEKS",
+                "trading_approved": False,
+                "options_trading_approved": False,
+            }
+            return self.journal.save(kind, bound, source=source)
+        if any(key in inputs for key in ("log_moneyness", "total_variance")):
+            raise ValueError("calculator inputs must leave log_moneyness and total_variance unbound")
         rows = [row for row in options.get("rows", [])
                 if row.get("right") == "CALL" and row.get("state") == "AVAILABLE"
                 and row.get("implied_volatility") is not None
