@@ -142,6 +142,9 @@ class CycleServices:
         return ResearchScreenWorkspace(self.workspace.base_dir)
 
     def research_screen(self, payload: dict[str, Any]) -> Contract:
+        if isinstance(payload, dict) and payload.get("operation") == "from-runs":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().discover(body)
         return self._screens().run(payload)
 
     def screen_replay(self, payload: dict[str, Any]) -> Contract:

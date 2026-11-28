@@ -17,6 +17,10 @@ names, signed by stance. It is not a lot size. Timing events are
 `ENTER_LONG`, `EXIT_LONG`, `ENTER_SHORT`, `EXIT_SHORT`, `CONTINUE`, `FLIP`
 and `ENTER_HOLD`.
 
+`operation: "from-runs"` builds the ensemble and the screen in one request from
+saved model `run_ids` and `now`. The resulting artifact still pins the
+`signal_id` for offline allocation.
+
 Replay (`screen-replay`) recomputes the labels from the pinned signal and
 refuses the record if they differ. Offline allocation still consumes the
 `signal_id`; the screen sits beside that path as an explicit research view.

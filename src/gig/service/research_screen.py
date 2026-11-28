@@ -154,6 +154,29 @@ class ResearchScreenWorkspace:
     def _path(self, name: str) -> Path:
         return self.workspace._path("research-screens/" + name)
 
+    def discover(self, payload: dict[str, Any]) -> Contract:
+        """Fit an ensemble from saved model runs, then label research stances in one step."""
+        fields = _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations",
+                                   "buy_threshold", "sell_threshold", "previous_screen_id"},
+                         {"run_ids", "now"})
+        signal_payload: dict[str, Any] = {"run_ids": fields["run_ids"], "now": fields["now"]}
+        for key in ("lookback", "min_ic_observations"):
+            if key in fields:
+                signal_payload[key] = fields[key]
+        signal_contract = self.signals.run(signal_payload)
+        signal = signal_contract.to_dict()
+        if signal["state"] != State.AVAILABLE.value or not isinstance(signal.get("data"), dict):
+            return signal_contract
+        screen_payload: dict[str, Any] = {
+            "signal_id": signal["data"]["signal_id"],
+            "discovery": {"operation": "from-runs", "run_ids": list(signal["data"]["run_ids"]),
+                          "scoring_state": signal["data"]["scoring_state"]},
+        }
+        for key in ("buy_threshold", "sell_threshold", "previous_screen_id"):
+            if key in fields:
+                screen_payload[key] = fields[key]
+        return self.run(screen_payload)
+
     @staticmethod
     def _contract(document: dict[str, Any], *, state: State = State.AVAILABLE) -> Contract:
         return Contract.admit(
@@ -172,7 +195,7 @@ class ResearchScreenWorkspace:
         )
 
     def run(self, payload: dict[str, Any]) -> Contract:
-        fields = _fields(payload, {"signal_id", "buy_threshold", "sell_threshold", "previous_screen_id"},
+        fields = _fields(payload, {"signal_id", "buy_threshold", "sell_threshold", "previous_screen_id", "discovery"},
                          {"signal_id"})
         request = {
             "signal_id": sha256(fields["signal_id"]),
@@ -181,6 +204,12 @@ class ResearchScreenWorkspace:
         }
         if "previous_screen_id" in fields:
             request["previous_screen_id"] = sha256(fields["previous_screen_id"])
+        discovery = fields.get("discovery")
+        if discovery is not None:
+            if not isinstance(discovery, dict) or discovery.get("operation") != "from-runs":
+                raise ValueError("discovery must record a from-runs operation")
+            if not isinstance(discovery.get("run_ids"), list) or not discovery["run_ids"]:
+                raise ValueError("discovery requires the ensemble run identities")
         try:
             signal = self.signals.load(str(request["signal_id"]))
             previous = self.load(str(request["previous_screen_id"])) if "previous_screen_id" in request else None
@@ -194,6 +223,10 @@ class ResearchScreenWorkspace:
             if aware_timestamp(previous["signal_as_of"]) >= aware_timestamp(signal["signal_as_of"]):
                 raise ValueError("previous screen must precede the current signal decision")
         body = build_screen(signal, request, previous)
+        if discovery is not None:
+            body["discovery"] = {"operation": "from-runs", "signal_id": signal["signal_id"],
+                                 "run_ids": list(discovery["run_ids"]),
+                                 "scoring_state": discovery.get("scoring_state")}
         identity = _hash(body)
         document = {**body, "screen_id": identity}
         result = self._contract(document)
@@ -226,7 +259,10 @@ class ResearchScreenWorkspace:
             raise ValueError("screen index differs from preserved artifact")
         signal = self.signals.load(document["signal_id"])
         previous = self.load(document["previous_screen_id"]) if document.get("previous_screen_id") else None
-        if build_screen(signal, document["request"], previous) != body:
+        rebuilt = build_screen(signal, document["request"], previous)
+        if document.get("discovery") is not None:
+            rebuilt["discovery"] = document["discovery"]
+        if rebuilt != body:
             raise ValueError("screen evidence differs from deterministic replay")
         return document
 

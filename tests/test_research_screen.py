@@ -81,6 +81,20 @@ class ScreenFlowTests(unittest.TestCase):
                 "buy_threshold": 0.0, "sell_threshold": -0.01,
             })
 
+    def test_from_runs_discovers_a_screen_in_one_step(self):
+        discovered = self.screens.discover({
+            "run_ids": [self.signal["run_ids"][0]], "now": self.now,
+            "lookback": 20, "min_ic_observations": 5,
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()
+        self.assertEqual(discovered["state"], "AVAILABLE")
+        self.assertEqual(discovered["data"]["discovery"]["operation"], "from-runs")
+        self.assertEqual(discovered["data"]["discovery"]["signal_id"], discovered["data"]["signal_id"])
+        self.assertFalse(discovered["data"]["trading_approved"])
+        again = self.screens.replay({"screen_id": discovered["data"]["screen_id"]}).to_dict()
+        self.assertEqual(again["data"]["rows"], discovered["data"]["rows"])
+
+
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def test_http_screen_hands_the_signal_to_offline_allocation(self):
         with tempfile.TemporaryDirectory() as directory:
