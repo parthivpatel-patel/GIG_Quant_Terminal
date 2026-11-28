@@ -196,10 +196,11 @@ class ResearchStrategyWorkspace:
                    "portfolio_notional", "max_name_notional", "vol_scale", "target_volatility",
                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                    "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
-                   "initial_cash", "n_long", "n_short", "gross_leverage", "max_name_weight",
-                   "lot_size", "max_age_seconds", "annualization", "metadata", "limits",
-                   "commission_bps", "slippage_bps", "price_tick", "max_turnover",
-                   "max_transaction_cost", "fill", "document_id", "nlp_profile"}
+                   "previous_size_id", "max_size_turnover", "initial_cash", "n_long", "n_short",
+                   "gross_leverage", "max_name_weight", "lot_size", "max_age_seconds",
+                   "annualization", "metadata", "limits", "commission_bps", "slippage_bps",
+                   "price_tick", "max_turnover", "max_transaction_cost", "fill", "document_id",
+                   "nlp_profile"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -245,7 +246,8 @@ class ResearchStrategyWorkspace:
         }
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
                     "regime_short_bars", "regime_long_bars", "max_gross_exposure",
-                    "max_adv_participation", "adv_lookback_bars", "annualization"):
+                    "max_adv_participation", "adv_lookback_bars", "previous_size_id",
+                    "max_size_turnover", "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -263,7 +265,7 @@ class ResearchStrategyWorkspace:
                      "portfolio_notional", "max_name_notional", "vol_scale", "target_volatility",
                      "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                      "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
-                     "document_id", "nlp_profile"}
+                     "previous_size_id", "max_size_turnover", "document_id", "nlp_profile"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -357,7 +359,8 @@ class ResearchStrategyWorkspace:
                    "max_name_notional", "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                    "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
-                   "annualization", "options_run_ids", "document_id", "nlp_profile"}
+                   "previous_size_id", "max_size_turnover", "annualization", "options_run_ids",
+                   "document_id", "nlp_profile"}
         fields = _fields(payload, allowed, {"signal_ids", "now", "portfolio_notional",
                                             "max_name_notional", "lot_size"})
         monitor_payload = {key: fields[key] for key in fields
@@ -396,7 +399,8 @@ class ResearchStrategyWorkspace:
         }
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
                     "regime_short_bars", "regime_long_bars", "max_gross_exposure",
-                    "max_adv_participation", "adv_lookback_bars", "annualization"):
+                    "max_adv_participation", "adv_lookback_bars", "previous_size_id",
+                    "max_size_turnover", "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -1151,7 +1155,7 @@ class ResearchStrategyWorkspace:
                                    "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
                                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                                    "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
-                                   "annualization"},
+                                   "previous_size_id", "max_size_turnover", "annualization"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
         if "vol_scale" in fields and "target_volatility" in fields:
             raise ValueError("provide vol_scale or target_volatility, not both")
@@ -1161,9 +1165,13 @@ class ResearchStrategyWorkspace:
             raise ValueError("max_adv_participation requires adv_lookback_bars")
         if "adv_lookback_bars" in fields and "max_adv_participation" not in fields:
             raise ValueError("adv_lookback_bars requires max_adv_participation")
+        if "max_size_turnover" in fields and "previous_size_id" not in fields:
+            raise ValueError("max_size_turnover requires previous_size_id")
         try:
             screen = self.screens.load(fields["screen_id"])
             dataset = PersistedDatasetWorkspace(self.base_dir).load(screen["dataset_id"])
+            previous_size = (self.load_size(fields["previous_size_id"])
+                             if "previous_size_id" in fields else None)
         except FileNotFoundError:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
@@ -1172,6 +1180,14 @@ class ResearchStrategyWorkspace:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
+        if previous_size is not None:
+            if previous_size["dataset_id"] != screen["dataset_id"]:
+                raise ValueError("previous_size_id must share the screen dataset")
+            if self._invalidation_hits(size_id=previous_size["size_id"]):
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
         at = aware_timestamp(fields["now"])
         portfolio = _positive(fields["portfolio_notional"], "portfolio_notional")
         name_cap = _positive(fields["max_name_notional"], "max_name_notional")
@@ -1409,6 +1425,82 @@ class ResearchStrategyWorkspace:
                 return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                       classification="UNAVAILABLE", scope="workspace.research-strategy",
                                       error=public_error("DATA_UNAVAILABLE"))
+        turnover_nav = None
+        turnover_cap_applied = False
+        if previous_size is not None:
+            prior = {
+                row["instrument_id"]: Decimal(row["target_notional"]) * (
+                    Decimal(1) if row["side"] == "buy" else Decimal(-1))
+                for row in previous_size["rows"]
+            }
+            current = {
+                row["instrument_id"]: Decimal(row["target_notional"]) * (
+                    Decimal(1) if row["side"] == "buy" else Decimal(-1))
+                for row in sized
+            }
+            names = set(prior) | set(current)
+            turnover = sum((abs(current.get(name, Decimal(0)) - prior.get(name, Decimal(0)))
+                            for name in names), Decimal(0)) / Decimal(2)
+            turnover_nav = turnover / portfolio
+            if "max_size_turnover" in fields:
+                turnover_cap = _positive(fields["max_size_turnover"], "max_size_turnover")
+                if turnover_cap > Decimal("8"):
+                    raise ValueError("max_size_turnover must lie in (0, 8]")
+                if turnover_nav > turnover_cap and turnover > 0:
+                    # Blend toward the previous signed notionals so |Δ|/2 ≤ cap * NAV.
+                    # Solve: (1-a)*turnover_nav = turnover_cap  => a = 1 - cap/turnover_nav.
+                    blend = Decimal(1) - (turnover_cap / turnover_nav)
+                    blended: list[dict[str, Any]] = []
+                    for name in sorted(names):
+                        signed = ((Decimal(1) - blend) * current.get(name, Decimal(0))
+                                  + blend * prior.get(name, Decimal(0)))
+                        if signed == 0:
+                            continue
+                        notional = abs(signed)
+                        price = Decimal(marks[name]["price"]) if name in marks else None
+                        if price is None:
+                            # Fall back to previous mark when a closed name lacks a current mark.
+                            prior_row = next(row for row in previous_size["rows"]
+                                             if row["instrument_id"] == name)
+                            price = Decimal(prior_row["reference_price"])
+                        quantity = int(Fraction(notional) / Fraction(price) / Fraction(lot)) * lot
+                        if quantity <= 0:
+                            continue
+                        prior_row = next((row for row in sized if row["instrument_id"] == name), None)
+                        base = prior_row or {
+                            "instrument_id": name,
+                            "stance": "HOLD",
+                            "research_weight": 0.0,
+                            "uncapped_notional": str(notional),
+                            "capped": False,
+                            "reference_price": str(price),
+                            "price_asof": marks[name]["as_of"] if name in marks else previous_size["as_of"],
+                            "trading_approved": False,
+                        }
+                        blended.append({
+                            **base,
+                            "side": "buy" if signed > 0 else "sell",
+                            "target_notional": str(notional),
+                            "quantity": str(quantity),
+                            "turnover_blended": True,
+                        })
+                    sized = blended
+                    turnover_cap_applied = True
+                    if not sized:
+                        return Contract.admit(State.UNAVAILABLE, None,
+                                              source="persisted-research-strategy",
+                                              classification="UNAVAILABLE",
+                                              scope="workspace.research-strategy",
+                                              error=public_error("DATA_UNAVAILABLE"))
+                    current = {
+                        row["instrument_id"]: Decimal(row["target_notional"]) * (
+                            Decimal(1) if row["side"] == "buy" else Decimal(-1))
+                        for row in sized
+                    }
+                    names = set(prior) | set(current)
+                    turnover = sum((abs(current.get(name, Decimal(0)) - prior.get(name, Decimal(0)))
+                                    for name in names), Decimal(0)) / Decimal(2)
+                    turnover_nav = turnover / portfolio
         gross = sum((Decimal(row["target_notional"]) for row in sized), Decimal(0))
         net = sum((Decimal(row["target_notional"]) * (1 if row["side"] == "buy" else -1)
                    for row in sized), Decimal(0))
@@ -1437,12 +1529,20 @@ class ResearchStrategyWorkspace:
                 _positive(fields["max_adv_participation"], "max_adv_participation"))
             request["adv_lookback_bars"] = int(fields["adv_lookback_bars"])
             request["adv_participation_cap_applied"] = adv_cap_applied
+        if previous_size is not None:
+            request["previous_size_id"] = previous_size["size_id"]
+            request["size_turnover_nav"] = str(turnover_nav)
+            if "max_size_turnover" in fields:
+                request["max_size_turnover"] = str(
+                    _positive(fields["max_size_turnover"], "max_size_turnover"))
+                request["size_turnover_cap_applied"] = turnover_cap_applied
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
             "dataset_id": screen["dataset_id"],
             "screen_id": screen["screen_id"],
             "signal_id": screen["signal_id"],
+            "previous_size_id": previous_size["size_id"] if previous_size is not None else None,
             "source": screen["source"],
             "input_classification": screen["input_classification"],
             "request": request,
@@ -1465,12 +1565,15 @@ class ResearchStrategyWorkspace:
                 "vol_scale_source": scale_source,
                 "gross_exposure_cap_applied": gross_cap_applied,
                 "adv_participation_cap_applied": adv_cap_applied,
+                "size_turnover_nav": None if turnover_nav is None else str(turnover_nav),
+                "size_turnover_cap_applied": turnover_cap_applied,
                 "trading_approved": False,
             },
             "notes": [
                 "Position sizes are research lot targets from screen weights and admitted marks.",
                 "max_name_notional caps each name; target_volatility, max_expected_shortfall, max_gross_exposure, and max_adv_participation constrain notionals.",
                 "ADV caps use trailing close×volume means from the saved panel; they are descriptive liquidity bounds.",
+                "previous_size_id measures one-way NAV turnover; max_size_turnover blends toward the prior signed notionals.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }

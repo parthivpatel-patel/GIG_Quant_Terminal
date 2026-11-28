@@ -251,6 +251,35 @@ class StrategyTests(unittest.TestCase):
         self.assertTrue(gated["data"]["risk"]["data"]["expected_shortfall_bound_applied"])
         self.assertFalse(gated["data"]["trading_approved"])
 
+    def test_size_applies_max_size_turnover_blend(self):
+        first = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "0.2",
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        measured = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "previous_size_id": first["data"]["size_id"],
+        }).to_dict()
+        self.assertEqual(measured["state"], "AVAILABLE", measured)
+        self.assertGreater(float(measured["data"]["metrics"]["size_turnover_nav"]), 0.05)
+        second = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "previous_size_id": first["data"]["size_id"],
+            "max_size_turnover": "0.05",
+        }).to_dict()
+        EnvelopeSchema.model_validate(second)
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        self.assertTrue(second["data"]["request"]["size_turnover_cap_applied"])
+        self.assertLessEqual(float(second["data"]["metrics"]["size_turnover_nav"]), 0.05 + 1e-9)
+        self.assertEqual(second["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertFalse(second["data"]["trading_approved"])
+
     def test_size_applies_max_adv_participation(self):
         probe = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
