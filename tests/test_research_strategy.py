@@ -563,6 +563,47 @@ class StrategyTests(unittest.TestCase):
                 "rebalance_id": skipped["data"]["rebalance_id"], "now": self.now,
                 "lot_size": 0,
             })
+        with self.assertRaisesRegex(ValueError, "exactly one"):
+            self.strategies.size_from_rebalance({"now": self.now})
+
+    def test_size_from_factor_rebalance_materializes_shrunk_book(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        shrunk = self.strategies.factor_rebalance({
+            "size_id": sized["data"]["size_id"], "now": self.now,
+            "mode": "SHRINK_TO_VOL", "n_factors": 2, "min_obs": 40, "lookback": 40,
+            "max_ex_ante_vol": "0.025",
+        }).to_dict()
+        self.assertEqual(shrunk["state"], "AVAILABLE", shrunk)
+        self.assertGreaterEqual(shrunk["data"]["metrics"]["names_shrunk"], 1)
+        materialized = self.strategies.size_from_rebalance({
+            "factor_rebalance_id": shrunk["data"]["factor_rebalance_id"], "now": self.now,
+        }).to_dict()
+        EnvelopeSchema.model_validate(materialized)
+        self.assertEqual(materialized["state"], "AVAILABLE", materialized)
+        body = materialized["data"]
+        self.assertFalse(body["trading_approved"])
+        self.assertEqual(body["previous_size_id"], sized["data"]["size_id"])
+        self.assertEqual(body["factor_rebalance_id"], shrunk["data"]["factor_rebalance_id"])
+        self.assertIsNone(body["rebalance_id"])
+        self.assertEqual(body["request"]["materialized_from"], "FACTOR_REBALANCE")
+        self.assertEqual(body["metrics"]["materialized_from"], "FACTOR_REBALANCE")
+        self.assertGreaterEqual(body["metrics"]["rebalance_actions_shrunk"], 1)
+        self.assertLess(
+            float(body["metrics"]["gross_notional"]) + 1e-9,
+            float(sized["data"]["metrics"]["gross_notional"]))
+        replayed = self.strategies.replay_size({"size_id": body["size_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["size_id"], body["size_id"])
+        with self.assertRaisesRegex(ValueError, "exactly one"):
+            self.strategies.size_from_rebalance({
+                "rebalance_id": "0" * 64,
+                "factor_rebalance_id": shrunk["data"]["factor_rebalance_id"],
+                "now": self.now,
+            })
 
     def test_cycle_can_attach_cost_rebalance(self):
         with tempfile.TemporaryDirectory() as directory:

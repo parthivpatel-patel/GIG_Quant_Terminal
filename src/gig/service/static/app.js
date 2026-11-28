@@ -1078,6 +1078,10 @@
     if (kind === "workspace-research-cost-rebalance" && workflowReferences.cost_id) example.cost_id = workflowReferences.cost_id;
     if (kind === "workspace-cost-rebalance-replay" && workflowReferences.rebalance_id) example.rebalance_id = workflowReferences.rebalance_id;
     if (kind === "workspace-size-from-rebalance" && workflowReferences.rebalance_id) example.rebalance_id = workflowReferences.rebalance_id;
+    if (kind === "workspace-size-from-rebalance" && workflowReferences.factor_rebalance_id) {
+      example.factor_rebalance_id = workflowReferences.factor_rebalance_id;
+      delete example.rebalance_id;
+    }
     if (kind === "workspace-research-factor-exposure" && workflowReferences.size_id) example.size_id = workflowReferences.size_id;
     if (kind === "workspace-factor-exposure-replay" && workflowReferences.exposure_id) example.exposure_id = workflowReferences.exposure_id;
     if (kind === "workspace-research-factor-rebalance" && workflowReferences.size_id) example.size_id = workflowReferences.size_id;
@@ -1201,7 +1205,7 @@
       "workspace-allocate-screen": "Construct offline targets from nonzero research_weight values on a saved buy/hold/sell screen. Still simulated and unapproved.",
       "workspace-research-strategy": "Allocate from a research screen, prepare offline intents, and optionally fill at reference prices in the offline OMS. Broker stays off; trading stays unapproved.",
       "workspace-research-size": "Convert screen research weights into capped lot sizes using admitted marks. Optional target_volatility and max_expected_shortfall scale notionals from the saved return panel. Optional calculator_record_id overlays risk-parity / HRP / max-div weights. No OMS prepare or broker order.",
-      "workspace-size-from-rebalance": "Materialize a cost-aware rebalance proposal into a chained size book (previous_size_id = proposal size_id). Enables later TCA and factor exposure on the gated book. Research-only.",
+      "workspace-size-from-rebalance": "Materialize a cost or factor rebalance proposal into a chained size book (provide rebalance_id or factor_rebalance_id). Enables later TCA and factor exposure on the gated book. Research-only.",
       "workspace-research-cycle": "One research cycle: discover from saved model runs, size positions, optional pre-trade TCA, then allocate/prepare/optionally fill offline. Broker stays off; trading stays unapproved.",
       "workspace-strategy-replay": "Reload a saved offline strategy simulation. No new orders are created.",
       "workspace-size-replay": "Reload saved research position sizes by identity. Replay does not approve trading.",

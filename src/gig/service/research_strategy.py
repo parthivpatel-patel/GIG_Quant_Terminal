@@ -2159,26 +2159,38 @@ class ResearchStrategyWorkspace:
                               identity_key="size_id")
 
     def size_from_rebalance(self, payload: dict[str, Any]) -> Contract:
-        """Materialize a cost-rebalance proposal into a chained research size book.
+        """Materialize a cost or factor rebalance proposal into a chained size book.
 
+        Provide exactly one of ``rebalance_id`` (cost) or ``factor_rebalance_id``.
         Promotes KEEP/TRADE/SKIP/SHRINK proposed notionals into an immutable
         ``sizing`` artifact whose ``previous_size_id`` is the proposal's
         ``size_id``. Enables later TCA, factor exposure, and schedule chaining
         on the gated book. Research-only; broker stays off.
         """
-        fields = _fields(payload, {"rebalance_id", "now", "lot_size"},
-                         {"rebalance_id", "now"})
+        fields = _fields(payload, {"rebalance_id", "factor_rebalance_id", "now", "lot_size"},
+                         {"now"})
+        if ("rebalance_id" in fields) == ("factor_rebalance_id" in fields):
+            raise ValueError("provide exactly one of rebalance_id or factor_rebalance_id")
         try:
-            proposal = self.load_rebalance(fields["rebalance_id"])
+            if "rebalance_id" in fields:
+                proposal = self.load_rebalance(fields["rebalance_id"])
+                origin = "COST_REBALANCE"
+                proposal_key = "rebalance_id"
+                proposal_id = proposal["rebalance_id"]
+            else:
+                proposal = self.load_factor_rebalance(fields["factor_rebalance_id"])
+                origin = "FACTOR_REBALANCE"
+                proposal_key = "factor_rebalance_id"
+                proposal_id = proposal["factor_rebalance_id"]
             source = self.load_size(proposal["size_id"])
         except FileNotFoundError:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
         if proposal["dataset_id"] != source["dataset_id"]:
-            raise ValueError("rebalance_id must share the size dataset")
+            raise ValueError(f"{proposal_key} must share the size dataset")
         if proposal["screen_id"] != source["screen_id"]:
-            raise ValueError("rebalance_id must share the size screen")
+            raise ValueError(f"{proposal_key} must share the size screen")
         if self._invalidation_hits(screen_id=source["screen_id"], size_id=source["size_id"]):
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
@@ -2272,12 +2284,12 @@ class ResearchStrategyWorkspace:
             "lot_size": lot,
             "max_age_seconds": source["request"].get("max_age_seconds", 86_400),
             "vol_scale": source["request"].get("vol_scale", "1"),
-            "vol_scale_source": "COST_REBALANCE",
+            "vol_scale_source": origin,
             "annualization": source["request"].get("annualization", 252),
             "previous_size_id": source["size_id"],
             "size_turnover_nav": str(turnover_nav),
-            "rebalance_id": proposal["rebalance_id"],
-            "materialized_from": "COST_REBALANCE",
+            proposal_key: proposal_id,
+            "materialized_from": origin,
             "rebalance_mode": (proposal.get("request") or {}).get("mode"),
         }
         body = {
@@ -2287,7 +2299,8 @@ class ResearchStrategyWorkspace:
             "screen_id": source["screen_id"],
             "signal_id": source["signal_id"],
             "previous_size_id": source["size_id"],
-            "rebalance_id": proposal["rebalance_id"],
+            "rebalance_id": proposal_id if origin == "COST_REBALANCE" else None,
+            "factor_rebalance_id": proposal_id if origin == "FACTOR_REBALANCE" else None,
             "findings_id": source.get("findings_id"),
             "calculator_record_id": source.get("calculator_record_id"),
             "source": source["source"],
@@ -2308,7 +2321,7 @@ class ResearchStrategyWorkspace:
                 "net_exposure": str(net / portfolio if portfolio > 0 else Decimal(0)),
                 "capped_names": sum(1 for row in sized if row.get("capped")),
                 "vol_scale": request["vol_scale"],
-                "vol_scale_source": "COST_REBALANCE",
+                "vol_scale_source": origin,
                 "gross_exposure_cap_applied": False,
                 "adv_participation_cap_applied": False,
                 "size_turnover_nav": str(turnover_nav),
@@ -2319,11 +2332,11 @@ class ResearchStrategyWorkspace:
                 "rebalance_actions_traded": actions_traded,
                 "rebalance_actions_skipped": actions_skipped,
                 "rebalance_actions_shrunk": actions_shrunk,
-                "materialized_from": "COST_REBALANCE",
+                "materialized_from": origin,
                 "trading_approved": False,
             },
             "notes": [
-                "Position sizes materialized from a cost-aware rebalance proposal.",
+                "Position sizes materialized from a cost or factor rebalance proposal.",
                 "previous_size_id chains to the proposal size_id for turnover and delta TCA.",
                 "KEEP/TRADE/SKIP/SHRINK notionals are preserved; flat SKIP/KEEP zeros are dropped.",
                 "No broker order, OMS prepare, or trading approval is established.",
