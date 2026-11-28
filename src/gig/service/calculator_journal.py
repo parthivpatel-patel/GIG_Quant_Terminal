@@ -35,6 +35,7 @@ DATASET_BINDINGS = {
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
 SIZE_BINDINGS = frozenset({"historical-var-components"})
 SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
+OPTIONS_BINDINGS = frozenset({"svi-smile"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
     id TEXT PRIMARY KEY,
@@ -207,10 +208,11 @@ class CalculatorJournalWorkspace:
 
     def run(self, payload: dict[str, Any]) -> Contract:
         if not isinstance(payload, dict) or payload.get("operation") not in (
-                "save", "replay", "from-dataset", "from-record", "from-size", "from-screen"):
+                "save", "replay", "from-dataset", "from-record", "from-size", "from-screen",
+                "from-options"):
             raise ValueError(
                 "calculator journal operation must be save, replay, from-dataset, from-record, "
-                "from-size or from-screen")
+                "from-size, from-screen or from-options")
         try:
             if payload["operation"] == "save":
                 fields = _fields(payload, {"operation", "kind", "inputs"}, {"operation", "kind", "inputs"})
@@ -225,6 +227,8 @@ class CalculatorJournalWorkspace:
                 return self._contract(self._from_size(payload))
             if payload["operation"] == "from-screen":
                 return self._contract(self._from_screen(payload))
+            if payload["operation"] == "from-options":
+                return self._contract(self._from_options(payload))
             fields = _fields(payload, {"operation", "record_id"}, {"operation", "record_id"})
             return self._contract(self.journal.replay(fields["record_id"]))
         except FileNotFoundError:
@@ -407,3 +411,55 @@ class CalculatorJournalWorkspace:
             "view_count": len(bound.get("views", [])),
         }
         return self.journal.save(kind, bound, source=source)
+
+    def _from_options(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Bind one expiry of a saved options research run into an SVI smile fit.
+
+        Uses admitted CALL rows with finite IV and log-forward moneyness.
+        Total variance is ``iv**2 * ttm``. Research-only; no OPRA or trading path.
+        """
+        fields = _fields(payload, {"operation", "options_run_id", "kind", "expiry", "inputs"},
+                         {"operation", "options_run_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in OPTIONS_BINDINGS:
+            raise ValueError("calculator cannot be bound to a saved options run")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict) or "log_moneyness" in inputs or "total_variance" in inputs:
+            raise ValueError("calculator inputs must leave log_moneyness and total_variance unbound")
+        from gig.service.options_workspace import OptionsWorkspace
+        options = OptionsWorkspace(self.directory).load(fields["options_run_id"])
+        rows = [row for row in options.get("rows", [])
+                if row.get("right") == "CALL" and row.get("state") == "AVAILABLE"
+                and row.get("implied_volatility") is not None
+                and row.get("log_forward_moneyness") is not None
+                and row.get("ttm") is not None and float(row["ttm"]) > 0]
+        if "expiry" in fields:
+            expiry = fields["expiry"]
+            rows = [row for row in rows if row.get("expiry") == expiry]
+        else:
+            expiries = sorted({row["expiry"] for row in rows})
+            if not expiries:
+                raise ValueError("options run has no admitted CALL smile for SVI")
+            expiry = expiries[0]
+            rows = [row for row in rows if row.get("expiry") == expiry]
+        ordered = sorted(rows, key=lambda row: float(row["log_forward_moneyness"]))
+        if len(ordered) < 5:
+            raise ValueError("SVI binding needs at least five admitted CALL quotes on one expiry")
+        log_moneyness = [float(row["log_forward_moneyness"]) for row in ordered]
+        if len(set(log_moneyness)) != len(log_moneyness):
+            raise ValueError("options smile has duplicate log-moneyness on the selected expiry")
+        total_variance = [
+            float(row["implied_volatility"]) ** 2 * float(row["ttm"]) for row in ordered
+        ]
+        source = {
+            "options_run_id": options["run_id"],
+            "underlying_id": options["underlying_id"],
+            "expiry": expiry,
+            "quotes": len(ordered),
+            "argument": "log_moneyness/total_variance",
+            "extraction": "ADMITTED_CALL_IV_TOTAL_VARIANCE_ONE_EXPIRY",
+            "trading_approved": False,
+            "options_trading_approved": False,
+        }
+        return self.journal.save(kind, {**inputs, "log_moneyness": log_moneyness,
+                                        "total_variance": total_variance}, source=source)

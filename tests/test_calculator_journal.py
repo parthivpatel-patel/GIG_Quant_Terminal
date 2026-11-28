@@ -284,6 +284,45 @@ class DatasetBindingTests(unittest.TestCase):
         self.assertAlmostEqual(sum(parity["data"]["result"]["weights"]), 1.0, places=6)
         self.assertFalse(parity["data"]["trading_approved"])
 
+    def test_from_options_fits_svi_on_admitted_call_slice(self):
+        from gig.options.analytics import black_scholes
+        from gig.service.options_workspace import OptionsWorkspace
+        from test_options_workspace import option_fixture, option_request
+
+        options = OptionsWorkspace(self.root)
+        fixture = option_fixture(underlying_id="US:OPT", source="authored-svi-bind")
+        expiry = next(quote["expiry"] for quote in fixture["quotes"] if quote["right"] == "CALL")
+        event = fixture["event_at"]
+        from gig.timestamps import aware_timestamp
+        ttm = (aware_timestamp(expiry).value - aware_timestamp(event).value) / (365 * 86400 * 1_000_000_000)
+        for strike in (80, 95, 105, 120):
+            mid = float(black_scholes(100, strike, .02, .01, .2, ttm, True)["price"])
+            fixture["quotes"].append({
+                "contract_id": f"SYN100-extra-{strike}-CALL", "expiry": expiry,
+                "strike": strike, "right": "CALL", "multiplier": 100, "style": "EUROPEAN",
+                "bid": mid - .01, "ask": mid + .01, "volume": 10, "open_interest": 100,
+            })
+        calls = [quote for quote in fixture["quotes"]
+                 if quote["right"] == "CALL" and quote["expiry"] == expiry]
+        self.assertGreaterEqual(len(calls), 5)
+        request = option_request(
+            underlying_id="US:OPT", source=fixture["source"],
+            positions=[{"contract_id": calls[0]["contract_id"], "quantity": 1}],
+        )
+        options.ingest(fixture)
+        run = options.run(request).to_dict()
+        self.assertEqual(run["state"], "AVAILABLE", run)
+        fitted = self.workspace.run({
+            "operation": "from-options", "options_run_id": run["data"]["run_id"],
+            "kind": "svi-smile", "expiry": expiry, "inputs": {},
+        }).to_dict()
+        self.assertEqual(fitted["state"], "AVAILABLE", fitted)
+        self.assertFalse(fitted["data"]["trading_approved"])
+        self.assertIn("parameters", fitted["data"]["result"])
+        self.assertEqual(fitted["data"]["source"]["extraction"],
+                         "ADMITTED_CALL_IV_TOTAL_VARIANCE_ONE_EXPIRY")
+        self.assertGreaterEqual(fitted["data"]["source"]["quotes"], 5)
+
 
 if __name__ == "__main__":
     unittest.main()
