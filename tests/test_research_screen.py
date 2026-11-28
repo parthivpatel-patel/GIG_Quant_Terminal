@@ -149,6 +149,39 @@ class ScreenFlowTests(unittest.TestCase):
 
 
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):
+    async def test_discover_allocates_and_prepares_offline_targets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            run = PersistedResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+                "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+            }).to_dict()["data"]
+            transport = httpx.ASGITransport(app=create_app(state_dir=root))
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+                discovered = await client.post("/api/v1/workspace/research-screen", json={
+                    "operation": "from-runs", "run_ids": [run["run_id"]], "now": request["as_of"],
+                    "lookback": 20, "min_ic_observations": 5,
+                    "buy_threshold": 0.0, "sell_threshold": -0.01,
+                })
+                self.assertEqual(discovered.status_code, 200, discovered.text)
+                body = discovered.json()["data"]
+                self.assertEqual(body["discovery"]["operation"], "from-runs")
+                self.assertFalse(body["trading_approved"])
+                alloc = allocation_request("", request["as_of"])
+                del alloc["run_id"]
+                alloc.update(signal_id=body["signal_id"], max_turnover=0.3, max_transaction_cost="100")
+                allocated = await client.post("/api/v1/workspace/research-allocate", json=alloc)
+                self.assertEqual(allocated.status_code, 200, allocated.text)
+                allocation_id = allocated.json()["data"]["allocation_id"]
+                prepared = await client.post("/api/v1/workspace/research-prepare", json={
+                    "allocation_id": allocation_id, "now": request["as_of"],
+                })
+                self.assertEqual(prepared.status_code, 200, prepared.text)
+                self.assertTrue(prepared.json()["data"]["prepared_client_ids"])
+                self.assertFalse(prepared.json()["data"].get("trading_approved", False))
+
     async def test_http_screen_hands_the_signal_to_offline_allocation(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
