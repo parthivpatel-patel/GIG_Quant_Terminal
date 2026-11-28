@@ -2300,11 +2300,11 @@ class ResearchStrategyWorkspace:
                     action = "KEEP" if abs(tgt - prv) == 0 else "TRADE"
                     proposed[name] = tgt
                 else:
-                    est = (Decimal(row["transaction_fees"]) + Decimal(row["spread_cost"])
-                           + Decimal(row["market_impact"]))
+                    trade_est = (Decimal(row["transaction_fees"]) + Decimal(row["spread_cost"])
+                                 + Decimal(row["market_impact"]))
                     weight = abs(weights.get(name, Decimal(0)))
                     budget = weight * alpha_scale * portfolio
-                    if est > budget:
+                    if trade_est > budget:
                         action, skip_reason = "SKIP", "ALPHA_COST_GATE"
                         proposed[name] = prv
                     else:
