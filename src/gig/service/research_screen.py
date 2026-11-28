@@ -277,20 +277,40 @@ class ResearchScreenWorkspace:
         """Fit an ensemble from saved model runs, then label research stances in one step."""
         fields = _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations",
                                    "buy_threshold", "sell_threshold", "previous_screen_id",
-                                   "ttl_seconds"},
-                         {"run_ids", "now"})
-        signal_payload: dict[str, Any] = {"run_ids": fields["run_ids"], "now": fields["now"]}
-        for key in ("lookback", "min_ic_observations"):
-            if key in fields:
-                signal_payload[key] = fields[key]
-        signal_contract = self.signals.run(signal_payload)
+                                   "ttl_seconds", "dataset_id", "mode", "momentum_lookback",
+                                   "reversion_lookback", "momentum_weight", "reversion_weight"},
+                         {"now"})
+        if "run_ids" in fields and "dataset_id" in fields:
+            raise ValueError("provide run_ids or dataset_id, not both")
+        if "dataset_id" in fields:
+            signal_payload = {key: fields[key] for key in fields
+                              if key in {"dataset_id", "now", "mode", "momentum_lookback",
+                                         "reversion_lookback", "momentum_weight", "reversion_weight"}}
+            signal_contract = self.signals.run_from_dataset(signal_payload)
+            discovery_op = "from-dataset"
+        else:
+            if "run_ids" not in fields:
+                raise ValueError("discover requires run_ids or dataset_id")
+            signal_payload = {"run_ids": fields["run_ids"], "now": fields["now"]}
+            for key in ("lookback", "min_ic_observations"):
+                if key in fields:
+                    signal_payload[key] = fields[key]
+            signal_contract = self.signals.run(signal_payload)
+            discovery_op = "from-runs"
         signal = signal_contract.to_dict()
         if signal["state"] != State.AVAILABLE.value or not isinstance(signal.get("data"), dict):
             return signal_contract
+        discovery: dict[str, Any] = {
+            "operation": discovery_op, "scoring_state": signal["data"]["scoring_state"],
+        }
+        if discovery_op == "from-runs":
+            discovery["run_ids"] = list(signal["data"]["run_ids"])
+        else:
+            discovery["dataset_id"] = signal["data"]["dataset_id"]
+            discovery["mode"] = signal["data"]["request"]["mode"]
         screen_payload: dict[str, Any] = {
             "signal_id": signal["data"]["signal_id"],
-            "discovery": {"operation": "from-runs", "run_ids": list(signal["data"]["run_ids"]),
-                          "scoring_state": signal["data"]["scoring_state"]},
+            "discovery": discovery,
             "now": fields["now"],
         }
         for key in ("buy_threshold", "sell_threshold", "previous_screen_id", "ttl_seconds"):
@@ -335,10 +355,13 @@ class ResearchScreenWorkspace:
             request["now"] = aware_timestamp(fields["now"]).isoformat()
         discovery = fields.get("discovery")
         if discovery is not None:
-            if not isinstance(discovery, dict) or discovery.get("operation") != "from-runs":
-                raise ValueError("discovery must record a from-runs operation")
-            if not isinstance(discovery.get("run_ids"), list) or not discovery["run_ids"]:
-                raise ValueError("discovery requires the ensemble run identities")
+            if not isinstance(discovery, dict) or discovery.get("operation") not in {"from-runs", "from-dataset"}:
+                raise ValueError("discovery must record a from-runs or from-dataset operation")
+            if discovery["operation"] == "from-runs":
+                if not isinstance(discovery.get("run_ids"), list) or not discovery["run_ids"]:
+                    raise ValueError("discovery requires the ensemble run identities")
+            elif not isinstance(discovery.get("dataset_id"), str) or not discovery["dataset_id"]:
+                raise ValueError("discovery requires the dataset identity")
         try:
             signal = self.signals.load(str(request["signal_id"]))
             previous = self.load(str(request["previous_screen_id"])) if "previous_screen_id" in request else None
@@ -355,9 +378,18 @@ class ResearchScreenWorkspace:
                 raise ValueError("previous screen must precede the current evaluation time")
         body = build_screen(signal, request, previous)
         if discovery is not None:
-            body["discovery"] = {"operation": "from-runs", "signal_id": signal["signal_id"],
-                                 "run_ids": list(discovery["run_ids"]),
-                                 "scoring_state": discovery.get("scoring_state")}
+            if discovery["operation"] == "from-dataset":
+                body["discovery"] = {
+                    "operation": "from-dataset", "signal_id": signal["signal_id"],
+                    "dataset_id": discovery["dataset_id"], "mode": discovery.get("mode"),
+                    "scoring_state": discovery.get("scoring_state"),
+                }
+            else:
+                body["discovery"] = {
+                    "operation": "from-runs", "signal_id": signal["signal_id"],
+                    "run_ids": list(discovery["run_ids"]),
+                    "scoring_state": discovery.get("scoring_state"),
+                }
         identity = _hash(body)
         document = {**body, "screen_id": identity}
         result = self._contract(document)

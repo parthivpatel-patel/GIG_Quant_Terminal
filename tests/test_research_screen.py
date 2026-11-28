@@ -93,6 +93,24 @@ class ScreenFlowTests(unittest.TestCase):
         }).to_dict()["data"]
         self.screens = ResearchScreenWorkspace(self.base)
 
+    def test_discover_from_dataset_factor_ranks(self):
+        discovered = self.screens.discover({
+            "dataset_id": self.dataset["dataset_id"], "now": self.now,
+            "mode": "momentum", "momentum_lookback": 10, "reversion_lookback": 5,
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()
+        EnvelopeSchema.model_validate(discovered)
+        self.assertEqual(discovered["state"], "AVAILABLE", discovered)
+        self.assertEqual(discovered["data"]["discovery"]["operation"], "from-dataset")
+        self.assertTrue(discovered["data"]["opportunity_ranking"])
+        self.assertFalse(discovered["data"]["trading_approved"])
+        signal = SignalWorkspace(self.base).load(discovered["data"]["signal_id"])
+        self.assertEqual(signal["schema_version"], "cs-factor-rank-v1")
+        self.assertTrue(all(
+            row["prediction_kind"] == "CROSS_SECTIONAL_FACTOR_CENTERED_RANK_SCORE"
+            for row in signal["rows"]
+        ))
+
     def test_enrich_mentions_matches_exchange_qualified_symbols(self):
         screen = self.screens.run({
             "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,

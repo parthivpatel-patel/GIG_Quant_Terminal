@@ -132,6 +132,9 @@ class CycleServices:
         return SignalWorkspace(self.workspace.base_dir)
 
     def research_signals(self, payload: dict[str, Any]) -> Contract:
+        if isinstance(payload, dict) and payload.get("operation") == "from-dataset":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._signals().run_from_dataset(body)
         return self._signals().run(payload)
 
     def signals_replay(self, payload: dict[str, Any]) -> Contract:
@@ -142,7 +145,7 @@ class CycleServices:
         return ResearchScreenWorkspace(self.workspace.base_dir)
 
     def research_screen(self, payload: dict[str, Any]) -> Contract:
-        if isinstance(payload, dict) and payload.get("operation") == "from-runs":
+        if isinstance(payload, dict) and payload.get("operation") in {"from-runs", "from-dataset"}:
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().discover(body)
         if isinstance(payload, dict) and payload.get("operation") == "link-options":

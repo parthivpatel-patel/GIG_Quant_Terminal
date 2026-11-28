@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from gig.artifacts import write_immutable
+from gig.research.factor_screen import FACTOR_SCHEMA, score_factor_dataset
 from gig.research.model_pipeline import integer, sha256
 from gig.service.contracts import Contract, State
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
@@ -20,6 +21,7 @@ from gig.service.workspace import TerminalWorkspace, _age, _fields
 from gig.timestamps import aware_timestamp
 
 IMPLEMENTATION = "pit-oos-rank-ic-v1"
+SCHEMAS = frozenset({IMPLEMENTATION, FACTOR_SCHEMA})
 
 
 def _hash(value):
@@ -131,14 +133,41 @@ class SignalWorkspace:
 
     @staticmethod
     def _contract(document, state=State.AVAILABLE):
-        return Contract.admit(state, {**document, "title": "Unapproved IC-aware research ensemble"}
+        schema = document.get("schema_version", IMPLEMENTATION)
+        title = ("Unapproved cross-sectional factor research ranks"
+                 if schema == FACTOR_SCHEMA else "Unapproved IC-aware research ensemble")
+        evidence = ("HASH_VERIFIED_CS_FACTOR_RESEARCH"
+                    if schema == FACTOR_SCHEMA else "HASH_VERIFIED_PIT_OOS_RESEARCH")
+        return Contract.admit(state, {**document, "title": title}
             if state in {State.AVAILABLE, State.STALE} else None, source=document["source"],
             classification="MODEL_ESTIMATE", as_of=document["as_of"], scope="workspace.research-signals",
             source_identity=document["dataset_id"], model_identity=document["signal_id"],
-            model_version=IMPLEMENTATION, evidence_state="HASH_VERIFIED_PIT_OOS_RESEARCH", readiness="RESEARCH_ONLY")
+            model_version=schema, evidence_state=evidence, readiness="RESEARCH_ONLY")
+
+    def _persist(self, body: dict[str, Any]) -> Contract:
+        identity = _hash(body)
+        document = {**body, "signal_id": identity}
+        result = self._contract(document)
+        self._path("runs").mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(self._path("signals.sqlite")) as connection:
+            connection.execute("PRAGMA synchronous=FULL")
+            connection.execute("CREATE TABLE IF NOT EXISTS signals(identity TEXT PRIMARY KEY,as_of TEXT NOT NULL)")
+            count = connection.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
+            old = connection.execute("SELECT as_of FROM signals WHERE identity=?", (identity,)).fetchone()
+            if old is not None and old[0] != document["as_of"]:
+                raise ValueError("signal index conflicts with immutable evidence")
+            if old is None and count >= 1000:
+                raise ValueError("signal registry exceeds retention bound")
+            write_immutable(self._path("runs/" + identity + ".json"), dumps(document).encode())
+            connection.execute("INSERT OR IGNORE INTO signals VALUES(?,?)", (identity, document["as_of"]))
+        return result
 
     def run(self, payload: dict[str, Any]) -> Contract:
-        _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations"}, {"run_ids", "now"})
+        if isinstance(payload, dict) and payload.get("operation") == "from-dataset":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self.run_from_dataset(body)
+        _fields(payload, {"run_ids", "now", "lookback", "min_ic_observations", "operation"},
+                {"run_ids", "now"})
         ids = payload["run_ids"]
         if not isinstance(ids, list) or not 1 <= len(ids) <= 8 or len(set(ids)) != len(ids):
             raise ValueError("one to eight distinct saved run identities required")
@@ -157,35 +186,46 @@ class SignalWorkspace:
                 scope="workspace.research-signals", error=public_error("DATA_UNAVAILABLE"))
         if any(not r["usable_for_portfolio"] or aware_timestamp(r["as_of"]) > aware_timestamp(request["now"]) for r in runs):
             raise ValueError("run is unavailable at this time or is not an eligible forecasting/ranking model")
-        body = score_runs(runs, dataset, request)
-        identity = _hash(body)
-        document = {**body, "signal_id": identity}
-        result = self._contract(document)
-        self._path("runs").mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self._path("signals.sqlite")) as connection:
-            connection.execute("PRAGMA synchronous=FULL")
-            connection.execute("CREATE TABLE IF NOT EXISTS signals(identity TEXT PRIMARY KEY,as_of TEXT NOT NULL)")
-            count = connection.execute("SELECT COUNT(*) FROM signals").fetchone()[0]
-            old = connection.execute("SELECT as_of FROM signals WHERE identity=?", (identity,)).fetchone()
-            if old is not None and old[0] != document["as_of"]:
-                raise ValueError("signal index conflicts with immutable evidence")
-            if old is None and count >= 1000:
-                raise ValueError("signal registry exceeds retention bound")
-            write_immutable(self._path("runs/" + identity + ".json"), dumps(document).encode())
-            connection.execute("INSERT OR IGNORE INTO signals VALUES(?,?)", (identity, document["as_of"]))
-        return result
+        return self._persist(score_runs(runs, dataset, request))
+
+    def run_from_dataset(self, payload: dict[str, Any]) -> Contract:
+        """Cross-sectional momentum / mean-reversion ranks from a saved return panel."""
+        fields = _fields(payload, {"dataset_id", "now", "mode", "momentum_lookback", "reversion_lookback",
+                                   "momentum_weight", "reversion_weight"},
+                         {"dataset_id", "now"})
+        request = {
+            "dataset_id": sha256(fields["dataset_id"]),
+            "now": aware_timestamp(fields["now"]).isoformat(),
+            "mode": fields.get("mode", "blend"),
+            "momentum_lookback": integer(fields.get("momentum_lookback", 20), 2, 252, "momentum_lookback"),
+            "reversion_lookback": integer(fields.get("reversion_lookback", 5), 2, 60, "reversion_lookback"),
+            "momentum_weight": float(fields.get("momentum_weight", 0.5)),
+            "reversion_weight": float(fields.get("reversion_weight", 0.5)),
+        }
+        try:
+            dataset = PersistedDatasetWorkspace(self.base_dir).load(request["dataset_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-signals",
+                                  classification="UNAVAILABLE", scope="workspace.research-signals",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._persist(score_factor_dataset(dataset, request))
 
     def load(self, signal_id: str) -> dict[str, Any]:
         identity = sha256(signal_id)
         document = loads(self._path("runs/" + identity + ".json").read_bytes())
         body = {k: v for k, v in document.items() if k != "signal_id"}
-        if document.get("signal_id") != identity or _hash(body) != identity or body.get("schema_version") != IMPLEMENTATION:
+        schema = body.get("schema_version")
+        if document.get("signal_id") != identity or _hash(body) != identity or schema not in SCHEMAS:
             raise ValueError("signal artifact integrity mismatch")
         with sqlite3.connect(self._path("signals.sqlite").as_uri() + "?mode=ro", uri=True) as connection:
             row = connection.execute("SELECT as_of FROM signals WHERE identity=?", (identity,)).fetchone()
         if row is None or row[0] != document["as_of"]:
             raise ValueError("signal index differs from preserved artifact")
         dataset = PersistedDatasetWorkspace(self.base_dir).load(document["dataset_id"])
+        if schema == FACTOR_SCHEMA:
+            if score_factor_dataset(dataset, document["request"]) != body:
+                raise ValueError("signal evidence differs from deterministic replay")
+            return document
         runs = [PersistedResearchWorkspace(self.base_dir).load(i) for i in document["run_ids"]]
         if score_runs(runs, dataset, document["request"]) != body:
             raise ValueError("signal evidence differs from deterministic replay")

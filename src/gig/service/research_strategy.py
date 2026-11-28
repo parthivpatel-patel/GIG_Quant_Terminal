@@ -630,6 +630,10 @@ class ResearchStrategyWorkspace:
             if scale > Decimal("10"):
                 raise ValueError("vol_scale exceeds the research bound")
             scale_source = "CALLER"
+        if any(row.get("expiration_state") == "EXPIRED" for row in screen["rows"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
         actionable = [row for row in screen["rows"] if float(row["research_weight"]) != 0.0]
         if not actionable:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
