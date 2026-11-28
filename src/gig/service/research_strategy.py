@@ -1457,12 +1457,15 @@ class ResearchStrategyWorkspace:
                         if signed == 0:
                             continue
                         notional = abs(signed)
-                        price = Decimal(marks[name]["price"]) if name in marks else None
-                        if price is None:
+                        if name in marks:
+                            price = Decimal(marks[name]["price"])
+                            price_asof = marks[name]["as_of"]
+                        else:
                             # Fall back to previous mark when a closed name lacks a current mark.
-                            prior_row = next(row for row in previous_size["rows"]
-                                             if row["instrument_id"] == name)
-                            price = Decimal(prior_row["reference_price"])
+                            prior_mark = next(row for row in previous_size["rows"]
+                                              if row["instrument_id"] == name)
+                            price = Decimal(prior_mark["reference_price"])
+                            price_asof = previous_size["as_of"]
                         quantity = int(Fraction(notional) / Fraction(price) / Fraction(lot)) * lot
                         if quantity <= 0:
                             continue
@@ -1474,7 +1477,7 @@ class ResearchStrategyWorkspace:
                             "uncapped_notional": str(notional),
                             "capped": False,
                             "reference_price": str(price),
-                            "price_asof": marks[name]["as_of"] if name in marks else previous_size["as_of"],
+                            "price_asof": price_asof,
                             "trading_approved": False,
                         }
                         blended.append({
