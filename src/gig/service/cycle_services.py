@@ -181,6 +181,12 @@ class CycleServices:
         if isinstance(payload, dict) and payload.get("operation") == "enrich-mentions-replay":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().replay_enrichment(body)
+        if isinstance(payload, dict) and payload.get("operation") == "annotate-fi-findings":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().annotate_fi_findings(body)
+        if isinstance(payload, dict) and payload.get("operation") == "annotate-fi-findings-replay":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().replay_fi_findings(body)
         return self._screens().run(payload)
 
     def screen_replay(self, payload: dict[str, Any]) -> Contract:

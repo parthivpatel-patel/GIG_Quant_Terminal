@@ -27,6 +27,9 @@ OPTIONS_LINK = "gig.research-screen.options-link.v1"
 OPTIONS_SCAN = "gig.research-screen.options-scan.v1"
 OPTIONS_STRUCTURES = "gig.research-screen.options-structures.v1"
 FI_ENRICH = "gig.research-screen.fi-enrich.v1"
+FI_FINDINGS = "gig.research-screen.fi-findings.v1"
+_FI_FINDINGS_POLICIES = frozenset({"annotate", "gate-hold", "weight-adjust"})
+_FI_FINDINGS_OPS = frozenset({"investigation", "watch-check", "entity-graph"})
 STANCES = ("RESEARCH_BUY", "RESEARCH_HOLD", "RESEARCH_SELL")
 EVENTS = ("ENTER_LONG", "EXIT_LONG", "ENTER_SHORT", "EXIT_SHORT", "CONTINUE", "FLIP", "ENTER_HOLD")
 OPTION_CANDIDATES = ("RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE", "RESEARCH_NO_OPTION_MATCH",
@@ -1030,3 +1033,249 @@ class ResearchScreenWorkspace:
             evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_FI_ENRICHMENT",
             readiness="RESEARCH_ONLY",
         )
+
+    def annotate_fi_findings(self, payload: dict[str, Any]) -> Contract:
+        """Annotate a research screen from a saved FI investigation, watch-check, or entity-graph.
+
+        Policies may annotate lineage only, gate matched names to RESEARCH_HOLD on
+        structural evidence, or multiplicatively demote weights from mention counts.
+        The original screen is never rewritten. Director binding stays NOT_BOUND.
+        """
+        fields = _fields(payload, {"screen_id", "investigation_id", "watch_check_id",
+                                   "entity_graph_id", "nlp_profile", "policy",
+                                   "weight_demote"},
+                         {"screen_id"})
+        sources = [key for key in ("investigation_id", "watch_check_id", "entity_graph_id")
+                   if key in fields]
+        if len(sources) != 1:
+            raise ValueError(
+                "annotate-fi-findings requires exactly one of investigation_id, "
+                "watch_check_id, or entity_graph_id")
+        policy = fields.get("policy", "annotate")
+        if policy not in _FI_FINDINGS_POLICIES:
+            raise ValueError("policy must be annotate, gate-hold, or weight-adjust")
+        profile = fields.get("nlp_profile", "v1")
+        if profile not in {"v1", "v2"}:
+            raise ValueError("nlp_profile must be v1 or v2")
+        demote = float(fields.get("weight_demote", 0.85))
+        if not 0.1 <= demote <= 1.0:
+            raise ValueError("weight_demote must lie in [0.1, 1.0]")
+        try:
+            screen = self.load(fields["screen_id"])
+            from gig.financial_intelligence import nlp
+            from gig.financial_intelligence import research as fi_research
+            from gig.service.financial_workspace import FinancialIntelligenceWorkspace
+            corpus = FinancialIntelligenceWorkspace(self.base_dir).corpus
+            record_id = fields[sources[0]]
+            record = fi_research.load(corpus, record_id)
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen.fi",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        operation = record.get("operation")
+        expected = {"investigation_id": "investigation", "watch_check_id": "watch-check",
+                    "entity_graph_id": "entity-graph"}[sources[0]]
+        if operation != expected or operation not in _FI_FINDINGS_OPS:
+            raise ValueError(f"{sources[0]} must reference a saved {expected} record")
+
+        entity_mentions: list[dict[str, Any]] = []
+        evidence_docs: list[str] = []
+        structural_gates: dict[str, str] = {}
+        alert_changed = False
+
+        if operation == "entity-graph":
+            for node in record.get("nodes") or []:
+                if not isinstance(node, dict) or not isinstance(node.get("mention"), str):
+                    continue
+                entity_mentions.append({
+                    "mention": node["mention"],
+                    "link_state": node.get("link_state", "UNKNOWN_NO_ISSUER_AUTHORITY"),
+                    "passage_mentions": node.get("passage_mentions", 0),
+                    "document_ids": list(node.get("document_ids") or []),
+                })
+            evidence_docs = list(record.get("document_ids") or [])
+        elif operation == "investigation":
+            evidence_docs = sorted({
+                reviewed["document_id"]
+                for reviewed in (record.get("documents_reviewed") or [])
+                if isinstance(reviewed, dict) and isinstance(reviewed.get("document_id"), str)
+            })
+            for document_id in evidence_docs:
+                try:
+                    admitted = corpus.document(document_id)
+                except FileNotFoundError:
+                    continue
+                extracted = nlp.extract(admitted["passages"], profile=profile)
+                for mention in extracted.get("entity_mentions", []):
+                    if isinstance(mention, dict):
+                        entity_mentions.append(mention)
+            inconsistent = {
+                reviewed["document_id"]
+                for reviewed in (record.get("documents_reviewed") or [])
+                if isinstance(reviewed, dict) and reviewed.get("inconsistent_checks")
+            }
+            unanswered = list(record.get("unanswered_questions") or [])
+            if unanswered:
+                structural_gates["UNANSWERED_QUESTIONS"] = f"{len(unanswered)} unanswered"
+            if inconsistent:
+                structural_gates["INCONSISTENT_STATEMENTS"] = (
+                    f"{len(inconsistent)} reviewed documents with INCONSISTENT checks")
+        else:  # watch-check
+            alert_changed = record.get("alert_state") == "CHANGED"
+            evidence_docs = list(record.get("new_document_ids") or [])
+            for document_id in evidence_docs:
+                try:
+                    admitted = corpus.document(document_id)
+                except FileNotFoundError:
+                    continue
+                extracted = nlp.extract(admitted["passages"], profile=profile)
+                for mention in extracted.get("entity_mentions", []):
+                    if isinstance(mention, dict):
+                        entity_mentions.append(mention)
+            if alert_changed and evidence_docs:
+                structural_gates["WATCH_ALERT_CHANGED"] = "watch-check alert_state=CHANGED"
+
+        matches = match_mentions(screen["rows"], entity_mentions)
+        mention_counts: dict[str, int] = {}
+        evidence_by_name: dict[str, list[dict[str, Any]]] = {}
+        for match in matches:
+            name = match["instrument_id"]
+            mention_counts[name] = mention_counts.get(name, 0) + 1
+            evidence_by_name.setdefault(name, []).append({
+                "mention": match["mention"],
+                "link_state": match["link_state"],
+                "evidence_record_id": record["record_id"],
+                "evidence_operation": operation,
+                "trading_approved": False,
+            })
+
+        rows_out: list[dict[str, Any]] = []
+        gated = 0
+        adjusted = 0
+        for row in screen["rows"]:
+            name = row["instrument_id"]
+            base_stance = row["stance"]
+            base_weight = float(row["research_weight"])
+            evidence = evidence_by_name.get(name, [])
+            stance_override = None
+            adjusted_weight = None
+            gate_reason = None
+            if evidence and policy == "gate-hold" and structural_gates:
+                stance_override = "RESEARCH_HOLD"
+                gate_reason = sorted(structural_gates)[0]
+                gated += 1
+            if evidence and policy == "weight-adjust":
+                hits = mention_counts.get(name, 0)
+                factor = demote ** min(hits, 8)
+                adjusted_weight = float(base_weight) * float(factor)
+                adjusted += 1
+            rows_out.append({
+                "instrument_id": name,
+                "base_stance": base_stance,
+                "base_research_weight": base_weight,
+                "evidence": evidence,
+                "mention_count": mention_counts.get(name, 0),
+                "stance_override": stance_override,
+                "adjusted_weight": adjusted_weight,
+                "gate_reason": gate_reason,
+                "link_state": (evidence[0]["link_state"] if evidence
+                               else "UNKNOWN_NO_ISSUER_AUTHORITY"),
+                "trading_approved": False,
+            })
+
+        body = {
+            "schema_version": FI_FINDINGS,
+            "as_of": screen["as_of"],
+            "screen_id": screen["screen_id"],
+            "dataset_id": screen["dataset_id"],
+            "signal_id": screen["signal_id"],
+            "evidence_kind": operation,
+            "evidence_record_id": record["record_id"],
+            "evidence_document_ids": evidence_docs,
+            "source": screen["source"],
+            "input_classification": screen["input_classification"],
+            "evidence_classification": record.get("classification", "UNKNOWN"),
+            "nlp_profile": profile,
+            "policy": policy,
+            "request": {
+                "policy": policy,
+                "weight_demote": demote if policy == "weight-adjust" else None,
+                "source_field": sources[0],
+            },
+            "structural_gates": structural_gates,
+            "rows": rows_out,
+            "director_binding_state": "NOT_BOUND_HUMAN_APPROVED_OBJECTIVE_REQUIRED",
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "usable_for_portfolio": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {
+                "names": len(rows_out),
+                "matched": sum(1 for row in rows_out if row["mention_count"] > 0),
+                "gated": gated,
+                "adjusted": adjusted,
+                "entity_mention_count": len(entity_mentions),
+                "trading_approved": False,
+            },
+            "notes": [
+                "FI findings annotate a research screen from saved investigate, watch-check, or entity-graph records.",
+                "Matches are lexical only; issuer identity and trading approval stay unestablished.",
+                "gate-hold requires structural evidence (unanswered questions, inconsistent statements, or CHANGED watch).",
+                "weight-adjust demotes research_weight by weight_demote^min(hits,8); weights stay uncalibrated.",
+                "The original screen artifact is not rewritten.",
+                "director_binding_state remains NOT_BOUND_HUMAN_APPROVED_OBJECTIVE_REQUIRED.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "findings_id": identity}
+        self._path("fi-findings").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("fi-findings/" + identity + ".json"), dumps(document).encode())
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved FI findings annotation of a research screen"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.fi",
+            source_identity=document["dataset_id"],
+            model_identity=identity,
+            model_version=FI_FINDINGS,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_FI_FINDINGS",
+            readiness="RESEARCH_ONLY",
+        )
+
+    def load_fi_findings(self, findings_id: str) -> dict[str, Any]:
+        identity = sha256(findings_id)
+        path = self._path("fi-findings/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research screen FI findings unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "findings_id"}
+        if (document.get("findings_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != FI_FINDINGS):
+            raise ValueError("FI findings artifact integrity mismatch")
+        return document
+
+    def replay_fi_findings(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"findings_id"}, {"findings_id"})
+        try:
+            document = self.load_fi_findings(payload["findings_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
+                                  classification="UNAVAILABLE", scope="workspace.research-screen.fi",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return Contract.admit(
+            State.AVAILABLE,
+            {**document, "title": "Unapproved FI findings annotation of a research screen"},
+            source=document["source"],
+            classification="MODEL_ESTIMATE",
+            as_of=document["as_of"],
+            scope="workspace.research-screen.fi",
+            source_identity=document["dataset_id"],
+            model_identity=document["findings_id"],
+            model_version=FI_FINDINGS,
+            evidence_state="HASH_VERIFIED_RESEARCH_SCREEN_FI_FINDINGS",
+            readiness="RESEARCH_ONLY",
+        )
+
