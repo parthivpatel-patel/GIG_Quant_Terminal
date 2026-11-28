@@ -318,6 +318,19 @@ class StrategyTests(unittest.TestCase):
         self.assertIn("scheduled_shares", participation["data"]["result"])
         self.assertEqual(participation["data"]["source"]["extraction"],
                          "RESEARCH_SIZE_LARGEST_NAME_PARTICIPATION_SCHEDULE")
+        shortfall = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "shortfall-simulation", "adv_lookback_bars": 20,
+            "inputs": {
+                "intervals": 5, "interval": 1, "temporary_impact": 2.5e-6,
+                "permanent_impact": 2.5e-7, "paths": 200, "seed": 7,
+            },
+        }).to_dict()
+        self.assertEqual(shortfall["state"], "AVAILABLE", shortfall)
+        self.assertFalse(shortfall["data"]["trading_approved"])
+        self.assertIn("mean", shortfall["data"]["result"])
+        self.assertEqual(shortfall["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_SHORTFALL_SIMULATION")
 
     def test_cycle_can_attach_pretrade_cost_estimate(self):
         with tempfile.TemporaryDirectory() as directory:

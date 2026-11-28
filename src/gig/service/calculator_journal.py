@@ -35,6 +35,7 @@ DATASET_BINDINGS = {
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
 SIZE_BINDINGS = frozenset({
     "historical-var-components", "liquidity-var", "almgren-chriss", "participation-schedule",
+    "shortfall-simulation",
 })
 SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
 OPTIONS_BINDINGS = frozenset({"svi-smile", "option-greeks-advanced"})
@@ -299,9 +300,10 @@ class CalculatorJournalWorkspace:
         """Bind research position sizes into risk or execution calculators.
 
         ``historical-var-components`` uses signed size weights over the aligned
-        return panel. ``liquidity-var``, ``almgren-chriss``, and
-        ``participation-schedule`` bind the largest absolute name using panel
-        ADV/volume and return volatility. No order path.
+        return panel. ``liquidity-var``, ``almgren-chriss``,
+        ``participation-schedule``, and ``shortfall-simulation`` bind the
+        largest absolute name using panel ADV/volume and return volatility.
+        No order path.
         """
         fields = _fields(payload, {"operation", "size_id", "kind", "field", "inputs",
                                    "adv_lookback_bars", "instrument_id"},
@@ -429,6 +431,25 @@ class CalculatorJournalWorkspace:
                 **inputs,
             }
             extraction = "RESEARCH_SIZE_LARGEST_NAME_PARTICIPATION_SCHEDULE"
+        elif kind == "shortfall-simulation":
+            if any(key in inputs for key in ("trades", "volatility")):
+                raise ValueError("calculator inputs must leave trades and volatility unbound")
+            intervals = inputs.get("intervals", 5)
+            if isinstance(intervals, bool) or not isinstance(intervals, int) or not 1 <= intervals <= 64:
+                raise ValueError("shortfall-simulation binding needs intervals in [1, 64]")
+            whole_shares = int(float(selected["quantity"]))
+            if whole_shares < intervals:
+                raise ValueError("shortfall-simulation needs quantity at least equal to intervals")
+            base, rem = divmod(whole_shares, intervals)
+            trades = [base + (1 if index < rem else 0) for index in range(intervals)]
+            bound = {
+                "trades": trades,
+                "volatility": volatility * price,
+                **{key: value for key, value in inputs.items() if key != "intervals"},
+            }
+            if "interval" not in bound or "temporary_impact" not in bound:
+                raise ValueError("shortfall-simulation binding requires interval and temporary_impact")
+            extraction = "RESEARCH_SIZE_LARGEST_NAME_SHORTFALL_SIMULATION"
         else:
             if any(key in inputs for key in ("shares", "volatility")):
                 raise ValueError("calculator inputs must leave shares and volatility unbound")

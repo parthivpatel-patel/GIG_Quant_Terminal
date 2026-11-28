@@ -993,6 +993,7 @@ class ResearchStrategyWorkspace:
             "watch_id": result.get("watch_id"),
             "screen_id": result.get("screen_id"),
             "size_id": result.get("size_id"),
+            "cost_id": result.get("cost_id"),
             "strategy_id": result.get("strategy_id"),
             "source": result.get("source", plan["source"]),
             "input_classification": result.get("input_classification", plan["input_classification"]),
@@ -1003,11 +1004,13 @@ class ResearchStrategyWorkspace:
             "metrics": {
                 "tick_index": completed,
                 "prepared_orders": (result.get("metrics") or {}).get("prepared_orders"),
+                "estimated_cost_nav": (result.get("metrics") or {}).get("estimated_cost_nav"),
                 "trading_approved": False,
             },
             "notes": [
                 "Schedule tick executed one research cycle or watch pass under an explicit clock.",
                 "next_due advances by cadence_seconds from the tick clock.",
+                "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
                 "No background scheduler or trading approval is established.",
             ],
         }
