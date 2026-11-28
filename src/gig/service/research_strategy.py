@@ -900,8 +900,10 @@ class ResearchStrategyWorkspace:
             body["dataset_id"] = sha256(request["dataset_id"])
         elif isinstance(request.get("run_ids"), list) and request["run_ids"]:
             body["dataset_id"] = sha256("|".join(sorted(sha256(i) for i in request["run_ids"])))
+        elif isinstance(request.get("signal_ids"), list) and request["signal_ids"]:
+            body["dataset_id"] = _hash(sorted(sha256(i) for i in request["signal_ids"]))
         else:
-            body["dataset_id"] = sha256(dumps({"action": action, "request": request}))
+            body["dataset_id"] = _hash({"action": action, "request": request})
         identity = _hash(body)
         document = {**body, "schedule_id": identity}
         self._path("schedules").mkdir(parents=True, exist_ok=True)
@@ -965,6 +967,9 @@ class ResearchStrategyWorkspace:
                 readiness="RESEARCH_ONLY",
             )
         request = {**plan["request"], "now": clock.isoformat()}
+        # Chain the prior tick size so later cycles/watches measure turnover and delta TCA.
+        if "previous_size_id" not in request and plan.get("last_size_id"):
+            request["previous_size_id"] = plan["last_size_id"]
         if plan["action"] == "cycle":
             executed = self.cycle(request).to_dict()
         else:
@@ -993,6 +998,7 @@ class ResearchStrategyWorkspace:
             "watch_id": result.get("watch_id"),
             "screen_id": result.get("screen_id"),
             "size_id": result.get("size_id"),
+            "previous_size_id": request.get("previous_size_id"),
             "cost_id": result.get("cost_id"),
             "strategy_id": result.get("strategy_id"),
             "source": result.get("source", plan["source"]),
@@ -1005,11 +1011,13 @@ class ResearchStrategyWorkspace:
                 "tick_index": completed,
                 "prepared_orders": (result.get("metrics") or {}).get("prepared_orders"),
                 "estimated_cost_nav": (result.get("metrics") or {}).get("estimated_cost_nav"),
+                "size_chained": bool(request.get("previous_size_id")),
                 "trading_approved": False,
             },
             "notes": [
                 "Schedule tick executed one research cycle or watch pass under an explicit clock.",
                 "next_due advances by cadence_seconds from the tick clock.",
+                "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
                 "No background scheduler or trading approval is established.",
             ],
@@ -1024,6 +1032,8 @@ class ResearchStrategyWorkspace:
             "ticks_completed": completed,
             "next_due": next_due,
             "last_tick_id": identity,
+            "last_size_id": result.get("size_id"),
+            "last_cost_id": result.get("cost_id"),
         }
         pointer_path = self._path("schedules/" + plan["schedule_id"] + ".pointer.json")
         pointer_path.write_bytes(dumps(pointer).encode())
@@ -1040,7 +1050,9 @@ class ResearchStrategyWorkspace:
             if pointer.get("schedule_id") != plan["schedule_id"]:
                 raise ValueError("schedule pointer integrity mismatch")
             return {**plan, "ticks_completed": pointer["ticks_completed"],
-                    "next_due": pointer["next_due"], "last_tick_id": pointer.get("last_tick_id")}
+                    "next_due": pointer["next_due"], "last_tick_id": pointer.get("last_tick_id"),
+                    "last_size_id": pointer.get("last_size_id"),
+                    "last_cost_id": pointer.get("last_cost_id")}
         return plan
 
     def due_schedules(self, payload: dict[str, Any]) -> Contract:
@@ -1779,12 +1791,10 @@ class ResearchStrategyWorkspace:
             total_fees += fees
             total_spread += spread_cost
             total_impact += impact_cost
-        if not rows_out:
-            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
-                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
-                                  error=public_error("DATA_UNAVAILABLE"))
         total_cost = total_fees + total_spread + total_impact
-        turnover_nav = total_notional / Decimal(2) / portfolio
+        turnover_nav = (total_notional / Decimal(2) / portfolio) if portfolio > 0 else Decimal(0)
+        # A zero-delta book is an AVAILABLE zero-cost estimate (no rebalance trades),
+        # not an unavailable research artifact — schedule ticks rely on this.
         body = {
             "schema_version": COST,
             "as_of": at.isoformat(),

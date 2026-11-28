@@ -592,6 +592,58 @@ class StrategyTests(unittest.TestCase):
             remaining = batch_ws.due_schedules({"now": batch_now, "limit": 8}).to_dict()
             self.assertEqual(remaining["data"]["metrics"]["due"], 1)
 
+    def test_schedule_ticks_chain_previous_size_for_delta_cost(self):
+        # Watch ticks avoid OMS prepare conflicts across ticks while still chaining sizes.
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 2,
+            "now": self.now, "request": watch_request,
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        schedule_id = planned["data"]["schedule_id"]
+        first = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": self.now,
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        self.assertTrue(first["data"]["size_id"])
+        self.assertIsNone(first["data"]["previous_size_id"])
+        self.assertFalse(first["data"]["metrics"]["size_chained"])
+        open_cost = self.strategies.estimate_cost({
+            "size_id": first["data"]["size_id"], "now": self.now, "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(open_cost["state"], "AVAILABLE", open_cost)
+        self.assertEqual(open_cost["data"]["request"]["trade_basis"], "OPEN_FROM_FLAT")
+        second_now = (pd.Timestamp(self.now) + pd.Timedelta(hours=1)).isoformat()
+        second = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": second_now,
+        }).to_dict()
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        self.assertEqual(second["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertTrue(second["data"]["metrics"]["size_chained"])
+        delta = self.strategies.estimate_cost({
+            "size_id": second["data"]["size_id"], "now": second_now,
+            "previous_size_id": first["data"]["size_id"], "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(delta["state"], "AVAILABLE", delta)
+        self.assertEqual(delta["data"]["request"]["trade_basis"], "DELTA_VS_PREVIOUS")
+        self.assertEqual(delta["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertFalse(second["data"]["trading_approved"])
+        state = self.strategies.load_schedule_state(schedule_id)
+        self.assertEqual(state["last_size_id"], second["data"]["size_id"])
+        self.assertEqual(int(state["ticks_completed"]), 2)
+
     def test_watch_monitors_sizes_and_optionally_scans(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)
