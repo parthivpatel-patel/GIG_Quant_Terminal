@@ -323,6 +323,49 @@ class DatasetBindingTests(unittest.TestCase):
                          "ADMITTED_CALL_IV_TOTAL_VARIANCE_ONE_EXPIRY")
         self.assertGreaterEqual(fitted["data"]["source"]["quotes"], 5)
 
+    def test_from_size_record_runs_conditional_stress(self):
+        from gig.service.persisted_research import PersistedResearchWorkspace
+        from gig.service.research_screen import ResearchScreenWorkspace
+        from gig.service.research_strategy import ResearchStrategyWorkspace
+        from gig.service.signal_workspace import SignalWorkspace
+        from test_persisted_flow_http import seed_flow
+
+        request = seed_flow(self.root)
+        dataset = PersistedDatasetWorkspace(self.root).build(request).to_dict()["data"]
+        run = PersistedResearchWorkspace(self.root).run({
+            "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+            "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+        }).to_dict()["data"]
+        signal = SignalWorkspace(self.root).run({
+            "run_ids": [run["run_id"]], "now": request["as_of"],
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        screen = ResearchScreenWorkspace(self.root).run({
+            "signal_id": signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        sized = ResearchStrategyWorkspace(self.root).size({
+            "screen_id": screen["screen_id"], "now": request["as_of"],
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        instruments = [row["instrument_id"] for row in sized["data"]["rows"][:2]]
+        self.assertEqual(len(instruments), 2)
+        covariance = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": dataset["dataset_id"],
+            "kind": "ledoit-wolf", "instruments": instruments, "field": "return_1", "inputs": {},
+        }).to_dict()["data"]
+        stressed = self.workspace.run({
+            "operation": "from-size-record", "size_id": sized["data"]["size_id"],
+            "record_id": covariance["record_id"], "kind": "conditional-stress",
+            "inputs": {"shocked_assets": [0], "shocks": [-0.05]},
+        }).to_dict()
+        self.assertEqual(stressed["state"], "AVAILABLE", stressed)
+        self.assertFalse(stressed["data"]["trading_approved"])
+        self.assertIn("portfolio_return", stressed["data"]["result"])
+        self.assertEqual(stressed["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_WEIGHTS_PINNED_LEDOIT_WOLF_COVARIANCE")
+
 
 if __name__ == "__main__":
     unittest.main()

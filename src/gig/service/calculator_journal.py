@@ -36,6 +36,7 @@ COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversific
 SIZE_BINDINGS = frozenset({"historical-var-components"})
 SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
 OPTIONS_BINDINGS = frozenset({"svi-smile"})
+SIZE_RECORD_BINDINGS = frozenset({"conditional-stress"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
     id TEXT PRIMARY KEY,
@@ -209,10 +210,10 @@ class CalculatorJournalWorkspace:
     def run(self, payload: dict[str, Any]) -> Contract:
         if not isinstance(payload, dict) or payload.get("operation") not in (
                 "save", "replay", "from-dataset", "from-record", "from-size", "from-screen",
-                "from-options"):
+                "from-options", "from-size-record"):
             raise ValueError(
                 "calculator journal operation must be save, replay, from-dataset, from-record, "
-                "from-size, from-screen or from-options")
+                "from-size, from-screen, from-options or from-size-record")
         try:
             if payload["operation"] == "save":
                 fields = _fields(payload, {"operation", "kind", "inputs"}, {"operation", "kind", "inputs"})
@@ -229,6 +230,8 @@ class CalculatorJournalWorkspace:
                 return self._contract(self._from_screen(payload))
             if payload["operation"] == "from-options":
                 return self._contract(self._from_options(payload))
+            if payload["operation"] == "from-size-record":
+                return self._contract(self._from_size_record(payload))
             fields = _fields(payload, {"operation", "record_id"}, {"operation", "record_id"})
             return self._contract(self.journal.replay(fields["record_id"]))
         except FileNotFoundError:
@@ -463,3 +466,60 @@ class CalculatorJournalWorkspace:
         }
         return self.journal.save(kind, {**inputs, "log_moneyness": log_moneyness,
                                         "total_variance": total_variance}, source=source)
+
+    def _from_size_record(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Bind research sizes and a Ledoit-Wolf covariance into conditional stress.
+
+        Weights follow signed size notionals over portfolio notional. Covariance
+        stays pinned from the parent record. Caller supplies shocked_assets/shocks.
+        """
+        fields = _fields(payload, {"operation", "size_id", "record_id", "kind", "inputs"},
+                         {"operation", "size_id", "record_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in SIZE_RECORD_BINDINGS:
+            raise ValueError("calculator cannot bind research sizes with a covariance record")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict) or any(key in inputs for key in ("weights", "covariance")):
+            raise ValueError("calculator inputs must leave weights and covariance unbound")
+        if "shocked_assets" not in inputs or "shocks" not in inputs:
+            raise ValueError("conditional stress requires shocked_assets and shocks")
+        from gig.service.research_strategy import ResearchStrategyWorkspace
+        sized = ResearchStrategyWorkspace(self.directory).load_size(fields["size_id"])
+        parent = self.journal.replay(fields["record_id"])
+        if parent["kind"] != "ledoit-wolf" or "covariance" not in parent["result"]:
+            raise ValueError("covariance must come from a saved Ledoit-Wolf record")
+        parent_source = parent.get("source")
+        if not isinstance(parent_source, dict) or "instruments" not in parent_source:
+            raise ValueError("Ledoit-Wolf record must pin its instrument order")
+        instruments = list(parent_source["instruments"])
+        size_weights = {
+            row["instrument_id"]: (
+                float(row["target_notional"]) / float(sized["request"]["portfolio_notional"])
+                if row["side"] == "buy"
+                else -float(row["target_notional"]) / float(sized["request"]["portfolio_notional"])
+            )
+            for row in sized["rows"]
+        }
+        if any(name not in size_weights for name in instruments):
+            raise ValueError("covariance instruments must appear in the research size")
+        if sized["dataset_id"] != parent_source.get("dataset_id"):
+            raise ValueError("size and covariance must share one dataset identity")
+        weights = [size_weights[name] for name in instruments]
+        covariance = parent["result"]["covariance"]
+        if len(covariance) != len(instruments):
+            raise ValueError("covariance dimension does not match pinned instruments")
+        source = {
+            "size_id": sized["size_id"],
+            "screen_id": sized["screen_id"],
+            "parent_record_id": parent["record_id"],
+            "parent_kind": "ledoit-wolf",
+            "dataset_id": sized["dataset_id"],
+            "dataset_classification": parent_source.get("dataset_classification",
+                                                       sized.get("input_classification")),
+            "instruments": instruments,
+            "argument": "weights/covariance",
+            "extraction": "RESEARCH_SIZE_WEIGHTS_PINNED_LEDOIT_WOLF_COVARIANCE",
+            "trading_approved": False,
+        }
+        return self.journal.save(kind, {**inputs, "weights": weights, "covariance": covariance},
+                                 source=source)
