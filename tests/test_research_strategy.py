@@ -226,6 +226,141 @@ class StrategyTests(unittest.TestCase):
         }).to_dict()
         self.assertEqual(replayed["data"]["result"], body["result"])
 
+    def test_estimate_cost_from_size_and_delta(self):
+        first = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "0.2",
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        opened = self.strategies.estimate_cost({
+            "size_id": first["data"]["size_id"], "now": self.now,
+            "spread_bps": "4", "commission_bps": "1", "impact_eta": "0.10",
+            "adv_lookback_bars": 20,
+        }).to_dict()
+        EnvelopeSchema.model_validate(opened)
+        self.assertEqual(opened["state"], "AVAILABLE", opened)
+        self.assertFalse(opened["data"]["trading_approved"])
+        self.assertFalse(opened["data"]["broker_connected"])
+        self.assertEqual(opened["data"]["request"]["trade_basis"], "OPEN_FROM_FLAT")
+        self.assertEqual(opened["data"]["metrics"]["evidence_class"], "ESTIMATED")
+        self.assertGreater(float(opened["data"]["metrics"]["total_estimated_cost"]), 0.0)
+        self.assertTrue(opened["data"]["rows"])
+        for row in opened["data"]["rows"]:
+            self.assertEqual(row["evidence_class"], "ESTIMATED")
+            self.assertGreater(float(row["one_way_bps"]), 0.0)
+        second = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        self.assertGreater(
+            float(second["data"]["metrics"]["gross_notional"]),
+            float(first["data"]["metrics"]["gross_notional"]) + 1e-9,
+        )
+        delta = self.strategies.estimate_cost({
+            "size_id": second["data"]["size_id"], "now": self.now,
+            "previous_size_id": first["data"]["size_id"],
+            "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(delta["state"], "AVAILABLE", delta)
+        self.assertEqual(delta["data"]["request"]["trade_basis"], "DELTA_VS_PREVIOUS")
+        self.assertEqual(delta["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertGreater(float(delta["data"]["metrics"]["trade_notional"]), 0.0)
+        self.assertLess(
+            float(delta["data"]["metrics"]["trade_notional"]) + 1e-9,
+            float(opened["data"]["metrics"]["trade_notional"])
+            + float(second["data"]["metrics"]["gross_notional"]),
+        )
+        replayed = self.strategies.replay_cost({"cost_id": opened["data"]["cost_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["cost_id"], opened["data"]["cost_id"])
+        missing = self.strategies.replay_cost({"cost_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+
+    def test_calculator_journal_binds_liquidity_and_almgren_from_size(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        liquidity = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "liquidity-var", "adv_lookback_bars": 20,
+            "inputs": {"max_participation": 0.2, "confidence": 0.99},
+        }).to_dict()
+        self.assertEqual(liquidity["state"], "AVAILABLE", liquidity)
+        self.assertFalse(liquidity["data"]["trading_approved"])
+        self.assertIn("liquidity_adjusted_var", liquidity["data"]["result"])
+        self.assertEqual(liquidity["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_LIQUIDITY_VAR")
+        schedule = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "almgren-chriss", "adv_lookback_bars": 20,
+            "inputs": {
+                "horizon": 5, "intervals": 5, "temporary_impact": 2.5e-6,
+                "permanent_impact": 2.5e-7, "risk_aversion": 2e-6,
+            },
+        }).to_dict()
+        self.assertEqual(schedule["state"], "AVAILABLE", schedule)
+        self.assertFalse(schedule["data"]["trading_approved"])
+        self.assertIn("expected_cost", schedule["data"]["result"])
+        self.assertEqual(schedule["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_ALMGREN_CHRISS")
+        participation = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "participation-schedule", "adv_lookback_bars": 20,
+            "inputs": {"max_participation": 0.1},
+        }).to_dict()
+        self.assertEqual(participation["state"], "AVAILABLE", participation)
+        self.assertFalse(participation["data"]["trading_approved"])
+        self.assertIn("scheduled_shares", participation["data"]["result"])
+        self.assertEqual(participation["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_PARTICIPATION_SCHEDULE")
+        shortfall = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "shortfall-simulation", "adv_lookback_bars": 20,
+            "inputs": {
+                "intervals": 5, "interval": 1, "temporary_impact": 2.5e-6,
+                "permanent_impact": 2.5e-7, "paths": 200, "seed": 7,
+            },
+        }).to_dict()
+        self.assertEqual(shortfall["state"], "AVAILABLE", shortfall)
+        self.assertFalse(shortfall["data"]["trading_approved"])
+        self.assertIn("mean", shortfall["data"]["result"])
+        self.assertEqual(shortfall["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_SHORTFALL_SIMULATION")
+
+    def test_cycle_can_attach_pretrade_cost_estimate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            now = request["as_of"]
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            run = PersistedResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+                "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+            }).to_dict()["data"]
+            payload = allocation_request("", now)
+            del payload["run_id"]
+            payload.update(
+                run_ids=[run["run_id"]], lookback=20, min_ic_observations=5,
+                buy_threshold=0.0, sell_threshold=-0.01,
+                portfolio_notional="100000", max_name_notional="8000",
+                max_turnover=0.3, max_transaction_cost="100", fill=True,
+                estimate_cost=True, adv_lookback_bars=20,
+            )
+            cycled = ResearchStrategyWorkspace(root).cycle(payload).to_dict()
+            EnvelopeSchema.model_validate(cycled)
+            self.assertEqual(cycled["state"], "AVAILABLE", cycled)
+            body = cycled["data"]
+            self.assertTrue(body["cost_id"])
+            self.assertIsNotNone(body["cost_metrics"])
+            self.assertEqual(body["cost_metrics"]["evidence_class"], "ESTIMATED")
+            self.assertIsNotNone(body["metrics"]["estimated_cost_nav"])
+            self.assertFalse(body["trading_approved"])
+
     def test_size_applies_max_expected_shortfall_bound(self):
         probe = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
@@ -457,6 +592,58 @@ class StrategyTests(unittest.TestCase):
             remaining = batch_ws.due_schedules({"now": batch_now, "limit": 8}).to_dict()
             self.assertEqual(remaining["data"]["metrics"]["due"], 1)
 
+    def test_schedule_ticks_chain_previous_size_for_delta_cost(self):
+        # Watch ticks avoid OMS prepare conflicts across ticks while still chaining sizes.
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 2,
+            "now": self.now, "request": watch_request,
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        schedule_id = planned["data"]["schedule_id"]
+        first = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": self.now,
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        self.assertTrue(first["data"]["size_id"])
+        self.assertIsNone(first["data"]["previous_size_id"])
+        self.assertFalse(first["data"]["metrics"]["size_chained"])
+        open_cost = self.strategies.estimate_cost({
+            "size_id": first["data"]["size_id"], "now": self.now, "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(open_cost["state"], "AVAILABLE", open_cost)
+        self.assertEqual(open_cost["data"]["request"]["trade_basis"], "OPEN_FROM_FLAT")
+        second_now = (pd.Timestamp(self.now) + pd.Timedelta(hours=1)).isoformat()
+        second = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": second_now,
+        }).to_dict()
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        self.assertEqual(second["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertTrue(second["data"]["metrics"]["size_chained"])
+        delta = self.strategies.estimate_cost({
+            "size_id": second["data"]["size_id"], "now": second_now,
+            "previous_size_id": first["data"]["size_id"], "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(delta["state"], "AVAILABLE", delta)
+        self.assertEqual(delta["data"]["request"]["trade_basis"], "DELTA_VS_PREVIOUS")
+        self.assertEqual(delta["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertFalse(second["data"]["trading_approved"])
+        state = self.strategies.load_schedule_state(schedule_id)
+        self.assertEqual(state["last_size_id"], second["data"]["size_id"])
+        self.assertEqual(int(state["ticks_completed"]), 2)
+
     def test_watch_monitors_sizes_and_optionally_scans(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)
@@ -553,6 +740,19 @@ class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):
                 })
                 self.assertEqual(size_replay.status_code, 200, size_replay.text)
                 self.assertEqual(size_replay.json()["data"]["size_id"], size_body["size_id"])
+                costed = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "estimate-cost", "size_id": size_body["size_id"],
+                    "now": request["as_of"], "adv_lookback_bars": 20,
+                })
+                self.assertEqual(costed.status_code, 200, costed.text)
+                cost_body = costed.json()["data"]
+                self.assertFalse(cost_body["trading_approved"])
+                self.assertEqual(cost_body["metrics"]["evidence_class"], "ESTIMATED")
+                cost_replay = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "estimate-cost-replay", "cost_id": cost_body["cost_id"],
+                })
+                self.assertEqual(cost_replay.status_code, 200, cost_replay.text)
+                self.assertEqual(cost_replay.json()["data"]["cost_id"], cost_body["cost_id"])
 
 
 if __name__ == "__main__":

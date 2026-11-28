@@ -214,12 +214,16 @@ class CycleServices:
             return self._strategies().due_schedules(body)
         if operation == "tick-due":
             return self._strategies().tick_due_schedules(body)
+        if operation == "estimate-cost":
+            return self._strategies().estimate_cost(body)
+        if operation == "estimate-cost-replay":
+            return self._strategies().replay_cost(body)
         if operation != "simulate":
             raise ValueError(
                 "research strategy operation must be simulate, size, size-replay, cycle, "
                 "cycle-replay, watch, watch-replay, exit-eval, exit-eval-replay, feedback, "
                 "feedback-replay, invalidate, invalidate-replay, schedule, schedule-tick, "
-                "due-schedules, tick-due, or replay")
+                "due-schedules, tick-due, estimate-cost, estimate-cost-replay, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):
