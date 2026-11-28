@@ -164,6 +164,44 @@ class StrategyTests(unittest.TestCase):
         }).to_dict()
         self.assertEqual(again["data"]["feedback_id"], feedback["data"]["feedback_id"])
 
+    def test_invalidate_blocks_later_size_and_simulate(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        invalidated = self.strategies.invalidate({
+            "size_id": sized["data"]["size_id"], "reason": "MANUAL", "now": self.now,
+            "notes": "research stop after feedback review",
+        }).to_dict()
+        EnvelopeSchema.model_validate(invalidated)
+        self.assertEqual(invalidated["state"], "AVAILABLE", invalidated)
+        self.assertFalse(invalidated["data"]["usable_for_simulation"])
+        self.assertFalse(invalidated["data"]["trading_approved"])
+        blocked_size = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(blocked_size["state"], "UNAVAILABLE")
+        blocked_sim = self.strategies.run(self.payload).to_dict()
+        self.assertEqual(blocked_sim["state"], "UNAVAILABLE")
+        blocked_exit = self.strategies.exit_eval({
+            "size_id": sized["data"]["size_id"],
+            "stop_loss_pct": "0.1", "take_profit_pct": "0.2", "horizon_bars": 3,
+        }).to_dict()
+        self.assertEqual(blocked_exit["state"], "UNAVAILABLE")
+        replayed = self.strategies.replay_invalidation({
+            "invalidation_id": invalidated["data"]["invalidation_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["invalidation_id"],
+                         invalidated["data"]["invalidation_id"])
+        with self.assertRaisesRegex(ValueError, "already invalidated"):
+            self.strategies.invalidate({
+                "screen_id": self.screen["screen_id"], "reason": "MANUAL", "now": self.now,
+            })
+
     def test_calculator_journal_binds_historical_var_from_size(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,

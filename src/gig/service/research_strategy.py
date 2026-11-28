@@ -35,6 +35,10 @@ CYCLE = "gig.research-strategy.cycle.v1"
 WATCH = "gig.research-strategy.watch.v1"
 EXIT_EVAL = "gig.research-strategy.exit-eval.v1"
 FEEDBACK = "gig.research-strategy.feedback.v1"
+INVALIDATION = "gig.research-strategy.invalidation.v1"
+_INVALIDATION_REASONS = frozenset({
+    "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP",
+})
 
 
 def _hash(value: Any) -> str:
@@ -96,6 +100,10 @@ class ResearchStrategyWorkspace:
         try:
             screen = self.screens.load(fields["screen_id"])
         except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=screen["screen_id"]):
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
@@ -485,6 +493,10 @@ class ResearchStrategyWorkspace:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=sized["screen_id"], size_id=sized["size_id"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
         panel = pd.DataFrame(dataset["panel_rows"])
         if "return_1" not in panel or "timestamp" not in panel:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
@@ -677,6 +689,116 @@ class ResearchStrategyWorkspace:
                               evidence="HASH_VERIFIED_RESEARCH_STRATEGY_FEEDBACK",
                               identity_key="feedback_id")
 
+    def _invalidation_hits(self, *, screen_id: str | None = None,
+                           size_id: str | None = None) -> list[dict[str, Any]]:
+        directory = self._path("invalidations")
+        if not directory.is_dir():
+            return []
+        hits: list[dict[str, Any]] = []
+        for path in sorted(directory.glob("*.json")):
+            document = loads(path.read_bytes())
+            if ((screen_id is not None and document.get("screen_id") == screen_id)
+                    or (size_id is not None and document.get("size_id") == size_id)):
+                hits.append(document)
+        return hits
+
+    def invalidate(self, payload: dict[str, Any]) -> Contract:
+        """Record a research strategy invalidation that blocks later size/simulate use."""
+        fields = _fields(payload, {"screen_id", "size_id", "reason", "now", "notes"},
+                         {"reason", "now"})
+        reason = fields["reason"]
+        if reason not in _INVALIDATION_REASONS:
+            raise ValueError("reason must be a supported research invalidation reason")
+        if ("screen_id" in fields) == ("size_id" in fields):
+            raise ValueError("invalidate requires exactly one of screen_id or size_id")
+        screen_id = None
+        size_id = None
+        dataset_id = None
+        source = None
+        input_classification = None
+        try:
+            if "size_id" in fields:
+                sized = self.load_size(fields["size_id"])
+                size_id = sized["size_id"]
+                screen_id = sized["screen_id"]
+                dataset_id = sized["dataset_id"]
+                source = sized["source"]
+                input_classification = sized["input_classification"]
+            else:
+                screen = self.screens.load(fields["screen_id"])
+                screen_id = screen["screen_id"]
+                dataset_id = screen["dataset_id"]
+                source = screen["source"]
+                input_classification = screen["input_classification"]
+                if reason == "SIGNAL_EXPIRED":
+                    expired = bool(screen.get("signal_expired")) or any(
+                        row.get("expiration_state") == "EXPIRED" for row in screen.get("rows", []))
+                    if not expired:
+                        raise ValueError("SIGNAL_EXPIRED requires an expired research screen")
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=screen_id, size_id=size_id):
+            raise ValueError("research strategy lineage is already invalidated")
+        notes = fields.get("notes")
+        if notes is not None and (not isinstance(notes, str) or not 1 <= len(notes) <= 240):
+            raise ValueError("notes must be a short string when provided")
+        body = {
+            "schema_version": INVALIDATION,
+            "as_of": aware_timestamp(fields["now"]).isoformat(),
+            "dataset_id": dataset_id,
+            "screen_id": screen_id,
+            "size_id": size_id,
+            "reason": reason,
+            "source": source,
+            "input_classification": input_classification,
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "usable_for_simulation": False,
+            "metrics": {"trading_approved": False},
+            "notes": [
+                "Invalidation permanently blocks later size and simulate ops on this lineage.",
+                "It does not cancel offline OMS intents or approve trading.",
+                *([notes] if notes else []),
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "invalidation_id": identity}
+        self._path("invalidations").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("invalidations/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research strategy invalidation",
+                              model_version=INVALIDATION,
+                              evidence="HASH_VERIFIED_RESEARCH_STRATEGY_INVALIDATION",
+                              identity_key="invalidation_id")
+
+    def load_invalidation(self, invalidation_id: str) -> dict[str, Any]:
+        identity = sha256(invalidation_id)
+        path = self._path("invalidations/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research strategy invalidation unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "invalidation_id"}
+        if (document.get("invalidation_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != INVALIDATION):
+            raise ValueError("research strategy invalidation integrity mismatch")
+        return document
+
+    def replay_invalidation(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"invalidation_id"}, {"invalidation_id"})
+        try:
+            document = self.load_invalidation(payload["invalidation_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research strategy invalidation",
+                              model_version=INVALIDATION,
+                              evidence="HASH_VERIFIED_RESEARCH_STRATEGY_INVALIDATION",
+                              identity_key="invalidation_id")
+
     def size(self, payload: dict[str, Any]) -> Contract:
         """Convert screen research weights into capped research lot sizes.
 
@@ -697,6 +819,10 @@ class ResearchStrategyWorkspace:
             screen = self.screens.load(fields["screen_id"])
             dataset = PersistedDatasetWorkspace(self.base_dir).load(screen["dataset_id"])
         except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=screen["screen_id"]):
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
