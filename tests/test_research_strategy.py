@@ -472,6 +472,59 @@ class StrategyTests(unittest.TestCase):
         missing = self.strategies.replay_rebalance({"rebalance_id": "0" * 64}).to_dict()
         self.assertEqual(missing["state"], "UNAVAILABLE")
 
+    def test_size_from_rebalance_materializes_chained_book(self):
+        first = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "0.2",
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        second = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "previous_size_id": first["data"]["size_id"],
+        }).to_dict()
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        cost = self.strategies.estimate_cost({
+            "size_id": second["data"]["size_id"], "now": self.now,
+            "previous_size_id": first["data"]["size_id"],
+            "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(cost["state"], "AVAILABLE", cost)
+        skipped = self.strategies.cost_rebalance({
+            "size_id": second["data"]["size_id"], "cost_id": cost["data"]["cost_id"],
+            "now": self.now, "mode": "SKIP_BELOW_COST",
+            "min_trade_notional": "1e18",
+        }).to_dict()
+        self.assertEqual(skipped["state"], "AVAILABLE", skipped)
+        materialized = self.strategies.size_from_rebalance({
+            "rebalance_id": skipped["data"]["rebalance_id"], "now": self.now,
+        }).to_dict()
+        EnvelopeSchema.model_validate(materialized)
+        self.assertEqual(materialized["state"], "AVAILABLE", materialized)
+        body = materialized["data"]
+        self.assertFalse(body["trading_approved"])
+        self.assertEqual(body["previous_size_id"], second["data"]["size_id"])
+        self.assertEqual(body["rebalance_id"], skipped["data"]["rebalance_id"])
+        self.assertEqual(body["request"]["materialized_from"], "COST_REBALANCE")
+        self.assertGreaterEqual(body["metrics"]["rebalance_actions_skipped"], 1)
+        self.assertTrue(body["rows"])
+        # Chained TCA against the proposal source size.
+        chained = self.strategies.estimate_cost({
+            "size_id": body["size_id"], "now": self.now,
+            "previous_size_id": body["previous_size_id"],
+            "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(chained["state"], "AVAILABLE", chained)
+        replayed = self.strategies.replay_size({"size_id": body["size_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["size_id"], body["size_id"])
+        with self.assertRaisesRegex(ValueError, "lot_size"):
+            self.strategies.size_from_rebalance({
+                "rebalance_id": skipped["data"]["rebalance_id"], "now": self.now,
+                "lot_size": 0,
+            })
+
     def test_cycle_can_attach_cost_rebalance(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
