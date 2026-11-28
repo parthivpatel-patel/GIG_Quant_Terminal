@@ -251,6 +251,41 @@ class StrategyTests(unittest.TestCase):
         self.assertTrue(gated["data"]["risk"]["data"]["expected_shortfall_bound_applied"])
         self.assertFalse(gated["data"]["trading_approved"])
 
+    def test_size_applies_max_adv_participation(self):
+        probe = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(probe["state"], "AVAILABLE", probe)
+        # First call without a cap to materialize ADV, then choose a tight but
+        # non-zero participation that still leaves lot sizes.
+        soft = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_adv_participation": "1", "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(soft["state"], "AVAILABLE", soft)
+        adv_values = [float(row["adv_dollar"]) for row in soft["data"]["rows"]]
+        self.assertTrue(adv_values)
+        # Cap at ~10% of the smallest ADV so at least one name is reduced.
+        participation = max(min(adv_values) * 0.1 / max(adv_values), 1e-6)
+        gated = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_adv_participation": str(participation), "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(gated["state"], "AVAILABLE", gated)
+        self.assertTrue(gated["data"]["request"]["adv_participation_cap_applied"])
+        self.assertTrue(any(row.get("adv_capped") for row in gated["data"]["rows"]))
+        self.assertLess(
+            float(gated["data"]["metrics"]["gross_notional"]),
+            float(probe["data"]["metrics"]["gross_notional"]) + 1e-12,
+        )
+        self.assertFalse(gated["data"]["trading_approved"])
+
     def test_cycle_discovers_sizes_and_simulates(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

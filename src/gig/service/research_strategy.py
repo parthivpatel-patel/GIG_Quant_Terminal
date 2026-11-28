@@ -195,9 +195,10 @@ class ResearchStrategyWorkspace:
                    "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id",
                    "portfolio_notional", "max_name_notional", "vol_scale", "target_volatility",
                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
-                   "max_gross_exposure", "initial_cash", "n_long", "n_short", "gross_leverage",
-                   "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata",
-                   "limits", "commission_bps", "slippage_bps", "price_tick", "max_turnover",
+                   "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
+                   "initial_cash", "n_long", "n_short", "gross_leverage", "max_name_weight",
+                   "lot_size", "max_age_seconds", "annualization", "metadata", "limits",
+                   "commission_bps", "slippage_bps", "price_tick", "max_turnover",
                    "max_transaction_cost", "fill", "document_id", "nlp_profile"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
@@ -243,7 +244,8 @@ class ResearchStrategyWorkspace:
             "lot_size": fields["lot_size"],
         }
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
-                    "regime_short_bars", "regime_long_bars", "max_gross_exposure", "annualization"):
+                    "regime_short_bars", "regime_long_bars", "max_gross_exposure",
+                    "max_adv_participation", "adv_lookback_bars", "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -260,7 +262,8 @@ class ResearchStrategyWorkspace:
                      "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id",
                      "portfolio_notional", "max_name_notional", "vol_scale", "target_volatility",
                      "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
-                     "max_gross_exposure", "document_id", "nlp_profile"}
+                     "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
+                     "document_id", "nlp_profile"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -353,8 +356,8 @@ class ResearchStrategyWorkspace:
         allowed = {"signal_ids", "buy_threshold", "sell_threshold", "now", "portfolio_notional",
                    "max_name_notional", "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
-                   "max_gross_exposure", "annualization", "options_run_ids", "document_id",
-                   "nlp_profile"}
+                   "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
+                   "annualization", "options_run_ids", "document_id", "nlp_profile"}
         fields = _fields(payload, allowed, {"signal_ids", "now", "portfolio_notional",
                                             "max_name_notional", "lot_size"})
         monitor_payload = {key: fields[key] for key in fields
@@ -392,7 +395,8 @@ class ResearchStrategyWorkspace:
             "lot_size": fields["lot_size"],
         }
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
-                    "regime_short_bars", "regime_long_bars", "max_gross_exposure", "annualization"):
+                    "regime_short_bars", "regime_long_bars", "max_gross_exposure",
+                    "max_adv_participation", "adv_lookback_bars", "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -1146,12 +1150,17 @@ class ResearchStrategyWorkspace:
         fields = _fields(payload, {"screen_id", "now", "portfolio_notional", "max_name_notional",
                                    "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
                                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
-                                   "max_gross_exposure", "annualization"},
+                                   "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
+                                   "annualization"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
         if "vol_scale" in fields and "target_volatility" in fields:
             raise ValueError("provide vol_scale or target_volatility, not both")
         if ("regime_short_bars" in fields) != ("regime_long_bars" in fields):
             raise ValueError("regime_short_bars and regime_long_bars must be provided together")
+        if "max_adv_participation" in fields and "adv_lookback_bars" not in fields:
+            raise ValueError("max_adv_participation requires adv_lookback_bars")
+        if "adv_lookback_bars" in fields and "max_adv_participation" not in fields:
+            raise ValueError("adv_lookback_bars requires max_adv_participation")
         try:
             screen = self.screens.load(fields["screen_id"])
             dataset = PersistedDatasetWorkspace(self.base_dir).load(screen["dataset_id"])
@@ -1341,6 +1350,65 @@ class ResearchStrategyWorkspace:
                                           classification="UNAVAILABLE",
                                           scope="workspace.research-strategy",
                                           error=public_error("DATA_UNAVAILABLE"))
+        adv_cap_applied = False
+        if "max_adv_participation" in fields:
+            participation = _positive(fields["max_adv_participation"], "max_adv_participation")
+            if participation > Decimal("1"):
+                raise ValueError("max_adv_participation must lie in (0, 1]")
+            lookback = int(fields["adv_lookback_bars"])
+            if not 5 <= lookback <= 252:
+                raise ValueError("adv_lookback_bars must lie between 5 and 252")
+            panel = pd.DataFrame(dataset["panel_rows"])
+            if not {"timestamp", "instrument_id", "close", "volume"}.issubset(panel.columns):
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            panel = panel.copy()
+            panel["timestamp"] = pd.to_datetime(panel["timestamp"], utc=True)
+            panel = panel.loc[panel["timestamp"] <= pd.Timestamp(at)]
+            panel["close"] = pd.to_numeric(panel["close"], errors="coerce")
+            panel["volume"] = pd.to_numeric(panel["volume"], errors="coerce")
+            panel = panel.dropna(subset=["close", "volume"])
+            panel = panel.loc[panel["volume"] > 0]
+            limited: list[dict[str, Any]] = []
+            for row in sized:
+                symbol = row["instrument_id"]
+                history = panel.loc[panel["instrument_id"] == symbol].sort_values("timestamp")
+                if len(history) < lookback:
+                    return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                          classification="UNAVAILABLE",
+                                          scope="workspace.research-strategy",
+                                          error=public_error("DATA_UNAVAILABLE"))
+                recent = history.tail(lookback)
+                dollar = (recent["close"] * recent["volume"]).astype(float)
+                adv = Decimal(str(float(dollar.mean())))
+                if adv <= 0:
+                    return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                          classification="UNAVAILABLE",
+                                          scope="workspace.research-strategy",
+                                          error=public_error("DATA_UNAVAILABLE"))
+                cap = adv * participation
+                notional = min(Decimal(row["target_notional"]), cap)
+                price = Decimal(row["reference_price"])
+                quantity = int(Fraction(notional) / Fraction(price) / Fraction(lot)) * lot
+                if quantity <= 0:
+                    continue
+                updated = {
+                    **row,
+                    "target_notional": str(notional),
+                    "quantity": str(quantity),
+                    "adv_dollar": str(adv),
+                    "adv_cap": str(cap),
+                    "adv_capped": Decimal(row["target_notional"]) > cap,
+                }
+                if updated["adv_capped"]:
+                    adv_cap_applied = True
+                limited.append(updated)
+            sized = limited
+            if not sized:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
         gross = sum((Decimal(row["target_notional"]) for row in sized), Decimal(0))
         net = sum((Decimal(row["target_notional"]) * (1 if row["side"] == "buy" else -1)
                    for row in sized), Decimal(0))
@@ -1364,6 +1432,11 @@ class ResearchStrategyWorkspace:
         if "max_gross_exposure" in fields:
             request["max_gross_exposure"] = str(_positive(fields["max_gross_exposure"], "max_gross_exposure"))
             request["gross_exposure_cap_applied"] = gross_cap_applied
+        if "max_adv_participation" in fields:
+            request["max_adv_participation"] = str(
+                _positive(fields["max_adv_participation"], "max_adv_participation"))
+            request["adv_lookback_bars"] = int(fields["adv_lookback_bars"])
+            request["adv_participation_cap_applied"] = adv_cap_applied
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
@@ -1391,11 +1464,13 @@ class ResearchStrategyWorkspace:
                 "vol_scale": str(scale),
                 "vol_scale_source": scale_source,
                 "gross_exposure_cap_applied": gross_cap_applied,
+                "adv_participation_cap_applied": adv_cap_applied,
                 "trading_approved": False,
             },
             "notes": [
                 "Position sizes are research lot targets from screen weights and admitted marks.",
-                "max_name_notional caps each name; target_volatility, max_expected_shortfall, and max_gross_exposure constrain notionals.",
+                "max_name_notional caps each name; target_volatility, max_expected_shortfall, max_gross_exposure, and max_adv_participation constrain notionals.",
+                "ADV caps use trailing close×volume means from the saved panel; they are descriptive liquidity bounds.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }
