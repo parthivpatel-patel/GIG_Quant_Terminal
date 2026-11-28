@@ -31,6 +31,40 @@ def _hash(value):
     return hashlib.sha256(dumps(value).encode()).hexdigest()
 
 
+def ic_half_life(ics: list[float]) -> dict[str, Any]:
+    """Descriptive lag-1 AR half-life on the trailing OOS IC path.
+
+    Uses ``ln(2) / -ln(|phi|)`` when the AR(1) coefficient ``phi`` is in
+    ``(-1, 1)`` excluding zero. Not a claim of alpha lifetime in markets.
+    """
+    if len(ics) < 8:
+        return {"state": "UNKNOWN", "observations": len(ics), "phi": None,
+                "half_life_steps": None, "method": "AR1_ABS_PHI_HALF_LIFE"}
+    series = np.asarray(ics, dtype=float)
+    if not np.isfinite(series).all():
+        return {"state": "UNKNOWN", "observations": len(ics), "phi": None,
+                "half_life_steps": None, "method": "AR1_ABS_PHI_HALF_LIFE"}
+    centered = series - float(series.mean())
+    prior, current = centered[:-1], centered[1:]
+    denom = float(prior @ prior)
+    if denom <= 0:
+        return {"state": "UNKNOWN", "observations": len(ics), "phi": None,
+                "half_life_steps": None, "method": "AR1_ABS_PHI_HALF_LIFE"}
+    phi = float(prior @ current / denom)
+    magnitude = abs(phi)
+    if not (0.0 < magnitude < 1.0):
+        return {"state": "UNKNOWN", "observations": len(ics), "phi": phi,
+                "half_life_steps": None, "method": "AR1_ABS_PHI_HALF_LIFE"}
+    half_life = float(np.log(2.0) / -np.log(magnitude))
+    return {
+        "state": "AVAILABLE",
+        "observations": len(ics),
+        "phi": phi,
+        "half_life_steps": half_life,
+        "method": "AR1_ABS_PHI_HALF_LIFE",
+    }
+
+
 def score_pair_run(pair_run: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
     """Collapse latest available pair proposals into centered research scores."""
     now = aware_timestamp(request["now"])
@@ -175,6 +209,7 @@ def score_runs(runs, dataset, request):
         else:
             ic_drift = {**ic_drift, "weight_zeroed": False,
                         "max_ic_drift_psi": None if limit is None else float(limit)}
+        decay = ic_half_life(ics)
         selected = [r for r in run["rows"] if r["timestamp"] == decision]
         if any(r.get("fit_state", "CONVERGED") != "CONVERGED" for r in selected):
             weight = 0.
@@ -185,6 +220,7 @@ def score_runs(runs, dataset, request):
             "selected_label_evidence_hash": _hash(evidence),
             "two_instrument_dates": sum(r["instruments"] == 2 for r in observations),
             "ic_drift": ic_drift,
+            "ic_half_life": decay,
             "raw_adaptive_weight": weight, "adaptive_weight": 0.,
             "confidence": {"state": "UNKNOWN", "value": None, "method": "NO_PROBABILITY_CALIBRATION"}})
     total = sum(d["raw_adaptive_weight"] for d in diagnostics)
@@ -217,7 +253,8 @@ def score_runs(runs, dataset, request):
         "notes": ["Latest-decision outcome and later-known label revisions are excluded from IC adaptation.",
                   "Two-name rank IC takes +/-1; neither IC nor shrinkage is calibrated confidence or economic validation.",
                   "Nonpositive or insufficient IC gets zero ensemble weight; no automatic sign reversal.",
-                  "ic_drift is a descriptive PSI on the prior OOS IC path; max_ic_drift_psi may zero a model weight."]}
+                  "ic_drift is a descriptive PSI on the prior OOS IC path; max_ic_drift_psi may zero a model weight.",
+                  "ic_half_life is a descriptive AR(1) half-life on the OOS IC path, not an alpha lifetime claim."]}
 
 
 class SignalWorkspace:

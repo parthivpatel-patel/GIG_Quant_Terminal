@@ -51,7 +51,24 @@ class SignalScoringReferenceTests(unittest.TestCase):
         self.assertEqual(result["diagnostics"][0]["confidence"]["state"], "UNKNOWN")
         self.assertEqual(result["diagnostics"][0]["ic_drift"]["state"], "UNKNOWN")
         self.assertFalse(result["diagnostics"][0]["ic_drift"]["weight_zeroed"])
+        self.assertEqual(result["diagnostics"][0]["ic_half_life"]["state"], "UNKNOWN")
+        self.assertEqual(result["diagnostics"][0]["ic_half_life"]["method"], "AR1_ABS_PHI_HALF_LIFE")
         self.assertFalse(result["trading_approved"])
+
+    def test_ic_half_life_ar1_reference(self):
+        from gig.service.signal_workspace import ic_half_life
+        # Zero-mean AR(1) with phi=0.5 => half-life = 1 step.
+        series = [1.0]
+        for _ in range(31):
+            series.append(0.5 * series[-1])
+        # Mirror so the sample mean is approximately zero without changing AR structure.
+        series = series + [-value for value in series]
+        report = ic_half_life(series)
+        self.assertEqual(report["state"], "AVAILABLE")
+        self.assertAlmostEqual(report["phi"], 0.5, places=6)
+        self.assertAlmostEqual(report["half_life_steps"], 1.0, places=6)
+        short = ic_half_life([0.1, -0.2, 0.3])
+        self.assertEqual(short["state"], "UNKNOWN")
 
     def test_later_revisions_and_current_outcome_do_not_change_earlier_signal(self):
         runs, dataset, request = scoring_fixture()
