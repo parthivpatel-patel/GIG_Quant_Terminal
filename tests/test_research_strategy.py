@@ -226,6 +226,89 @@ class StrategyTests(unittest.TestCase):
         }).to_dict()
         self.assertEqual(replayed["data"]["result"], body["result"])
 
+    def test_estimate_cost_from_size_and_delta(self):
+        first = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "0.2",
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        opened = self.strategies.estimate_cost({
+            "size_id": first["data"]["size_id"], "now": self.now,
+            "spread_bps": "4", "commission_bps": "1", "impact_eta": "0.10",
+            "adv_lookback_bars": 20,
+        }).to_dict()
+        EnvelopeSchema.model_validate(opened)
+        self.assertEqual(opened["state"], "AVAILABLE", opened)
+        self.assertFalse(opened["data"]["trading_approved"])
+        self.assertFalse(opened["data"]["broker_connected"])
+        self.assertEqual(opened["data"]["request"]["trade_basis"], "OPEN_FROM_FLAT")
+        self.assertEqual(opened["data"]["metrics"]["evidence_class"], "ESTIMATED")
+        self.assertGreater(float(opened["data"]["metrics"]["total_estimated_cost"]), 0.0)
+        self.assertTrue(opened["data"]["rows"])
+        for row in opened["data"]["rows"]:
+            self.assertEqual(row["evidence_class"], "ESTIMATED")
+            self.assertGreater(float(row["one_way_bps"]), 0.0)
+        second = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(second["state"], "AVAILABLE", second)
+        self.assertGreater(
+            float(second["data"]["metrics"]["gross_notional"]),
+            float(first["data"]["metrics"]["gross_notional"]) + 1e-9,
+        )
+        delta = self.strategies.estimate_cost({
+            "size_id": second["data"]["size_id"], "now": self.now,
+            "previous_size_id": first["data"]["size_id"],
+            "adv_lookback_bars": 20,
+        }).to_dict()
+        self.assertEqual(delta["state"], "AVAILABLE", delta)
+        self.assertEqual(delta["data"]["request"]["trade_basis"], "DELTA_VS_PREVIOUS")
+        self.assertEqual(delta["data"]["previous_size_id"], first["data"]["size_id"])
+        self.assertGreater(float(delta["data"]["metrics"]["trade_notional"]), 0.0)
+        self.assertLess(
+            float(delta["data"]["metrics"]["trade_notional"]) + 1e-9,
+            float(opened["data"]["metrics"]["trade_notional"])
+            + float(second["data"]["metrics"]["gross_notional"]),
+        )
+        replayed = self.strategies.replay_cost({"cost_id": opened["data"]["cost_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["cost_id"], opened["data"]["cost_id"])
+        missing = self.strategies.replay_cost({"cost_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+
+    def test_calculator_journal_binds_liquidity_and_almgren_from_size(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        liquidity = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "liquidity-var", "adv_lookback_bars": 20,
+            "inputs": {"max_participation": 0.2, "confidence": 0.99},
+        }).to_dict()
+        self.assertEqual(liquidity["state"], "AVAILABLE", liquidity)
+        self.assertFalse(liquidity["data"]["trading_approved"])
+        self.assertIn("liquidity_adjusted_var", liquidity["data"]["result"])
+        self.assertEqual(liquidity["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_LIQUIDITY_VAR")
+        schedule = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "almgren-chriss", "adv_lookback_bars": 20,
+            "inputs": {
+                "horizon": 5, "intervals": 5, "temporary_impact": 2.5e-6,
+                "permanent_impact": 2.5e-7, "risk_aversion": 2e-6,
+            },
+        }).to_dict()
+        self.assertEqual(schedule["state"], "AVAILABLE", schedule)
+        self.assertFalse(schedule["data"]["trading_approved"])
+        self.assertIn("expected_cost", schedule["data"]["result"])
+        self.assertEqual(schedule["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_ALMGREN_CHRISS")
+
     def test_size_applies_max_expected_shortfall_bound(self):
         probe = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
@@ -553,6 +636,19 @@ class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):
                 })
                 self.assertEqual(size_replay.status_code, 200, size_replay.text)
                 self.assertEqual(size_replay.json()["data"]["size_id"], size_body["size_id"])
+                costed = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "estimate-cost", "size_id": size_body["size_id"],
+                    "now": request["as_of"], "adv_lookback_bars": 20,
+                })
+                self.assertEqual(costed.status_code, 200, costed.text)
+                cost_body = costed.json()["data"]
+                self.assertFalse(cost_body["trading_approved"])
+                self.assertEqual(cost_body["metrics"]["evidence_class"], "ESTIMATED")
+                cost_replay = await client.post("/api/v1/workspace/research-strategy", json={
+                    "operation": "estimate-cost-replay", "cost_id": cost_body["cost_id"],
+                })
+                self.assertEqual(cost_replay.status_code, 200, cost_replay.text)
+                self.assertEqual(cost_replay.json()["data"]["cost_id"], cost_body["cost_id"])
 
 
 if __name__ == "__main__":

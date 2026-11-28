@@ -38,6 +38,7 @@ FEEDBACK = "gig.research-strategy.feedback.v1"
 INVALIDATION = "gig.research-strategy.invalidation.v1"
 SCHEDULE = "gig.research-strategy.schedule.v1"
 TICK = "gig.research-strategy.schedule-tick.v1"
+COST = "gig.research-strategy.estimate-cost.v1"
 _INVALIDATION_REASONS = frozenset({
     "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP",
 })
@@ -1612,6 +1613,221 @@ class ResearchStrategyWorkspace:
                               model_version=SIZING,
                               evidence="HASH_VERIFIED_RESEARCH_POSITION_SIZING",
                               identity_key="size_id")
+
+    def estimate_cost(self, payload: dict[str, Any]) -> Contract:
+        """Pre-trade TCA on research sizes using square-root impact against ADV.
+
+        Trades are the full size book from flat cash, or the signed notional
+        delta versus ``previous_size_id``. Costs stay ESTIMATED; nothing here
+        observes fills, connects a broker, or approves trading.
+        """
+        fields = _fields(payload, {"size_id", "now", "previous_size_id", "spread_bps",
+                                   "commission_bps", "impact_eta", "adv_lookback_bars"},
+                         {"size_id", "now"})
+        try:
+            sized = self.load_size(fields["size_id"])
+            previous = (self.load_size(fields["previous_size_id"])
+                        if "previous_size_id" in fields else None)
+            dataset = PersistedDatasetWorkspace(self.base_dir).load(sized["dataset_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=sized["screen_id"], size_id=sized["size_id"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if previous is not None:
+            if previous["dataset_id"] != sized["dataset_id"]:
+                raise ValueError("previous_size_id must share the size dataset")
+            if self._invalidation_hits(size_id=previous["size_id"]):
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+        at = aware_timestamp(fields["now"])
+        spread_bps = _positive(fields.get("spread_bps", "4"), "spread_bps")
+        commission_bps = _positive(fields.get("commission_bps", "1"), "commission_bps")
+        if spread_bps > Decimal("500") or commission_bps > Decimal("500"):
+            raise ValueError("spread_bps and commission_bps must lie in (0, 500]")
+        impact_eta = _positive(fields.get("impact_eta", "0.10"), "impact_eta")
+        if impact_eta > Decimal("10"):
+            raise ValueError("impact_eta must lie in (0, 10]")
+        lookback = int(fields.get("adv_lookback_bars", 20))
+        if not 5 <= lookback <= 252:
+            raise ValueError("adv_lookback_bars must lie between 5 and 252")
+        portfolio = Decimal(sized["request"]["portfolio_notional"])
+        current = {
+            row["instrument_id"]: Decimal(row["target_notional"]) * (
+                Decimal(1) if row["side"] == "buy" else Decimal(-1))
+            for row in sized["rows"]
+        }
+        prior = {}
+        if previous is not None:
+            prior = {
+                row["instrument_id"]: Decimal(row["target_notional"]) * (
+                    Decimal(1) if row["side"] == "buy" else Decimal(-1))
+                for row in previous["rows"]
+            }
+        marks = {row["instrument_id"]: row for row in sized["rows"]}
+        if previous is not None:
+            for row in previous["rows"]:
+                marks.setdefault(row["instrument_id"], row)
+        names = sorted(set(current) | set(prior))
+        panel = pd.DataFrame(dataset["panel_rows"])
+        if not {"timestamp", "instrument_id", "close", "volume"}.issubset(panel.columns):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        panel = panel.copy()
+        panel["timestamp"] = pd.to_datetime(panel["timestamp"], utc=True)
+        panel = panel.loc[panel["timestamp"] <= pd.Timestamp(at)]
+        panel["close"] = pd.to_numeric(panel["close"], errors="coerce")
+        panel["volume"] = pd.to_numeric(panel["volume"], errors="coerce")
+        panel = panel.dropna(subset=["close", "volume"])
+        panel = panel.loc[panel["volume"] > 0]
+        bp = Decimal("0.0001")
+        rows_out: list[dict[str, Any]] = []
+        total_notional = Decimal(0)
+        total_fees = Decimal(0)
+        total_spread = Decimal(0)
+        total_impact = Decimal(0)
+        for name in names:
+            delta = current.get(name, Decimal(0)) - prior.get(name, Decimal(0))
+            if delta == 0:
+                continue
+            trade_notional = abs(delta)
+            mark = marks[name]
+            price = Decimal(mark["reference_price"])
+            if price <= 0:
+                raise ValueError("reference_price must be positive")
+            quantity = trade_notional / price
+            history = panel.loc[panel["instrument_id"] == name].sort_values("timestamp")
+            if len(history) < lookback:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            recent = history.tail(lookback)
+            adv = Decimal(str(float((recent["close"] * recent["volume"]).astype(float).mean())))
+            if adv <= 0:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            participation = trade_notional / adv
+            impact_bps = impact_eta * participation.sqrt() * Decimal(10_000)
+            fees = trade_notional * commission_bps * bp
+            spread_cost = trade_notional * spread_bps * bp / Decimal(2)
+            impact_cost = trade_notional * impact_bps * bp
+            one_way_bps = commission_bps + (spread_bps / Decimal(2)) + impact_bps
+            side = "BUY" if delta > 0 else "SELL"
+            rows_out.append({
+                "instrument_id": name,
+                "side": side,
+                "trade_notional": str(trade_notional),
+                "quantity": str(quantity),
+                "reference_price": str(price),
+                "adv_dollar": str(adv),
+                "participation": str(participation),
+                "spread_bps": str(spread_bps),
+                "commission_bps": str(commission_bps),
+                "impact_eta": str(impact_eta),
+                "impact_bps": str(impact_bps),
+                "one_way_bps": str(one_way_bps),
+                "transaction_fees": str(fees),
+                "spread_cost": str(spread_cost),
+                "market_impact": str(impact_cost),
+                "evidence_class": "ESTIMATED",
+                "model": "half-spread + commission + square-root impact",
+                "trading_approved": False,
+            })
+            total_notional += trade_notional
+            total_fees += fees
+            total_spread += spread_cost
+            total_impact += impact_cost
+        if not rows_out:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        total_cost = total_fees + total_spread + total_impact
+        turnover_nav = total_notional / Decimal(2) / portfolio
+        body = {
+            "schema_version": COST,
+            "as_of": at.isoformat(),
+            "dataset_id": sized["dataset_id"],
+            "screen_id": sized["screen_id"],
+            "signal_id": sized["signal_id"],
+            "size_id": sized["size_id"],
+            "previous_size_id": previous["size_id"] if previous is not None else None,
+            "source": sized["source"],
+            "input_classification": sized["input_classification"],
+            "request": {
+                "spread_bps": str(spread_bps),
+                "commission_bps": str(commission_bps),
+                "impact_eta": str(impact_eta),
+                "adv_lookback_bars": lookback,
+                "portfolio_notional": str(portfolio),
+                "trade_basis": "DELTA_VS_PREVIOUS" if previous is not None else "OPEN_FROM_FLAT",
+            },
+            "rows": rows_out,
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {
+                "names": len(rows_out),
+                "trade_notional": str(total_notional),
+                "turnover_nav": str(turnover_nav),
+                "transaction_fees": str(total_fees),
+                "spread_cost": str(total_spread),
+                "market_impact": str(total_impact),
+                "total_estimated_cost": str(total_cost),
+                "total_estimated_cost_bps": (
+                    None if total_notional == 0 else str(total_cost / total_notional * Decimal(10_000))),
+                "cost_nav": str(total_cost / portfolio),
+                "evidence_class": "ESTIMATED",
+                "trading_approved": False,
+            },
+            "notes": [
+                "Pre-trade costs use half-spread, commission, and square-root impact against trailing ADV.",
+                "ADV is the mean of close×volume over adv_lookback_bars ending at the request clock.",
+                "Estimates are never summed with simulated or observed fills.",
+                "No broker order, OMS prepare, or trading approval is established.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "cost_id": identity}
+        self._path("costs").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("costs/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research pre-trade cost estimate",
+                              model_version=COST,
+                              evidence="HASH_VERIFIED_RESEARCH_PRETRADE_COST",
+                              identity_key="cost_id")
+
+    def load_cost(self, cost_id: str) -> dict[str, Any]:
+        identity = sha256(cost_id)
+        path = self._path("costs/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research cost estimate unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "cost_id"}
+        if document.get("cost_id") != identity or _hash(body) != identity or body.get("schema_version") != COST:
+            raise ValueError("cost estimate artifact integrity mismatch")
+        return document
+
+    def replay_cost(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"cost_id"}, {"cost_id"})
+        try:
+            document = self.load_cost(payload["cost_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research pre-trade cost estimate",
+                              model_version=COST,
+                              evidence="HASH_VERIFIED_RESEARCH_PRETRADE_COST",
+                              identity_key="cost_id")
 
     def load(self, strategy_id: str) -> dict[str, Any]:
         identity = sha256(strategy_id)

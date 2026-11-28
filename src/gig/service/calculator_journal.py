@@ -33,7 +33,7 @@ DATASET_BINDINGS = {
     "minimum-cvar": ("scenarios", frozenset({"return_1"}), "panel"),
 }
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
-SIZE_BINDINGS = frozenset({"historical-var-components"})
+SIZE_BINDINGS = frozenset({"historical-var-components", "liquidity-var", "almgren-chriss"})
 SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
 OPTIONS_BINDINGS = frozenset({"svi-smile", "option-greeks-advanced"})
 SIZE_RECORD_BINDINGS = frozenset({"conditional-stress"})
@@ -294,47 +294,145 @@ class CalculatorJournalWorkspace:
         return self.journal.save(kind, {**inputs, "covariance": covariance}, source=source)
 
     def _from_size(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Bind research position sizes into a panel risk calculator.
+        """Bind research position sizes into risk or execution calculators.
 
-        Weights come from signed target notionals over portfolio notional.
-        Asset returns are the aligned saved dataset panel with no imputation.
+        ``historical-var-components`` uses signed size weights over the aligned
+        return panel. ``liquidity-var`` and ``almgren-chriss`` bind the largest
+        absolute name using panel ADV and return volatility. No order path.
         """
-        fields = _fields(payload, {"operation", "size_id", "kind", "field", "inputs"},
-                         {"operation", "size_id", "kind", "field", "inputs"})
+        fields = _fields(payload, {"operation", "size_id", "kind", "field", "inputs",
+                                   "adv_lookback_bars", "instrument_id"},
+                         {"operation", "size_id", "kind", "inputs"})
         kind = fields["kind"]
         if not isinstance(kind, str) or kind not in SIZE_BINDINGS:
             raise ValueError("calculator cannot be bound to research position sizes")
-        if fields["field"] != "return_1":
-            raise ValueError("dataset field is not valid for size-bound risk")
         inputs = fields["inputs"]
-        if not isinstance(inputs, dict) or "asset_returns" in inputs or "weights" in inputs:
-            raise ValueError("calculator inputs must leave asset_returns and weights unbound")
+        if not isinstance(inputs, dict):
+            raise ValueError("calculator inputs must be an object")
         from gig.service.research_strategy import ResearchStrategyWorkspace
         sized = ResearchStrategyWorkspace(self.directory).load_size(fields["size_id"])
         dataset = PersistedDatasetWorkspace(self.directory).load(sized["dataset_id"])
-        instruments = [row["instrument_id"] for row in sized["rows"]]
-        portfolio = float(sized["request"]["portfolio_notional"])
-        if portfolio <= 0:
-            raise ValueError("portfolio notional must be positive")
-        weights = []
-        for row in sized["rows"]:
-            notional = float(row["target_notional"])
-            signed = notional if row["side"] == "buy" else -notional
-            weights.append(signed / portfolio)
-        matrix, skipped = aligned_returns(dataset["panel_rows"], instruments, fields["field"])
-        if len(matrix) < 20:
-            raise ValueError("aligned return panel is too short for size-bound risk")
+        if kind == "historical-var-components":
+            if fields.get("field", "return_1") != "return_1":
+                raise ValueError("dataset field is not valid for size-bound risk")
+            if "asset_returns" in inputs or "weights" in inputs:
+                raise ValueError("calculator inputs must leave asset_returns and weights unbound")
+            instruments = [row["instrument_id"] for row in sized["rows"]]
+            portfolio = float(sized["request"]["portfolio_notional"])
+            if portfolio <= 0:
+                raise ValueError("portfolio notional must be positive")
+            weights = []
+            for row in sized["rows"]:
+                notional = float(row["target_notional"])
+                signed = notional if row["side"] == "buy" else -notional
+                weights.append(signed / portfolio)
+            matrix, skipped = aligned_returns(dataset["panel_rows"], instruments, "return_1")
+            if len(matrix) < 20:
+                raise ValueError("aligned return panel is too short for size-bound risk")
+            source = {
+                "size_id": sized["size_id"], "dataset_id": dataset["dataset_id"],
+                "dataset_classification": dataset["classification"],
+                "screen_id": sized["screen_id"], "instruments": instruments,
+                "field": "return_1", "observations": len(matrix),
+                "assets": len(instruments), "skipped_all_missing_timestamps": skipped,
+                "extraction": "RESEARCH_SIZE_WEIGHTS_ALIGNED_RETURN_PANEL_NO_IMPUTATION",
+                "trading_approved": False,
+            }
+            return self.journal.save(kind, {**inputs, "asset_returns": matrix, "weights": weights},
+                                     source=source)
+        lookback = int(fields.get("adv_lookback_bars", 20))
+        if not 5 <= lookback <= 252:
+            raise ValueError("adv_lookback_bars must lie between 5 and 252")
+        rows = list(sized["rows"])
+        if "instrument_id" in fields:
+            rows = [row for row in rows if row["instrument_id"] == fields["instrument_id"]]
+            if not rows:
+                raise ValueError("instrument_id is not present in the research size")
+        selected = max(rows, key=lambda row: float(row["target_notional"]))
+        notional = float(selected["target_notional"])
+        price = float(selected["reference_price"])
+        if notional <= 0 or price <= 0:
+            raise ValueError("selected size row must have positive notional and price")
+        shares = notional / price
+        panel_rows = dataset["panel_rows"]
+        if not isinstance(panel_rows, list):
+            raise ValueError("dataset panel is unavailable")
+        closes: list[float] = []
+        volumes: list[float] = []
+        returns: list[float] = []
+
+        def _finite(value: Any) -> float | None:
+            if isinstance(value, bool):
+                return None
+            if isinstance(value, (int, float)):
+                number = float(value)
+            elif isinstance(value, str):
+                try:
+                    number = float(value)
+                except ValueError:
+                    return None
+            else:
+                return None
+            return number if math.isfinite(number) else None
+
+        for row in panel_rows:
+            if not isinstance(row, dict) or row.get("instrument_id") != selected["instrument_id"]:
+                continue
+            close = _finite(row.get("close"))
+            volume = _finite(row.get("volume"))
+            ret = _finite(row.get("return_1"))
+            if close is not None and volume is not None and volume > 0 and close > 0:
+                closes.append(close)
+                volumes.append(volume)
+            if ret is not None:
+                returns.append(ret)
+        if len(closes) < lookback or len(returns) < 20:
+            raise ValueError("selected instrument lacks enough panel history for size binding")
+        recent_closes = closes[-lookback:]
+        recent_volumes = volumes[-lookback:]
+        adv = sum(c * v for c, v in zip(recent_closes, recent_volumes, strict=True)) / lookback
+        if adv <= 0:
+            raise ValueError("average daily value must be positive")
+        mean_ret = sum(returns) / len(returns)
+        variance = sum((value - mean_ret) ** 2 for value in returns) / (len(returns) - 1)
+        volatility = math.sqrt(max(variance, 0.0))
+        if volatility <= 0:
+            raise ValueError("return volatility must be positive")
+        if kind == "liquidity-var":
+            if any(key in inputs for key in
+                   ("position_value", "volatility", "average_daily_value")):
+                raise ValueError(
+                    "calculator inputs must leave position_value, volatility and "
+                    "average_daily_value unbound")
+            bound = {
+                "position_value": notional,
+                "volatility": volatility,
+                "average_daily_value": adv,
+                **inputs,
+            }
+            extraction = "RESEARCH_SIZE_LARGEST_NAME_LIQUIDITY_VAR"
+        else:
+            if any(key in inputs for key in ("shares", "volatility")):
+                raise ValueError("calculator inputs must leave shares and volatility unbound")
+            if "temporary_impact" not in inputs or "horizon" not in inputs or "intervals" not in inputs:
+                raise ValueError("almgren-chriss binding requires horizon, intervals and temporary_impact")
+            bound = {
+                "shares": shares,
+                "volatility": volatility * price,
+                **inputs,
+            }
+            extraction = "RESEARCH_SIZE_LARGEST_NAME_ALMGREN_CHRISS"
         source = {
             "size_id": sized["size_id"], "dataset_id": dataset["dataset_id"],
             "dataset_classification": dataset["classification"],
-            "screen_id": sized["screen_id"], "instruments": instruments,
-            "field": fields["field"], "observations": len(matrix),
-            "assets": len(instruments), "skipped_all_missing_timestamps": skipped,
-            "extraction": "RESEARCH_SIZE_WEIGHTS_ALIGNED_RETURN_PANEL_NO_IMPUTATION",
+            "screen_id": sized["screen_id"],
+            "instrument_id": selected["instrument_id"],
+            "adv_lookback_bars": lookback,
+            "observations": len(returns),
+            "extraction": extraction,
             "trading_approved": False,
         }
-        return self.journal.save(kind, {**inputs, "asset_returns": matrix, "weights": weights},
-                                 source=source)
+        return self.journal.save(kind, bound, source=source)
 
     def _from_screen(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Bind a research screen and Ledoit-Wolf covariance into allocation research.
