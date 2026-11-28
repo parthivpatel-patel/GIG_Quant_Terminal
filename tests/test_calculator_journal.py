@@ -242,6 +242,48 @@ class DatasetBindingTests(unittest.TestCase):
             self.workspace.run({"operation": "from-record", "record_id": covariance["record_id"],
                                 "kind": "hierarchical-risk-parity", "inputs": {"covariance": [[1, 0], [0, 1]]}})
 
+    def test_from_screen_binds_black_litterman_and_risk_parity(self):
+        from gig.service.persisted_research import PersistedResearchWorkspace
+        from gig.service.research_screen import ResearchScreenWorkspace
+        from gig.service.signal_workspace import SignalWorkspace
+        from test_persisted_flow_http import seed_flow
+
+        request = seed_flow(self.root)
+        dataset = PersistedDatasetWorkspace(self.root).build(request).to_dict()["data"]
+        run = PersistedResearchWorkspace(self.root).run({
+            "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+            "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+        }).to_dict()["data"]
+        signal = SignalWorkspace(self.root).run({
+            "run_ids": [run["run_id"]], "now": request["as_of"],
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        screen = ResearchScreenWorkspace(self.root).run({
+            "signal_id": signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        instruments = [row["instrument_id"] for row in screen["rows"][:2]]
+        self.assertEqual(len(instruments), 2)
+        covariance = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": dataset["dataset_id"],
+            "kind": "ledoit-wolf", "instruments": instruments, "field": "return_1", "inputs": {},
+        }).to_dict()["data"]
+        litterman = self.workspace.run({
+            "operation": "from-screen", "screen_id": screen["screen_id"],
+            "record_id": covariance["record_id"], "kind": "black-litterman",
+            "inputs": {"risk_aversion": 2.5, "tau": 0.05},
+        }).to_dict()
+        self.assertEqual(litterman["state"], "AVAILABLE", litterman)
+        self.assertFalse(litterman["data"]["trading_approved"])
+        self.assertEqual(len(litterman["data"]["result"]["expected_excess_returns"]), 2)
+        self.assertGreaterEqual(litterman["data"]["source"]["view_count"], 1)
+        parity = self.workspace.run({
+            "operation": "from-screen", "screen_id": screen["screen_id"],
+            "record_id": covariance["record_id"], "kind": "risk-parity", "inputs": {},
+        }).to_dict()
+        self.assertEqual(parity["state"], "AVAILABLE", parity)
+        self.assertAlmostEqual(sum(parity["data"]["result"]["weights"]), 1.0, places=6)
+        self.assertFalse(parity["data"]["trading_approved"])
+
 
 if __name__ == "__main__":
     unittest.main()

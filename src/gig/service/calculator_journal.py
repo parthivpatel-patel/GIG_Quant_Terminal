@@ -34,6 +34,7 @@ DATASET_BINDINGS = {
 }
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
 SIZE_BINDINGS = frozenset({"historical-var-components"})
+SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
     id TEXT PRIMARY KEY,
@@ -206,9 +207,10 @@ class CalculatorJournalWorkspace:
 
     def run(self, payload: dict[str, Any]) -> Contract:
         if not isinstance(payload, dict) or payload.get("operation") not in (
-                "save", "replay", "from-dataset", "from-record", "from-size"):
+                "save", "replay", "from-dataset", "from-record", "from-size", "from-screen"):
             raise ValueError(
-                "calculator journal operation must be save, replay, from-dataset, from-record or from-size")
+                "calculator journal operation must be save, replay, from-dataset, from-record, "
+                "from-size or from-screen")
         try:
             if payload["operation"] == "save":
                 fields = _fields(payload, {"operation", "kind", "inputs"}, {"operation", "kind", "inputs"})
@@ -221,6 +223,8 @@ class CalculatorJournalWorkspace:
                 return self._contract(self._from_record(payload))
             if payload["operation"] == "from-size":
                 return self._contract(self._from_size(payload))
+            if payload["operation"] == "from-screen":
+                return self._contract(self._from_screen(payload))
             fields = _fields(payload, {"operation", "record_id"}, {"operation", "record_id"})
             return self._contract(self.journal.replay(fields["record_id"]))
         except FileNotFoundError:
@@ -324,3 +328,82 @@ class CalculatorJournalWorkspace:
         }
         return self.journal.save(kind, {**inputs, "asset_returns": matrix, "weights": weights},
                                  source=source)
+
+    def _from_screen(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Bind a research screen and Ledoit-Wolf covariance into allocation research.
+
+        Black-Litterman views are absolute unit views on actionable names using
+        research_weight as the uncalibrated view return. Risk parity uses equal
+        risk budgets over the covariance instruments. Neither path approves trading.
+        """
+        fields = _fields(payload, {"operation", "screen_id", "record_id", "kind", "inputs"},
+                         {"operation", "screen_id", "record_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in SCREEN_BINDINGS:
+            raise ValueError("calculator cannot be bound to a research screen")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict):
+            raise ValueError("calculator inputs must be an object")
+        parent = self.journal.replay(fields["record_id"])
+        if parent["kind"] != "ledoit-wolf" or "covariance" not in parent["result"]:
+            raise ValueError("covariance must come from a saved Ledoit-Wolf record")
+        parent_source = parent.get("source")
+        if not isinstance(parent_source, dict) or "instruments" not in parent_source:
+            raise ValueError("Ledoit-Wolf record must pin its instrument order")
+        instruments = list(parent_source["instruments"])
+        covariance = parent["result"]["covariance"]
+        if len(covariance) != len(instruments):
+            raise ValueError("covariance dimension does not match pinned instruments")
+        from gig.service.research_screen import ResearchScreenWorkspace
+        screen = ResearchScreenWorkspace(self.directory).load(fields["screen_id"])
+        if screen.get("dataset_id") != parent_source.get("dataset_id"):
+            raise ValueError("screen and covariance must share one dataset identity")
+        by_name = {row["instrument_id"]: row for row in screen["rows"]}
+        if any(name not in by_name for name in instruments):
+            raise ValueError("covariance instruments must appear on the research screen")
+        count = len(instruments)
+        market_weights = [1.0 / count] * count
+        bound: dict[str, Any] = {"covariance": covariance}
+        if kind == "risk-parity":
+            if any(key in inputs for key in ("covariance", "budgets")):
+                raise ValueError("calculator inputs must leave covariance and budgets unbound")
+            bound["budgets"] = list(market_weights)
+            bound.update(inputs)
+        else:
+            if any(key in inputs for key in
+                   ("covariance", "market_weights", "views", "view_returns")):
+                raise ValueError(
+                    "calculator inputs must leave covariance, market_weights, views and "
+                    "view_returns unbound")
+            views: list[list[float]] = []
+            view_returns: list[float] = []
+            for index, name in enumerate(instruments):
+                row = by_name[name]
+                if row.get("stance") == "RESEARCH_HOLD" or float(row.get("research_weight", 0)) == 0.0:
+                    continue
+                vector = [0.0] * count
+                vector[index] = 1.0
+                views.append(vector)
+                view_returns.append(float(row["research_weight"]))
+            if not views:
+                raise ValueError("screen has no actionable research views for Black-Litterman")
+            bound.update({
+                "market_weights": market_weights,
+                "views": views,
+                "view_returns": view_returns,
+                **inputs,
+            })
+        source = {
+            "screen_id": screen["screen_id"],
+            "parent_record_id": parent["record_id"],
+            "parent_kind": "ledoit-wolf",
+            "dataset_id": screen["dataset_id"],
+            "dataset_classification": parent_source.get("dataset_classification",
+                                                       screen.get("input_classification")),
+            "instruments": instruments,
+            "argument": "covariance",
+            "extraction": "RESEARCH_SCREEN_VIEWS_PINNED_LEDOIT_WOLF_COVARIANCE",
+            "trading_approved": False,
+            "view_count": len(bound.get("views", [])),
+        }
+        return self.journal.save(kind, bound, source=source)
