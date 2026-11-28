@@ -80,6 +80,25 @@ class StrategyTests(unittest.TestCase):
         missing = self.strategies.replay_size({"size_id": "0" * 64}).to_dict()
         self.assertEqual(missing["state"], "UNAVAILABLE")
 
+    def test_size_derives_vol_scale_from_target_volatility(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "target_volatility": "0.15",
+            "annualization": 252,
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        self.assertEqual(sized["data"]["request"]["vol_scale_source"], "TARGET_VOLATILITY")
+        self.assertEqual(sized["data"]["risk"]["state"], "AVAILABLE")
+        self.assertGreater(float(sized["data"]["request"]["vol_scale"]), 0.0)
+        self.assertLessEqual(float(sized["data"]["request"]["vol_scale"]), 10.0)
+        with self.assertRaisesRegex(ValueError, "not both"):
+            self.strategies.size({
+                "screen_id": self.screen["screen_id"], "now": self.now,
+                "portfolio_notional": "100000", "max_name_notional": "5000",
+                "lot_size": 1, "vol_scale": "1", "target_volatility": "0.15",
+            })
+
     def test_cycle_discovers_sizes_and_simulates(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

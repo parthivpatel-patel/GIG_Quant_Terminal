@@ -906,7 +906,7 @@
   examples["workspace-allocate-screen"] = { ...examples["workspace-research-allocate"], screen_id: "0".repeat(64) };
   delete examples["workspace-allocate-screen"].run_id;
   examples["workspace-research-strategy"] = { ...examples["workspace-allocate-screen"], operation: "simulate", fill: true };
-  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, vol_scale: "1" };
+  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", annualization: 252 };
   examples["workspace-research-cycle"] = { ...examples["workspace-allocate-screen"], operation: "cycle", run_ids: ["0".repeat(64)], lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25, portfolio_notional: "100000", max_name_notional: "25000", vol_scale: "1", fill: true };
   delete examples["workspace-research-cycle"].screen_id;
   examples["workspace-strategy-replay"] = { operation: "replay", strategy_id: "0".repeat(64) };
@@ -1098,7 +1098,7 @@
       "workspace-allocate-signals": "Construct explicit constrained offline targets from a saved research score artifact. Existing exposure, cash, transaction costs and asynchronous fill limits still apply.",
       "workspace-allocate-screen": "Construct offline targets from nonzero research_weight values on a saved buy/hold/sell screen. Still simulated and unapproved.",
       "workspace-research-strategy": "Allocate from a research screen, prepare offline intents, and optionally fill at reference prices in the offline OMS. Broker stays off; trading stays unapproved.",
-      "workspace-research-size": "Convert screen research weights into capped lot sizes using admitted marks and optional caller vol_scale. No OMS prepare or broker order.",
+      "workspace-research-size": "Convert screen research weights into capped lot sizes using admitted marks. Optional target_volatility derives vol_scale from the saved return panel. No OMS prepare or broker order.",
       "workspace-research-cycle": "One research cycle: discover from saved model runs, size positions, then allocate/prepare/optionally fill offline. Broker stays off; trading stays unapproved.",
       "workspace-strategy-replay": "Reload a saved offline strategy simulation. No new orders are created.",
       "workspace-size-replay": "Reload saved research position sizes by identity. Replay does not approve trading.",
