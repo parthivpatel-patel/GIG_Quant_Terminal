@@ -85,6 +85,39 @@ class StrategyTests(unittest.TestCase):
         missing = self.strategies.replay_size({"size_id": "0" * 64}).to_dict()
         self.assertEqual(missing["state"], "UNAVAILABLE")
 
+    def test_size_overlays_regime_risk_parity_calculator_weights(self):
+        journal = CalculatorJournalWorkspace(self.base)
+        instruments = [row["instrument_id"] for row in self.screen["rows"][:2]]
+        self.assertEqual(len(instruments), 2)
+        covariance = journal.run({
+            "operation": "from-dataset", "dataset_id": self.screen["dataset_id"],
+            "kind": "ledoit-wolf", "instruments": instruments, "field": "return_1", "inputs": {},
+        }).to_dict()["data"]
+        parity = journal.run({
+            "operation": "from-screen", "screen_id": self.screen["screen_id"],
+            "record_id": covariance["record_id"], "kind": "risk-parity", "inputs": {},
+            "regime_short_bars": 20, "regime_long_bars": 60,
+        }).to_dict()
+        self.assertEqual(parity["state"], "AVAILABLE", parity)
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "calculator_record_id": parity["data"]["record_id"],
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        self.assertTrue(sized["data"]["metrics"]["allocation_weights_applied"])
+        self.assertEqual(sized["data"]["calculator_record_id"], parity["data"]["record_id"])
+        self.assertEqual(sized["data"]["request"]["calculator_kind"], "risk-parity")
+        self.assertIn("allocation_regime", sized["data"]["request"])
+        self.assertFalse(sized["data"]["trading_approved"])
+        with self.assertRaisesRegex(ValueError, "weight-producing"):
+            self.strategies.size({
+                "screen_id": self.screen["screen_id"], "now": self.now,
+                "portfolio_notional": "100000", "max_name_notional": "5000",
+                "lot_size": 1, "calculator_record_id": covariance["record_id"],
+            })
+
     def test_size_derives_vol_scale_from_target_volatility(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,

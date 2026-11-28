@@ -879,7 +879,7 @@
   examples["workspace-calculator-dataset"] = { operation: "from-dataset", dataset_id: "0".repeat(64), kind: "stationary-bootstrap", instrument_id: "US:AAA", field: "return_1", inputs: { mean_block: 5, replications: 100, seed: 1, confidence: .95 } };
   examples["workspace-calculator-covariance"] = { operation: "from-record", record_id: "0".repeat(64), kind: "hierarchical-risk-parity", inputs: {} };
   examples["workspace-calculator-size"] = { operation: "from-size", size_id: "0".repeat(64), kind: "historical-var-components", field: "return_1", inputs: { confidence: .95 } };
-  examples["workspace-calculator-screen"] = { operation: "from-screen", screen_id: "0".repeat(64), record_id: "0".repeat(64), kind: "black-litterman", inputs: { risk_aversion: 2.5, tau: 0.05 } };
+  examples["workspace-calculator-screen"] = { operation: "from-screen", screen_id: "0".repeat(64), record_id: "0".repeat(64), kind: "risk-parity", inputs: {}, regime_short_bars: 20, regime_long_bars: 60 };
   examples["workspace-calculator-options"] = { operation: "from-options", options_run_id: "0".repeat(64), kind: "svi-smile", inputs: {} };
   examples["workspace-calculator-size-record"] = { operation: "from-size-record", size_id: "0".repeat(64), record_id: "0".repeat(64), kind: "conditional-stress", inputs: { shocked_assets: [0], shocks: [-0.05] } };
   examples["workspace-research-gpr"] = { dataset_id: "0".repeat(64), model: "gaussian_process", min_train: 20, test_size: 10, embargo: 1, seed: 17 };
@@ -921,7 +921,7 @@
   examples["workspace-allocate-screen"] = { ...examples["workspace-research-allocate"], screen_id: "0".repeat(64) };
   delete examples["workspace-allocate-screen"].run_id;
   examples["workspace-research-strategy"] = { ...examples["workspace-allocate-screen"], operation: "simulate", fill: true };
-  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", max_expected_shortfall: "0.05", max_adv_participation: "0.1", adv_lookback_bars: 20, previous_size_id: "0".repeat(64), max_size_turnover: "0.2", annualization: 252 , findings_id: "0".repeat(64) };
+  examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", max_expected_shortfall: "0.05", max_adv_participation: "0.1", adv_lookback_bars: 20, previous_size_id: "0".repeat(64), max_size_turnover: "0.2", annualization: 252 , findings_id: "0".repeat(64), calculator_record_id: "0".repeat(64) };
   examples["workspace-research-cycle"] = { ...examples["workspace-allocate-screen"], operation: "cycle", run_ids: ["0".repeat(64)], lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25, portfolio_notional: "100000", max_name_notional: "25000", vol_scale: "1", estimate_cost: true, spread_bps: "4", impact_eta: "0.10", adv_lookback_bars: 20, fill: true };
   delete examples["workspace-research-cycle"].screen_id;
   examples["workspace-strategy-replay"] = { operation: "replay", strategy_id: "0".repeat(64) };
@@ -1050,6 +1050,7 @@
     if (kind === "workspace-research-strategy" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-size" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
     if (kind === "workspace-research-size" && workflowReferences.findings_id) example.findings_id = workflowReferences.findings_id;
+    if (kind === "workspace-research-size" && workflowReferences.calculator_record_id) example.calculator_record_id = workflowReferences.calculator_record_id;
     if (kind === "workspace-research-size" && workflowReferences.size_id) example.previous_size_id = workflowReferences.size_id;
     if (kind === "workspace-research-cycle" && workflowReferences.run_id) example.run_ids = [workflowReferences.run_id];
     if (kind === "workspace-research-enrich" && workflowReferences.screen_id) example.screen_id = workflowReferences.screen_id;
@@ -1184,7 +1185,7 @@
       "workspace-allocate-signals": "Construct explicit constrained offline targets from a saved research score artifact. Existing exposure, cash, transaction costs and asynchronous fill limits still apply.",
       "workspace-allocate-screen": "Construct offline targets from nonzero research_weight values on a saved buy/hold/sell screen. Still simulated and unapproved.",
       "workspace-research-strategy": "Allocate from a research screen, prepare offline intents, and optionally fill at reference prices in the offline OMS. Broker stays off; trading stays unapproved.",
-      "workspace-research-size": "Convert screen research weights into capped lot sizes using admitted marks. Optional target_volatility and max_expected_shortfall scale notionals from the saved return panel. No OMS prepare or broker order.",
+      "workspace-research-size": "Convert screen research weights into capped lot sizes using admitted marks. Optional target_volatility and max_expected_shortfall scale notionals from the saved return panel. Optional calculator_record_id overlays risk-parity / HRP / max-div weights. No OMS prepare or broker order.",
       "workspace-research-cycle": "One research cycle: discover from saved model runs, size positions, optional pre-trade TCA, then allocate/prepare/optionally fill offline. Broker stays off; trading stays unapproved.",
       "workspace-strategy-replay": "Reload a saved offline strategy simulation. No new orders are created.",
       "workspace-size-replay": "Reload saved research position sizes by identity. Replay does not approve trading.",
@@ -1292,7 +1293,7 @@
     specialScopes["workspace-calculator-dataset"] = "Copy one instrument series, or an aligned return panel for Ledoit-Wolf or minimum-CVaR, from a saved dataset. Missing values are not filled. Replay uses the pinned numbers. No order or trading approval.";
     specialScopes["workspace-calculator-covariance"] = "Allocate hierarchical risk parity or maximum diversification from a pinned Ledoit-Wolf covariance record. Dataset panel is not reread. No order or trading approval.";
     specialScopes["workspace-calculator-size"] = "Bind research sizes into historical VaR, liquidity VaR, Almgren-Chriss, participation schedules, or shortfall simulation. VaR uses signed weights on the aligned return panel; execution binders use the largest absolute name with panel ADV/volume and volatility. No order or trading approval.";
-    specialScopes["workspace-calculator-screen"] = "Bind a research screen and pinned Ledoit-Wolf covariance into Black-Litterman views or equal-budget risk parity. Views use research_weight; research-only, no trading approval.";
+    specialScopes["workspace-calculator-screen"] = "Bind a research screen and pinned Ledoit-Wolf covariance into Black-Litterman, risk parity, or hierarchical risk parity. Optional regime_short_bars/regime_long_bars tilt RP budgets and scale BL views from descriptive trailing vol; research-only, no trading approval.";
     specialScopes["workspace-calculator-options"] = "Fit raw SVI on one admitted CALL expiry from a saved options research run. Uses IV total variance; research-only, no OPRA or trading approval.";
     specialScopes["workspace-calculator-size-record"] = "Bind research sizes and a pinned Ledoit-Wolf covariance into conditional stress. Caller supplies shocked assets and shocks; research-only.";
     $("workbench-scope").textContent = specialScopes[kind] || (workspaceActions[kind] ? "This explicit action writes caller-supplied evidence or simulated research state to this local service. Submitted source claims are not vendor-verified. No broker orders can be sent." : "This calculation returns model research estimates. It does not admit market observations or approve trading.");
