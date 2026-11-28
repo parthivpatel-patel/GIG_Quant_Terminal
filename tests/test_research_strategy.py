@@ -104,6 +104,27 @@ class StrategyTests(unittest.TestCase):
                 "lot_size": 1, "vol_scale": "1", "target_volatility": "0.15",
             })
 
+    def test_size_applies_max_gross_exposure_cap(self):
+        baseline = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(baseline["state"], "AVAILABLE", baseline)
+        gross = float(baseline["data"]["metrics"]["gross_exposure"])
+        self.assertGreater(gross, 0.0)
+        capped = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_gross_exposure": str(max(gross * 0.5, 0.01)),
+        }).to_dict()
+        self.assertEqual(capped["state"], "AVAILABLE", capped)
+        self.assertTrue(capped["data"]["request"]["gross_exposure_cap_applied"])
+        self.assertLessEqual(float(capped["data"]["metrics"]["gross_exposure"]) + 1e-9,
+                             float(capped["data"]["request"]["max_gross_exposure"]) + 1e-6)
+        self.assertFalse(capped["data"]["trading_approved"])
+
     def test_exit_eval_and_regime_aware_sizing(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,

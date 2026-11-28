@@ -180,10 +180,10 @@ class ResearchStrategyWorkspace:
         allowed = {"run_ids", "now", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
                    "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
                    "target_volatility", "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
-                   "initial_cash", "n_long", "n_short", "gross_leverage", "max_name_weight", "lot_size",
-                   "max_age_seconds", "annualization", "metadata", "limits", "commission_bps",
-                   "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost", "fill",
-                   "document_id", "nlp_profile"}
+                   "max_gross_exposure", "initial_cash", "n_long", "n_short", "gross_leverage",
+                   "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata", "limits",
+                   "commission_bps", "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost",
+                   "fill", "document_id", "nlp_profile"}
         fields = _fields(payload, allowed, {"run_ids", "now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -223,7 +223,7 @@ class ResearchStrategyWorkspace:
             "lot_size": fields["lot_size"],
         }
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
-                    "regime_short_bars", "regime_long_bars", "annualization"):
+                    "regime_short_bars", "regime_long_bars", "max_gross_exposure", "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -238,7 +238,7 @@ class ResearchStrategyWorkspace:
         size_only = {"run_ids", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
                      "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
                      "target_volatility", "max_expected_shortfall", "regime_short_bars",
-                     "regime_long_bars", "document_id", "nlp_profile"}
+                     "regime_long_bars", "max_gross_exposure", "document_id", "nlp_profile"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -329,8 +329,9 @@ class ResearchStrategyWorkspace:
         """
         allowed = {"signal_ids", "buy_threshold", "sell_threshold", "now", "portfolio_notional",
                    "max_name_notional", "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
-                   "max_expected_shortfall", "regime_short_bars", "regime_long_bars", "annualization",
-                   "options_run_ids", "document_id", "nlp_profile"}
+                   "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
+                   "max_gross_exposure", "annualization", "options_run_ids", "document_id",
+                   "nlp_profile"}
         fields = _fields(payload, allowed, {"signal_ids", "now", "portfolio_notional",
                                             "max_name_notional", "lot_size"})
         monitor_payload = {key: fields[key] for key in fields
@@ -368,7 +369,7 @@ class ResearchStrategyWorkspace:
             "lot_size": fields["lot_size"],
         }
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
-                    "regime_short_bars", "regime_long_bars", "annualization"):
+                    "regime_short_bars", "regime_long_bars", "max_gross_exposure", "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -597,7 +598,7 @@ class ResearchStrategyWorkspace:
         fields = _fields(payload, {"screen_id", "now", "portfolio_notional", "max_name_notional",
                                    "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
                                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
-                                   "annualization"},
+                                   "max_gross_exposure", "annualization"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
         if "vol_scale" in fields and "target_volatility" in fields:
             raise ValueError("provide vol_scale or target_volatility, not both")
@@ -762,6 +763,35 @@ class ResearchStrategyWorkspace:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
+        gross_cap_applied = False
+        if "max_gross_exposure" in fields:
+            gross_cap = _positive(fields["max_gross_exposure"], "max_gross_exposure")
+            if gross_cap > Decimal("10"):
+                raise ValueError("max_gross_exposure exceeds the research bound")
+            gross = sum((Decimal(row["target_notional"]) for row in sized), Decimal(0))
+            exposure = gross / portfolio
+            if exposure > gross_cap:
+                factor = gross_cap / exposure
+                rescaled: list[dict[str, Any]] = []
+                for row in sized:
+                    notional = Decimal(row["target_notional"]) * factor
+                    price = Decimal(row["reference_price"])
+                    quantity = int(Fraction(notional) / Fraction(price) / Fraction(lot)) * lot
+                    if quantity <= 0:
+                        continue
+                    updated = {**row, "target_notional": str(notional), "quantity": str(quantity),
+                               "gross_scaled": True}
+                    rescaled.append(updated)
+                sized = rescaled
+                gross_cap_applied = True
+                if not sized:
+                    return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                          classification="UNAVAILABLE",
+                                          scope="workspace.research-strategy",
+                                          error=public_error("DATA_UNAVAILABLE"))
+        gross = sum((Decimal(row["target_notional"]) for row in sized), Decimal(0))
+        net = sum((Decimal(row["target_notional"]) * (1 if row["side"] == "buy" else -1)
+                   for row in sized), Decimal(0))
         request = {
             "portfolio_notional": str(portfolio),
             "max_name_notional": str(name_cap),
@@ -779,6 +809,9 @@ class ResearchStrategyWorkspace:
         if "regime_short_bars" in fields:
             request["regime_short_bars"] = int(fields["regime_short_bars"])
             request["regime_long_bars"] = int(fields["regime_long_bars"])
+        if "max_gross_exposure" in fields:
+            request["max_gross_exposure"] = str(_positive(fields["max_gross_exposure"], "max_gross_exposure"))
+            request["gross_exposure_cap_applied"] = gross_cap_applied
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
@@ -798,15 +831,19 @@ class ResearchStrategyWorkspace:
             "classification": "SIMULATED_PLAN",
             "metrics": {
                 "names": len(sized),
-                "gross_notional": str(sum((Decimal(row["target_notional"]) for row in sized), Decimal(0))),
+                "gross_notional": str(gross),
+                "net_notional": str(net),
+                "gross_exposure": str(gross / portfolio),
+                "net_exposure": str(net / portfolio),
                 "capped_names": sum(1 for row in sized if row["capped"]),
                 "vol_scale": str(scale),
                 "vol_scale_source": scale_source,
+                "gross_exposure_cap_applied": gross_cap_applied,
                 "trading_approved": False,
             },
             "notes": [
                 "Position sizes are research lot targets from screen weights and admitted marks.",
-                "max_name_notional caps each name; target_volatility and max_expected_shortfall scale notionals by panel risk.",
+                "max_name_notional caps each name; target_volatility, max_expected_shortfall, and max_gross_exposure constrain notionals.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }
