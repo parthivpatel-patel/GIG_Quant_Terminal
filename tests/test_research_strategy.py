@@ -661,6 +661,76 @@ class StrategyTests(unittest.TestCase):
         self.assertIsNone(plain_tick["data"]["exit_eval_id"])
         self.assertIsNone(plain_tick["data"]["feedback_id"])
 
+    def test_schedule_tick_soft_skips_when_ic_ir_decayed(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 2,
+            "now": self.now, "request": watch_request,
+            "min_ic_ir": 1e9, "alpha_decay_action": "soft_skip",
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        schedule_id = planned["data"]["schedule_id"]
+        first = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": self.now,
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        self.assertTrue(first["data"]["metrics"]["alpha_decayed"])
+        self.assertEqual(first["data"]["metrics"]["alpha_decay_action"], "soft_skip")
+        self.assertTrue(first["data"]["size_id"])
+        second_now = (pd.Timestamp(self.now) + pd.Timedelta(hours=1)).isoformat()
+        second = self.strategies.tick_schedule({
+            "schedule_id": schedule_id, "now": second_now,
+        }).to_dict()
+        self.assertEqual(second["state"], "STALE")
+        self.assertEqual(second["data"]["tick_state"], "ALPHA_DECAYED")
+        due = self.strategies.due_schedules({"now": second_now, "limit": 8}).to_dict()
+        self.assertTrue(all(row["schedule_id"] != schedule_id for row in due["data"]["rows"]))
+
+    def test_schedule_tick_invalidates_on_alpha_decay(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        watch_request = {
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "vol_scale": "1",
+        }
+        planned = self.strategies.schedule({
+            "action": "watch", "cadence_seconds": 3600, "max_ticks": 2,
+            "now": self.now, "request": watch_request,
+            "min_ic_half_life_steps": 100.0, "alpha_decay_action": "invalidate",
+        }).to_dict()
+        self.assertEqual(planned["state"], "AVAILABLE", planned)
+        first = self.strategies.tick_schedule({
+            "schedule_id": planned["data"]["schedule_id"], "now": self.now,
+        }).to_dict()
+        self.assertEqual(first["state"], "AVAILABLE", first)
+        self.assertTrue(first["data"]["metrics"]["alpha_decayed"])
+        self.assertTrue(first["data"]["invalidation_id"])
+        blocked = self.strategies.size({
+            "screen_id": first["data"]["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(blocked["state"], "UNAVAILABLE")
+
     def test_schedule_ticks_chain_previous_size_for_delta_cost(self):
         # Watch ticks avoid OMS prepare conflicts across ticks while still chaining sizes.
         first_signal_id = self.screen["signal_id"]

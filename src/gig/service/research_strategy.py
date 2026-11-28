@@ -40,7 +40,7 @@ SCHEDULE = "gig.research-strategy.schedule.v1"
 TICK = "gig.research-strategy.schedule-tick.v1"
 COST = "gig.research-strategy.estimate-cost.v1"
 _INVALIDATION_REASONS = frozenset({
-    "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP",
+    "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP", "ALPHA_DECAY",
 })
 _SCHEDULE_ACTIONS = frozenset({"cycle", "watch"})
 
@@ -860,7 +860,8 @@ class ResearchStrategyWorkspace:
         """
         fields = _fields(payload, {"action", "cadence_seconds", "now", "request", "max_ticks",
                                    "exit_eval", "stop_loss_pct", "take_profit_pct", "horizon_bars",
-                                   "feedback_every_n_ticks"},
+                                   "feedback_every_n_ticks",
+                                   "min_ic_ir", "min_ic_half_life_steps", "alpha_decay_action"},
                          {"action", "cadence_seconds", "now", "request"})
         action = fields["action"]
         if action not in _SCHEDULE_ACTIONS:
@@ -899,6 +900,19 @@ class ResearchStrategyWorkspace:
                 "take_profit_pct": str(take),
                 "horizon_bars": horizon,
             }
+        decay_action = fields.get("alpha_decay_action", "soft_skip")
+        if decay_action not in {"soft_skip", "invalidate"}:
+            raise ValueError("alpha_decay_action must be soft_skip or invalidate")
+        min_ir = fields.get("min_ic_ir")
+        if min_ir is not None:
+            min_ir = float(min_ir)
+            if min_ir != min_ir:  # NaN
+                raise ValueError("min_ic_ir must be a finite decimal")
+        min_hl = fields.get("min_ic_half_life_steps")
+        if min_hl is not None:
+            min_hl = float(min_hl)
+            if not (min_hl > 0):
+                raise ValueError("min_ic_half_life_steps must be positive")
         origin = aware_timestamp(fields["now"])
         body = {
             "schema_version": SCHEDULE,
@@ -913,6 +927,9 @@ class ResearchStrategyWorkspace:
             "exit_eval": do_exit,
             "exit_eval_request": exit_request,
             "feedback_every_n_ticks": feedback_every,
+            "min_ic_ir": min_ir,
+            "min_ic_half_life_steps": min_hl,
+            "alpha_decay_action": decay_action,
             "source": "persisted-research-strategy-schedule",
             "input_classification": "MODEL_ESTIMATE",
             "broker_connected": False,
@@ -920,11 +937,14 @@ class ResearchStrategyWorkspace:
             "economically_validated": False,
             "classification": "MODEL_ESTIMATE",
             "metrics": {"ticks_completed": 0, "exit_eval": do_exit,
-                        "feedback_every_n_ticks": feedback_every, "trading_approved": False},
+                        "feedback_every_n_ticks": feedback_every,
+                        "alpha_decay_gated": min_ir is not None or min_hl is not None,
+                        "trading_approved": False},
             "notes": [
                 "Schedules are durable research plans; ticks are explicit and CPU-local.",
                 "Optional exit_eval runs stop/take path diagnostics on each tick size_id.",
                 "Optional feedback_every_n_ticks aggregates successful exit-evals into research feedback.",
+                "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background worker, broker path, or trading approval is established.",
             ],
         }
@@ -958,6 +978,53 @@ class ResearchStrategyWorkspace:
             raise ValueError("research strategy schedule integrity mismatch")
         return document
 
+
+    def _alpha_decay_tripped(self, plan: dict[str, Any], screen_id: str | None) -> dict[str, Any] | None:
+        """Evaluate optional schedule alpha-decay thresholds against signal diagnostics."""
+        min_ir = plan.get("min_ic_ir")
+        min_hl = plan.get("min_ic_half_life_steps")
+        if min_ir is None and min_hl is None:
+            return None
+        if not screen_id:
+            return None
+        action = plan.get("alpha_decay_action", "soft_skip")
+        if action not in {"soft_skip", "invalidate"}:
+            raise ValueError("alpha_decay_action must be soft_skip or invalidate")
+        try:
+            screen = self.screens.load(screen_id)
+            from gig.service.signal_workspace import SignalWorkspace
+            signal = SignalWorkspace(self.base_dir).load(screen["signal_id"])
+        except FileNotFoundError:
+            return None
+        diagnostics = signal.get("diagnostics") or []
+        ir_values = [float(d["ic_ir"]) for d in diagnostics
+                     if d.get("ic_ir_state") == "AVAILABLE" and d.get("ic_ir") is not None]
+        hl_values = [float(d["ic_half_life"]["half_life_steps"]) for d in diagnostics
+                     if isinstance(d.get("ic_half_life"), dict)
+                     and d["ic_half_life"].get("state") == "AVAILABLE"
+                     and d["ic_half_life"].get("half_life_steps") is not None]
+        tripped = False
+        reasons: list[str] = []
+        if min_ir is not None and ir_values and all(value < float(min_ir) for value in ir_values):
+            tripped = True
+            reasons.append("MIN_IC_IR")
+        if min_hl is not None and hl_values and all(value < float(min_hl) for value in hl_values):
+            tripped = True
+            reasons.append("MIN_IC_HALF_LIFE")
+        if not tripped:
+            return None
+        return {
+            "alpha_decayed": True,
+            "alpha_decay_action": action,
+            "alpha_decay_reasons": reasons,
+            "min_ic_ir": None if min_ir is None else float(min_ir),
+            "min_ic_half_life_steps": None if min_hl is None else float(min_hl),
+            "observed_ic_ir": ir_values,
+            "observed_half_life_steps": hl_values,
+            "signal_id": signal["signal_id"],
+            "screen_id": screen["screen_id"],
+        }
+
     def tick_schedule(self, payload: dict[str, Any]) -> Contract:
         """Run one due schedule action and persist a tick receipt.
 
@@ -979,6 +1046,26 @@ class ResearchStrategyWorkspace:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
+        if plan.get("alpha_decayed"):
+            return Contract.admit(
+                State.STALE,
+                {
+                    **plan,
+                    "title": "Research schedule soft-stopped after alpha decay",
+                    "tick_state": "ALPHA_DECAYED",
+                    "observed_at": clock.isoformat(),
+                    "trading_approved": False,
+                },
+                source=plan["source"],
+                classification="MODEL_ESTIMATE",
+                as_of=clock.isoformat(),
+                scope="workspace.research-strategy",
+                source_identity=str(plan["dataset_id"]),
+                model_identity=plan["schedule_id"],
+                model_version=TICK,
+                evidence_state="HASH_VERIFIED_RESEARCH_STRATEGY_SCHEDULE_TICK",
+                readiness="RESEARCH_ONLY",
+            )
         if clock < due:
             return Contract.admit(
                 State.STALE,
@@ -1038,6 +1125,17 @@ class ResearchStrategyWorkspace:
                     fed = self.feedback({"exit_eval_ids": window}).to_dict()
                     if fed["state"] == State.AVAILABLE.value and isinstance(fed.get("data"), dict):
                         feedback_id = fed["data"]["feedback_id"]
+        decay = self._alpha_decay_tripped(plan, result.get("screen_id"))
+        invalidation_id = None
+        if decay is not None and decay["alpha_decay_action"] == "invalidate" and result.get("screen_id"):
+            invalidated = self.invalidate({
+                "screen_id": result["screen_id"],
+                "reason": "ALPHA_DECAY",
+                "now": clock.isoformat(),
+                "notes": "Schedule alpha-decay gate tripped on signal diagnostics",
+            }).to_dict()
+            if invalidated["state"] == State.AVAILABLE.value and isinstance(invalidated.get("data"), dict):
+                invalidation_id = invalidated["data"]["invalidation_id"]
         body = {
             "schema_version": TICK,
             "as_of": clock.isoformat(),
@@ -1056,6 +1154,8 @@ class ResearchStrategyWorkspace:
             "exit_eval_id": exit_eval_id,
             "feedback_id": feedback_id,
             "strategy_id": result.get("strategy_id"),
+            "invalidation_id": invalidation_id,
+            "alpha_decay": decay,
             "source": result.get("source", plan["source"]),
             "input_classification": result.get("input_classification", plan["input_classification"]),
             "broker_connected": False,
@@ -1070,6 +1170,8 @@ class ResearchStrategyWorkspace:
                 "exit_eval_attached": exit_eval_id is not None,
                 "feedback_attached": feedback_id is not None,
                 "exit_eval_count": len(exit_eval_ids),
+                "alpha_decayed": decay is not None,
+                "alpha_decay_action": None if decay is None else decay["alpha_decay_action"],
                 "trading_approved": False,
             },
             "notes": [
@@ -1078,6 +1180,7 @@ class ResearchStrategyWorkspace:
                 "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
                 "Optional exit_eval and feedback hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
+                "Optional min_ic_ir / min_ic_half_life_steps soft-stop or invalidate when signal diagnostics decay.",
                 "No background scheduler or trading approval is established.",
             ],
         }
@@ -1096,6 +1199,9 @@ class ResearchStrategyWorkspace:
             "last_exit_eval_id": exit_eval_id if exit_eval_id is not None else plan.get("last_exit_eval_id"),
             "exit_eval_ids": exit_eval_ids,
             "last_feedback_id": feedback_id if feedback_id is not None else plan.get("last_feedback_id"),
+            "alpha_decayed": bool(decay is not None or plan.get("alpha_decayed")),
+            "alpha_decay_tick_id": identity if decay is not None else plan.get("alpha_decay_tick_id"),
+            "invalidation_id": invalidation_id if invalidation_id is not None else plan.get("invalidation_id"),
         }
         pointer_path = self._path("schedules/" + plan["schedule_id"] + ".pointer.json")
         pointer_path.write_bytes(dumps(pointer).encode())
@@ -1117,7 +1223,10 @@ class ResearchStrategyWorkspace:
                     "last_cost_id": pointer.get("last_cost_id"),
                     "last_exit_eval_id": pointer.get("last_exit_eval_id"),
                     "exit_eval_ids": pointer.get("exit_eval_ids") or [],
-                    "last_feedback_id": pointer.get("last_feedback_id")}
+                    "last_feedback_id": pointer.get("last_feedback_id"),
+                    "alpha_decayed": pointer.get("alpha_decayed", False),
+                    "alpha_decay_tick_id": pointer.get("alpha_decay_tick_id"),
+                    "invalidation_id": pointer.get("invalidation_id")}
         return plan
 
     def due_schedules(self, payload: dict[str, Any]) -> Contract:
@@ -1174,6 +1283,8 @@ class ResearchStrategyWorkspace:
             except (FileNotFoundError, ValueError):
                 continue
             if int(plan["ticks_completed"]) >= int(plan["max_ticks"]):
+                continue
+            if plan.get("alpha_decayed"):
                 continue
             due = aware_timestamp(plan["next_due"])
             if clock < due:
