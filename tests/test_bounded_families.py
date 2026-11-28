@@ -559,7 +559,7 @@ class PersistedTests(unittest.TestCase):
 
     def test_purged_folds_saved_replay_and_research_only_boundary(self):
         for key, family in families().items():
-            if key == "nmf":
+            if key in {"nmf", "ard"}:
                 continue
             with self.subTest(family=key):
                 dataset, request, _ = self.request(key)
@@ -592,6 +592,11 @@ class PersistedTests(unittest.TestCase):
     def test_nonnegative_family_refuses_signed_persisted_features_before_fitting(self):
         dataset, request, _ = self.request("nmf")
         with patch("gig.research.bounded.fit_family", side_effect=AssertionError("preflight first")), self.assertRaisesRegex(ValueError, "nonnegative"):
+            fit_dataset(dataset, configuration(request))
+
+    def test_ard_refuses_the_short_persisted_fixture_before_a_false_fit(self):
+        dataset, request, _ = self.request("ard")
+        with self.assertRaisesRegex(ValueError, "converge with at least one retained coefficient"):
             fit_dataset(dataset, configuration(request))
 
     def test_future_revisions_and_strict_label_cutoff_do_not_change_first_fold(self):
