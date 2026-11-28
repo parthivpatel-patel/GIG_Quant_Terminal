@@ -2228,12 +2228,12 @@ class ResearchStrategyWorkspace:
             max_bps = _positive(fields["max_one_way_bps"], "max_one_way_bps")
             if max_bps > Decimal("10_000"):
                 raise ValueError("max_one_way_bps must lie in (0, 10000]")
-        max_cost_nav = None
+        max_cost_nav: Decimal | None = None
         if mode == "SHRINK_TO_COST":
             max_cost_nav = _positive(fields.get("max_cost_nav", "0.001"), "max_cost_nav")
             if max_cost_nav > Decimal("1"):
                 raise ValueError("max_cost_nav must lie in (0, 1]")
-        alpha_scale = None
+        alpha_scale: Decimal | None = None
         if mode == "ALPHA_COST_GATE":
             alpha_scale = _positive(fields.get("alpha_scale", "0.01"), "alpha_scale")
             if alpha_scale > Decimal("10"):
@@ -2244,16 +2244,18 @@ class ResearchStrategyWorkspace:
         cost_nav = Decimal(cost["metrics"]["cost_nav"])
         scale = Decimal(1)
 
-        if mode == "SHRINK_TO_COST" and cost_nav > max_cost_nav and cost_nav > 0:
-            scale = max_cost_nav / cost_nav
-            if scale > 1:
-                scale = Decimal(1)
-            for name in set(target) | set(prior):
-                delta = target.get(name, Decimal(0)) - prior.get(name, Decimal(0))
-                proposed[name] = prior.get(name, Decimal(0)) + scale * delta
-            for name in set(proposed):
-                if proposed[name] == 0 and name not in target and name not in prior:
-                    del proposed[name]
+        if mode == "SHRINK_TO_COST":
+            assert max_cost_nav is not None
+            if cost_nav > max_cost_nav and cost_nav > 0:
+                scale = max_cost_nav / cost_nav
+                if scale > 1:
+                    scale = Decimal(1)
+                for name in set(target) | set(prior):
+                    delta = target.get(name, Decimal(0)) - prior.get(name, Decimal(0))
+                    proposed[name] = prior.get(name, Decimal(0)) + scale * delta
+                for name in set(proposed):
+                    if proposed[name] == 0 and name not in target and name not in prior:
+                        del proposed[name]
 
         for name in set(target) | set(prior) | set(cost_by_name):
             tgt = target.get(name, Decimal(0))
@@ -2292,6 +2294,7 @@ class ResearchStrategyWorkspace:
                         action = "TRADE"
                         proposed[name] = tgt
             else:  # ALPHA_COST_GATE
+                assert alpha_scale is not None
                 row = cost_by_name.get(name)
                 if row is None or trade_notional == 0:
                     action = "KEEP" if abs(tgt - prv) == 0 else "TRADE"
@@ -2330,8 +2333,8 @@ class ResearchStrategyWorkspace:
             elif action == "SKIP":
                 trades_skipped += 1
             row_cost = cost_by_name.get(name)
-            est = None
-            trade_n = None
+            est: Decimal | None = None
+            trade_n: Decimal | None = None
             if row_cost is not None and action in {"TRADE", "SHRINK"}:
                 base_est = (Decimal(row_cost["transaction_fees"]) + Decimal(row_cost["spread_cost"])
                             + Decimal(row_cost["market_impact"]))
