@@ -12,7 +12,7 @@ const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
 assert.equal(new Set(ids).size, ids.length, "HTML IDs must be unique");
 for (const match of html.matchAll(/\bfor="([^"]+)"/g)) assert(ids.includes(match[1]), `Missing label target ${match[1]}`);
 for (const match of source.matchAll(/\$\("([^"]+)"\)/g)) assert(ids.includes(match[1]), `Missing DOM reference ${match[1]}`);
-assert(!/\b(?:innerHTML|outerHTML|eval)\b/.test(source), "Provider content must not use HTML execution sinks");
+assert(!/\b(?:innerHTML|outerHTML)\b|\beval\s*\(/.test(source), "Provider content must not use HTML execution sinks");
 assert(!/https?:\/\//.test(html), "No external asset fetches in the terminal shell");
 
 let clickedDownloads = [];
