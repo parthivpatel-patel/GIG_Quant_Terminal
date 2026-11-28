@@ -32,6 +32,7 @@ DATASET_BINDINGS = {
     "ledoit-wolf": ("returns", frozenset({"return_1"}), "panel"),
     "minimum-cvar": ("scenarios", frozenset({"return_1"}), "panel"),
 }
+COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
     id TEXT PRIMARY KEY,
@@ -203,8 +204,8 @@ class CalculatorJournalWorkspace:
                               error=public_error("DATA_UNAVAILABLE") if state == State.UNAVAILABLE else None)
 
     def run(self, payload: dict[str, Any]) -> Contract:
-        if not isinstance(payload, dict) or payload.get("operation") not in ("save", "replay", "from-dataset"):
-            raise ValueError("calculator journal operation must be save, replay or from-dataset")
+        if not isinstance(payload, dict) or payload.get("operation") not in ("save", "replay", "from-dataset", "from-record"):
+            raise ValueError("calculator journal operation must be save, replay, from-dataset or from-record")
         try:
             if payload["operation"] == "save":
                 fields = _fields(payload, {"operation", "kind", "inputs"}, {"operation", "kind", "inputs"})
@@ -213,6 +214,8 @@ class CalculatorJournalWorkspace:
                 return self._contract(self.journal.save(fields["kind"], fields["inputs"]))
             if payload["operation"] == "from-dataset":
                 return self._contract(self._from_dataset(payload))
+            if payload["operation"] == "from-record":
+                return self._contract(self._from_record(payload))
             fields = _fields(payload, {"operation", "record_id"}, {"operation", "record_id"})
             return self._contract(self.journal.replay(fields["record_id"]))
         except FileNotFoundError:
@@ -251,3 +254,25 @@ class CalculatorJournalWorkspace:
                   "skipped_all_missing_timestamps": skipped,
                   "extraction": "ALIGNED_RETURN_PANEL_NO_IMPUTATION"}
         return self.journal.save(kind, {**inputs, argument: matrix}, source=source)
+
+    def _from_record(self, payload: dict[str, Any]) -> dict[str, Any]:
+        fields = _fields(payload, {"operation", "record_id", "kind", "inputs"},
+                         {"operation", "record_id", "kind", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in COVARIANCE_BINDINGS:
+            raise ValueError("calculator cannot bind a saved covariance")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict) or "covariance" in inputs:
+            raise ValueError("calculator inputs must leave the covariance unbound")
+        parent = self.journal.replay(fields["record_id"])
+        if parent["kind"] != "ledoit-wolf" or "covariance" not in parent["result"]:
+            raise ValueError("covariance must come from a saved Ledoit-Wolf record")
+        covariance = parent["result"]["covariance"]
+        source = {"parent_record_id": parent["record_id"], "parent_kind": "ledoit-wolf",
+                  "argument": "covariance", "extraction": "PINNED_LEDOIT_WOLF_COVARIANCE"}
+        parent_source = parent.get("source")
+        if isinstance(parent_source, dict):
+            for key in ("dataset_id", "dataset_classification", "instruments"):
+                if key in parent_source:
+                    source[key] = parent_source[key]
+        return self.journal.save(kind, {**inputs, "covariance": covariance}, source=source)

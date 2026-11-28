@@ -24,8 +24,10 @@ or `roll-spread`. An aligned `return_1` panel of 2–64 instruments binds to
 is omitted and counted. A timestamp missing only some of them is refused.
 Nothing is imputed. Replay recomputes from the pinned numbers even if the
 dataset file is later removed. The dataset classification is kept beside the
-record and is not upgraded. `POST /api/v1/analytics/<kind>` still reads no
-dataset.
+record and is not upgraded. **Allocate from saved covariance** runs
+`hierarchical-risk-parity` or `maximum-diversification` on the covariance
+inside a saved Ledoit-Wolf record and pins that matrix. The weights remain
+a research estimate. `POST /api/v1/analytics/<kind>` still reads no dataset.
 
 | Kind | Method | Independent reference in `tests/test_quant_analytics.py` |
 | --- | --- | --- |

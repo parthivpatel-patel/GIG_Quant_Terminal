@@ -211,6 +211,37 @@ class DatasetBindingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.workspace.run(payload)
 
+    def test_a_saved_covariance_allocates_without_rereading_the_dataset(self):
+        covariance = self.workspace.run({
+            "operation": "from-dataset", "dataset_id": self.dataset["dataset_id"],
+            "kind": "ledoit-wolf", "instruments": ["US:AAA", "US:BBB"], "field": "return_1", "inputs": {},
+        }).to_dict()["data"]
+        allocated = self.workspace.run({
+            "operation": "from-record", "record_id": covariance["record_id"],
+            "kind": "hierarchical-risk-parity", "inputs": {},
+        }).to_dict()["data"]
+        self.assertEqual(allocated["source"]["parent_record_id"], covariance["record_id"])
+        self.assertEqual(allocated["source"]["dataset_classification"], "SYNTHETIC")
+        self.assertEqual(len(allocated["result"]["weights"]), 2)
+        self.assertFalse(allocated["trading_approved"])
+        diversified = self.workspace.run({
+            "operation": "from-record", "record_id": covariance["record_id"],
+            "kind": "maximum-diversification", "inputs": {"max_weight": 1},
+        }).to_dict()["data"]
+        self.assertAlmostEqual(sum(diversified["result"]["weights"]), 1)
+        (self.root / "research-datasets" / "datasets" / f"{self.dataset['dataset_id']}.json").unlink()
+        replayed = self.workspace.run({"operation": "replay", "record_id": allocated["record_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["result"]["weights"], allocated["result"]["weights"])
+        manual = self.workspace.run({
+            "operation": "save", "kind": "roll-spread", "inputs": ANALYSES["roll-spread"].example,
+        }).to_dict()["data"]
+        with self.assertRaisesRegex(ValueError, "Ledoit-Wolf"):
+            self.workspace.run({"operation": "from-record", "record_id": manual["record_id"],
+                                "kind": "hierarchical-risk-parity", "inputs": {}})
+        with self.assertRaisesRegex(ValueError, "unbound"):
+            self.workspace.run({"operation": "from-record", "record_id": covariance["record_id"],
+                                "kind": "hierarchical-risk-parity", "inputs": {"covariance": [[1, 0], [0, 1]]}})
+
 
 if __name__ == "__main__":
     unittest.main()
