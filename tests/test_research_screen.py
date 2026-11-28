@@ -11,9 +11,9 @@ import pandas as pd
 from gig.service.app import create_app
 from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
+from gig.service.financial_workspace import FinancialIntelligenceWorkspace
 from gig.service.options_workspace import OptionsWorkspace
 from gig.service.persisted_research import PersistedResearchWorkspace
-from gig.service.financial_workspace import FinancialIntelligenceWorkspace
 from gig.service.research_screen import (
     ResearchScreenWorkspace,
     label_rows,
