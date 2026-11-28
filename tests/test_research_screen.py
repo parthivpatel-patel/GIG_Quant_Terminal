@@ -236,6 +236,10 @@ class ScreenFlowTests(unittest.TestCase):
         self.assertEqual(scanned["data"]["metrics"]["scanned"], 2)
         self.assertFalse(scanned["data"]["trading_approved"])
         self.assertEqual(len(scanned["data"]["rows"]), 2)
+        self.assertTrue(all("iv_opportunity_score" in row for row in scanned["data"]["rows"]))
+        ranked = [row["iv_opportunity_rank"] for row in scanned["data"]["rows"]
+                  if row["iv_opportunity_rank"] is not None]
+        self.assertEqual(sorted(ranked), list(range(1, len(ranked) + 1)))
 
 
 class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):

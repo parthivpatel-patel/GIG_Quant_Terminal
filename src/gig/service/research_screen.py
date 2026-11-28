@@ -577,6 +577,15 @@ class ResearchScreenWorkspace:
                                       classification="UNAVAILABLE", scope="workspace.research-screen.options",
                                       error=public_error("DATA_UNAVAILABLE"))
             linked = option_candidate(screen["rows"], options["underlying_id"])
+            term = options.get("term_structure") or []
+            skew = options.get("skew") or []
+            vts_rows = (options.get("vts") or {}).get("rows") or []
+            atm_iv = term[0].get("implied_volatility") if term else None
+            skew_secant = next((item.get("value") for item in skew if item.get("value") is not None), None)
+            term_slope = next((item.get("value") for item in vts_rows if item.get("value") is not None), None)
+            parts = [abs(float(value)) for value in (skew_secant, term_slope) if value is not None]
+            opportunity = (sum(parts) / len(parts)) if parts else None
+            surface_state = (options.get("surface") or {}).get("state")
             rows.append({
                 "options_run_id": options["run_id"],
                 "underlying_id": options["underlying_id"],
@@ -584,10 +593,35 @@ class ResearchScreenWorkspace:
                 "option_candidate": linked["option_candidate"],
                 "research_weight": linked["research_weight"],
                 "admitted_option_quotes": options.get("metrics", {}).get("admitted_quotes", 0),
+                "atm_implied_volatility": atm_iv,
+                "skew_secant": skew_secant,
+                "term_structure_slope": term_slope,
+                "iv_opportunity_score": opportunity,
+                "iv_opportunity_rank": None,
+                "surface_state": surface_state,
+                "confidence": {
+                    "state": "UNCALIBRATED_RELATIVE_ABS_SCORE",
+                    "value": opportunity,
+                    "method": "MEAN_ABS_SKEW_AND_TERM_SLOPE",
+                },
                 "trading_approved": False,
             })
+        scored = sorted(
+            (row for row in rows if row["iv_opportunity_score"] is not None),
+            key=lambda row: (-float(row["iv_opportunity_score"]), row["underlying_id"]),
+        )
+        for index, row in enumerate(scored, start=1):
+            row["iv_opportunity_rank"] = index
         actionable = [row for row in rows if row["option_candidate"] in
                       {"RESEARCH_CALL_CANDIDATE", "RESEARCH_PUT_CANDIDATE"}]
+        ranked_actionable = sorted(
+            actionable,
+            key=lambda row: (
+                row["iv_opportunity_rank"] is None,
+                row["iv_opportunity_rank"] if row["iv_opportunity_rank"] is not None else 10**9,
+                row["underlying_id"],
+            ),
+        )
         body = {
             "schema_version": OPTIONS_SCAN,
             "as_of": screen["as_of"],
@@ -598,18 +632,20 @@ class ResearchScreenWorkspace:
             "input_classification": screen["input_classification"],
             "options_run_ids": [sha256(i) for i in ids],
             "rows": rows,
-            "actionable": actionable,
+            "actionable": ranked_actionable,
             "options_trading_approved": False,
             "trading_approved": False,
             "economically_validated": False,
             "usable_for_portfolio": False,
             "notes": [
                 "Options scan maps each saved options run onto the equity research screen by underlying identity.",
+                "IV opportunity scores use absolute skew secant and adjacent-expiry ATM IV slope; uncalibrated only.",
                 "Candidates are research labels only; no priced order, OPRA entitlement, or broker path is created.",
             ],
             "metrics": {
                 "scanned": len(rows),
                 "actionable": len(actionable),
+                "ranked_iv_opportunities": len(scored),
                 "calls": sum(1 for row in actionable if row["option_candidate"] == "RESEARCH_CALL_CANDIDATE"),
                 "puts": sum(1 for row in actionable if row["option_candidate"] == "RESEARCH_PUT_CANDIDATE"),
                 "trading_approved": False,

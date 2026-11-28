@@ -49,6 +49,8 @@ class SignalScoringReferenceTests(unittest.TestCase):
         self.assertAlmostEqual(result["diagnostics"][0]["raw_adaptive_weight"], 9/29)
         self.assertEqual([r["prediction"] for r in result["rows"]], [-.5, 0., .5])
         self.assertEqual(result["diagnostics"][0]["confidence"]["state"], "UNKNOWN")
+        self.assertEqual(result["diagnostics"][0]["ic_drift"]["state"], "UNKNOWN")
+        self.assertFalse(result["diagnostics"][0]["ic_drift"]["weight_zeroed"])
         self.assertFalse(result["trading_approved"])
 
     def test_later_revisions_and_current_outcome_do_not_change_earlier_signal(self):
