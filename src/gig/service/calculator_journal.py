@@ -33,6 +33,7 @@ DATASET_BINDINGS = {
     "minimum-cvar": ("scenarios", frozenset({"return_1"}), "panel"),
 }
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
+SIZE_BINDINGS = frozenset({"historical-var-components"})
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records(
     id TEXT PRIMARY KEY,
@@ -204,8 +205,10 @@ class CalculatorJournalWorkspace:
                               error=public_error("DATA_UNAVAILABLE") if state == State.UNAVAILABLE else None)
 
     def run(self, payload: dict[str, Any]) -> Contract:
-        if not isinstance(payload, dict) or payload.get("operation") not in ("save", "replay", "from-dataset", "from-record"):
-            raise ValueError("calculator journal operation must be save, replay, from-dataset or from-record")
+        if not isinstance(payload, dict) or payload.get("operation") not in (
+                "save", "replay", "from-dataset", "from-record", "from-size"):
+            raise ValueError(
+                "calculator journal operation must be save, replay, from-dataset, from-record or from-size")
         try:
             if payload["operation"] == "save":
                 fields = _fields(payload, {"operation", "kind", "inputs"}, {"operation", "kind", "inputs"})
@@ -216,6 +219,8 @@ class CalculatorJournalWorkspace:
                 return self._contract(self._from_dataset(payload))
             if payload["operation"] == "from-record":
                 return self._contract(self._from_record(payload))
+            if payload["operation"] == "from-size":
+                return self._contract(self._from_size(payload))
             fields = _fields(payload, {"operation", "record_id"}, {"operation", "record_id"})
             return self._contract(self.journal.replay(fields["record_id"]))
         except FileNotFoundError:
@@ -276,3 +281,46 @@ class CalculatorJournalWorkspace:
                 if key in parent_source:
                     source[key] = parent_source[key]
         return self.journal.save(kind, {**inputs, "covariance": covariance}, source=source)
+
+    def _from_size(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Bind research position sizes into a panel risk calculator.
+
+        Weights come from signed target notionals over portfolio notional.
+        Asset returns are the aligned saved dataset panel with no imputation.
+        """
+        fields = _fields(payload, {"operation", "size_id", "kind", "field", "inputs"},
+                         {"operation", "size_id", "kind", "field", "inputs"})
+        kind = fields["kind"]
+        if not isinstance(kind, str) or kind not in SIZE_BINDINGS:
+            raise ValueError("calculator cannot be bound to research position sizes")
+        if fields["field"] != "return_1":
+            raise ValueError("dataset field is not valid for size-bound risk")
+        inputs = fields["inputs"]
+        if not isinstance(inputs, dict) or "asset_returns" in inputs or "weights" in inputs:
+            raise ValueError("calculator inputs must leave asset_returns and weights unbound")
+        from gig.service.research_strategy import ResearchStrategyWorkspace
+        sized = ResearchStrategyWorkspace(self.directory).load_size(fields["size_id"])
+        dataset = PersistedDatasetWorkspace(self.directory).load(sized["dataset_id"])
+        instruments = [row["instrument_id"] for row in sized["rows"]]
+        portfolio = float(sized["request"]["portfolio_notional"])
+        if portfolio <= 0:
+            raise ValueError("portfolio notional must be positive")
+        weights = []
+        for row in sized["rows"]:
+            notional = float(row["target_notional"])
+            signed = notional if row["side"] == "buy" else -notional
+            weights.append(signed / portfolio)
+        matrix, skipped = aligned_returns(dataset["panel_rows"], instruments, fields["field"])
+        if len(matrix) < 20:
+            raise ValueError("aligned return panel is too short for size-bound risk")
+        source = {
+            "size_id": sized["size_id"], "dataset_id": dataset["dataset_id"],
+            "dataset_classification": dataset["classification"],
+            "screen_id": sized["screen_id"], "instruments": instruments,
+            "field": fields["field"], "observations": len(matrix),
+            "assets": len(instruments), "skipped_all_missing_timestamps": skipped,
+            "extraction": "RESEARCH_SIZE_WEIGHTS_ALIGNED_RETURN_PANEL_NO_IMPUTATION",
+            "trading_approved": False,
+        }
+        return self.journal.save(kind, {**inputs, "asset_returns": matrix, "weights": weights},
+                                 source=source)

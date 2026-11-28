@@ -6,14 +6,19 @@ import unittest
 from pathlib import Path
 
 import httpx
+import pandas as pd
 
 from gig.service.app import create_app
+from gig.service.calculator_journal import CalculatorJournalWorkspace
 from gig.service.contracts import EnvelopeSchema
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
+from gig.service.financial_workspace import FinancialIntelligenceWorkspace
+from gig.service.options_workspace import OptionsWorkspace
 from gig.service.persisted_research import PersistedResearchWorkspace
 from gig.service.research_screen import ResearchScreenWorkspace
 from gig.service.research_strategy import ResearchStrategyWorkspace
 from gig.service.signal_workspace import SignalWorkspace
+from test_options_workspace import option_fixture, option_request
 from test_persisted_flow_http import allocation_request, seed_flow
 
 
@@ -99,6 +104,55 @@ class StrategyTests(unittest.TestCase):
                 "lot_size": 1, "vol_scale": "1", "target_volatility": "0.15",
             })
 
+    def test_calculator_journal_binds_historical_var_from_size(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        journaled = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "historical-var-components", "field": "return_1",
+            "inputs": {"confidence": 0.95},
+        }).to_dict()
+        EnvelopeSchema.model_validate(journaled)
+        self.assertEqual(journaled["state"], "AVAILABLE", journaled)
+        body = journaled["data"]
+        self.assertFalse(body["trading_approved"])
+        self.assertEqual(body["source"]["size_id"], sized["data"]["size_id"])
+        self.assertEqual(body["kind"], "historical-var-components")
+        self.assertIn("expected_shortfall", body["result"])
+        replayed = CalculatorJournalWorkspace(self.base).run({
+            "operation": "replay", "record_id": body["record_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["result"], body["result"])
+
+    def test_size_applies_max_expected_shortfall_bound(self):
+        probe = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_expected_shortfall": "5", "annualization": 252,
+        }).to_dict()
+        self.assertEqual(probe["state"], "AVAILABLE", probe)
+        expected = float(probe["data"]["risk"]["data"]["loss_risk"]["expected_shortfall"])
+        self.assertGreater(expected, 0.0)
+        bound = str(max(expected * 0.5, 1e-6))
+        gated = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "max_expected_shortfall": bound, "annualization": 252,
+        }).to_dict()
+        self.assertEqual(gated["state"], "AVAILABLE", gated)
+        self.assertEqual(gated["data"]["risk"]["state"], "AVAILABLE")
+        self.assertIn("MAX_EXPECTED_SHORTFALL", gated["data"]["request"]["vol_scale_source"])
+        self.assertLess(float(gated["data"]["request"]["vol_scale"]),
+                        float(probe["data"]["request"]["vol_scale"]) + 1e-12)
+        self.assertTrue(gated["data"]["risk"]["data"]["expected_shortfall_bound_applied"])
+        self.assertFalse(gated["data"]["trading_approved"])
+
     def test_cycle_discovers_sizes_and_simulates(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -130,6 +184,54 @@ class StrategyTests(unittest.TestCase):
             replayed = ResearchStrategyWorkspace(root).replay_cycle(
                 {"cycle_id": body["cycle_id"]}).to_dict()
             self.assertEqual(replayed["data"]["cycle_id"], body["cycle_id"])
+
+    def test_watch_monitors_sizes_and_optionally_scans(self):
+        first_signal_id = self.screen["signal_id"]
+        signal_doc = SignalWorkspace(self.base).load(first_signal_id)
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": signal_doc["run_ids"], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        underlying = self.screen["rows"][0]["instrument_id"]
+        options = OptionsWorkspace(self.base)
+        fixture = option_fixture(underlying_id=underlying)
+        options.ingest(fixture)
+        option_run = options.run(option_request(underlying_id=underlying)).to_dict()["data"]
+        names = " and ".join(row["instrument_id"].replace("US:", "NYSE:")
+                             for row in self.screen["rows"][:2])
+        admitted = FinancialIntelligenceWorkspace(self.base).run({
+            "operation": "admit-authored",
+            "source_id": "watch-enrich-fixture",
+            "title": "Authored watch enrichment fixture",
+            "text": f"Analysts mentioned {names} during earnings.",
+            "license": "GIG-AUTHORED",
+        }).to_dict()
+        self.assertEqual(admitted["state"], "AVAILABLE", admitted)
+        watched = self.strategies.watch({
+            "signal_ids": [first_signal_id, later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+            "now": later, "portfolio_notional": "100000", "max_name_notional": "8000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+            "options_run_ids": [option_run["run_id"]],
+            "document_id": admitted["data"]["document_id"], "nlp_profile": "v2",
+        }).to_dict()
+        EnvelopeSchema.model_validate(watched)
+        self.assertEqual(watched["state"], "AVAILABLE", watched)
+        body = watched["data"]
+        self.assertFalse(body["trading_approved"])
+        self.assertFalse(body["broker_connected"])
+        self.assertTrue(body["monitor_id"])
+        self.assertTrue(body["size_id"])
+        self.assertTrue(body["scan_id"])
+        self.assertTrue(body["enrichment_id"])
+        self.assertEqual(body["metrics"]["screens"], 2)
+        self.assertGreaterEqual(body["metrics"]["fi_matched"], 0)
+        self.assertGreaterEqual(body["metrics"]["options_actionable"], 0)
+        replayed = self.strategies.replay_watch({"watch_id": body["watch_id"]}).to_dict()
+        self.assertEqual(replayed["data"]["watch_id"], body["watch_id"])
+        missing = self.strategies.replay_watch({"watch_id": "0" * 64}).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
 
 
 class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):

@@ -31,6 +31,7 @@ from gig.timestamps import aware_timestamp
 IMPLEMENTATION = "gig.research-strategy.v1"
 SIZING = "gig.research-strategy.sizing.v1"
 CYCLE = "gig.research-strategy.cycle.v1"
+WATCH = "gig.research-strategy.watch.v1"
 
 
 def _hash(value: Any) -> str:
@@ -176,10 +177,10 @@ class ResearchStrategyWorkspace:
         """
         allowed = {"run_ids", "now", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
                    "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
-                   "target_volatility", "initial_cash", "n_long", "n_short", "gross_leverage",
-                   "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata", "limits",
-                   "commission_bps", "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost",
-                   "fill"}
+                   "target_volatility", "max_expected_shortfall", "initial_cash", "n_long", "n_short",
+                   "gross_leverage", "max_name_weight", "lot_size", "max_age_seconds", "annualization",
+                   "metadata", "limits", "commission_bps", "slippage_bps", "price_tick", "max_turnover",
+                   "max_transaction_cost", "fill", "document_id", "nlp_profile"}
         fields = _fields(payload, allowed, {"run_ids", "now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -197,13 +198,29 @@ class ResearchStrategyWorkspace:
                                   error=discovered.get("error"),
                                   readiness="RESEARCH_ONLY")
         screen = discovered["data"]
+        enrich_data = None
+        if "document_id" in fields:
+            enrich_payload = {"screen_id": screen["screen_id"], "document_id": fields["document_id"]}
+            if "nlp_profile" in fields:
+                enrich_payload["nlp_profile"] = fields["nlp_profile"]
+            enriched = self.screens.enrich_mentions(enrich_payload).to_dict()
+            if enriched["state"] != State.AVAILABLE.value or not isinstance(enriched.get("data"), dict):
+                return Contract.admit(enriched["state"], enriched.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=enriched["provenance"]["classification"],
+                                      as_of=enriched["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=enriched.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            enrich_data = enriched["data"]
         size_payload = {
             "screen_id": screen["screen_id"], "now": fields["now"],
             "portfolio_notional": fields["portfolio_notional"],
             "max_name_notional": fields["max_name_notional"],
             "lot_size": fields["lot_size"],
         }
-        for key in ("max_age_seconds", "vol_scale", "target_volatility", "annualization"):
+        for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
+                    "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
         sized = self.size(size_payload).to_dict()
@@ -215,11 +232,10 @@ class ResearchStrategyWorkspace:
                                   scope="workspace.research-strategy",
                                   error=sized.get("error"),
                                   readiness="RESEARCH_ONLY")
-        simulate_payload = {key: fields[key] for key in fields
-                            if key not in {"run_ids", "lookback", "min_ic_observations",
-                                           "buy_threshold", "sell_threshold", "previous_screen_id",
-                                           "portfolio_notional", "max_name_notional", "vol_scale",
-                                           "target_volatility"}}
+        size_only = {"run_ids", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
+                     "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
+                     "target_volatility", "max_expected_shortfall", "document_id", "nlp_profile"}
+        simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
         if simulated["state"] != State.AVAILABLE.value or not isinstance(simulated.get("data"), dict):
@@ -238,12 +254,14 @@ class ResearchStrategyWorkspace:
             "screen_id": screen["screen_id"],
             "signal_id": screen["signal_id"],
             "size_id": sized["data"]["size_id"],
+            "enrichment_id": enrich_data.get("enrichment_id") if enrich_data is not None else None,
             "strategy_id": strategy["strategy_id"],
             "allocation_id": strategy["allocation_id"],
             "source": screen["source"],
             "input_classification": screen["input_classification"],
             "discovery": screen.get("discovery"),
             "size_metrics": sized["data"]["metrics"],
+            "fi_metrics": enrich_data["metrics"] if enrich_data is not None else None,
             "strategy_metrics": strategy["metrics"],
             "prepared_client_ids": strategy["prepared_client_ids"],
             "fills": strategy["fills"],
@@ -256,12 +274,13 @@ class ResearchStrategyWorkspace:
                 "research_buys": screen["metrics"]["research_buys"],
                 "research_sells": screen["metrics"]["research_sells"],
                 "sized_names": sized["data"]["metrics"]["names"],
+                "fi_matched": (enrich_data["metrics"]["matched_count"] if enrich_data is not None else 0),
                 "prepared_orders": strategy["metrics"]["prepared_orders"],
                 "filled_orders": strategy["metrics"]["filled_orders"],
                 "trading_approved": False,
             },
             "notes": [
-                "Research cycle chains discovery, position sizing, and offline simulation.",
+                "Research cycle chains discovery, optional FI enrich, position sizing, and offline simulation.",
                 "Sizing is advisory relative to the separate allocation/OMS simulation path.",
                 "Broker connectivity stays disabled; trading stays unapproved.",
             ],
@@ -299,6 +318,145 @@ class ResearchStrategyWorkspace:
                               evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_CYCLE",
                               identity_key="cycle_id")
 
+    def watch(self, payload: dict[str, Any]) -> Contract:
+        """Research watch pass: monitor successive signals, size latest, optional options scan.
+
+        Explicit caller invocation only — not a live market subscription.
+        """
+        allowed = {"signal_ids", "buy_threshold", "sell_threshold", "now", "portfolio_notional",
+                   "max_name_notional", "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
+                   "max_expected_shortfall", "annualization", "options_run_ids", "document_id",
+                   "nlp_profile"}
+        fields = _fields(payload, allowed, {"signal_ids", "now", "portfolio_notional",
+                                            "max_name_notional", "lot_size"})
+        monitor_payload = {key: fields[key] for key in fields
+                           if key in {"signal_ids", "buy_threshold", "sell_threshold"}}
+        monitored = self.screens.monitor(monitor_payload).to_dict()
+        if monitored["state"] != State.AVAILABLE.value or not isinstance(monitored.get("data"), dict):
+            return Contract.admit(monitored["state"], monitored.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=monitored["provenance"]["classification"],
+                                  as_of=monitored["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=monitored.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        monitor = monitored["data"]
+        screen_id = monitor["latest_screen_id"]
+        enrich_data = None
+        if "document_id" in fields:
+            enrich_payload = {"screen_id": screen_id, "document_id": fields["document_id"]}
+            if "nlp_profile" in fields:
+                enrich_payload["nlp_profile"] = fields["nlp_profile"]
+            enriched = self.screens.enrich_mentions(enrich_payload).to_dict()
+            if enriched["state"] != State.AVAILABLE.value or not isinstance(enriched.get("data"), dict):
+                return Contract.admit(enriched["state"], enriched.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=enriched["provenance"]["classification"],
+                                      as_of=enriched["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=enriched.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            enrich_data = enriched["data"]
+        size_payload = {
+            "screen_id": screen_id, "now": fields["now"],
+            "portfolio_notional": fields["portfolio_notional"],
+            "max_name_notional": fields["max_name_notional"],
+            "lot_size": fields["lot_size"],
+        }
+        for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
+                    "annualization"):
+            if key in fields:
+                size_payload[key] = fields[key]
+        sized = self.size(size_payload).to_dict()
+        if sized["state"] != State.AVAILABLE.value or not isinstance(sized.get("data"), dict):
+            return Contract.admit(sized["state"], sized.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=sized["provenance"]["classification"],
+                                  as_of=sized["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=sized.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        scan_data = None
+        if "options_run_ids" in fields:
+            scanned = self.screens.scan_options({
+                "screen_id": screen_id, "options_run_ids": fields["options_run_ids"],
+            }).to_dict()
+            if scanned["state"] != State.AVAILABLE.value or not isinstance(scanned.get("data"), dict):
+                return Contract.admit(scanned["state"], scanned.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=scanned["provenance"]["classification"],
+                                      as_of=scanned["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=scanned.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            scan_data = scanned["data"]
+        body = {
+            "schema_version": WATCH,
+            "as_of": sized["data"]["as_of"],
+            "dataset_id": monitor["dataset_id"],
+            "monitor_id": monitor["monitor_id"],
+            "screen_id": screen_id,
+            "size_id": sized["data"]["size_id"],
+            "enrichment_id": enrich_data.get("enrichment_id") if enrich_data is not None else None,
+            "scan_id": scan_data["scan_id"] if scan_data is not None else None,
+            "source": monitor["source"],
+            "input_classification": monitor["input_classification"],
+            "timeline": monitor["timeline"],
+            "size_metrics": sized["data"]["metrics"],
+            "fi_metrics": enrich_data["metrics"] if enrich_data is not None else None,
+            "options_metrics": scan_data["metrics"] if scan_data is not None else None,
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "SIMULATED_PLAN",
+            "metrics": {
+                "screens": monitor["metrics"]["screens"],
+                "timing_entries": monitor["metrics"]["timing_entries"],
+                "timing_exits": monitor["metrics"]["timing_exits"],
+                "sized_names": sized["data"]["metrics"]["names"],
+                "fi_matched": (enrich_data["metrics"]["matched_count"] if enrich_data is not None else 0),
+                "options_actionable": (scan_data["metrics"]["actionable"] if scan_data is not None else 0),
+                "trading_approved": False,
+            },
+            "notes": [
+                "Watch pass chains monitor → optional FI enrich → size → optional options scan.",
+                "It is not a live market subscription or broker order path.",
+                "Trading stays unapproved.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "watch_id": identity}
+        self._path("watches").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("watches/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research opportunity watch pass",
+                              model_version=WATCH,
+                              evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_WATCH",
+                              identity_key="watch_id")
+
+    def load_watch(self, watch_id: str) -> dict[str, Any]:
+        identity = sha256(watch_id)
+        path = self._path("watches/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research watch unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "watch_id"}
+        if document.get("watch_id") != identity or _hash(body) != identity or body.get("schema_version") != WATCH:
+            raise ValueError("research watch artifact integrity mismatch")
+        return document
+
+    def replay_watch(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"watch_id"}, {"watch_id"})
+        try:
+            document = self.load_watch(payload["watch_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research opportunity watch pass",
+                              model_version=WATCH,
+                              evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_WATCH",
+                              identity_key="watch_id")
+
     def size(self, payload: dict[str, Any]) -> Contract:
         """Convert screen research weights into capped research lot sizes.
 
@@ -308,7 +466,7 @@ class ResearchStrategyWorkspace:
         """
         fields = _fields(payload, {"screen_id", "now", "portfolio_notional", "max_name_notional",
                                    "lot_size", "max_age_seconds", "vol_scale", "target_volatility",
-                                   "annualization"},
+                                   "max_expected_shortfall", "annualization"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
         if "vol_scale" in fields and "target_volatility" in fields:
             raise ValueError("provide vol_scale or target_volatility, not both")
@@ -345,10 +503,8 @@ class ResearchStrategyWorkspace:
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
         symbols = sorted({row["instrument_id"] for row in actionable})
-        if "target_volatility" in fields:
-            target = _positive(fields["target_volatility"], "target_volatility")
-            if target > Decimal("5"):
-                raise ValueError("target_volatility exceeds the research bound")
+        need_risk = "target_volatility" in fields or "max_expected_shortfall" in fields
+        if need_risk:
             panel = pd.DataFrame(dataset["panel_rows"])
             if "return_1" not in panel:
                 return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
@@ -363,6 +519,11 @@ class ResearchStrategyWorkspace:
             weights = [float(next(row["research_weight"] for row in actionable if row["instrument_id"] == symbol))
                        for symbol in symbols]
             risk_metrics = portfolio_risk(complete.to_numpy(), weights, annualization=annualization)
+        if "target_volatility" in fields:
+            target = _positive(fields["target_volatility"], "target_volatility")
+            if target > Decimal("5"):
+                raise ValueError("target_volatility exceeds the research bound")
+            assert risk_metrics is not None
             realized = Decimal(str(risk_metrics["annualized_volatility"]))
             if realized <= 0:
                 return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
@@ -370,6 +531,18 @@ class ResearchStrategyWorkspace:
                                       error=public_error("DATA_UNAVAILABLE"))
             scale = min(target / realized, Decimal("10"))
             scale_source = "TARGET_VOLATILITY"
+        if "max_expected_shortfall" in fields:
+            bound = _positive(fields["max_expected_shortfall"], "max_expected_shortfall")
+            if bound > Decimal("5"):
+                raise ValueError("max_expected_shortfall exceeds the research bound")
+            assert risk_metrics is not None
+            expected = Decimal(str(risk_metrics["loss_risk"]["expected_shortfall"]))
+            if expected > 0 and expected > bound:
+                scale = min(scale * (bound / expected), Decimal("10"))
+                scale_source = (scale_source + "+MAX_EXPECTED_SHORTFALL"
+                                if scale_source != "IDENTITY" else "MAX_EXPECTED_SHORTFALL")
+            risk_metrics = {**risk_metrics, "max_expected_shortfall": str(bound),
+                            "expected_shortfall_bound_applied": expected > bound}
         source_policy = dataset["provenance"]["stored_corporate_action_policy"]
         snapshot = PointInTimeStore(self.workspace._path("bars.sqlite"), read_only=True).snapshot(
             at, source=dataset["source"])
@@ -429,6 +602,9 @@ class ResearchStrategyWorkspace:
         }
         if "target_volatility" in fields:
             request["target_volatility"] = str(_positive(fields["target_volatility"], "target_volatility"))
+        if "max_expected_shortfall" in fields:
+            request["max_expected_shortfall"] = str(
+                _positive(fields["max_expected_shortfall"], "max_expected_shortfall"))
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
@@ -456,7 +632,7 @@ class ResearchStrategyWorkspace:
             },
             "notes": [
                 "Position sizes are research lot targets from screen weights and admitted marks.",
-                "max_name_notional caps each name; target_volatility scales notionals by realized panel risk.",
+                "max_name_notional caps each name; target_volatility and max_expected_shortfall scale notionals by panel risk.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }
