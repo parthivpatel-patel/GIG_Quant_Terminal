@@ -188,11 +188,60 @@ class CompareTests(Base):
             documents.compare(self.corpus, identity, "0"*64)
 
 
+class MentionDiffTests(Base):
+    def test_a_changed_percent_and_a_dropped_event_stay_cited(self):
+        base = self.text("base", CALL)
+        revised = self.text("revised", CALL.replace("12%", "9%").replace(
+            "Is there any change to the dividend?", "Is there any change to the buyback?"))
+        result = documents.mention_diff(self.corpus, base, revised)
+        self.assertEqual((result["nlp_profile"], result["coverage"], result["trading_approved"]), ("v1", "ALL_PASSAGES", False))
+        self.assertEqual([(row["metric_mention"], row["quoted_decimal"], row["unit"], row["truth_state"])
+                          for row in result["base_only_facts"]], [("revenue", "12", "PERCENT", "UNKNOWN")])
+        self.assertEqual([row["quoted_decimal"] for row in result["revised_only_facts"]], ["9"])
+        fact = result["base_only_facts"][0]
+        cited = CALL.encode()[fact["provenance"]["source_start"]:fact["provenance"]["source_end"]].decode()
+        self.assertEqual(cited, "12%")
+        self.assertEqual([row["mention"].lower() for row in result["base_only_events"]], ["dividend"])
+        self.assertTrue(all(row["occurrence"] == "UNKNOWN" for row in result["base_only_events"]))
+        self.assertEqual(result["revised_only_events"], [])
+        self.assertGreater(result["shared_fact_count"], 0)
+
+    def test_an_extra_copy_stays_on_that_side_and_passage_21_is_not_annotated(self):
+        base = self.text("twice", "Jane Doe - Chief Executive Officer: Revenue grew 12%. Revenue grew 12%.")
+        once = self.text("once", "Jane Doe - Chief Executive Officer: Revenue grew 12%.")
+        copies = documents.mention_diff(self.corpus, base, once)
+        self.assertEqual((len(copies["base_only_facts"]), copies["revised_only_facts"], copies["shared_fact_count"]), (1, [], 1))
+        long_text = "\n".join(f"Item {i}: revenue {i}%." for i in range(1, 22))
+        long_id, twin = self.text("long", long_text), self.text("twin", long_text)
+        same = documents.mention_diff(self.corpus, long_id, twin)
+        self.assertTrue(same["identical_mentions"])
+        self.assertEqual(same["coverage"], "FIRST_20_PASSAGES_OF_A_DOCUMENT")
+        diff = documents.mention_diff(self.corpus, long_id, self.text("only-21", "Item 21: revenue 21%."))
+        self.assertEqual(len(diff["base_only_facts"]), 20)
+        self.assertNotIn("21", [row["quoted_decimal"] for row in diff["base_only_facts"]])
+        self.assertEqual([row["quoted_decimal"] for row in diff["revised_only_facts"]], ["21"])
+
+    def test_v2_keeps_the_share_class_that_v1_stops_at_the_dot(self):
+        left = self.text("class", "Operator: See NASDAQ:Z.A in this fixture.")
+        right = self.text("plain", "Operator: See NASDAQ:Z in this fixture.")
+        self.assertTrue(documents.mention_diff(self.corpus, left, right, profile="v1")["identical_mentions"])
+        version2 = documents.mention_diff(self.corpus, left, right, profile="v2")
+        self.assertEqual([row["mention"] for row in version2["base_only_entities"]], ["NASDAQ:Z.A"])
+        self.assertEqual([row["mention"] for row in version2["revised_only_entities"]], ["NASDAQ:Z"])
+        self.assertTrue(all(row["instrument_identity_state"] == "UNKNOWN" and row["existence_state"] == "UNKNOWN"
+                            for row in version2["base_only_entities"]+version2["revised_only_entities"]))
+        with self.assertRaisesRegex(ValueError, "v1 or v2"):
+            documents.mention_diff(self.corpus, left, right, profile="latest")
+        with self.assertRaisesRegex(ValueError, "two different documents"):
+            documents.mention_diff(self.corpus, left, left, profile="v2")
+
+
 class RecordTests(Base):
     def test_records_replay_after_restart_and_reject_tampering(self):
         first, second = self.text("call", CALL), self.text("call-2", CALL.replace("12%", "13%"))
         saved = [research.save(self.corpus, documents.transcript(self.corpus, first)),
-                 research.save(self.corpus, documents.compare(self.corpus, first, second))]
+                 research.save(self.corpus, documents.compare(self.corpus, first, second)),
+                 research.save(self.corpus, documents.mention_diff(self.corpus, first, second, profile="v2"))]
         restarted = FinancialCorpus(self.root, clock=self.clock)
         for record in saved:
             replayed = research.replay(restarted, record["record_id"])
@@ -206,7 +255,8 @@ class RecordTests(Base):
     def test_workspace_reports_missing_documents_as_unavailable_without_saving(self):
         workspace = FinancialIntelligenceWorkspace(self.root)
         for payload in ({"operation": "transcript", "document_id": "0"*64},
-                        {"operation": "compare", "base_document_id": "0"*64, "revised_document_id": "1"*64}):
+                        {"operation": "compare", "base_document_id": "0"*64, "revised_document_id": "1"*64},
+                        {"operation": "mention-diff", "base_document_id": "0"*64, "revised_document_id": "1"*64}):
             self.assertEqual(workspace.run(payload).to_dict()["state"], "UNAVAILABLE")
         self.assertFalse(self.root.exists() and any(self.root.rglob("*.sqlite*")))
 
@@ -230,13 +280,23 @@ class HTTPTests(unittest.IsolatedAsyncioTestCase):
                 compared = await client.post(endpoint, json={"operation": "compare", "base_document_id": ids[0],
                                                              "revised_document_id": ids[1]})
                 self.assertEqual(compared.json()["data"]["counts"]["NUMERIC_ONLY"], 1)
+                differed = await client.post(endpoint, json={"operation": "mention-diff", "base_document_id": ids[0],
+                                                             "revised_document_id": ids[1], "nlp_profile": "v1"})
+                self.assertEqual(differed.status_code, 200, differed.text)
+                self.assertEqual([row["quoted_decimal"] for row in differed.json()["data"]["base_only_facts"]], ["12"])
+                self.assertEqual([row["quoted_decimal"] for row in differed.json()["data"]["revised_only_facts"]], ["13"])
+                replayed_diff = await client.post(endpoint, json={"operation": "research-replay",
+                                                                  "record_id": differed.json()["data"]["record_id"]})
+                self.assertEqual(replayed_diff.json()["data"]["replay_state"], "REPRODUCED_FROM_PINNED_INPUTS")
                 replay = await client.post(endpoint, json={"operation": "research-replay",
                                                            "record_id": compared.json()["data"]["record_id"]})
                 self.assertEqual(replay.json()["data"]["replay_state"], "REPRODUCED_FROM_PINNED_INPUTS")
                 for bad in ({"operation": "transcript", "document_id": ids[0], "as_of": "now"},
                             {"operation": "compare", "base_document_id": ids[0]},
                             {"operation": "compare", "base_document_id": ids[0], "revised_document_id": ids[0]},
-                            {"operation": "transcript", "document_id": "not-a-hash"}):
+                            {"operation": "transcript", "document_id": "not-a-hash"},
+                            {"operation": "mention-diff", "base_document_id": ids[0], "revised_document_id": ids[1],
+                             "nlp_profile": "latest"}):
                     self.assertEqual((await client.post(endpoint, json=bad)).status_code, 422)
                 hostile = await client.post(endpoint, json={"operation": "transcript", "document_id": ids[0]},
                                             headers={"Origin": "https://hostile.invalid"})

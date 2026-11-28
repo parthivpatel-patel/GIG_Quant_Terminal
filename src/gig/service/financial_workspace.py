@@ -18,9 +18,11 @@ RESEARCH = {
                      "Saved research watch; checked only on explicit request"),
     "watch-check": ({"watch_id", "as_of"}, set(), "Explicit watch check against its saved baseline"),
     "investigate": ({"title", "questions", "as_of"}, set(), "Cited investigation report; extractive findings only"),
-    "transcript": ({"document_id"}, set(), "Cited transcript structure; speaker labels and cue words, not interpretation"),
+    "transcript": ({"document_id"}, {"nlp_profile"}, "Cited transcript structure; speaker labels and cue words, not interpretation"),
     "compare": ({"base_document_id", "revised_document_id"}, set(),
                 "Cited document comparison; text differences, not verified restatements"),
+    "mention-diff": ({"base_document_id", "revised_document_id"}, {"nlp_profile"},
+                     "Cited mention differences; parsed text, not verified restatements"),
     "research-replay": ({"record_id"}, set(), "Saved financial research record replay"),
 }
 
@@ -106,9 +108,12 @@ class FinancialIntelligenceWorkspace:
             if operation == "statements":
                 data = research.statements(self.corpus, payload["document_id"])
             elif operation == "transcript":
-                data = documents.transcript(self.corpus, payload["document_id"])
+                data = documents.transcript(self.corpus, payload["document_id"], profile=options.get("nlp_profile", "v1"))
             elif operation == "compare":
                 data = documents.compare(self.corpus, payload["base_document_id"], payload["revised_document_id"])
+            elif operation == "mention-diff":
+                data = documents.mention_diff(self.corpus, payload["base_document_id"], payload["revised_document_id"],
+                                              profile=options.get("nlp_profile", "v1"))
             elif operation == "synthesize":
                 data = research.multi_document_digest(self.corpus, payload["query"], payload["as_of"], **options)
             elif operation == "watch-create":
