@@ -171,12 +171,14 @@ class ScreenHTTPTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(body["trading_approved"])
                 alloc = allocation_request("", request["as_of"])
                 del alloc["run_id"]
-                alloc.update(signal_id=body["signal_id"], max_turnover=0.3, max_transaction_cost="100")
+                alloc.update(screen_id=body["screen_id"], max_turnover=0.3, max_transaction_cost="100")
                 allocated = await client.post("/api/v1/workspace/research-allocate", json=alloc)
                 self.assertEqual(allocated.status_code, 200, allocated.text)
-                allocation_id = allocated.json()["data"]["allocation_id"]
+                plan = allocated.json()["data"]
+                self.assertEqual(plan["source_kind"], "screen_id")
+                self.assertFalse(plan["trading_approved"])
                 prepared = await client.post("/api/v1/workspace/research-prepare", json={
-                    "allocation_id": allocation_id, "now": request["as_of"],
+                    "allocation_id": plan["allocation_id"], "now": request["as_of"],
                 })
                 self.assertEqual(prepared.status_code, 200, prepared.text)
                 self.assertTrue(prepared.json()["data"]["prepared_client_ids"])
