@@ -546,6 +546,27 @@ class BarTests(unittest.TestCase):
         self.assertEqual(report["errors"], sum(row["severity"] == "ERROR" for row in report["findings"]))
 
 
+class AllocationRegistryTests(unittest.TestCase):
+    def test_registered_allocation_examples_match_their_references(self):
+        parity = run("risk-parity", ANALYSES["risk-parity"].example)
+        np.testing.assert_allclose(parity["weights"], [2/3, 1/3], atol=2e-6)
+        self.assertEqual(parity["state"], "RISK_BUDGET_MATCHED")
+        example = ANALYSES["black-litterman"].example
+        posterior = run("black-litterman", example)
+        prior = 2.5*np.array(example["covariance"]) @ np.array(example["market_weights"])
+        np.testing.assert_allclose(posterior["expected_excess_returns"], prior, atol=1e-12)
+        self.assertEqual(posterior["view_uncertainty_source"], "diagonal_prior_view_variance")
+        kelly = run("fractional-kelly", ANALYSES["fractional-kelly"].example)
+        np.testing.assert_allclose(kelly["weights"], [.5, 0], atol=1e-12)
+        self.assertFalse(kelly["trading_approved"])
+        drawdown = run("drawdown", ANALYSES["drawdown"].example)
+        wealth = np.cumprod(1+np.array(ANALYSES["drawdown"].example["returns"]))
+        self.assertAlmostEqual(drawdown["max_drawdown"], wealth[1]/wealth[0]-1)
+        self.assertAlmostEqual(drawdown["current_drawdown"], wealth[-1]/wealth[0]-1)
+        self.assertEqual((drawdown["max_duration_observations"], drawdown["current_duration_observations"]), (2, 2))
+        self.assertEqual(len(ANALYSES), 36)
+
+
 class RegistryHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         async def clock():

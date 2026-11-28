@@ -63,6 +63,10 @@ a research estimate. `POST /api/v1/analytics/<kind>` still reads no dataset.
 | `stationary-bootstrap` | Politis-Romano (1994) geometric blocks, circular wrap, percentile interval | a direct block-by-block reconstruction; unit blocks match the iid resample variance |
 | `roll-spread` | Roll (1984) spread from the autocovariance of price changes | the written covariance formula; a seeded bid-ask bounce recovers its spread |
 | `corwin-schultz` | Corwin-Schultz (2012) high-low spread on consecutive bars | the published two-day expression on each window |
+| `risk-parity` | long-only risk budgeting | two-asset closed form in `tests/test_risk_allocation.py`; registry weights checked in `tests/test_quant_analytics.py` |
+| `black-litterman` | Gaussian Black-Litterman posterior; diagonal view variance unless Omega is supplied | a view equal to the equilibrium spread leaves the prior unchanged; one-asset Gaussian update |
+| `fractional-kelly` | capped `fraction * Sigma^{-1} * mu` | unconstrained two-asset weights and a binding gross cap |
+| `drawdown` | compounded wealth against a peak that starts at one | a three-return path: peak, 20 percent drawdown, partial recovery |
 
 ## Limits
 
@@ -98,3 +102,10 @@ a research estimate. `POST /api/v1/analytics/<kind>` still reads no dataset.
   identified rather than given an imaginary spread.
 - `corwin-schultz` uses overlapping pairs. Negative windows are counted and
   also shown floored at zero.
+- `risk-parity` is long-only and fully invested. A binding cap is labelled an
+  approximation rather than an exact budget.
+- `black-litterman` returns a posterior mean and covariance. It does not
+  optimize a portfolio, and market weights must be long-only and sum to one.
+- `fractional-kelly` is a small-return Gaussian approximation. Name and gross
+  caps change that result, and shorting is off unless requested.
+- `drawdown` compounds the supplied arithmetic returns. It is not a forecast.
