@@ -240,8 +240,10 @@ class ResearchScreenWorkspace:
         if previous is not None:
             if previous["dataset_id"] != signal["dataset_id"]:
                 raise ValueError("previous screen must share the signal dataset")
-            if aware_timestamp(previous["signal_as_of"]) >= aware_timestamp(signal["signal_as_of"]):
-                raise ValueError("previous screen must precede the current signal decision")
+            if aware_timestamp(previous["signal_as_of"]) > aware_timestamp(signal["signal_as_of"]):
+                raise ValueError("previous screen cannot follow a later signal decision")
+            if aware_timestamp(previous["as_of"]) >= aware_timestamp(signal["as_of"]):
+                raise ValueError("previous screen must precede the current evaluation time")
         body = build_screen(signal, request, previous)
         if discovery is not None:
             body["discovery"] = {"operation": "from-runs", "signal_id": signal["signal_id"],
@@ -294,6 +296,66 @@ class ResearchScreenWorkspace:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-screen",
                                   classification="UNAVAILABLE", scope="workspace.research-screen",
                                   error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document)
+
+    def monitor(self, payload: dict[str, Any]) -> Contract:
+        """Chain screens across successive saved signals for research-only monitoring."""
+        fields = _fields(payload, {"signal_ids", "buy_threshold", "sell_threshold"}, {"signal_ids"})
+        ids = fields["signal_ids"]
+        if not isinstance(ids, list) or not 2 <= len(ids) <= 32 or len(set(ids)) != len(ids):
+            raise ValueError("monitor requires two to thirty-two distinct signal identities")
+        screens: list[dict[str, Any]] = []
+        previous_id: str | None = None
+        for signal_id in ids:
+            request: dict[str, Any] = {"signal_id": signal_id}
+            for key in ("buy_threshold", "sell_threshold"):
+                if key in fields:
+                    request[key] = fields[key]
+            if previous_id is not None:
+                request["previous_screen_id"] = previous_id
+            contract = self.run(request)
+            result = contract.to_dict()
+            if result["state"] != State.AVAILABLE.value or not isinstance(result.get("data"), dict):
+                return contract
+            screens.append(result["data"])
+            previous_id = result["data"]["screen_id"]
+        timeline = [{"screen_id": screen["screen_id"], "signal_id": screen["signal_id"],
+                     "signal_as_of": screen["signal_as_of"],
+                     "research_buys": screen["metrics"]["research_buys"],
+                     "research_sells": screen["metrics"]["research_sells"],
+                     "research_holds": screen["metrics"]["research_holds"],
+                     "timing_entries": screen["metrics"]["timing_entries"],
+                     "timing_exits": screen["metrics"]["timing_exits"],
+                     "timing_flips": screen["metrics"]["timing_flips"]} for screen in screens]
+        body = {
+            "schema_version": IMPLEMENTATION + ".monitor",
+            "as_of": screens[-1]["as_of"],
+            "dataset_id": screens[-1]["dataset_id"],
+            "source": screens[-1]["source"],
+            "input_classification": screens[-1]["input_classification"],
+            "signal_ids": [sha256(i) for i in ids],
+            "screen_ids": [screen["screen_id"] for screen in screens],
+            "timeline": timeline,
+            "latest_screen_id": screens[-1]["screen_id"],
+            "rows": screens[-1]["rows"],
+            "timing": screens[-1]["timing"],
+            "metrics": {
+                "screens": len(screens),
+                "timing_entries": sum(item["timing_entries"] for item in timeline),
+                "timing_exits": sum(item["timing_exits"] for item in timeline),
+                "timing_flips": sum(item["timing_flips"] for item in timeline),
+                "trading_approved": False,
+            },
+            "trading_approved": False,
+            "economically_validated": False,
+            "usable_for_portfolio": screens[-1]["usable_for_portfolio"],
+            "notes": [
+                "Monitor chains saved signals in caller order; it is not a live market subscription.",
+                "Each step is a persisted research screen. No broker order or trading approval is established.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "monitor_id": identity, "screen_id": screens[-1]["screen_id"]}
         return self._contract(document)
 
     def link_options(self, payload: dict[str, Any]) -> Contract:

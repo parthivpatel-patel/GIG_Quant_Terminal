@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 import httpx
+import pandas as pd
 
 from gig.service.app import create_app
 from gig.service.contracts import EnvelopeSchema
@@ -104,6 +105,26 @@ class ScreenFlowTests(unittest.TestCase):
         self.assertFalse(discovered["data"]["trading_approved"])
         again = self.screens.replay({"screen_id": discovered["data"]["screen_id"]}).to_dict()
         self.assertEqual(again["data"]["rows"], discovered["data"]["rows"])
+
+    def test_monitor_chains_successive_saved_signals(self):
+        first_screen = self.screens.run({
+            "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()["data"]
+        later = (pd.Timestamp(self.now) + pd.Timedelta(days=1)).isoformat()
+        later_signal = SignalWorkspace(self.base).run({
+            "run_ids": [self.signal["run_ids"][0]], "now": later,
+            "lookback": 20, "min_ic_observations": 5,
+        }).to_dict()["data"]
+        self.assertNotEqual(later_signal["signal_id"], self.signal["signal_id"])
+        monitored = self.screens.monitor({
+            "signal_ids": [self.signal["signal_id"], later_signal["signal_id"]],
+            "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()
+        self.assertEqual(monitored["state"], "AVAILABLE")
+        self.assertEqual(monitored["data"]["metrics"]["screens"], 2)
+        self.assertFalse(monitored["data"]["trading_approved"])
+        self.assertEqual(len(monitored["data"]["timeline"]), 2)
+        self.assertEqual(monitored["data"]["screen_ids"][0], first_screen["screen_id"])
 
     def test_options_link_follows_the_matching_equity_stance(self):
         screen = self.screens.run({
