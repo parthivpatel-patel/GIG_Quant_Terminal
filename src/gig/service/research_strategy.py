@@ -858,7 +858,9 @@ class ResearchStrategyWorkspace:
         Cadence is advisory. Nothing runs in the background; each tick must be
         requested. Broker connectivity stays disabled.
         """
-        fields = _fields(payload, {"action", "cadence_seconds", "now", "request", "max_ticks"},
+        fields = _fields(payload, {"action", "cadence_seconds", "now", "request", "max_ticks",
+                                   "exit_eval", "stop_loss_pct", "take_profit_pct", "horizon_bars",
+                                   "feedback_every_n_ticks"},
                          {"action", "cadence_seconds", "now", "request"})
         action = fields["action"]
         if action not in _SCHEDULE_ACTIONS:
@@ -872,6 +874,31 @@ class ResearchStrategyWorkspace:
         request = fields["request"]
         if not isinstance(request, dict) or "now" in request:
             raise ValueError("schedule request must be an object without a now clock")
+        do_exit = fields.get("exit_eval", False)
+        if not isinstance(do_exit, bool):
+            raise ValueError("exit_eval must be a boolean")
+        feedback_every = int(fields.get("feedback_every_n_ticks", 0))
+        if not 0 <= feedback_every <= 32:
+            raise ValueError("feedback_every_n_ticks must lie between 0 and 32")
+        if feedback_every and not do_exit:
+            raise ValueError("feedback_every_n_ticks requires exit_eval")
+        exit_request = None
+        if do_exit:
+            for key in ("stop_loss_pct", "take_profit_pct", "horizon_bars"):
+                if key not in fields:
+                    raise ValueError(f"exit_eval requires {key}")
+            stop = _positive(fields["stop_loss_pct"], "stop_loss_pct")
+            take = _positive(fields["take_profit_pct"], "take_profit_pct")
+            if stop > Decimal("1") or take > Decimal("5"):
+                raise ValueError("stop_loss_pct or take_profit_pct exceeds the research bound")
+            horizon = int(fields["horizon_bars"])
+            if not 1 <= horizon <= 252:
+                raise ValueError("horizon_bars must lie between 1 and 252")
+            exit_request = {
+                "stop_loss_pct": str(stop),
+                "take_profit_pct": str(take),
+                "horizon_bars": horizon,
+            }
         origin = aware_timestamp(fields["now"])
         body = {
             "schema_version": SCHEDULE,
@@ -883,15 +910,21 @@ class ResearchStrategyWorkspace:
             "ticks_completed": 0,
             "next_due": origin.isoformat(),
             "request": request,
+            "exit_eval": do_exit,
+            "exit_eval_request": exit_request,
+            "feedback_every_n_ticks": feedback_every,
             "source": "persisted-research-strategy-schedule",
             "input_classification": "MODEL_ESTIMATE",
             "broker_connected": False,
             "trading_approved": False,
             "economically_validated": False,
             "classification": "MODEL_ESTIMATE",
-            "metrics": {"ticks_completed": 0, "trading_approved": False},
+            "metrics": {"ticks_completed": 0, "exit_eval": do_exit,
+                        "feedback_every_n_ticks": feedback_every, "trading_approved": False},
             "notes": [
                 "Schedules are durable research plans; ticks are explicit and CPU-local.",
+                "Optional exit_eval runs stop/take path diagnostics on each tick size_id.",
+                "Optional feedback_every_n_ticks aggregates successful exit-evals into research feedback.",
                 "No background worker, broker path, or trading approval is established.",
             ],
         }
@@ -985,6 +1018,26 @@ class ResearchStrategyWorkspace:
         result = executed["data"]
         completed = int(plan["ticks_completed"]) + 1
         next_due = (clock + timedelta(seconds=int(plan["cadence_seconds"]))).isoformat()
+        exit_eval_id = None
+        feedback_id = None
+        exit_eval_ids = list(plan.get("exit_eval_ids") or [])
+        if plan.get("exit_eval") and result.get("size_id") and plan.get("exit_eval_request"):
+            eval_payload = {
+                "size_id": result["size_id"],
+                **plan["exit_eval_request"],
+            }
+            evaluated = self.exit_eval(eval_payload).to_dict()
+            if evaluated["state"] == State.AVAILABLE.value and isinstance(evaluated.get("data"), dict):
+                exit_eval_id = evaluated["data"]["exit_eval_id"]
+                if exit_eval_id not in exit_eval_ids:
+                    exit_eval_ids.append(exit_eval_id)
+                exit_eval_ids = exit_eval_ids[-32:]
+                every = int(plan.get("feedback_every_n_ticks") or 0)
+                if every > 0 and len(exit_eval_ids) >= every and len(exit_eval_ids) % every == 0:
+                    window = exit_eval_ids[-every:]
+                    fed = self.feedback({"exit_eval_ids": window}).to_dict()
+                    if fed["state"] == State.AVAILABLE.value and isinstance(fed.get("data"), dict):
+                        feedback_id = fed["data"]["feedback_id"]
         body = {
             "schema_version": TICK,
             "as_of": clock.isoformat(),
@@ -1000,6 +1053,8 @@ class ResearchStrategyWorkspace:
             "size_id": result.get("size_id"),
             "previous_size_id": request.get("previous_size_id"),
             "cost_id": result.get("cost_id"),
+            "exit_eval_id": exit_eval_id,
+            "feedback_id": feedback_id,
             "strategy_id": result.get("strategy_id"),
             "source": result.get("source", plan["source"]),
             "input_classification": result.get("input_classification", plan["input_classification"]),
@@ -1012,6 +1067,9 @@ class ResearchStrategyWorkspace:
                 "prepared_orders": (result.get("metrics") or {}).get("prepared_orders"),
                 "estimated_cost_nav": (result.get("metrics") or {}).get("estimated_cost_nav"),
                 "size_chained": bool(request.get("previous_size_id")),
+                "exit_eval_attached": exit_eval_id is not None,
+                "feedback_attached": feedback_id is not None,
+                "exit_eval_count": len(exit_eval_ids),
                 "trading_approved": False,
             },
             "notes": [
@@ -1019,6 +1077,7 @@ class ResearchStrategyWorkspace:
                 "next_due advances by cadence_seconds from the tick clock.",
                 "Later ticks inject previous_size_id from the prior tick when the schedule request omits it.",
                 "Optional cycle estimate_cost attaches ESTIMATED pre-trade TCA on the sized book.",
+                "Optional exit_eval and feedback hooks are soft-fail; UNAVAILABLE post-hooks leave null ids.",
                 "No background scheduler or trading approval is established.",
             ],
         }
@@ -1034,6 +1093,9 @@ class ResearchStrategyWorkspace:
             "last_tick_id": identity,
             "last_size_id": result.get("size_id"),
             "last_cost_id": result.get("cost_id"),
+            "last_exit_eval_id": exit_eval_id if exit_eval_id is not None else plan.get("last_exit_eval_id"),
+            "exit_eval_ids": exit_eval_ids,
+            "last_feedback_id": feedback_id if feedback_id is not None else plan.get("last_feedback_id"),
         }
         pointer_path = self._path("schedules/" + plan["schedule_id"] + ".pointer.json")
         pointer_path.write_bytes(dumps(pointer).encode())
@@ -1052,7 +1114,10 @@ class ResearchStrategyWorkspace:
             return {**plan, "ticks_completed": pointer["ticks_completed"],
                     "next_due": pointer["next_due"], "last_tick_id": pointer.get("last_tick_id"),
                     "last_size_id": pointer.get("last_size_id"),
-                    "last_cost_id": pointer.get("last_cost_id")}
+                    "last_cost_id": pointer.get("last_cost_id"),
+                    "last_exit_eval_id": pointer.get("last_exit_eval_id"),
+                    "exit_eval_ids": pointer.get("exit_eval_ids") or [],
+                    "last_feedback_id": pointer.get("last_feedback_id")}
         return plan
 
     def due_schedules(self, payload: dict[str, Any]) -> Contract:
