@@ -41,6 +41,7 @@ TICK = "gig.research-strategy.schedule-tick.v1"
 COST = "gig.research-strategy.estimate-cost.v1"
 COST_REBALANCE = "gig.research-strategy.cost-rebalance.v1"
 FACTOR_EXPOSURE = "gig.research-strategy.factor-exposure.v1"
+FACTOR_REBALANCE = "gig.research-strategy.factor-rebalance.v1"
 _INVALIDATION_REASONS = frozenset({
     "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP", "ALPHA_DECAY",
     "FACTOR_BREACH",
@@ -206,7 +207,9 @@ class ResearchStrategyWorkspace:
                    "price_tick", "max_turnover", "max_transaction_cost", "fill", "document_id",
                    "nlp_profile", "estimate_cost", "spread_bps", "impact_eta", "findings_id",
                    "calculator_record_id", "cost_rebalance", "rebalance_mode",
-                   "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"}
+                   "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale",
+                   "factor_rebalance", "factor_rebalance_mode", "n_factors", "min_obs",
+                   "shrinkage", "max_ex_ante_vol", "max_systematic_share", "exposure_id"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
@@ -332,6 +335,33 @@ class ResearchStrategyWorkspace:
                                       error=rebalanced.get("error"),
                                       readiness="RESEARCH_ONLY")
             rebalance_data = rebalanced["data"]
+        do_factor_reb = fields.get("factor_rebalance", False)
+        if not isinstance(do_factor_reb, bool):
+            raise ValueError("factor_rebalance must be a boolean")
+        factor_reb_data = None
+        if do_factor_reb:
+            factor_payload: dict[str, Any] = {
+                "size_id": sized["data"]["size_id"],
+                "now": fields["now"],
+                "mode": fields.get("factor_rebalance_mode", "SHRINK_TO_VOL"),
+            }
+            for key in ("n_factors", "min_obs", "lookback", "shrinkage", "max_ex_ante_vol",
+                        "max_systematic_share", "annualization", "exposure_id"):
+                if key in fields:
+                    factor_payload[key] = fields[key]
+            if "max_ex_ante_vol" not in factor_payload:
+                raise ValueError("factor_rebalance requires max_ex_ante_vol")
+            factor_rebalanced = self.factor_rebalance(factor_payload).to_dict()
+            if (factor_rebalanced["state"] != State.AVAILABLE.value
+                    or not isinstance(factor_rebalanced.get("data"), dict)):
+                return Contract.admit(factor_rebalanced["state"], factor_rebalanced.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=factor_rebalanced["provenance"]["classification"],
+                                      as_of=factor_rebalanced["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=factor_rebalanced.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            factor_reb_data = factor_rebalanced["data"]
         size_only = {"run_ids", "dataset_id", "pair_run_id", "mode", "momentum_lookback",
                      "reversion_lookback", "momentum_weight", "reversion_weight", "lookback",
                      "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id",
@@ -341,7 +371,9 @@ class ResearchStrategyWorkspace:
                      "previous_size_id", "max_size_turnover", "document_id", "nlp_profile",
                      "estimate_cost", "spread_bps", "impact_eta", "findings_id",
                      "calculator_record_id", "cost_rebalance", "rebalance_mode",
-                     "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"}
+                     "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale",
+                     "factor_rebalance", "factor_rebalance_mode", "n_factors", "min_obs",
+                     "shrinkage", "max_ex_ante_vol", "max_systematic_share", "exposure_id"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -363,6 +395,9 @@ class ResearchStrategyWorkspace:
             "size_id": sized["data"]["size_id"],
             "cost_id": cost_data["cost_id"] if cost_data is not None else None,
             "rebalance_id": rebalance_data["rebalance_id"] if rebalance_data is not None else None,
+            "exposure_id": factor_reb_data["exposure_id"] if factor_reb_data is not None else None,
+            "factor_rebalance_id": (
+                factor_reb_data["factor_rebalance_id"] if factor_reb_data is not None else None),
             "enrichment_id": enrich_data.get("enrichment_id") if enrich_data is not None else None,
             "strategy_id": strategy["strategy_id"],
             "allocation_id": strategy["allocation_id"],
@@ -372,6 +407,8 @@ class ResearchStrategyWorkspace:
             "size_metrics": sized["data"]["metrics"],
             "cost_metrics": cost_data["metrics"] if cost_data is not None else None,
             "rebalance_metrics": rebalance_data["metrics"] if rebalance_data is not None else None,
+            "factor_rebalance_metrics": (
+                factor_reb_data["metrics"] if factor_reb_data is not None else None),
             "fi_metrics": enrich_data["metrics"] if enrich_data is not None else None,
             "strategy_metrics": strategy["metrics"],
             "prepared_client_ids": strategy["prepared_client_ids"],
@@ -390,12 +427,15 @@ class ResearchStrategyWorkspace:
                     None if cost_data is None else cost_data["metrics"]["cost_nav"]),
                 "rebalance_trades_skipped": (
                     None if rebalance_data is None else rebalance_data["metrics"]["trades_skipped"]),
+                "factor_shrink_scale": (
+                    None if factor_reb_data is None
+                    else factor_reb_data["request"]["shrink_scale"]),
                 "prepared_orders": strategy["metrics"]["prepared_orders"],
                 "filled_orders": strategy["metrics"]["filled_orders"],
                 "trading_approved": False,
             },
             "notes": [
-                "Research cycle chains discovery, optional FI enrich, position sizing, optional pre-trade TCA, optional cost-aware rebalance, and offline simulation.",
+                "Research cycle chains discovery, optional FI enrich, position sizing, optional pre-trade TCA, optional cost-aware rebalance, optional factor shrink-to-vol, and offline simulation.",
                 "Discovery may use model ensembles or cross-sectional factor ranks including market-neutral momentum.",
                 "Sizing is advisory relative to the separate allocation/OMS simulation path.",
                 "Pre-trade costs stay ESTIMATED and are never mixed with simulated fills.",
@@ -2829,6 +2869,192 @@ class ResearchStrategyWorkspace:
                               model_version=FACTOR_EXPOSURE,
                               evidence="HASH_VERIFIED_RESEARCH_FACTOR_EXPOSURE",
                               identity_key="exposure_id")
+
+    def factor_rebalance(self, payload: dict[str, Any]) -> Contract:
+        """Propose a factor-risk shrink of a sized research book.
+
+        ``SHRINK_TO_VOL`` scales gross target notionals uniformly until
+        ex-ante vol ≤ ``max_ex_ante_vol`` (portfolio vol is homogeneous of
+        degree 1 under ``Σ = BB′ + D``). Optional ``exposure_id`` reuses a
+        prior attribution; otherwise a PCA exposure is fitted and persisted.
+        Advisory only — sized books are not rewritten; broker stays off.
+        """
+        modes = frozenset({"SHRINK_TO_VOL"})
+        fields = _fields(payload, {"size_id", "now", "mode", "exposure_id", "n_factors",
+                                   "min_obs", "lookback", "shrinkage", "max_ex_ante_vol",
+                                   "max_systematic_share", "annualization"},
+                         {"size_id", "now", "mode", "max_ex_ante_vol"})
+        mode = fields["mode"]
+        if mode not in modes:
+            raise ValueError("mode must be SHRINK_TO_VOL")
+        max_vol = _positive(fields["max_ex_ante_vol"], "max_ex_ante_vol")
+        if max_vol > Decimal("5"):
+            raise ValueError("max_ex_ante_vol exceeds the research bound")
+        try:
+            sized = self.load_size(fields["size_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=sized["screen_id"], size_id=sized["size_id"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        at = aware_timestamp(fields["now"])
+        exposure: dict[str, Any] | None = None
+        if "exposure_id" in fields:
+            try:
+                exposure = self.load_factor_exposure(fields["exposure_id"])
+            except FileNotFoundError:
+                return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                      classification="UNAVAILABLE",
+                                      scope="workspace.research-strategy",
+                                      error=public_error("DATA_UNAVAILABLE"))
+            if exposure["size_id"] != sized["size_id"]:
+                raise ValueError("exposure_id must reference the same size_id")
+            if exposure["dataset_id"] != sized["dataset_id"]:
+                raise ValueError("exposure_id must share the size dataset")
+        else:
+            exp_payload: dict[str, Any] = {
+                "size_id": sized["size_id"], "now": fields["now"],
+                "max_ex_ante_vol": str(max_vol),
+            }
+            for key in ("n_factors", "min_obs", "lookback", "shrinkage",
+                        "max_systematic_share", "annualization"):
+                if key in fields:
+                    exp_payload[key] = fields[key]
+            attributed = self.factor_exposure(exp_payload).to_dict()
+            if attributed["state"] != State.AVAILABLE.value or not isinstance(attributed.get("data"), dict):
+                return Contract.admit(attributed["state"], attributed.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=attributed["provenance"]["classification"],
+                                      as_of=attributed["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=attributed.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            exposure = attributed["data"]
+        report = exposure.get("report") or {}
+        if not report.get("available") or report.get("ex_ante_vol") is None:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        input_vol = Decimal(str(report["ex_ante_vol"]))
+        if input_vol < 0 or not input_vol.is_finite():
+            raise ValueError("ex_ante_vol from exposure must be a finite non-negative decimal")
+        scale = Decimal(1)
+        if input_vol > max_vol and input_vol > 0:
+            scale = max_vol / input_vol
+            if scale > 1:
+                scale = Decimal(1)
+        proposed_vol = input_vol * scale
+        portfolio = Decimal(sized["request"]["portfolio_notional"])
+        rows_out: list[dict[str, Any]] = []
+        names_shrunk = 0
+        gross = Decimal(0)
+        for row in sorted(sized["rows"], key=lambda item: item["instrument_id"]):
+            signed = Decimal(row["target_notional"]) * (
+                Decimal(1) if row["side"] == "buy" else Decimal(-1))
+            proposed = signed * scale
+            notional = abs(proposed)
+            price = Decimal(row["reference_price"])
+            quantity = (notional / price) if price > 0 else Decimal(0)
+            action = "KEEP"
+            skip_reason = None
+            if scale < 1 and abs(signed) > 0:
+                action = "SHRINK"
+                skip_reason = "EX_ANTE_VOL_SHRINK"
+                names_shrunk += 1
+            gross += notional
+            rows_out.append({
+                "instrument_id": row["instrument_id"],
+                "side": "buy" if proposed > 0 else ("sell" if proposed < 0 else "flat"),
+                "target_notional": str(notional),
+                "quantity": str(quantity),
+                "reference_price": str(price),
+                "action": action,
+                "skip_reason": skip_reason,
+                "research_weight": float(
+                    Decimal(str(row.get("research_weight", 0))) * scale),
+                "trading_approved": False,
+            })
+        body = {
+            "schema_version": FACTOR_REBALANCE,
+            "as_of": at.isoformat(),
+            "dataset_id": sized["dataset_id"],
+            "screen_id": sized["screen_id"],
+            "size_id": sized["size_id"],
+            "exposure_id": exposure["exposure_id"],
+            "source": sized["source"],
+            "input_classification": sized["input_classification"],
+            "request": {
+                "mode": mode,
+                "max_ex_ante_vol": str(max_vol),
+                "max_systematic_share": exposure["request"].get("max_systematic_share"),
+                "shrink_scale": str(scale),
+                "portfolio_notional": str(portfolio),
+                "n_factors": exposure["request"].get("n_factors"),
+                "min_obs": exposure["request"].get("min_obs"),
+                "lookback": exposure["request"].get("lookback"),
+                "shrinkage": exposure["request"].get("shrinkage"),
+                "annualization": exposure["request"].get("annualization"),
+            },
+            "rows": rows_out,
+            "input_breaches": list(exposure.get("breaches") or []),
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {
+                "names": len(rows_out),
+                "names_shrunk": names_shrunk,
+                "shrink_scale": str(scale),
+                "input_ex_ante_vol": str(input_vol),
+                "proposed_ex_ante_vol": str(proposed_vol),
+                "max_ex_ante_vol": str(max_vol),
+                "systematic_share": report.get("systematic_share"),
+                "gross_notional": str(gross),
+                "trading_approved": False,
+            },
+            "notes": [
+                "Factor rebalance proposes KEEP/SHRINK actions from PCA ex-ante vol bounds.",
+                "SHRINK_TO_VOL scales gross notionals uniformly; systematic share is scale-invariant.",
+                "Proposals never prepare OMS intents, connect a broker, or approve trading.",
+                "Sized books are not rewritten; this artifact is advisory relative to size_id.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "factor_rebalance_id": identity}
+        self._path("factor-rebalances").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("factor-rebalances/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research factor shrink-to-vol proposal",
+                              model_version=FACTOR_REBALANCE,
+                              evidence="HASH_VERIFIED_RESEARCH_FACTOR_REBALANCE",
+                              identity_key="factor_rebalance_id")
+
+    def load_factor_rebalance(self, factor_rebalance_id: str) -> dict[str, Any]:
+        identity = sha256(factor_rebalance_id)
+        path = self._path("factor-rebalances/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research factor rebalance unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "factor_rebalance_id"}
+        if (document.get("factor_rebalance_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != FACTOR_REBALANCE):
+            raise ValueError("factor rebalance artifact integrity mismatch")
+        return document
+
+    def replay_factor_rebalance(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"factor_rebalance_id"}, {"factor_rebalance_id"})
+        try:
+            document = self.load_factor_rebalance(payload["factor_rebalance_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research factor shrink-to-vol proposal",
+                              model_version=FACTOR_REBALANCE,
+                              evidence="HASH_VERIFIED_RESEARCH_FACTOR_REBALANCE",
+                              identity_key="factor_rebalance_id")
 
     def load(self, strategy_id: str) -> dict[str, Any]:
         identity = sha256(strategy_id)
