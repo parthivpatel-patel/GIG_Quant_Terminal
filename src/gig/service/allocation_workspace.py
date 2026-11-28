@@ -74,6 +74,9 @@ class ResearchAllocationWorkspace:
         elif kind == "signal_id":
             from gig.service.signal_workspace import SignalWorkspace
             source = SignalWorkspace(self.base_dir).load(source_id)
+        elif kind == "screen_id":
+            from gig.service.research_screen import ResearchScreenWorkspace
+            source = ResearchScreenWorkspace(self.base_dir).load(source_id)
         elif kind == "pair_run_id":
             from gig.service.pairs_workspace import PairsResearchWorkspace
             source = PairsResearchWorkspace(self.base_dir).load(source_id)
@@ -95,15 +98,15 @@ class ResearchAllocationWorkspace:
 
     @_exact
     def build(self, payload: dict[str, Any]) -> Contract:
-        _fields(payload, {"run_id", "signal_id", "pair_run_id", "max_turnover", "max_transaction_cost", "now", "initial_cash", "n_long", "n_short", "gross_leverage",
+        _fields(payload, {"run_id", "signal_id", "screen_id", "pair_run_id", "max_turnover", "max_transaction_cost", "now", "initial_cash", "n_long", "n_short", "gross_leverage",
                           "max_name_weight", "lot_size", "max_age_seconds", "annualization",
                           "metadata", "limits", "commission_bps", "slippage_bps", "price_tick"},
                 {"now", "initial_cash", "n_long", "n_short", "gross_leverage",
                  "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata", "limits"})
         request = loads(dumps(payload))
-        sources = set(request) & {"run_id", "signal_id", "pair_run_id"}
+        sources = set(request) & {"run_id", "signal_id", "screen_id", "pair_run_id"}
         if len(sources) != 1:
-            raise ValueError("allocation requires exactly one saved model, signal or pair source")
+            raise ValueError("allocation requires exactly one saved model, signal, screen or pair source")
         source_key = next(iter(sources))
         source_id = sha256(request[source_key])
         at, maximum = _age(request["now"], request["max_age_seconds"])
@@ -149,6 +152,11 @@ class ResearchAllocationWorkspace:
             elif source_key == "signal_id":
                 from gig.service.signal_workspace import SignalWorkspace
                 run = SignalWorkspace(self.base_dir).load(source_id)
+            elif source_key == "screen_id":
+                from gig.service.research_screen import ResearchScreenWorkspace
+                from gig.service.signal_workspace import SignalWorkspace
+                run = ResearchScreenWorkspace(self.base_dir).load(source_id)
+                run = {**run, "model_ids": SignalWorkspace(self.base_dir).load(run["signal_id"])["model_ids"]}
             else:
                 from gig.service.pairs_workspace import PairsResearchWorkspace
                 run = PairsResearchWorkspace(self.base_dir).load(source_id)
@@ -172,6 +180,14 @@ class ResearchAllocationWorkspace:
                     for symbol, weight in proposal["weights"].items():
                         pair_weights[symbol] = pair_weights.get(symbol, 0.) + _number(weight)
             scores = {s: w for s, w in pair_weights.items() if w != 0.}
+        elif source_key == "screen_id":
+            rows = run["rows"]
+            if not rows:
+                return self._contract(None, at.isoformat(), state=State.UNAVAILABLE)
+            latest = max(aware_timestamp(row["timestamp"]) for row in rows)
+            # Stance-weighted shares among actionable names only; HOLDs are omitted.
+            scores = {row["instrument_id"]: _number(row["research_weight"]) for row in rows
+                      if aware_timestamp(row["timestamp"]) == latest and _number(row["research_weight"]) != 0}
         else:
             rows = run["rows"]
             if not rows:

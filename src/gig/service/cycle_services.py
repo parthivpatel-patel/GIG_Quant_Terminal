@@ -137,6 +137,52 @@ class CycleServices:
     def signals_replay(self, payload: dict[str, Any]) -> Contract:
         return self._signals().replay(payload)
 
+    def _screens(self):
+        from gig.service.research_screen import ResearchScreenWorkspace
+        return ResearchScreenWorkspace(self.workspace.base_dir)
+
+    def research_screen(self, payload: dict[str, Any]) -> Contract:
+        if isinstance(payload, dict) and payload.get("operation") == "from-runs":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().discover(body)
+        if isinstance(payload, dict) and payload.get("operation") == "link-options":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().link_options(body)
+        if isinstance(payload, dict) and payload.get("operation") == "monitor":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().monitor(body)
+        if isinstance(payload, dict) and payload.get("operation") == "enrich-mentions":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().enrich_mentions(body)
+        return self._screens().run(payload)
+
+    def screen_replay(self, payload: dict[str, Any]) -> Contract:
+        return self._screens().replay(payload)
+
+    def _strategies(self):
+        from gig.service.research_strategy import ResearchStrategyWorkspace
+        return ResearchStrategyWorkspace(self.workspace.base_dir)
+
+    def research_strategy(self, payload: dict[str, Any]) -> Contract:
+        if not isinstance(payload, dict):
+            raise ValueError("research strategy request must be an object")
+        operation = payload.get("operation", "simulate")
+        body = {key: value for key, value in payload.items() if key != "operation"}
+        if operation == "replay":
+            return self._strategies().replay(body)
+        if operation == "size":
+            return self._strategies().size(body)
+        if operation == "size-replay":
+            return self._strategies().replay_size(body)
+        if operation == "cycle":
+            return self._strategies().cycle(body)
+        if operation == "cycle-replay":
+            return self._strategies().replay_cycle(body)
+        if operation != "simulate":
+            raise ValueError(
+                "research strategy operation must be simulate, size, size-replay, cycle, cycle-replay, or replay")
+        return self._strategies().run(body)
+
     def _overlay(self):
         from gig.service.overlay_workspace import OptionsOverlayWorkspace
         return OptionsOverlayWorkspace(self.workspace.base_dir)
