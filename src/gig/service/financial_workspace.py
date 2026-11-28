@@ -23,6 +23,8 @@ RESEARCH = {
                 "Cited document comparison; text differences, not verified restatements"),
     "mention-diff": ({"base_document_id", "revised_document_id"}, {"nlp_profile"},
                      "Cited mention differences; parsed text, not verified restatements"),
+    "entity-graph": ({"document_ids"}, {"nlp_profile"},
+                     "Lexical entity co-mention graph; not issuer resolution or supply-chain truth"),
     "research-replay": ({"record_id"}, set(), "Saved financial research record replay"),
 }
 
@@ -113,6 +115,9 @@ class FinancialIntelligenceWorkspace:
                 data = documents.compare(self.corpus, payload["base_document_id"], payload["revised_document_id"])
             elif operation == "mention-diff":
                 data = documents.mention_diff(self.corpus, payload["base_document_id"], payload["revised_document_id"],
+                                              profile=options.get("nlp_profile", "v1"))
+            elif operation == "entity-graph":
+                data = documents.entity_graph(self.corpus, payload["document_ids"],
                                               profile=options.get("nlp_profile", "v1"))
             elif operation == "synthesize":
                 data = research.multi_document_digest(self.corpus, payload["query"], payload["as_of"], **options)

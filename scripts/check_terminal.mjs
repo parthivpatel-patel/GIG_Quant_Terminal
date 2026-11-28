@@ -453,7 +453,7 @@ for (const kind of ["calculator-save", "calculator-replay", "calculator-dataset"
   await get("run-analysis").dispatch("click"); await settle();
   checked(`${kind} uses the local calculator journal`, () => assert.equal(calls.at(-1).url, "/api/v1/workspace/calculator-journal"));
 }
-const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify", "financial-html", "financial-statements", "financial-digest", "financial-watch", "financial-watch-check", "financial-investigate", "financial-call", "financial-transcript", "financial-compare", "financial-mention-diff", "financial-record-replay"];
+const financialActions = ["financial-reference", "financial-search", "financial-answer", "financial-replay", "financial-latent", "financial-hybrid", "financial-facts", "financial-entity-protocol", "financial-entities", "financial-verify", "financial-html", "financial-statements", "financial-digest", "financial-watch", "financial-watch-check", "financial-investigate", "financial-call", "financial-transcript", "financial-compare", "financial-mention-diff", "financial-entity-graph", "financial-record-replay"];
 for (const kind of financialActions) {
   get("analytics-kind").value = "workspace-" + kind;
   const before = calls.length;

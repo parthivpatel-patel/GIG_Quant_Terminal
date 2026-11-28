@@ -393,13 +393,15 @@ def replay(corpus: FinancialCorpus, record_id: str) -> dict[str, Any]:
             if statements(corpus, reviewed["document_id"])["record_id"] != reviewed["statement_record_id"]:
                 raise ValueError("financial research replay changed")
         again = saved
-    elif operation in ("transcript", "compare", "mention-diff"):
+    elif operation in ("transcript", "compare", "mention-diff", "entity-graph"):
         from gig.financial_intelligence import documents
 
         if operation == "transcript":
             again = documents.transcript(corpus, saved["document_id"], profile=saved["financial_mentions"]["profile"])
         elif operation == "compare":
             again = documents.compare(corpus, saved["base_document_id"], saved["revised_document_id"])
+        elif operation == "entity-graph":
+            again = documents.entity_graph(corpus, saved["document_ids"], profile=saved["nlp_profile"])
         else:
             again = documents.mention_diff(corpus, saved["base_document_id"], saved["revised_document_id"],
                                            profile=saved["nlp_profile"])
