@@ -13,9 +13,12 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 from gig.artifacts import write_immutable
 from gig.data.validated import PointInTimeStore
 from gig.research.model_pipeline import sha256
+from gig.risk.analytics import portfolio_risk
 from gig.service.allocation_workspace import ResearchAllocationWorkspace
 from gig.service.contracts import Contract, State
 from gig.service.dataset_workspace import PersistedDatasetWorkspace
@@ -346,8 +349,6 @@ class ResearchStrategyWorkspace:
             target = _positive(fields["target_volatility"], "target_volatility")
             if target > Decimal("5"):
                 raise ValueError("target_volatility exceeds the research bound")
-            import pandas as pd
-            from gig.risk.analytics import portfolio_risk
             panel = pd.DataFrame(dataset["panel_rows"])
             if "return_1" not in panel:
                 return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
