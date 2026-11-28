@@ -253,6 +253,10 @@ class CycleServices:
             return self._strategies().factor_rebalance(body)
         if operation == "factor-rebalance-replay":
             return self._strategies().replay_factor_rebalance(body)
+        if operation == "factor-attribution":
+            return self._strategies().factor_attribution(body)
+        if operation == "factor-attribution-replay":
+            return self._strategies().replay_factor_attribution(body)
         if operation != "simulate":
             raise ValueError(
                 "research strategy operation must be simulate, size, size-from-rebalance, "
@@ -260,7 +264,8 @@ class CycleServices:
                 "exit-eval-replay, feedback, feedback-replay, invalidate, invalidate-replay, "
                 "schedule, schedule-tick, due-schedules, tick-due, estimate-cost, "
                 "estimate-cost-replay, cost-rebalance, cost-rebalance-replay, factor-exposure, "
-                "factor-exposure-replay, factor-rebalance, factor-rebalance-replay, or replay")
+                "factor-exposure-replay, factor-rebalance, factor-rebalance-replay, "
+                "factor-attribution, factor-attribution-replay, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):

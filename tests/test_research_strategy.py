@@ -147,6 +147,45 @@ class StrategyTests(unittest.TestCase):
                 "size_id": sized["data"]["size_id"], "now": self.now, "n_factors": 99,
             })
 
+    def test_factor_attribution_path_splits_systematic_and_specific(self):
+        # Size before the panel tip so forward bars exist for path attribution.
+        earlier = (pd.Timestamp(self.now) - pd.Timedelta(days=10)).isoformat()
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": earlier,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 10_000_000, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        attributed = self.strategies.factor_attribution({
+            "size_id": sized["data"]["size_id"], "now": self.now,
+            "horizon_bars": 5, "n_factors": 2, "min_obs": 40, "lookback": 40,
+        }).to_dict()
+        EnvelopeSchema.model_validate(attributed)
+        self.assertEqual(attributed["state"], "AVAILABLE", attributed)
+        body = attributed["data"]
+        self.assertFalse(body["trading_approved"])
+        self.assertGreaterEqual(body["metrics"]["bars_observed"], 1)
+        self.assertEqual(len(body["path"]), body["metrics"]["bars_observed"])
+        self.assertIn("cumulative_systematic", body["metrics"])
+        self.assertIn("cumulative_specific", body["metrics"])
+        last = body["path"][-1]
+        self.assertAlmostEqual(
+            last["cumulative_total"],
+            last["cumulative_systematic"] + last["cumulative_specific"],
+            places=10)
+        replayed = self.strategies.replay_factor_attribution({
+            "attribution_id": body["attribution_id"],
+        }).to_dict()
+        self.assertEqual(replayed["data"]["attribution_id"], body["attribution_id"])
+        missing = self.strategies.replay_factor_attribution({
+            "attribution_id": "0" * 64,
+        }).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+        with self.assertRaisesRegex(ValueError, "horizon_bars"):
+            self.strategies.factor_attribution({
+                "size_id": sized["data"]["size_id"], "now": self.now, "horizon_bars": 0,
+            })
+
     def test_factor_rebalance_shrinks_to_ex_ante_vol_and_replays(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,

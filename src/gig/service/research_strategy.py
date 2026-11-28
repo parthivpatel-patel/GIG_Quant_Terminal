@@ -42,6 +42,7 @@ COST = "gig.research-strategy.estimate-cost.v1"
 COST_REBALANCE = "gig.research-strategy.cost-rebalance.v1"
 FACTOR_EXPOSURE = "gig.research-strategy.factor-exposure.v1"
 FACTOR_REBALANCE = "gig.research-strategy.factor-rebalance.v1"
+FACTOR_ATTRIBUTION = "gig.research-strategy.factor-attribution.v1"
 _INVALIDATION_REASONS = frozenset({
     "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP", "ALPHA_DECAY",
     "FACTOR_BREACH",
@@ -3235,6 +3236,210 @@ class ResearchStrategyWorkspace:
                               model_version=FACTOR_REBALANCE,
                               evidence="HASH_VERIFIED_RESEARCH_FACTOR_REBALANCE",
                               identity_key="factor_rebalance_id")
+
+    def factor_attribution(self, payload: dict[str, Any]) -> Contract:
+        """Ex-post PCA path attribution for a sized research book.
+
+        Fits ``Σ = BB′ + D`` on the return panel up to the size clock, then
+        walks ``horizon_bars`` of forward returns to split portfolio path PnL
+        into systematic (common-factor) and specific contributions. Research
+        diagnostics only — not broker P&L or trading approval.
+        """
+        fields = _fields(payload, {"size_id", "now", "horizon_bars", "n_factors", "min_obs",
+                                   "lookback", "shrinkage", "annualization"},
+                         {"size_id", "now", "horizon_bars"})
+        horizon = int(fields["horizon_bars"])
+        if not 1 <= horizon <= 252:
+            raise ValueError("horizon_bars must lie between 1 and 252")
+        n_factors = int(fields.get("n_factors", 3))
+        if not 1 <= n_factors <= 8:
+            raise ValueError("n_factors must lie between 1 and 8")
+        min_obs = int(fields.get("min_obs", 40))
+        if not 20 <= min_obs <= 252:
+            raise ValueError("min_obs must lie between 20 and 252")
+        lookback = int(fields.get("lookback", min(63, min_obs)))
+        if not 5 <= lookback <= 252:
+            raise ValueError("lookback must lie between 5 and 252")
+        shrinkage = float(fields.get("shrinkage", 0.15))
+        if not 0.0 <= shrinkage <= 1.0:
+            raise ValueError("shrinkage must lie between 0 and 1")
+        annualization = int(fields.get("annualization", 252))
+        if annualization < 1:
+            raise ValueError("annualization must be a positive integer")
+        try:
+            sized = self.load_size(fields["size_id"])
+            dataset = PersistedDatasetWorkspace(self.base_dir).load(sized["dataset_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if self._invalidation_hits(screen_id=sized["screen_id"], size_id=sized["size_id"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        at = aware_timestamp(fields["now"])
+        decision = aware_timestamp(sized["as_of"])
+        portfolio = Decimal(sized["request"]["portfolio_notional"])
+        if portfolio <= 0:
+            raise ValueError("sized portfolio_notional must be positive")
+        weights = pd.Series({
+            row["instrument_id"]: float(
+                Decimal(row["target_notional"]) * (Decimal(1) if row["side"] == "buy" else Decimal(-1))
+                / portfolio)
+            for row in sized["rows"]
+        }, dtype=float)
+        if weights.empty or float(weights.abs().sum()) <= 0:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        panel = pd.DataFrame(dataset["panel_rows"])
+        if "return_1" not in panel.columns or "timestamp" not in panel.columns:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        symbols = sorted(weights.index.tolist())
+        wide = panel.pivot(index="timestamp", columns="instrument_id", values="return_1")
+        wide.index = pd.to_datetime(wide.index, utc=True)
+        wide = wide.sort_index().reindex(columns=symbols)
+        estimation = wide.loc[wide.index <= decision].dropna()
+        if len(estimation) > lookback:
+            estimation = estimation.iloc[-lookback:]
+        if len(estimation) < min_obs:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        from gig.risk.factor_model import fit_statistical_risk_model
+        model = fit_statistical_risk_model(
+            estimation, n_factors=n_factors, min_obs=min_obs, shrinkage=shrinkage)
+        if model is None:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        forward = wide.loc[wide.index > decision].head(horizon)
+        b = model.exposures.reindex(index=symbols).fillna(0.0).to_numpy(dtype=float)
+        w = weights.reindex(symbols).fillna(0.0).to_numpy(dtype=float)
+        # OLS factor scores per bar: f = (B'B)^{-1} B' r for held names.
+        gram = b.T @ b
+        try:
+            gram_inv = np.linalg.inv(gram)
+        except np.linalg.LinAlgError:
+            gram_inv = np.linalg.pinv(gram)
+        book_loadings = b.T @ w  # k,
+        path_rows: list[dict[str, Any]] = []
+        cum_total = 0.0
+        cum_systematic = 0.0
+        cum_specific = 0.0
+        factor_names = list(model.exposures.columns)
+        cum_factors = {name: 0.0 for name in factor_names}
+        for stamp, row in forward.iterrows():
+            r = row.reindex(symbols).fillna(0.0).to_numpy(dtype=float)
+            total = float(w @ r)
+            scores = gram_inv @ (b.T @ r)
+            factor_parts = {
+                name: float(book_loadings[index] * scores[index])
+                for index, name in enumerate(factor_names)
+            }
+            systematic = float(sum(factor_parts.values()))
+            specific = total - systematic
+            cum_total += total
+            cum_systematic += systematic
+            cum_specific += specific
+            for name, value in factor_parts.items():
+                cum_factors[name] += value
+            path_rows.append({
+                "timestamp": pd.Timestamp(stamp).isoformat(),
+                "portfolio_return": total,
+                "systematic_return": systematic,
+                "specific_return": specific,
+                "factor_returns": factor_parts,
+                "cumulative_total": cum_total,
+                "cumulative_systematic": cum_systematic,
+                "cumulative_specific": cum_specific,
+                "trading_approved": False,
+            })
+        decomposition = model.decompose(weights)
+        body = {
+            "schema_version": FACTOR_ATTRIBUTION,
+            "as_of": at.isoformat(),
+            "dataset_id": sized["dataset_id"],
+            "screen_id": sized["screen_id"],
+            "size_id": sized["size_id"],
+            "source": sized["source"],
+            "input_classification": sized["input_classification"],
+            "request": {
+                "horizon_bars": horizon,
+                "n_factors": model.n_factors,
+                "min_obs": min_obs,
+                "lookback": lookback,
+                "shrinkage": shrinkage,
+                "annualization": annualization,
+                "decision_as_of": decision.isoformat(),
+            },
+            "weights": {name: float(weights[name]) for name in symbols},
+            "ex_ante": {
+                "ex_ante_vol": decomposition["ex_ante_vol"],
+                "systematic_share": decomposition["systematic_share"],
+                "specific_share": decomposition["specific_share"],
+                "explained": model.explained,
+                "n_obs": model.n_obs,
+                "equation": "Σ = BB′ + D",
+            },
+            "path": path_rows,
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {
+                "bars_observed": len(path_rows),
+                "horizon_bars": horizon,
+                "cumulative_total": cum_total,
+                "cumulative_systematic": cum_systematic,
+                "cumulative_specific": cum_specific,
+                "factor_cumulative": cum_factors,
+                "systematic_share_of_path": (
+                    cum_systematic / cum_total if cum_total != 0 else float("nan")),
+                "trading_approved": False,
+            },
+            "notes": [
+                "Factor attribution walks forward returns after the size decision clock.",
+                "Systematic path PnL uses OLS factor scores on Σ = BB′ + D exposures fitted before the decision.",
+                "Specific path PnL is the residual portfolio return; not a licensed Barra/Axioma attribution.",
+                "No broker P&L, OMS prepare, or trading approval is established.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "attribution_id": identity}
+        self._path("factor-attributions").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("factor-attributions/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research factor path attribution",
+                              model_version=FACTOR_ATTRIBUTION,
+                              evidence="HASH_VERIFIED_RESEARCH_FACTOR_ATTRIBUTION",
+                              identity_key="attribution_id")
+
+    def load_factor_attribution(self, attribution_id: str) -> dict[str, Any]:
+        identity = sha256(attribution_id)
+        path = self._path("factor-attributions/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research factor attribution unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "attribution_id"}
+        if (document.get("attribution_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != FACTOR_ATTRIBUTION):
+            raise ValueError("factor attribution artifact integrity mismatch")
+        return document
+
+    def replay_factor_attribution(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"attribution_id"}, {"attribution_id"})
+        try:
+            document = self.load_factor_attribution(payload["attribution_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research factor path attribution",
+                              model_version=FACTOR_ATTRIBUTION,
+                              evidence="HASH_VERIFIED_RESEARCH_FACTOR_ATTRIBUTION",
+                              identity_key="attribution_id")
 
     def load(self, strategy_id: str) -> dict[str, Any]:
         identity = sha256(strategy_id)
