@@ -147,6 +147,83 @@ class StrategyTests(unittest.TestCase):
                 "size_id": sized["data"]["size_id"], "now": self.now, "n_factors": 99,
             })
 
+    def test_factor_rebalance_shrinks_to_ex_ante_vol_and_replays(self):
+        sized = self.strategies.size({
+            "screen_id": self.screen["screen_id"], "now": self.now,
+            "portfolio_notional": "100000", "max_name_notional": "50000",
+            "lot_size": 1, "max_age_seconds": 86_400, "vol_scale": "1",
+        }).to_dict()
+        self.assertEqual(sized["state"], "AVAILABLE", sized)
+        # Tiny vol bound forces a uniform gross shrink.
+        shrunk = self.strategies.factor_rebalance({
+            "size_id": sized["data"]["size_id"], "now": self.now,
+            "mode": "SHRINK_TO_VOL", "n_factors": 2, "min_obs": 40, "lookback": 40,
+            "max_ex_ante_vol": "0.000001",
+        }).to_dict()
+        EnvelopeSchema.model_validate(shrunk)
+        self.assertEqual(shrunk["state"], "AVAILABLE", shrunk)
+        self.assertFalse(shrunk["data"]["trading_approved"])
+        self.assertTrue(shrunk["data"]["exposure_id"])
+        self.assertLess(float(shrunk["data"]["request"]["shrink_scale"]) + 1e-18, 1.0)
+        self.assertTrue(any(row["action"] == "SHRINK" for row in shrunk["data"]["rows"]))
+        self.assertLessEqual(
+            float(shrunk["data"]["metrics"]["proposed_ex_ante_vol"]),
+            float(shrunk["data"]["metrics"]["max_ex_ante_vol"]) + 1e-12)
+        # Reuse the exposure_id path and keep when already under the bound.
+        kept = self.strategies.factor_rebalance({
+            "size_id": sized["data"]["size_id"], "now": self.now,
+            "mode": "SHRINK_TO_VOL", "exposure_id": shrunk["data"]["exposure_id"],
+            "max_ex_ante_vol": "5",
+        }).to_dict()
+        self.assertEqual(kept["state"], "AVAILABLE", kept)
+        self.assertEqual(float(kept["data"]["request"]["shrink_scale"]), 1.0)
+        self.assertTrue(all(row["action"] == "KEEP" for row in kept["data"]["rows"]))
+        replayed = self.strategies.replay_factor_rebalance({
+            "factor_rebalance_id": shrunk["data"]["factor_rebalance_id"],
+        }).to_dict()
+        self.assertEqual(
+            replayed["data"]["factor_rebalance_id"], shrunk["data"]["factor_rebalance_id"])
+        missing = self.strategies.replay_factor_rebalance({
+            "factor_rebalance_id": "0" * 64,
+        }).to_dict()
+        self.assertEqual(missing["state"], "UNAVAILABLE")
+        with self.assertRaisesRegex(ValueError, "SHRINK_TO_VOL"):
+            self.strategies.factor_rebalance({
+                "size_id": sized["data"]["size_id"], "now": self.now,
+                "mode": "NOT_A_MODE", "max_ex_ante_vol": "0.2",
+            })
+
+    def test_cycle_can_attach_factor_rebalance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            now = request["as_of"]
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            run = PersistedResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+                "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+            }).to_dict()["data"]
+            payload = allocation_request("", now)
+            del payload["run_id"]
+            payload.update(
+                run_ids=[run["run_id"]], lookback=20, min_ic_observations=5,
+                buy_threshold=0.0, sell_threshold=-0.01,
+                portfolio_notional="100000", max_name_notional="8000",
+                max_turnover=0.3, max_transaction_cost="100", fill=True,
+                factor_rebalance=True, factor_rebalance_mode="SHRINK_TO_VOL",
+                n_factors=2, min_obs=40, max_ex_ante_vol="0.000001",
+            )
+            cycled = ResearchStrategyWorkspace(root).cycle(payload).to_dict()
+            EnvelopeSchema.model_validate(cycled)
+            self.assertEqual(cycled["state"], "AVAILABLE", cycled)
+            body = cycled["data"]
+            self.assertTrue(body["factor_rebalance_id"])
+            self.assertTrue(body["exposure_id"])
+            self.assertLess(float(body["metrics"]["factor_shrink_scale"]) + 1e-18, 1.0)
+            replayed = ResearchStrategyWorkspace(root).replay_cycle({
+                "cycle_id": body["cycle_id"],
+            }).to_dict()
+            self.assertEqual(replayed["data"]["factor_rebalance_id"], body["factor_rebalance_id"])
     def test_size_derives_vol_scale_from_target_volatility(self):
         sized = self.strategies.size({
             "screen_id": self.screen["screen_id"], "now": self.now,
