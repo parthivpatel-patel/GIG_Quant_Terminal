@@ -2157,6 +2157,186 @@ class ResearchStrategyWorkspace:
                               evidence="HASH_VERIFIED_RESEARCH_POSITION_SIZING",
                               identity_key="size_id")
 
+    def size_from_rebalance(self, payload: dict[str, Any]) -> Contract:
+        """Materialize a cost-rebalance proposal into a chained research size book.
+
+        Promotes KEEP/TRADE/SKIP/SHRINK proposed notionals into an immutable
+        ``sizing`` artifact whose ``previous_size_id`` is the proposal's
+        ``size_id``. Enables later TCA, factor exposure, and schedule chaining
+        on the gated book. Research-only; broker stays off.
+        """
+        fields = _fields(payload, {"rebalance_id", "now", "lot_size"},
+                         {"rebalance_id", "now"})
+        try:
+            proposal = self.load_rebalance(fields["rebalance_id"])
+            source = self.load_size(proposal["size_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if proposal["dataset_id"] != source["dataset_id"]:
+            raise ValueError("rebalance_id must share the size dataset")
+        if proposal["screen_id"] != source["screen_id"]:
+            raise ValueError("rebalance_id must share the size screen")
+        if self._invalidation_hits(screen_id=source["screen_id"], size_id=source["size_id"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        at = aware_timestamp(fields["now"])
+        lot = int(fields.get("lot_size", source["request"]["lot_size"]))
+        if lot < 1:
+            raise ValueError("lot_size must be a positive integer")
+        portfolio = Decimal(source["request"]["portfolio_notional"])
+        source_by_name = {row["instrument_id"]: row for row in source["rows"]}
+        marks = dict(source.get("marks") or {})
+        sized: list[dict[str, Any]] = []
+        actions_kept = 0
+        actions_traded = 0
+        actions_skipped = 0
+        actions_shrunk = 0
+        for row in sorted(proposal["rows"], key=lambda item: item["instrument_id"]):
+            action = row.get("action", "KEEP")
+            if action == "KEEP":
+                actions_kept += 1
+            elif action == "TRADE":
+                actions_traded += 1
+            elif action == "SKIP":
+                actions_skipped += 1
+            elif action == "SHRINK":
+                actions_shrunk += 1
+            else:
+                raise ValueError("rebalance row action must be KEEP, TRADE, SKIP, or SHRINK")
+            side = row["side"]
+            if side == "flat":
+                continue
+            notional = Decimal(row["target_notional"])
+            if notional <= 0:
+                continue
+            price = Decimal(row["reference_price"])
+            if price <= 0:
+                raise ValueError("rebalance reference_price must be positive")
+            quantity = int(Fraction(notional) / Fraction(price) / Fraction(lot)) * lot
+            if quantity <= 0:
+                continue
+            base = source_by_name.get(row["instrument_id"]) or {
+                "instrument_id": row["instrument_id"],
+                "stance": "HOLD",
+                "research_weight": float(row.get("research_weight") or 0),
+                "uncapped_notional": str(notional),
+                "capped": False,
+                "reference_price": str(price),
+                "price_asof": source["as_of"],
+                "trading_approved": False,
+            }
+            sized.append({
+                **base,
+                "side": side,
+                "target_notional": str(notional),
+                "quantity": str(quantity),
+                "reference_price": str(price),
+                "research_weight": float(row.get("research_weight", base.get("research_weight", 0))),
+                "rebalance_action": action,
+                "rebalance_skip_reason": row.get("skip_reason"),
+                "trading_approved": False,
+            })
+            marks.setdefault(row["instrument_id"], {
+                "instrument_id": row["instrument_id"],
+                "price": str(price),
+                "as_of": source["as_of"],
+            })
+        if not sized:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        prior = {
+            row["instrument_id"]: Decimal(row["target_notional"]) * (
+                Decimal(1) if row["side"] == "buy" else Decimal(-1))
+            for row in source["rows"]
+        }
+        current = {
+            row["instrument_id"]: Decimal(row["target_notional"]) * (
+                Decimal(1) if row["side"] == "buy" else Decimal(-1))
+            for row in sized
+        }
+        names = set(prior) | set(current)
+        turnover = sum((abs(current.get(name, Decimal(0)) - prior.get(name, Decimal(0)))
+                        for name in names), Decimal(0)) / Decimal(2)
+        turnover_nav = turnover / portfolio if portfolio > 0 else Decimal(0)
+        gross = sum((Decimal(row["target_notional"]) for row in sized), Decimal(0))
+        net = sum((Decimal(row["target_notional"]) * (1 if row["side"] == "buy" else -1)
+                   for row in sized), Decimal(0))
+        request = {
+            "portfolio_notional": str(portfolio),
+            "max_name_notional": source["request"]["max_name_notional"],
+            "lot_size": lot,
+            "max_age_seconds": source["request"].get("max_age_seconds", 86_400),
+            "vol_scale": source["request"].get("vol_scale", "1"),
+            "vol_scale_source": "COST_REBALANCE",
+            "annualization": source["request"].get("annualization", 252),
+            "previous_size_id": source["size_id"],
+            "size_turnover_nav": str(turnover_nav),
+            "rebalance_id": proposal["rebalance_id"],
+            "materialized_from": "COST_REBALANCE",
+            "rebalance_mode": (proposal.get("request") or {}).get("mode"),
+        }
+        body = {
+            "schema_version": SIZING,
+            "as_of": at.isoformat(),
+            "dataset_id": source["dataset_id"],
+            "screen_id": source["screen_id"],
+            "signal_id": source["signal_id"],
+            "previous_size_id": source["size_id"],
+            "rebalance_id": proposal["rebalance_id"],
+            "findings_id": source.get("findings_id"),
+            "calculator_record_id": source.get("calculator_record_id"),
+            "source": source["source"],
+            "input_classification": source["input_classification"],
+            "request": request,
+            "rows": sized,
+            "marks": marks,
+            "risk": {"state": "NOT_REQUESTED", "data": None},
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "SIMULATED_PLAN",
+            "metrics": {
+                "names": len(sized),
+                "gross_notional": str(gross),
+                "net_notional": str(net),
+                "gross_exposure": str(gross / portfolio if portfolio > 0 else Decimal(0)),
+                "net_exposure": str(net / portfolio if portfolio > 0 else Decimal(0)),
+                "capped_names": sum(1 for row in sized if row.get("capped")),
+                "vol_scale": request["vol_scale"],
+                "vol_scale_source": "COST_REBALANCE",
+                "gross_exposure_cap_applied": False,
+                "adv_participation_cap_applied": False,
+                "size_turnover_nav": str(turnover_nav),
+                "size_turnover_cap_applied": False,
+                "findings_applied": False,
+                "allocation_weights_applied": False,
+                "rebalance_actions_kept": actions_kept,
+                "rebalance_actions_traded": actions_traded,
+                "rebalance_actions_skipped": actions_skipped,
+                "rebalance_actions_shrunk": actions_shrunk,
+                "materialized_from": "COST_REBALANCE",
+                "trading_approved": False,
+            },
+            "notes": [
+                "Position sizes materialized from a cost-aware rebalance proposal.",
+                "previous_size_id chains to the proposal size_id for turnover and delta TCA.",
+                "KEEP/TRADE/SKIP/SHRINK notionals are preserved; flat SKIP/KEEP zeros are dropped.",
+                "No broker order, OMS prepare, or trading approval is established.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "size_id": identity}
+        self._path("sizes").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("sizes/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research position sizes from rebalance",
+                              model_version=SIZING,
+                              evidence="HASH_VERIFIED_RESEARCH_POSITION_SIZING",
+                              identity_key="size_id")
+
     def estimate_cost(self, payload: dict[str, Any]) -> Contract:
         """Pre-trade TCA on research sizes using square-root impact against ADV.
 
