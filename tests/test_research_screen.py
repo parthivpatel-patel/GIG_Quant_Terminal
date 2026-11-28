@@ -111,6 +111,21 @@ class ScreenFlowTests(unittest.TestCase):
             for row in signal["rows"]
         ))
 
+    def test_discover_market_neutral_momentum_factor(self):
+        discovered = self.screens.discover({
+            "dataset_id": self.dataset["dataset_id"], "now": self.now,
+            "mode": "market_neutral_momentum", "momentum_lookback": 10,
+            "reversion_lookback": 5, "buy_threshold": 0.0, "sell_threshold": -0.01,
+        }).to_dict()
+        EnvelopeSchema.model_validate(discovered)
+        self.assertEqual(discovered["state"], "AVAILABLE", discovered)
+        self.assertEqual(discovered["data"]["discovery"]["mode"], "market_neutral_momentum")
+        signal = SignalWorkspace(self.base).load(discovered["data"]["signal_id"])
+        self.assertEqual(signal["method"], "MARKET_NEUTRAL_RESIDUAL_MOMENTUM_CENTERED_RANK_V1")
+        self.assertFalse(signal["trading_approved"])
+        predictions = [row["prediction"] for row in signal["rows"]]
+        self.assertGreater(max(predictions), min(predictions))
+
     def test_enrich_mentions_matches_exchange_qualified_symbols(self):
         screen = self.screens.run({
             "signal_id": self.signal["signal_id"], "buy_threshold": 0.0, "sell_threshold": -0.01,

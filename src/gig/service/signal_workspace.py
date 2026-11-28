@@ -222,10 +222,13 @@ class SignalWorkspace:
         fields = _fields(payload, {"dataset_id", "now", "mode", "momentum_lookback", "reversion_lookback",
                                    "momentum_weight", "reversion_weight"},
                          {"dataset_id", "now"})
+        mode = fields.get("mode", "blend")
+        if mode not in {"momentum", "mean_reversion", "blend", "market_neutral_momentum"}:
+            raise ValueError("mode must be momentum, mean_reversion, blend, or market_neutral_momentum")
         request = {
             "dataset_id": sha256(fields["dataset_id"]),
             "now": aware_timestamp(fields["now"]).isoformat(),
-            "mode": fields.get("mode", "blend"),
+            "mode": mode,
             "momentum_lookback": integer(fields.get("momentum_lookback", 20), 2, 252, "momentum_lookback"),
             "reversion_lookback": integer(fields.get("reversion_lookback", 5), 2, 60, "reversion_lookback"),
             "momentum_weight": float(fields.get("momentum_weight", 0.5)),

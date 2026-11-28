@@ -36,9 +36,12 @@ WATCH = "gig.research-strategy.watch.v1"
 EXIT_EVAL = "gig.research-strategy.exit-eval.v1"
 FEEDBACK = "gig.research-strategy.feedback.v1"
 INVALIDATION = "gig.research-strategy.invalidation.v1"
+SCHEDULE = "gig.research-strategy.schedule.v1"
+TICK = "gig.research-strategy.schedule-tick.v1"
 _INVALIDATION_REASONS = frozenset({
     "SIGNAL_EXPIRED", "MANUAL", "REGIME_BREAK", "DATA_STALE", "FEEDBACK_STOP",
 })
+_SCHEDULE_ACTIONS = frozenset({"cycle", "watch"})
 
 
 def _hash(value: Any) -> str:
@@ -181,25 +184,31 @@ class ResearchStrategyWorkspace:
         return self._contract(document)
 
     def cycle(self, payload: dict[str, Any]) -> Contract:
-        """One research cycle: discover from runs → size → offline simulate.
+        """One research cycle: discover → size → offline simulate.
 
-        Broker connectivity stays disabled. The cycle never grants trading
-        approval. Size and simulate steps reuse the same screen identity.
+        Discovery accepts saved model ``run_ids`` or a factor ``dataset_id``
+        (including ``market_neutral_momentum``). Broker connectivity stays
+        disabled. The cycle never grants trading approval.
         """
-        allowed = {"run_ids", "now", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
-                   "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
-                   "target_volatility", "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
-                   "max_gross_exposure", "initial_cash", "n_long", "n_short", "gross_leverage",
-                   "max_name_weight", "lot_size", "max_age_seconds", "annualization", "metadata", "limits",
-                   "commission_bps", "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost",
-                   "fill", "document_id", "nlp_profile"}
-        fields = _fields(payload, allowed, {"run_ids", "now", "portfolio_notional", "max_name_notional",
+        allowed = {"run_ids", "dataset_id", "mode", "momentum_lookback", "reversion_lookback",
+                   "momentum_weight", "reversion_weight", "now", "lookback", "min_ic_observations",
+                   "buy_threshold", "sell_threshold", "previous_screen_id", "portfolio_notional",
+                   "max_name_notional", "vol_scale", "target_volatility", "max_expected_shortfall",
+                   "regime_short_bars", "regime_long_bars", "max_gross_exposure", "initial_cash",
+                   "n_long", "n_short", "gross_leverage", "max_name_weight", "lot_size",
+                   "max_age_seconds", "annualization", "metadata", "limits", "commission_bps",
+                   "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost", "fill",
+                   "document_id", "nlp_profile"}
+        fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
                                             "annualization", "metadata", "limits"})
-        discover_payload = {key: fields[key] for key in fields
-                            if key in {"run_ids", "now", "lookback", "min_ic_observations",
-                                       "buy_threshold", "sell_threshold", "previous_screen_id"}}
+        if ("run_ids" in fields) == ("dataset_id" in fields):
+            raise ValueError("cycle requires exactly one of run_ids or dataset_id")
+        discover_keys = {"run_ids", "dataset_id", "mode", "momentum_lookback", "reversion_lookback",
+                         "momentum_weight", "reversion_weight", "now", "lookback",
+                         "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id"}
+        discover_payload = {key: fields[key] for key in fields if key in discover_keys}
         discovered = self.screens.discover(discover_payload).to_dict()
         if discovered["state"] != State.AVAILABLE.value or not isinstance(discovered.get("data"), dict):
             return Contract.admit(discovered["state"], discovered.get("data"),
@@ -244,10 +253,12 @@ class ResearchStrategyWorkspace:
                                   scope="workspace.research-strategy",
                                   error=sized.get("error"),
                                   readiness="RESEARCH_ONLY")
-        size_only = {"run_ids", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
-                     "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
-                     "target_volatility", "max_expected_shortfall", "regime_short_bars",
-                     "regime_long_bars", "max_gross_exposure", "document_id", "nlp_profile"}
+        size_only = {"run_ids", "dataset_id", "mode", "momentum_lookback", "reversion_lookback",
+                     "momentum_weight", "reversion_weight", "lookback", "min_ic_observations",
+                     "buy_threshold", "sell_threshold", "previous_screen_id", "portfolio_notional",
+                     "max_name_notional", "vol_scale", "target_volatility", "max_expected_shortfall",
+                     "regime_short_bars", "regime_long_bars", "max_gross_exposure", "document_id",
+                     "nlp_profile"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -294,6 +305,7 @@ class ResearchStrategyWorkspace:
             },
             "notes": [
                 "Research cycle chains discovery, optional FI enrich, position sizing, and offline simulation.",
+                "Discovery may use model ensembles or cross-sectional factor ranks including market-neutral momentum.",
                 "Sizing is advisory relative to the separate allocation/OMS simulation path.",
                 "Broker connectivity stays disabled; trading stays unapproved.",
             ],
@@ -798,6 +810,258 @@ class ResearchStrategyWorkspace:
                               model_version=INVALIDATION,
                               evidence="HASH_VERIFIED_RESEARCH_STRATEGY_INVALIDATION",
                               identity_key="invalidation_id")
+
+    def schedule(self, payload: dict[str, Any]) -> Contract:
+        """Persist a bounded research scan schedule for explicit later ticks.
+
+        Cadence is advisory. Nothing runs in the background; each tick must be
+        requested. Broker connectivity stays disabled.
+        """
+        fields = _fields(payload, {"action", "cadence_seconds", "now", "request", "max_ticks"},
+                         {"action", "cadence_seconds", "now", "request"})
+        action = fields["action"]
+        if action not in _SCHEDULE_ACTIONS:
+            raise ValueError("schedule action must be cycle or watch")
+        cadence = int(fields["cadence_seconds"])
+        if not 60 <= cadence <= 86_400:
+            raise ValueError("cadence_seconds must lie between 60 and 86400")
+        maximum = int(fields.get("max_ticks", 32))
+        if not 1 <= maximum <= 128:
+            raise ValueError("max_ticks must lie between 1 and 128")
+        request = fields["request"]
+        if not isinstance(request, dict) or "now" in request:
+            raise ValueError("schedule request must be an object without a now clock")
+        origin = aware_timestamp(fields["now"])
+        body = {
+            "schema_version": SCHEDULE,
+            "as_of": origin.isoformat(),
+            "dataset_id": request.get("dataset_id") or request.get("run_ids") or "schedule",
+            "action": action,
+            "cadence_seconds": cadence,
+            "max_ticks": maximum,
+            "ticks_completed": 0,
+            "next_due": origin.isoformat(),
+            "request": request,
+            "source": "persisted-research-strategy-schedule",
+            "input_classification": "MODEL_ESTIMATE",
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "metrics": {"ticks_completed": 0, "trading_approved": False},
+            "notes": [
+                "Schedules are durable research plans; ticks are explicit and CPU-local.",
+                "No background worker, broker path, or trading approval is established.",
+            ],
+        }
+        # Pin a stable dataset identity when the template carries one.
+        if isinstance(request.get("dataset_id"), str):
+            body["dataset_id"] = sha256(request["dataset_id"])
+        elif isinstance(request.get("run_ids"), list) and request["run_ids"]:
+            body["dataset_id"] = sha256("|".join(sorted(sha256(i) for i in request["run_ids"])))
+        else:
+            body["dataset_id"] = sha256(dumps({"action": action, "request": request}))
+        identity = _hash(body)
+        document = {**body, "schedule_id": identity}
+        self._path("schedules").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("schedules/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research strategy scan schedule",
+                              model_version=SCHEDULE,
+                              evidence="HASH_VERIFIED_RESEARCH_STRATEGY_SCHEDULE",
+                              identity_key="schedule_id")
+
+    def load_schedule(self, schedule_id: str) -> dict[str, Any]:
+        identity = sha256(schedule_id)
+        path = self._path("schedules/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research strategy schedule unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "schedule_id"}
+        if (document.get("schedule_id") != identity or _hash(body) != identity
+                or body.get("schema_version") != SCHEDULE):
+            raise ValueError("research strategy schedule integrity mismatch")
+        return document
+
+    def tick_schedule(self, payload: dict[str, Any]) -> Contract:
+        """Run one due schedule action and persist a tick receipt.
+
+        If ``now`` is before ``next_due``, returns STALE without executing.
+        After ``max_ticks``, further ticks are UNAVAILABLE.
+        """
+        from datetime import timedelta
+
+        fields = _fields(payload, {"schedule_id", "now"}, {"schedule_id", "now"})
+        try:
+            plan = self.load_schedule_state(fields["schedule_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        clock = aware_timestamp(fields["now"])
+        due = aware_timestamp(plan["next_due"])
+        if int(plan["ticks_completed"]) >= int(plan["max_ticks"]):
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        if clock < due:
+            return Contract.admit(
+                State.STALE,
+                {
+                    **plan,
+                    "title": "Research schedule tick not yet due",
+                    "tick_state": "NOT_DUE",
+                    "observed_at": clock.isoformat(),
+                    "trading_approved": False,
+                },
+                source=plan["source"],
+                classification="MODEL_ESTIMATE",
+                as_of=clock.isoformat(),
+                scope="workspace.research-strategy",
+                source_identity=str(plan["dataset_id"]),
+                model_identity=plan["schedule_id"],
+                model_version=TICK,
+                evidence_state="HASH_VERIFIED_RESEARCH_STRATEGY_SCHEDULE_TICK",
+                readiness="RESEARCH_ONLY",
+            )
+        request = {**plan["request"], "now": clock.isoformat()}
+        if plan["action"] == "cycle":
+            executed = self.cycle(request).to_dict()
+        else:
+            executed = self.watch(request).to_dict()
+        if executed["state"] != State.AVAILABLE.value or not isinstance(executed.get("data"), dict):
+            return Contract.admit(executed["state"], executed.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=executed["provenance"]["classification"],
+                                  as_of=executed["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=executed.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        result = executed["data"]
+        completed = int(plan["ticks_completed"]) + 1
+        next_due = (clock + timedelta(seconds=int(plan["cadence_seconds"]))).isoformat()
+        body = {
+            "schema_version": TICK,
+            "as_of": clock.isoformat(),
+            "dataset_id": result.get("dataset_id", plan["dataset_id"]),
+            "schedule_id": plan["schedule_id"],
+            "action": plan["action"],
+            "tick_index": completed,
+            "max_ticks": plan["max_ticks"],
+            "next_due": next_due,
+            "cycle_id": result.get("cycle_id"),
+            "watch_id": result.get("watch_id"),
+            "screen_id": result.get("screen_id"),
+            "size_id": result.get("size_id"),
+            "strategy_id": result.get("strategy_id"),
+            "source": result.get("source", plan["source"]),
+            "input_classification": result.get("input_classification", plan["input_classification"]),
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "SIMULATED_PLAN",
+            "metrics": {
+                "tick_index": completed,
+                "prepared_orders": (result.get("metrics") or {}).get("prepared_orders"),
+                "trading_approved": False,
+            },
+            "notes": [
+                "Schedule tick executed one research cycle or watch pass under an explicit clock.",
+                "next_due advances by cadence_seconds from the tick clock.",
+                "No background scheduler or trading approval is established.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "tick_id": identity}
+        self._path("schedule-ticks").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("schedule-ticks/" + identity + ".json"), dumps(document).encode())
+        # Advance mutable schedule bookkeeping in a companion pointer file.
+        pointer = {
+            "schedule_id": plan["schedule_id"],
+            "ticks_completed": completed,
+            "next_due": next_due,
+            "last_tick_id": identity,
+        }
+        pointer_path = self._path("schedules/" + plan["schedule_id"] + ".pointer.json")
+        pointer_path.write_bytes(dumps(pointer).encode())
+        return self._contract(document, title="Unapproved research strategy schedule tick",
+                              model_version=TICK,
+                              evidence="HASH_VERIFIED_RESEARCH_STRATEGY_SCHEDULE_TICK",
+                              identity_key="tick_id")
+
+    def load_schedule_state(self, schedule_id: str) -> dict[str, Any]:
+        plan = self.load_schedule(schedule_id)
+        pointer_path = self._path("schedules/" + plan["schedule_id"] + ".pointer.json")
+        if pointer_path.is_file():
+            pointer = loads(pointer_path.read_bytes())
+            if pointer.get("schedule_id") != plan["schedule_id"]:
+                raise ValueError("schedule pointer integrity mismatch")
+            return {**plan, "ticks_completed": pointer["ticks_completed"],
+                    "next_due": pointer["next_due"], "last_tick_id": pointer.get("last_tick_id")}
+        return plan
+
+    def due_schedules(self, payload: dict[str, Any]) -> Contract:
+        """List hash-verified schedules that are due at ``now`` for agent ticks.
+
+        Advisory inventory only. Does not execute ticks, start workers, or
+        approve trading. Agents must call ``schedule-tick`` explicitly per row.
+        """
+        fields = _fields(payload, {"now", "limit"}, {"now"})
+        clock = aware_timestamp(fields["now"])
+        limit = int(fields.get("limit", 32))
+        if not 1 <= limit <= 128:
+            raise ValueError("limit must lie between 1 and 128")
+        directory = self._path("schedules")
+        rows: list[dict[str, Any]] = []
+        if directory.is_dir():
+            for path in sorted(directory.glob("*.json")):
+                if path.name.endswith(".pointer.json"):
+                    continue
+                try:
+                    plan = self.load_schedule_state(path.stem)
+                except (FileNotFoundError, ValueError):
+                    continue
+                if int(plan["ticks_completed"]) >= int(plan["max_ticks"]):
+                    continue
+                due = aware_timestamp(plan["next_due"])
+                if clock < due:
+                    continue
+                rows.append({
+                    "schedule_id": plan["schedule_id"],
+                    "action": plan["action"],
+                    "next_due": plan["next_due"],
+                    "ticks_completed": plan["ticks_completed"],
+                    "max_ticks": plan["max_ticks"],
+                    "dataset_id": plan["dataset_id"],
+                })
+                if len(rows) >= limit:
+                    break
+        body = {
+            "schema_version": "gig.research-strategy.due-schedules.v1",
+            "as_of": clock.isoformat(),
+            "dataset_id": "due-schedules",
+            "source": "persisted-research-strategy-schedule",
+            "input_classification": "MODEL_ESTIMATE",
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "MODEL_ESTIMATE",
+            "rows": rows,
+            "metrics": {"due": len(rows), "trading_approved": False},
+            "notes": [
+                "Due schedules are advisory for explicit agent ticks.",
+                "No background worker or trading approval is established.",
+            ],
+        }
+        return Contract.admit(
+            State.AVAILABLE, body, source=body["source"],
+            classification="MODEL_ESTIMATE", as_of=clock.isoformat(),
+            scope="workspace.research-strategy",
+            source_identity="due-schedules",
+            model_identity=_hash({"as_of": clock.isoformat(), "rows": rows}),
+            model_version="gig.research-strategy.due-schedules.v1",
+            evidence_state="HASH_VERIFIED_RESEARCH_STRATEGY_DUE_SCHEDULES",
+            readiness="RESEARCH_ONLY",
+        )
 
     def size(self, payload: dict[str, Any]) -> Contract:
         """Convert screen research weights into capped research lot sizes.

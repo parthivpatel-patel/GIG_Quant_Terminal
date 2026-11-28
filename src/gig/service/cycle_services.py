@@ -203,11 +203,18 @@ class CycleServices:
             return self._strategies().invalidate(body)
         if operation == "invalidate-replay":
             return self._strategies().replay_invalidation(body)
+        if operation == "schedule":
+            return self._strategies().schedule(body)
+        if operation == "schedule-tick":
+            return self._strategies().tick_schedule(body)
+        if operation == "due-schedules":
+            return self._strategies().due_schedules(body)
         if operation != "simulate":
             raise ValueError(
                 "research strategy operation must be simulate, size, size-replay, cycle, "
                 "cycle-replay, watch, watch-replay, exit-eval, exit-eval-replay, feedback, "
-                "feedback-replay, invalidate, invalidate-replay, or replay")
+                "feedback-replay, invalidate, invalidate-replay, schedule, schedule-tick, "
+                "due-schedules, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):

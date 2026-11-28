@@ -283,6 +283,95 @@ class StrategyTests(unittest.TestCase):
                 {"cycle_id": body["cycle_id"]}).to_dict()
             self.assertEqual(replayed["data"]["cycle_id"], body["cycle_id"])
 
+    def test_cycle_market_neutral_factor_and_schedule_tick(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            now = request["as_of"]
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            strategies = ResearchStrategyWorkspace(root)
+            payload = allocation_request("", now)
+            del payload["run_id"]
+            payload.update(
+                dataset_id=dataset["dataset_id"], mode="market_neutral_momentum",
+                momentum_lookback=10, reversion_lookback=5,
+                buy_threshold=0.0, sell_threshold=-0.01,
+                portfolio_notional="100000", max_name_notional="8000",
+                max_turnover=0.3, max_transaction_cost="100", fill=True, vol_scale="1",
+            )
+            cycled = strategies.cycle(payload).to_dict()
+            EnvelopeSchema.model_validate(cycled)
+            self.assertEqual(cycled["state"], "AVAILABLE", cycled)
+            self.assertEqual(cycled["data"]["discovery"]["mode"], "market_neutral_momentum")
+            self.assertFalse(cycled["data"]["trading_approved"])
+            self.assertTrue(cycled["data"]["fills"])
+
+            def _scheduled_workspace(name: str):
+                path = root / name
+                path.mkdir()
+                seed = seed_flow(path)
+                stamp = seed["as_of"]
+                saved = PersistedDatasetWorkspace(path).build(seed).to_dict()["data"]
+                workspace = ResearchStrategyWorkspace(path)
+                body = allocation_request("", stamp)
+                del body["run_id"]
+                body.update(
+                    dataset_id=saved["dataset_id"], mode="market_neutral_momentum",
+                    momentum_lookback=10, reversion_lookback=5,
+                    buy_threshold=0.0, sell_threshold=-0.01,
+                    portfolio_notional="100000", max_name_notional="8000",
+                    max_turnover=0.3, max_transaction_cost="100", fill=True, vol_scale="1",
+                )
+                return workspace, stamp, {key: value for key, value in body.items() if key != "now"}
+
+            scheduled, schedule_now, schedule_request = _scheduled_workspace("scheduled")
+            planned = scheduled.schedule({
+                "action": "cycle", "cadence_seconds": 3600, "max_ticks": 1,
+                "now": schedule_now, "request": schedule_request,
+            }).to_dict()
+            EnvelopeSchema.model_validate(planned)
+            self.assertEqual(planned["state"], "AVAILABLE", planned)
+            schedule_id = planned["data"]["schedule_id"]
+            due_before = scheduled.due_schedules({"now": schedule_now, "limit": 8}).to_dict()
+            self.assertEqual(due_before["state"], "AVAILABLE")
+            self.assertTrue(any(row["schedule_id"] == schedule_id for row in due_before["data"]["rows"]))
+            early = scheduled.tick_schedule({
+                "schedule_id": schedule_id, "now": schedule_now,
+            }).to_dict()
+            self.assertEqual(early["state"], "AVAILABLE", early)
+            self.assertEqual(early["data"]["tick_index"], 1)
+            self.assertEqual(early["data"]["action"], "cycle")
+            self.assertFalse(early["data"]["trading_approved"])
+            exhausted = scheduled.tick_schedule({
+                "schedule_id": schedule_id,
+                "now": (pd.Timestamp(schedule_now) + pd.Timedelta(hours=2)).isoformat(),
+            }).to_dict()
+            self.assertEqual(exhausted["state"], "UNAVAILABLE")
+            due_after = scheduled.due_schedules({
+                "now": (pd.Timestamp(schedule_now) + pd.Timedelta(hours=2)).isoformat(),
+                "limit": 8,
+            }).to_dict()
+            EnvelopeSchema.model_validate(due_after)
+            self.assertFalse(due_after["data"]["trading_approved"])
+            self.assertTrue(all(row["schedule_id"] != schedule_id for row in due_after["data"]["rows"]))
+
+            stale_ws, stale_now, stale_request = _scheduled_workspace("stale-sched")
+            pending = stale_ws.schedule({
+                "action": "cycle", "cadence_seconds": 7200, "max_ticks": 2,
+                "now": stale_now, "request": stale_request,
+            }).to_dict()
+            self.assertEqual(pending["state"], "AVAILABLE", pending)
+            first = stale_ws.tick_schedule({
+                "schedule_id": pending["data"]["schedule_id"], "now": stale_now,
+            }).to_dict()
+            self.assertEqual(first["state"], "AVAILABLE", first)
+            stale = stale_ws.tick_schedule({
+                "schedule_id": pending["data"]["schedule_id"],
+                "now": (pd.Timestamp(stale_now) + pd.Timedelta(hours=1)).isoformat(),
+            }).to_dict()
+            self.assertEqual(stale["state"], "STALE")
+            self.assertEqual(stale["data"]["tick_state"], "NOT_DUE")
+
     def test_watch_monitors_sizes_and_optionally_scans(self):
         first_signal_id = self.screen["signal_id"]
         signal_doc = SignalWorkspace(self.base).load(first_signal_id)

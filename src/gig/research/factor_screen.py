@@ -39,31 +39,43 @@ def return_panel(panel_rows: list[dict[str, Any]], *, now: str) -> pd.DataFrame:
     return panel
 
 
+def market_neutral_residuals(panel: pd.DataFrame) -> pd.DataFrame:
+    """Equal-weight cross-sectional residual returns (market-neutral research panel)."""
+    market = panel.mean(axis=1)
+    residual = panel.sub(market, axis=0)
+    if residual.empty or not np.isfinite(residual.to_numpy()).all():
+        raise ValueError("market-neutral residual panel is unavailable")
+    return residual
+
+
 def cross_section_factor(
     panel: pd.DataFrame,
     *,
-    mode: Literal["momentum", "mean_reversion", "blend"] = "blend",
+    mode: Literal["momentum", "mean_reversion", "blend", "market_neutral_momentum"] = "blend",
     momentum_lookback: int = 20,
     reversion_lookback: int = 5,
     momentum_weight: float = 0.5,
     reversion_weight: float = 0.5,
 ) -> pd.Series:
     """Raw cross-sectional factor scores at the latest complete panel date."""
-    if mode not in {"momentum", "mean_reversion", "blend"}:
-        raise ValueError("mode must be momentum, mean_reversion, or blend")
+    if mode not in {"momentum", "mean_reversion", "blend", "market_neutral_momentum"}:
+        raise ValueError("mode must be momentum, mean_reversion, blend, or market_neutral_momentum")
     if not 2 <= momentum_lookback <= 252 or not 2 <= reversion_lookback <= 60:
         raise ValueError("factor lookbacks are outside the research bound")
     need = max(momentum_lookback if mode != "mean_reversion" else 0,
-               reversion_lookback if mode != "momentum" else 0)
+               reversion_lookback if mode != "momentum" and mode != "market_neutral_momentum" else 0)
+    if mode == "market_neutral_momentum":
+        need = momentum_lookback
     if len(panel) < need:
         raise ValueError("aligned return panel is shorter than the factor lookback")
-    scores = pd.Series(0.0, index=panel.columns, dtype=float)
-    if mode in {"momentum", "blend"}:
-        momentum = panel.tail(momentum_lookback).sum(axis=0)
+    working = market_neutral_residuals(panel) if mode == "market_neutral_momentum" else panel
+    scores = pd.Series(0.0, index=working.columns, dtype=float)
+    if mode in {"momentum", "blend", "market_neutral_momentum"}:
+        momentum = working.tail(momentum_lookback).sum(axis=0)
         weight = momentum_weight if mode == "blend" else 1.0
         scores = scores.add(weight * momentum, fill_value=0.0)
     if mode in {"mean_reversion", "blend"}:
-        reversion = -panel.tail(reversion_lookback).sum(axis=0)
+        reversion = -working.tail(reversion_lookback).sum(axis=0)
         weight = reversion_weight if mode == "blend" else 1.0
         scores = scores.add(weight * reversion, fill_value=0.0)
     if mode == "blend":
@@ -131,11 +143,16 @@ def score_factor_dataset(dataset: dict[str, Any], request: dict[str, Any]) -> di
         "trading_approved": False,
         "economically_validated": False,
         "metrics": {"eligible_models": 0, "instruments": len(rows), "trading_approved": False},
-        "method": "CROSS_SECTIONAL_RETURN_PANEL_CENTERED_RANK_V1",
+        "method": (
+            "MARKET_NEUTRAL_RESIDUAL_MOMENTUM_CENTERED_RANK_V1"
+            if request["mode"] == "market_neutral_momentum"
+            else "CROSS_SECTIONAL_RETURN_PANEL_CENTERED_RANK_V1"
+        ),
         "library_versions": {"numpy": np.__version__, "pandas": pd.__version__},
         "notes": [
             "Factor ranks use the aligned saved return_1 panel with no imputation.",
             "Scores are uncalibrated relative ranks, not IC-weighted model ensembles.",
+            "market_neutral_momentum subtracts the equal-weight cross-section mean each day before momentum.",
             "No broker order or trading approval is established.",
         ],
     }
