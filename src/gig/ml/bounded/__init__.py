@@ -5,6 +5,7 @@ from typing import Any
 
 from gig.ml.bounded import (  # importing registers each family
     boosting,
+    extensions,
     history,
     latent,
     neural,
@@ -23,7 +24,7 @@ from gig.ml.bounded.core import (
 )
 
 __all__ = ["FAMILIES", "IMPLEMENTATION", "MAX_FITS", "MAX_PREDICT", "Family", "admit", "boosting", "capabilities",
-           "fit_family", "history", "latent", "neural", "predict_family", "supervised", "tails"]
+           "extensions", "fit_family", "history", "latent", "neural", "predict_family", "supervised", "tails"]
 
 
 def capabilities() -> dict[str, dict[str, Any]]:

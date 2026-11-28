@@ -1,7 +1,8 @@
 # Bounded research families (shared contract)
 
 `gig.ml.bounded` holds one registry (`FAMILIES`) for inventory families 15-33
-and 35-40. A registry entry declares an actual library fit, a
+and 35-40, plus families 41-44 (ARD, seasonal ARIMA, VECM, spectral clustering).
+Family 34 stays absent until permitted event timestamps exist. A registry entry declares an actual library fit, a
 non-executable JSON replay and, where the mathematics allows, a check that
 re-derives the saved parameters from the saved training rows. Generic code in
 `gig/ml/bounded/core.py` and `gig/research/bounded.py` owns everything else, so
@@ -24,9 +25,9 @@ every family has the same boundary:
 
 | Mode | Input | Families |
 | --- | --- | --- |
-| FEATURES | admitted feature rows per instrument | huber, ransac, quantile, xgboost, catboost, adaboost, ngboost, ebm, mlp, gmm, kmeans, pca, ica, nmf, autoencoder |
-| SERIES | admitted one-observation return history per instrument | arima, ets, evt_pot, bocpd, tcn, esn, nbeats, attention |
-| PANEL | balanced cross-instrument return matrix | var, dynamic_factor, gaussian_copula |
+| FEATURES | admitted feature rows per instrument | huber, ransac, quantile, xgboost, catboost, adaboost, ngboost, ebm, mlp, gmm, kmeans, pca, ica, nmf, autoencoder, ard, spectral |
+| SERIES | admitted one-observation return history per instrument | arima, ets, evt_pot, bocpd, tcn, esn, nbeats, attention, sarima |
+| PANEL | balanced cross-instrument return matrix | var, dynamic_factor, gaussian_copula, vecm |
 
 SERIES and PANEL replays are prefix-causal: output row t uses observations up to
 t only and is the estimate for t+1. They require a one-observation target

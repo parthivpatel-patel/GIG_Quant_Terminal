@@ -290,7 +290,7 @@ register(Family(
     score=_structure_score(True), tolerance=1e-8, **_COMMON))
 register(Family(
     key="kmeans", number=27, capability="kmeans_clustering", label="K-means clustering · saved dataset",
-    scope="Bounded CPU K-means with three clusters on admitted features: 4 seeded starts, Lloyd iterations to exact convergence, 20–256 training rows, 16 fits. Reports holdout distance to the nearest center against the one-cluster baseline. Spectral clustering is unavailable." + _NOTE,
+    scope="Bounded CPU K-means with three clusters on admitted features: 4 seeded starts, Lloyd iterations to exact convergence, 20–256 training rows, 16 fits. Reports holdout distance to the nearest center against the one-cluster baseline. Spectral clustering is the separate spectral family." + _NOTE,
     kind="NEAREST_CENTER_SQUARED_DISTANCE", fit=_kmeans_fit, replay=_kmeans_replay, check=_kmeans_check,
     backend="sklearn.cluster.KMeans", outputs=("prediction", "baseline", "cluster"),
     parameters={"n_clusters": CLUSTERS, "n_init": KMEANS_STARTS, "max_iter": KMEANS_ITERATIONS, "algorithm": "lloyd"},

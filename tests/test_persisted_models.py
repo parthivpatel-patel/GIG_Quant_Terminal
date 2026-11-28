@@ -27,7 +27,8 @@ from test_persisted_data import (
 
 # Bounded families that must refuse this fixture before any fit: its features are
 # signed and its series are shorter than a tail model's training minimum.
-FIXTURE_REFUSALS = {"nmf": "nonnegative", "evt_pot": "walk-forward folds"}
+FIXTURE_REFUSALS = {"nmf": "nonnegative", "evt_pot": "walk-forward folds",
+                    "ard": "converge with at least one retained coefficient"}
 
 
 class PersistedModelTests(unittest.TestCase):
