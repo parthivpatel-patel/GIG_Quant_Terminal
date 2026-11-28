@@ -166,6 +166,21 @@ class CycleServices:
         if isinstance(payload, dict) and payload.get("operation") == "enrich-mentions":
             body = {key: value for key, value in payload.items() if key != "operation"}
             return self._screens().enrich_mentions(body)
+        if isinstance(payload, dict) and payload.get("operation") == "monitor-replay":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().replay_monitor(body)
+        if isinstance(payload, dict) and payload.get("operation") == "link-options-replay":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().replay_options_link(body)
+        if isinstance(payload, dict) and payload.get("operation") == "scan-options-replay":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().replay_options_scan(body)
+        if isinstance(payload, dict) and payload.get("operation") == "options-structures-replay":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().replay_option_structures(body)
+        if isinstance(payload, dict) and payload.get("operation") == "enrich-mentions-replay":
+            body = {key: value for key, value in payload.items() if key != "operation"}
+            return self._screens().replay_enrichment(body)
         return self._screens().run(payload)
 
     def screen_replay(self, payload: dict[str, Any]) -> Contract:
