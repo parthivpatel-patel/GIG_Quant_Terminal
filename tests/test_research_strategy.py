@@ -308,6 +308,45 @@ class StrategyTests(unittest.TestCase):
         self.assertIn("expected_cost", schedule["data"]["result"])
         self.assertEqual(schedule["data"]["source"]["extraction"],
                          "RESEARCH_SIZE_LARGEST_NAME_ALMGREN_CHRISS")
+        participation = CalculatorJournalWorkspace(self.base).run({
+            "operation": "from-size", "size_id": sized["data"]["size_id"],
+            "kind": "participation-schedule", "adv_lookback_bars": 20,
+            "inputs": {"max_participation": 0.1},
+        }).to_dict()
+        self.assertEqual(participation["state"], "AVAILABLE", participation)
+        self.assertFalse(participation["data"]["trading_approved"])
+        self.assertIn("scheduled_shares", participation["data"]["result"])
+        self.assertEqual(participation["data"]["source"]["extraction"],
+                         "RESEARCH_SIZE_LARGEST_NAME_PARTICIPATION_SCHEDULE")
+
+    def test_cycle_can_attach_pretrade_cost_estimate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            now = request["as_of"]
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            run = PersistedResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+                "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+            }).to_dict()["data"]
+            payload = allocation_request("", now)
+            del payload["run_id"]
+            payload.update(
+                run_ids=[run["run_id"]], lookback=20, min_ic_observations=5,
+                buy_threshold=0.0, sell_threshold=-0.01,
+                portfolio_notional="100000", max_name_notional="8000",
+                max_turnover=0.3, max_transaction_cost="100", fill=True,
+                estimate_cost=True, adv_lookback_bars=20,
+            )
+            cycled = ResearchStrategyWorkspace(root).cycle(payload).to_dict()
+            EnvelopeSchema.model_validate(cycled)
+            self.assertEqual(cycled["state"], "AVAILABLE", cycled)
+            body = cycled["data"]
+            self.assertTrue(body["cost_id"])
+            self.assertIsNotNone(body["cost_metrics"])
+            self.assertEqual(body["cost_metrics"]["evidence_class"], "ESTIMATED")
+            self.assertIsNotNone(body["metrics"]["estimated_cost_nav"])
+            self.assertFalse(body["trading_approved"])
 
     def test_size_applies_max_expected_shortfall_bound(self):
         probe = self.strategies.size({

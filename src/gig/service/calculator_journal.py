@@ -33,7 +33,9 @@ DATASET_BINDINGS = {
     "minimum-cvar": ("scenarios", frozenset({"return_1"}), "panel"),
 }
 COVARIANCE_BINDINGS = frozenset({"hierarchical-risk-parity", "maximum-diversification"})
-SIZE_BINDINGS = frozenset({"historical-var-components", "liquidity-var", "almgren-chriss"})
+SIZE_BINDINGS = frozenset({
+    "historical-var-components", "liquidity-var", "almgren-chriss", "participation-schedule",
+})
 SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
 OPTIONS_BINDINGS = frozenset({"svi-smile", "option-greeks-advanced"})
 SIZE_RECORD_BINDINGS = frozenset({"conditional-stress"})
@@ -297,8 +299,9 @@ class CalculatorJournalWorkspace:
         """Bind research position sizes into risk or execution calculators.
 
         ``historical-var-components`` uses signed size weights over the aligned
-        return panel. ``liquidity-var`` and ``almgren-chriss`` bind the largest
-        absolute name using panel ADV and return volatility. No order path.
+        return panel. ``liquidity-var``, ``almgren-chriss``, and
+        ``participation-schedule`` bind the largest absolute name using panel
+        ADV/volume and return volatility. No order path.
         """
         fields = _fields(payload, {"operation", "size_id", "kind", "field", "inputs",
                                    "adv_lookback_bars", "instrument_id"},
@@ -411,6 +414,21 @@ class CalculatorJournalWorkspace:
                 **inputs,
             }
             extraction = "RESEARCH_SIZE_LARGEST_NAME_LIQUIDITY_VAR"
+        elif kind == "participation-schedule":
+            if any(key in inputs for key in ("shares", "volumes")):
+                raise ValueError("calculator inputs must leave shares and volumes unbound")
+            whole_shares = int(float(selected["quantity"]))
+            if whole_shares < 1:
+                raise ValueError("participation schedule needs a positive whole-share quantity")
+            volume_forecast = [max(1, int(value)) for value in volumes[-lookback:]]
+            if not volume_forecast:
+                raise ValueError("participation schedule needs a volume forecast")
+            bound = {
+                "shares": whole_shares,
+                "volumes": volume_forecast,
+                **inputs,
+            }
+            extraction = "RESEARCH_SIZE_LARGEST_NAME_PARTICIPATION_SCHEDULE"
         else:
             if any(key in inputs for key in ("shares", "volatility")):
                 raise ValueError("calculator inputs must leave shares and volatility unbound")

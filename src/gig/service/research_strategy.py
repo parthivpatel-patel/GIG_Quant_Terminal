@@ -201,11 +201,14 @@ class ResearchStrategyWorkspace:
                    "gross_leverage", "max_name_weight", "lot_size", "max_age_seconds",
                    "annualization", "metadata", "limits", "commission_bps", "slippage_bps",
                    "price_tick", "max_turnover", "max_transaction_cost", "fill", "document_id",
-                   "nlp_profile"}
+                   "nlp_profile", "estimate_cost", "spread_bps", "impact_eta"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
                                             "max_name_weight", "lot_size", "max_age_seconds",
                                             "annualization", "metadata", "limits"})
+        estimate = fields.get("estimate_cost", False)
+        if not isinstance(estimate, bool):
+            raise ValueError("estimate_cost must be a boolean")
         sources = [key for key in ("run_ids", "dataset_id", "pair_run_id") if key in fields]
         if len(sources) != 1:
             raise ValueError("cycle requires exactly one of run_ids, dataset_id, or pair_run_id")
@@ -247,10 +250,12 @@ class ResearchStrategyWorkspace:
         }
         for key in ("max_age_seconds", "vol_scale", "target_volatility", "max_expected_shortfall",
                     "regime_short_bars", "regime_long_bars", "max_gross_exposure",
-                    "max_adv_participation", "adv_lookback_bars", "previous_size_id",
-                    "max_size_turnover", "annualization"):
+                    "max_adv_participation", "previous_size_id", "max_size_turnover",
+                    "annualization"):
             if key in fields:
                 size_payload[key] = fields[key]
+        if "max_adv_participation" in fields and "adv_lookback_bars" in fields:
+            size_payload["adv_lookback_bars"] = fields["adv_lookback_bars"]
         sized = self.size(size_payload).to_dict()
         if sized["state"] != State.AVAILABLE.value or not isinstance(sized.get("data"), dict):
             return Contract.admit(sized["state"], sized.get("data"),
@@ -260,13 +265,33 @@ class ResearchStrategyWorkspace:
                                   scope="workspace.research-strategy",
                                   error=sized.get("error"),
                                   readiness="RESEARCH_ONLY")
+        cost_data = None
+        if estimate:
+            cost_payload: dict[str, Any] = {
+                "size_id": sized["data"]["size_id"], "now": fields["now"],
+            }
+            for key in ("previous_size_id", "spread_bps", "commission_bps", "impact_eta",
+                        "adv_lookback_bars"):
+                if key in fields:
+                    cost_payload[key] = fields[key]
+            costed = self.estimate_cost(cost_payload).to_dict()
+            if costed["state"] != State.AVAILABLE.value or not isinstance(costed.get("data"), dict):
+                return Contract.admit(costed["state"], costed.get("data"),
+                                      source="persisted-research-strategy",
+                                      classification=costed["provenance"]["classification"],
+                                      as_of=costed["provenance"].get("as_of"),
+                                      scope="workspace.research-strategy",
+                                      error=costed.get("error"),
+                                      readiness="RESEARCH_ONLY")
+            cost_data = costed["data"]
         size_only = {"run_ids", "dataset_id", "pair_run_id", "mode", "momentum_lookback",
                      "reversion_lookback", "momentum_weight", "reversion_weight", "lookback",
                      "min_ic_observations", "buy_threshold", "sell_threshold", "previous_screen_id",
                      "portfolio_notional", "max_name_notional", "vol_scale", "target_volatility",
                      "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                      "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
-                     "previous_size_id", "max_size_turnover", "document_id", "nlp_profile"}
+                     "previous_size_id", "max_size_turnover", "document_id", "nlp_profile",
+                     "estimate_cost", "spread_bps", "impact_eta"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
         simulated = self.run(simulate_payload).to_dict()
@@ -286,6 +311,7 @@ class ResearchStrategyWorkspace:
             "screen_id": screen["screen_id"],
             "signal_id": screen["signal_id"],
             "size_id": sized["data"]["size_id"],
+            "cost_id": cost_data["cost_id"] if cost_data is not None else None,
             "enrichment_id": enrich_data.get("enrichment_id") if enrich_data is not None else None,
             "strategy_id": strategy["strategy_id"],
             "allocation_id": strategy["allocation_id"],
@@ -293,6 +319,7 @@ class ResearchStrategyWorkspace:
             "input_classification": screen["input_classification"],
             "discovery": screen.get("discovery"),
             "size_metrics": sized["data"]["metrics"],
+            "cost_metrics": cost_data["metrics"] if cost_data is not None else None,
             "fi_metrics": enrich_data["metrics"] if enrich_data is not None else None,
             "strategy_metrics": strategy["metrics"],
             "prepared_client_ids": strategy["prepared_client_ids"],
@@ -307,14 +334,17 @@ class ResearchStrategyWorkspace:
                 "research_sells": screen["metrics"]["research_sells"],
                 "sized_names": sized["data"]["metrics"]["names"],
                 "fi_matched": (enrich_data["metrics"]["matched_count"] if enrich_data is not None else 0),
+                "estimated_cost_nav": (
+                    None if cost_data is None else cost_data["metrics"]["cost_nav"]),
                 "prepared_orders": strategy["metrics"]["prepared_orders"],
                 "filled_orders": strategy["metrics"]["filled_orders"],
                 "trading_approved": False,
             },
             "notes": [
-                "Research cycle chains discovery, optional FI enrich, position sizing, and offline simulation.",
+                "Research cycle chains discovery, optional FI enrich, position sizing, optional pre-trade TCA, and offline simulation.",
                 "Discovery may use model ensembles or cross-sectional factor ranks including market-neutral momentum.",
                 "Sizing is advisory relative to the separate allocation/OMS simulation path.",
+                "Pre-trade costs stay ESTIMATED and are never mixed with simulated fills.",
                 "Broker connectivity stays disabled; trading stays unapproved.",
             ],
         }

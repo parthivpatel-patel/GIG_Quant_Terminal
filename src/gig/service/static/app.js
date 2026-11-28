@@ -915,7 +915,7 @@
   delete examples["workspace-allocate-screen"].run_id;
   examples["workspace-research-strategy"] = { ...examples["workspace-allocate-screen"], operation: "simulate", fill: true };
   examples["workspace-research-size"] = { operation: "size", screen_id: "0".repeat(64), now: pipelineStamp(79), portfolio_notional: "100000", max_name_notional: "25000", lot_size: 1, max_age_seconds: 86400, target_volatility: "0.15", max_expected_shortfall: "0.05", max_adv_participation: "0.1", adv_lookback_bars: 20, previous_size_id: "0".repeat(64), max_size_turnover: "0.2", annualization: 252 };
-  examples["workspace-research-cycle"] = { ...examples["workspace-allocate-screen"], operation: "cycle", run_ids: ["0".repeat(64)], lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25, portfolio_notional: "100000", max_name_notional: "25000", vol_scale: "1", fill: true };
+  examples["workspace-research-cycle"] = { ...examples["workspace-allocate-screen"], operation: "cycle", run_ids: ["0".repeat(64)], lookback: 20, min_ic_observations: 5, buy_threshold: .25, sell_threshold: -.25, portfolio_notional: "100000", max_name_notional: "25000", vol_scale: "1", estimate_cost: true, spread_bps: "4", impact_eta: "0.10", adv_lookback_bars: 20, fill: true };
   delete examples["workspace-research-cycle"].screen_id;
   examples["workspace-strategy-replay"] = { operation: "replay", strategy_id: "0".repeat(64) };
   examples["workspace-size-replay"] = { operation: "size-replay", size_id: "0".repeat(64) };
@@ -1157,7 +1157,7 @@
       "workspace-allocate-screen": "Construct offline targets from nonzero research_weight values on a saved buy/hold/sell screen. Still simulated and unapproved.",
       "workspace-research-strategy": "Allocate from a research screen, prepare offline intents, and optionally fill at reference prices in the offline OMS. Broker stays off; trading stays unapproved.",
       "workspace-research-size": "Convert screen research weights into capped lot sizes using admitted marks. Optional target_volatility and max_expected_shortfall scale notionals from the saved return panel. No OMS prepare or broker order.",
-      "workspace-research-cycle": "One research cycle: discover from saved model runs, size positions, then allocate/prepare/optionally fill offline. Broker stays off; trading stays unapproved.",
+      "workspace-research-cycle": "One research cycle: discover from saved model runs, size positions, optional pre-trade TCA, then allocate/prepare/optionally fill offline. Broker stays off; trading stays unapproved.",
       "workspace-strategy-replay": "Reload a saved offline strategy simulation. No new orders are created.",
       "workspace-size-replay": "Reload saved research position sizes by identity. Replay does not approve trading.",
       "workspace-cycle-replay": "Reload a saved research opportunity cycle by identity. Replay does not approve trading.",
@@ -1261,7 +1261,7 @@
     specialScopes["workspace-calculator-replay"] = "Recompute a saved calculation from its pinned inputs. Any difference is an integrity failure. Nothing new is fitted or fetched.";
     specialScopes["workspace-calculator-dataset"] = "Copy one instrument series, or an aligned return panel for Ledoit-Wolf or minimum-CVaR, from a saved dataset. Missing values are not filled. Replay uses the pinned numbers. No order or trading approval.";
     specialScopes["workspace-calculator-covariance"] = "Allocate hierarchical risk parity or maximum diversification from a pinned Ledoit-Wolf covariance record. Dataset panel is not reread. No order or trading approval.";
-    specialScopes["workspace-calculator-size"] = "Bind research sizes into historical VaR, liquidity VaR, or Almgren-Chriss. VaR uses signed weights on the aligned return panel; liquidity/AC bind the largest absolute name with panel ADV and volatility. No order or trading approval.";
+    specialScopes["workspace-calculator-size"] = "Bind research sizes into historical VaR, liquidity VaR, Almgren-Chriss, or a participation schedule. VaR uses signed weights on the aligned return panel; execution binders use the largest absolute name with panel ADV/volume and volatility. No order or trading approval.";
     specialScopes["workspace-calculator-screen"] = "Bind a research screen and pinned Ledoit-Wolf covariance into Black-Litterman views or equal-budget risk parity. Views use research_weight; research-only, no trading approval.";
     specialScopes["workspace-calculator-options"] = "Fit raw SVI on one admitted CALL expiry from a saved options research run. Uses IV total variance; research-only, no OPRA or trading approval.";
     specialScopes["workspace-calculator-size-record"] = "Bind research sizes and a pinned Ledoit-Wolf covariance into conditional stress. Caller supplies shocked assets and shocks; research-only.";
