@@ -80,6 +80,38 @@ class StrategyTests(unittest.TestCase):
         missing = self.strategies.replay_size({"size_id": "0" * 64}).to_dict()
         self.assertEqual(missing["state"], "UNAVAILABLE")
 
+    def test_cycle_discovers_sizes_and_simulates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = seed_flow(root)
+            now = request["as_of"]
+            dataset = PersistedDatasetWorkspace(root).build(request).to_dict()["data"]
+            run = PersistedResearchWorkspace(root).run({
+                "dataset_id": dataset["dataset_id"], "model": "lightgbm",
+                "min_train": 30, "test_size": 12, "embargo": 1, "seed": 17,
+            }).to_dict()["data"]
+            payload = allocation_request("", now)
+            del payload["run_id"]
+            payload.update(
+                run_ids=[run["run_id"]], lookback=20, min_ic_observations=5,
+                buy_threshold=0.0, sell_threshold=-0.01,
+                portfolio_notional="100000", max_name_notional="8000",
+                max_turnover=0.3, max_transaction_cost="100", fill=True,
+            )
+            cycled = ResearchStrategyWorkspace(root).cycle(payload).to_dict()
+            EnvelopeSchema.model_validate(cycled)
+            self.assertEqual(cycled["state"], "AVAILABLE", cycled)
+            body = cycled["data"]
+            self.assertFalse(body["trading_approved"])
+            self.assertFalse(body["broker_connected"])
+            self.assertTrue(body["screen_id"])
+            self.assertTrue(body["size_id"])
+            self.assertTrue(body["strategy_id"])
+            self.assertTrue(body["fills"])
+            replayed = ResearchStrategyWorkspace(root).replay_cycle(
+                {"cycle_id": body["cycle_id"]}).to_dict()
+            self.assertEqual(replayed["data"]["cycle_id"], body["cycle_id"])
+
 
 class StrategyHTTPTests(unittest.IsolatedAsyncioTestCase):
     async def test_http_simulate_and_replay(self):

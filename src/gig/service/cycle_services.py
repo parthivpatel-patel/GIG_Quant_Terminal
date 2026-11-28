@@ -174,8 +174,13 @@ class CycleServices:
             return self._strategies().size(body)
         if operation == "size-replay":
             return self._strategies().replay_size(body)
+        if operation == "cycle":
+            return self._strategies().cycle(body)
+        if operation == "cycle-replay":
+            return self._strategies().replay_cycle(body)
         if operation != "simulate":
-            raise ValueError("research strategy operation must be simulate, size, size-replay, or replay")
+            raise ValueError(
+                "research strategy operation must be simulate, size, size-replay, cycle, cycle-replay, or replay")
         return self._strategies().run(body)
 
     def _overlay(self):

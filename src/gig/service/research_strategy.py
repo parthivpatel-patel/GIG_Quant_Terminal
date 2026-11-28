@@ -27,6 +27,7 @@ from gig.timestamps import aware_timestamp
 
 IMPLEMENTATION = "gig.research-strategy.v1"
 SIZING = "gig.research-strategy.sizing.v1"
+CYCLE = "gig.research-strategy.cycle.v1"
 
 
 def _hash(value: Any) -> str:
@@ -163,6 +164,135 @@ class ResearchStrategyWorkspace:
         self._path("runs").mkdir(parents=True, exist_ok=True)
         write_immutable(self._path("runs/" + identity + ".json"), dumps(document).encode())
         return self._contract(document)
+
+    def cycle(self, payload: dict[str, Any]) -> Contract:
+        """One research cycle: discover from runs → size → offline simulate.
+
+        Broker connectivity stays disabled. The cycle never grants trading
+        approval. Size and simulate steps reuse the same screen identity.
+        """
+        allowed = {"run_ids", "now", "lookback", "min_ic_observations", "buy_threshold", "sell_threshold",
+                   "previous_screen_id", "portfolio_notional", "max_name_notional", "vol_scale",
+                   "initial_cash", "n_long", "n_short", "gross_leverage", "max_name_weight", "lot_size",
+                   "max_age_seconds", "annualization", "metadata", "limits", "commission_bps",
+                   "slippage_bps", "price_tick", "max_turnover", "max_transaction_cost", "fill"}
+        fields = _fields(payload, allowed, {"run_ids", "now", "portfolio_notional", "max_name_notional",
+                                            "initial_cash", "n_long", "n_short", "gross_leverage",
+                                            "max_name_weight", "lot_size", "max_age_seconds",
+                                            "annualization", "metadata", "limits"})
+        discover_payload = {key: fields[key] for key in fields
+                            if key in {"run_ids", "now", "lookback", "min_ic_observations",
+                                       "buy_threshold", "sell_threshold", "previous_screen_id"}}
+        discovered = self.screens.discover(discover_payload).to_dict()
+        if discovered["state"] != State.AVAILABLE.value or not isinstance(discovered.get("data"), dict):
+            return Contract.admit(discovered["state"], discovered.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=discovered["provenance"]["classification"],
+                                  as_of=discovered["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=discovered.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        screen = discovered["data"]
+        size_payload = {
+            "screen_id": screen["screen_id"], "now": fields["now"],
+            "portfolio_notional": fields["portfolio_notional"],
+            "max_name_notional": fields["max_name_notional"],
+            "lot_size": fields["lot_size"],
+        }
+        for key in ("max_age_seconds", "vol_scale"):
+            if key in fields:
+                size_payload[key] = fields[key]
+        sized = self.size(size_payload).to_dict()
+        if sized["state"] != State.AVAILABLE.value or not isinstance(sized.get("data"), dict):
+            return Contract.admit(sized["state"], sized.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=sized["provenance"]["classification"],
+                                  as_of=sized["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=sized.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        simulate_payload = {key: fields[key] for key in fields
+                            if key not in {"run_ids", "lookback", "min_ic_observations",
+                                           "buy_threshold", "sell_threshold", "previous_screen_id",
+                                           "portfolio_notional", "max_name_notional", "vol_scale"}}
+        simulate_payload["screen_id"] = screen["screen_id"]
+        simulated = self.run(simulate_payload).to_dict()
+        if simulated["state"] != State.AVAILABLE.value or not isinstance(simulated.get("data"), dict):
+            return Contract.admit(simulated["state"], simulated.get("data"),
+                                  source="persisted-research-strategy",
+                                  classification=simulated["provenance"]["classification"],
+                                  as_of=simulated["provenance"].get("as_of"),
+                                  scope="workspace.research-strategy",
+                                  error=simulated.get("error"),
+                                  readiness="RESEARCH_ONLY")
+        strategy = simulated["data"]
+        body = {
+            "schema_version": CYCLE,
+            "as_of": strategy["as_of"],
+            "dataset_id": screen["dataset_id"],
+            "screen_id": screen["screen_id"],
+            "signal_id": screen["signal_id"],
+            "size_id": sized["data"]["size_id"],
+            "strategy_id": strategy["strategy_id"],
+            "allocation_id": strategy["allocation_id"],
+            "source": screen["source"],
+            "input_classification": screen["input_classification"],
+            "discovery": screen.get("discovery"),
+            "size_metrics": sized["data"]["metrics"],
+            "strategy_metrics": strategy["metrics"],
+            "prepared_client_ids": strategy["prepared_client_ids"],
+            "fills": strategy["fills"],
+            "fill_requested": strategy["fill_requested"],
+            "broker_connected": False,
+            "trading_approved": False,
+            "economically_validated": False,
+            "classification": "SIMULATED_PLAN",
+            "metrics": {
+                "research_buys": screen["metrics"]["research_buys"],
+                "research_sells": screen["metrics"]["research_sells"],
+                "sized_names": sized["data"]["metrics"]["names"],
+                "prepared_orders": strategy["metrics"]["prepared_orders"],
+                "filled_orders": strategy["metrics"]["filled_orders"],
+                "trading_approved": False,
+            },
+            "notes": [
+                "Research cycle chains discovery, position sizing, and offline simulation.",
+                "Sizing is advisory relative to the separate allocation/OMS simulation path.",
+                "Broker connectivity stays disabled; trading stays unapproved.",
+            ],
+        }
+        identity = _hash(body)
+        document = {**body, "cycle_id": identity}
+        self._path("cycles").mkdir(parents=True, exist_ok=True)
+        write_immutable(self._path("cycles/" + identity + ".json"), dumps(document).encode())
+        return self._contract(document, title="Unapproved research opportunity cycle",
+                              model_version=CYCLE,
+                              evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_CYCLE",
+                              identity_key="cycle_id")
+
+    def load_cycle(self, cycle_id: str) -> dict[str, Any]:
+        identity = sha256(cycle_id)
+        path = self._path("cycles/" + identity + ".json")
+        if not path.is_file():
+            raise FileNotFoundError("research cycle unavailable")
+        document = loads(path.read_bytes())
+        body = {k: v for k, v in document.items() if k != "cycle_id"}
+        if document.get("cycle_id") != identity or _hash(body) != identity or body.get("schema_version") != CYCLE:
+            raise ValueError("research cycle artifact integrity mismatch")
+        return document
+
+    def replay_cycle(self, payload: dict[str, Any]) -> Contract:
+        _fields(payload, {"cycle_id"}, {"cycle_id"})
+        try:
+            document = self.load_cycle(payload["cycle_id"])
+        except FileNotFoundError:
+            return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
+                                  classification="UNAVAILABLE", scope="workspace.research-strategy",
+                                  error=public_error("DATA_UNAVAILABLE"))
+        return self._contract(document, title="Unapproved research opportunity cycle",
+                              model_version=CYCLE,
+                              evidence="HASH_VERIFIED_RESEARCH_OPPORTUNITY_CYCLE",
+                              identity_key="cycle_id")
 
     def size(self, payload: dict[str, Any]) -> Contract:
         """Convert screen research weights into capped research lot sizes.
