@@ -283,6 +283,33 @@ class DatasetBindingTests(unittest.TestCase):
         self.assertEqual(parity["state"], "AVAILABLE", parity)
         self.assertAlmostEqual(sum(parity["data"]["result"]["weights"]), 1.0, places=6)
         self.assertFalse(parity["data"]["trading_approved"])
+        regime = self.workspace.run({
+            "operation": "from-screen", "screen_id": screen["screen_id"],
+            "record_id": covariance["record_id"], "kind": "risk-parity", "inputs": {},
+            "regime_short_bars": 20, "regime_long_bars": 60,
+        }).to_dict()
+        self.assertEqual(regime["state"], "AVAILABLE", regime)
+        self.assertIn("regime", regime["data"]["source"])
+        self.assertEqual(regime["data"]["source"]["extraction"],
+                         "RESEARCH_SCREEN_REGIME_TILTED_LEDOIT_WOLF_COVARIANCE")
+        self.assertAlmostEqual(sum(regime["data"]["result"]["weights"]), 1.0, places=6)
+        self.assertEqual(len(regime["data"]["source"]["regime"]["name_scales"]), 2)
+        self.assertGreaterEqual(regime["data"]["source"]["regime"]["regime_scale"], 0.1)
+        self.assertLessEqual(regime["data"]["source"]["regime"]["regime_scale"], 10.0)
+        hrp = self.workspace.run({
+            "operation": "from-screen", "screen_id": screen["screen_id"],
+            "record_id": covariance["record_id"], "kind": "hierarchical-risk-parity",
+            "inputs": {}, "regime_short_bars": 20, "regime_long_bars": 60,
+        }).to_dict()
+        self.assertEqual(hrp["state"], "AVAILABLE", hrp)
+        self.assertAlmostEqual(sum(hrp["data"]["result"]["weights"]), 1.0, places=6)
+        self.assertIn("regime", hrp["data"]["source"])
+        with self.assertRaisesRegex(ValueError, "together"):
+            self.workspace.run({
+                "operation": "from-screen", "screen_id": screen["screen_id"],
+                "record_id": covariance["record_id"], "kind": "risk-parity", "inputs": {},
+                "regime_short_bars": 20,
+            })
 
     def test_from_options_fits_svi_on_admitted_call_slice(self):
         from gig.options.analytics import black_scholes

@@ -37,7 +37,8 @@ SIZE_BINDINGS = frozenset({
     "historical-var-components", "liquidity-var", "almgren-chriss", "participation-schedule",
     "shortfall-simulation",
 })
-SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity"})
+SCREEN_BINDINGS = frozenset({"black-litterman", "risk-parity", "hierarchical-risk-parity"})
+SIZE_WEIGHT_KINDS = frozenset({"risk-parity", "hierarchical-risk-parity", "maximum-diversification"})
 OPTIONS_BINDINGS = frozenset({"svi-smile", "option-greeks-advanced"})
 SIZE_RECORD_BINDINGS = frozenset({"conditional-stress"})
 SCHEMA = """
@@ -473,15 +474,63 @@ class CalculatorJournalWorkspace:
         }
         return self.journal.save(kind, bound, source=source)
 
+    @staticmethod
+    def _trailing_vol_regime(panel_rows: Any, instruments: list[str],
+                             short_bars: int, long_bars: int) -> dict[str, Any]:
+        """Descriptive trailing-vol regime from an aligned return panel.
+
+        ``regime_scale`` is ``long_vol / short_vol`` clipped to ``[0.1, 10]``.
+        Values above one mean the recent window is quieter than the long window.
+        Per-name scales use the same ratio on each instrument return series.
+        This is not an HMM and does not approve trading.
+        """
+        if not 5 <= short_bars < long_bars <= 252:
+            raise ValueError("regime windows must satisfy 5 <= short < long <= 252")
+        matrix, _skipped = aligned_returns(panel_rows, instruments, "return_1")
+        if len(matrix) < long_bars:
+            raise ValueError("aligned return panel is shorter than the long regime window")
+        import numpy as np
+        panel = np.asarray(matrix, dtype=float)
+        equal = panel.mean(axis=1)
+        short_vol = float(np.std(equal[-short_bars:], ddof=1))
+        long_vol = float(np.std(equal[-long_bars:], ddof=1))
+        if not (short_vol == short_vol and long_vol == long_vol) or long_vol <= 0:
+            raise ValueError("regime volatilities are not finite and positive")
+        portfolio_scale = min(max((long_vol / short_vol) if short_vol > 0 else 1.0, 0.1), 10.0)
+        name_scales: list[float] = []
+        for column in range(panel.shape[1]):
+            series = panel[:, column]
+            name_short = float(np.std(series[-short_bars:], ddof=1))
+            name_long = float(np.std(series[-long_bars:], ddof=1))
+            if not (name_short == name_short and name_long == name_long) or name_long <= 0:
+                name_scales.append(1.0)
+                continue
+            name_scales.append(min(max((name_long / name_short) if name_short > 0 else 1.0, 0.1), 10.0))
+        return {
+            "short_bars": short_bars,
+            "long_bars": long_bars,
+            "short_vol": short_vol,
+            "long_vol": long_vol,
+            "regime_scale": portfolio_scale,
+            "name_scales": name_scales,
+            "observations": len(matrix),
+            "method": "DESCRIPTIVE_TRAILING_VOLATILITY_NOT_HMM",
+        }
+
     def _from_screen(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Bind a research screen and Ledoit-Wolf covariance into allocation research.
 
         Black-Litterman views are absolute unit views on actionable names using
-        research_weight as the uncalibrated view return. Risk parity uses equal
-        risk budgets over the covariance instruments. Neither path approves trading.
+        research_weight as the uncalibrated view return. Risk parity starts from
+        equal risk budgets; optional trailing-vol windows reweight those budgets
+        and scale Black-Litterman view returns. Hierarchical risk parity uses the
+        pinned covariance only. Neither path approves trading.
         """
-        fields = _fields(payload, {"operation", "screen_id", "record_id", "kind", "inputs"},
+        fields = _fields(payload, {"operation", "screen_id", "record_id", "kind", "inputs",
+                                   "regime_short_bars", "regime_long_bars"},
                          {"operation", "screen_id", "record_id", "kind", "inputs"})
+        if ("regime_short_bars" in fields) != ("regime_long_bars" in fields):
+            raise ValueError("regime_short_bars and regime_long_bars must be provided together")
         kind = fields["kind"]
         if not isinstance(kind, str) or kind not in SCREEN_BINDINGS:
             raise ValueError("calculator cannot be bound to a research screen")
@@ -507,11 +556,29 @@ class CalculatorJournalWorkspace:
             raise ValueError("covariance instruments must appear on the research screen")
         count = len(instruments)
         market_weights = [1.0 / count] * count
+        regime: dict[str, Any] | None = None
+        if "regime_short_bars" in fields:
+            dataset = PersistedDatasetWorkspace(self.directory).load(screen["dataset_id"])
+            regime = self._trailing_vol_regime(
+                dataset["panel_rows"], instruments,
+                int(fields["regime_short_bars"]), int(fields["regime_long_bars"]))
         bound: dict[str, Any] = {"covariance": covariance}
         if kind == "risk-parity":
             if any(key in inputs for key in ("covariance", "budgets")):
                 raise ValueError("calculator inputs must leave covariance and budgets unbound")
-            bound["budgets"] = list(market_weights)
+            budgets = list(market_weights)
+            if regime is not None:
+                tilted = [base * scale for base, scale
+                          in zip(budgets, regime["name_scales"], strict=True)]
+                total = sum(tilted)
+                if total <= 0:
+                    raise ValueError("regime-tilted risk budgets must stay positive")
+                budgets = [value / total for value in tilted]
+            bound["budgets"] = budgets
+            bound.update(inputs)
+        elif kind == "hierarchical-risk-parity":
+            if "covariance" in inputs:
+                raise ValueError("calculator inputs must leave covariance unbound")
             bound.update(inputs)
         else:
             if any(key in inputs for key in
@@ -521,6 +588,7 @@ class CalculatorJournalWorkspace:
                     "view_returns unbound")
             views: list[list[float]] = []
             view_returns: list[float] = []
+            view_scale = float(regime["regime_scale"]) if regime is not None else 1.0
             for index, name in enumerate(instruments):
                 row = by_name[name]
                 if row.get("stance") == "RESEARCH_HOLD" or float(row.get("research_weight", 0)) == 0.0:
@@ -528,7 +596,7 @@ class CalculatorJournalWorkspace:
                 vector = [0.0] * count
                 vector[index] = 1.0
                 views.append(vector)
-                view_returns.append(float(row["research_weight"]))
+                view_returns.append(float(row["research_weight"]) * view_scale)
             if not views:
                 raise ValueError("screen has no actionable research views for Black-Litterman")
             bound.update({
@@ -537,6 +605,9 @@ class CalculatorJournalWorkspace:
                 "view_returns": view_returns,
                 **inputs,
             })
+        extraction = ("RESEARCH_SCREEN_REGIME_TILTED_LEDOIT_WOLF_COVARIANCE"
+                      if regime is not None else
+                      "RESEARCH_SCREEN_VIEWS_PINNED_LEDOIT_WOLF_COVARIANCE")
         source = {
             "screen_id": screen["screen_id"],
             "parent_record_id": parent["record_id"],
@@ -546,10 +617,21 @@ class CalculatorJournalWorkspace:
                                                        screen.get("input_classification")),
             "instruments": instruments,
             "argument": "covariance",
-            "extraction": "RESEARCH_SCREEN_VIEWS_PINNED_LEDOIT_WOLF_COVARIANCE",
+            "extraction": extraction,
             "trading_approved": False,
             "view_count": len(bound.get("views", [])),
         }
+        if regime is not None:
+            source["regime"] = {
+                "short_bars": regime["short_bars"],
+                "long_bars": regime["long_bars"],
+                "short_vol": regime["short_vol"],
+                "long_vol": regime["long_vol"],
+                "regime_scale": regime["regime_scale"],
+                "name_scales": regime["name_scales"],
+                "observations": regime["observations"],
+                "method": regime["method"],
+            }
         return self.journal.save(kind, bound, source=source)
 
     def _from_options(self, payload: dict[str, Any]) -> dict[str, Any]:

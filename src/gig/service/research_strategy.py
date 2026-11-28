@@ -203,7 +203,7 @@ class ResearchStrategyWorkspace:
                    "annualization", "metadata", "limits", "commission_bps", "slippage_bps",
                    "price_tick", "max_turnover", "max_transaction_cost", "fill", "document_id",
                    "nlp_profile", "estimate_cost", "spread_bps", "impact_eta", "findings_id",
-                   "cost_rebalance", "rebalance_mode",
+                   "calculator_record_id", "cost_rebalance", "rebalance_mode",
                    "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"}
         fields = _fields(payload, allowed, {"now", "portfolio_notional", "max_name_notional",
                                             "initial_cash", "n_long", "n_short", "gross_leverage",
@@ -338,7 +338,7 @@ class ResearchStrategyWorkspace:
                      "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
                      "previous_size_id", "max_size_turnover", "document_id", "nlp_profile",
                      "estimate_cost", "spread_bps", "impact_eta", "findings_id",
-                     "cost_rebalance", "rebalance_mode",
+                     "calculator_record_id", "cost_rebalance", "rebalance_mode",
                      "min_trade_notional", "max_one_way_bps", "max_cost_nav", "alpha_scale"}
         simulate_payload = {key: fields[key] for key in fields if key not in size_only}
         simulate_payload["screen_id"] = screen["screen_id"]
@@ -1471,7 +1471,7 @@ class ResearchStrategyWorkspace:
                                    "max_expected_shortfall", "regime_short_bars", "regime_long_bars",
                                    "max_gross_exposure", "max_adv_participation", "adv_lookback_bars",
                                    "previous_size_id", "max_size_turnover", "annualization",
-                                   "findings_id"},
+                                   "findings_id", "calculator_record_id"},
                          {"screen_id", "now", "portfolio_notional", "max_name_notional", "lot_size"})
         if "vol_scale" in fields and "target_volatility" in fields:
             raise ValueError("provide vol_scale or target_volatility, not both")
@@ -1483,6 +1483,7 @@ class ResearchStrategyWorkspace:
             raise ValueError("adv_lookback_bars requires max_adv_participation")
         if "max_size_turnover" in fields and "previous_size_id" not in fields:
             raise ValueError("max_size_turnover requires previous_size_id")
+        allocation_record = None
         try:
             screen = self.screens.load(fields["screen_id"])
             dataset = PersistedDatasetWorkspace(self.base_dir).load(screen["dataset_id"])
@@ -1490,12 +1491,35 @@ class ResearchStrategyWorkspace:
                              if "previous_size_id" in fields else None)
             findings = (self.screens.load_fi_findings(fields["findings_id"])
                         if "findings_id" in fields else None)
+            if "calculator_record_id" in fields:
+                from gig.service.calculator_journal import CalculatorJournalWorkspace
+                allocation_record = CalculatorJournalWorkspace(self.base_dir).journal.replay(
+                    fields["calculator_record_id"])
         except FileNotFoundError:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
                                   error=public_error("DATA_UNAVAILABLE"))
         if findings is not None and findings["screen_id"] != screen["screen_id"]:
             raise ValueError("findings_id must reference the same screen_id")
+        allocation_weights: dict[str, float] | None = None
+        if allocation_record is not None:
+            from gig.service.calculator_journal import SIZE_WEIGHT_KINDS
+            if allocation_record.get("kind") not in SIZE_WEIGHT_KINDS:
+                raise ValueError("calculator_record_id must be a weight-producing allocation kind")
+            source = allocation_record.get("source")
+            if not isinstance(source, dict):
+                raise ValueError("calculator allocation record must pin its source")
+            if source.get("screen_id") not in (None, screen["screen_id"]):
+                raise ValueError("calculator_record_id screen lineage must match screen_id")
+            if source.get("dataset_id") not in (None, screen["dataset_id"]):
+                raise ValueError("calculator_record_id must share the screen dataset")
+            instruments = source.get("instruments")
+            weights = allocation_record.get("result", {}).get("weights")
+            if (not isinstance(instruments, list) or not isinstance(weights, list)
+                    or len(instruments) != len(weights) or not instruments):
+                raise ValueError("calculator allocation record must pin instruments and weights")
+            allocation_weights = {str(name): float(weight)
+                                  for name, weight in zip(instruments, weights, strict=True)}
         if self._invalidation_hits(screen_id=screen["screen_id"]):
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
                                   classification="UNAVAILABLE", scope="workspace.research-strategy",
@@ -1555,6 +1579,27 @@ class ResearchStrategyWorkspace:
                 overlaid.append(updated)
             screen_rows = overlaid
             findings_applied = True
+        allocation_applied = False
+        if allocation_weights is not None:
+            assert allocation_record is not None
+            weight_kind = str(allocation_record["kind"])
+            remapped: list[dict[str, Any]] = []
+            for row in screen_rows:
+                alloc_weight = allocation_weights.get(row["instrument_id"])
+                updated = dict(row)
+                if alloc_weight is None or alloc_weight == 0.0:
+                    updated["research_weight"] = 0.0
+                else:
+                    sign = 1.0 if float(row.get("research_weight", 0)) >= 0 else -1.0
+                    if row.get("stance") == "RESEARCH_SELL":
+                        sign = -1.0
+                    elif row.get("stance") == "RESEARCH_BUY":
+                        sign = 1.0
+                    updated["research_weight"] = sign * abs(float(alloc_weight))
+                    updated["allocation_weight_source"] = weight_kind
+                remapped.append(updated)
+            screen_rows = remapped
+            allocation_applied = True
         actionable = [row for row in screen_rows if float(row["research_weight"]) != 0.0]
         if not actionable:
             return Contract.admit(State.UNAVAILABLE, None, source="persisted-research-strategy",
@@ -1886,6 +1931,18 @@ class ResearchStrategyWorkspace:
             request["findings_id"] = findings["findings_id"]
             request["findings_policy"] = findings["policy"]
             request["findings_applied"] = findings_applied
+        if allocation_record is not None:
+            request["calculator_record_id"] = allocation_record["record_id"]
+            request["calculator_kind"] = allocation_record["kind"]
+            request["allocation_weights_applied"] = allocation_applied
+            regime = (allocation_record.get("source") or {}).get("regime")
+            if isinstance(regime, dict):
+                request["allocation_regime"] = {
+                    "short_bars": regime.get("short_bars"),
+                    "long_bars": regime.get("long_bars"),
+                    "regime_scale": regime.get("regime_scale"),
+                    "method": regime.get("method"),
+                }
         body = {
             "schema_version": SIZING,
             "as_of": at.isoformat(),
@@ -1894,6 +1951,8 @@ class ResearchStrategyWorkspace:
             "signal_id": screen["signal_id"],
             "previous_size_id": previous_size["size_id"] if previous_size is not None else None,
             "findings_id": findings["findings_id"] if findings is not None else None,
+            "calculator_record_id": (allocation_record["record_id"]
+                                     if allocation_record is not None else None),
             "source": screen["source"],
             "input_classification": screen["input_classification"],
             "request": request,
@@ -1919,6 +1978,7 @@ class ResearchStrategyWorkspace:
                 "size_turnover_nav": None if turnover_nav is None else str(turnover_nav),
                 "size_turnover_cap_applied": turnover_cap_applied,
                 "findings_applied": findings_applied,
+                "allocation_weights_applied": allocation_applied,
                 "trading_approved": False,
             },
             "notes": [
@@ -1927,6 +1987,7 @@ class ResearchStrategyWorkspace:
                 "ADV caps use trailing close×volume means from the saved panel; they are descriptive liquidity bounds.",
                 "previous_size_id measures one-way NAV turnover; max_size_turnover blends toward the prior signed notionals.",
                 "Optional findings_id applies FI gate-hold / weight-adjust overlays before sizing; the screen artifact is unchanged.",
+                "Optional calculator_record_id replaces screen research_weight with saved risk-parity / HRP / max-div weights.",
                 "No broker order, OMS prepare, or trading approval is established.",
             ],
         }
